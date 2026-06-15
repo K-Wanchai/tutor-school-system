@@ -47,7 +47,8 @@ public class CourseServiceImpl implements CourseService {
         Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
         Page<Course> coursePage = courseRepository.findAll(pageable);
         Page<CourseResponse> responsePage = coursePage.map(course -> {
-            long count = enrollmentRepository.countByCourseIdAndStatus(course.getId(), EnrollmentStatus.ACTIVE);
+            long count = enrollmentRepository.countByCourseIdAndStatusIn(course.getId(),
+                    List.of(EnrollmentStatus.PENDING, EnrollmentStatus.APPROVED));
             return courseMapper.toSummaryResponse(course, count);
         });
         return PageResponse.from(responsePage);
@@ -58,7 +59,8 @@ public class CourseServiceImpl implements CourseService {
     public CourseResponse getCourseById(Long id) {
         Course course = courseRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Course", id));
-        long enrolledCount = enrollmentRepository.countByCourseIdAndStatus(id, EnrollmentStatus.ACTIVE);
+        long enrolledCount = enrollmentRepository.countByCourseIdAndStatusIn(id,
+                List.of(EnrollmentStatus.PENDING, EnrollmentStatus.APPROVED));
         return courseMapper.toDetailResponse(course, enrolledCount);
     }
 
@@ -67,7 +69,8 @@ public class CourseServiceImpl implements CourseService {
     public CourseResponse getCourseByCode(String courseCode) {
         Course course = courseRepository.findByCourseCode(courseCode)
                 .orElseThrow(() -> new ResourceNotFoundException("Course not found with code: " + courseCode));
-        long enrolledCount = enrollmentRepository.countByCourseIdAndStatus(course.getId(), EnrollmentStatus.ACTIVE);
+        long enrolledCount = enrollmentRepository.countByCourseIdAndStatusIn(course.getId(),
+                List.of(EnrollmentStatus.PENDING, EnrollmentStatus.APPROVED));
         return courseMapper.toDetailResponse(course, enrolledCount);
     }
 
@@ -79,7 +82,8 @@ public class CourseServiceImpl implements CourseService {
         }
         return courseRepository.findByTeacherId(teacherId).stream()
                 .map(course -> {
-                    long count = enrollmentRepository.countByCourseIdAndStatus(course.getId(), EnrollmentStatus.ACTIVE);
+                    long count = enrollmentRepository.countByCourseIdAndStatusIn(course.getId(),
+                            List.of(EnrollmentStatus.PENDING, EnrollmentStatus.APPROVED));
                     return courseMapper.toSummaryResponse(course, count);
                 })
                 .toList();
@@ -158,7 +162,8 @@ public class CourseServiceImpl implements CourseService {
         addTestsToCourse(course, request.getTests());
 
         course = courseRepository.save(course);
-        long enrolledCount = enrollmentRepository.countByCourseIdAndStatus(id, EnrollmentStatus.ACTIVE);
+        long enrolledCount = enrollmentRepository.countByCourseIdAndStatusIn(id,
+                List.of(EnrollmentStatus.PENDING, EnrollmentStatus.APPROVED));
         return courseMapper.toDetailResponse(course, enrolledCount);
     }
 
@@ -170,7 +175,8 @@ public class CourseServiceImpl implements CourseService {
 
         course.setStatus(request.getStatus());
         course = courseRepository.save(course);
-        long enrolledCount = enrollmentRepository.countByCourseIdAndStatus(id, EnrollmentStatus.ACTIVE);
+        long enrolledCount = enrollmentRepository.countByCourseIdAndStatusIn(id,
+                List.of(EnrollmentStatus.PENDING, EnrollmentStatus.APPROVED));
         return courseMapper.toSummaryResponse(course, enrolledCount);
     }
 
