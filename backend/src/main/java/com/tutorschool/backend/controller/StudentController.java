@@ -2,6 +2,7 @@ package com.tutorschool.backend.controller;
 
 import com.tutorschool.backend.dto.request.CreateStudentRequest;
 import com.tutorschool.backend.dto.request.UpdateStudentRequest;
+import com.tutorschool.backend.dto.request.UpdateStudentStatusRequest;
 import com.tutorschool.backend.dto.response.ApiResponse;
 import com.tutorschool.backend.dto.response.PageResponse;
 import com.tutorschool.backend.dto.response.StudentResponse;
@@ -36,6 +37,13 @@ public class StudentController {
         return ResponseEntity.ok(ApiResponse.success("Student retrieved successfully", response));
     }
 
+    @GetMapping("/code/{studentCode}")
+    @PreAuthorize("hasAnyRole('ADMIN', 'TEACHER')")
+    public ResponseEntity<ApiResponse<StudentResponse>> getStudentByCode(@PathVariable String studentCode) {
+        StudentResponse response = studentService.getStudentByCode(studentCode);
+        return ResponseEntity.ok(ApiResponse.success("Student retrieved successfully", response));
+    }
+
     @PostMapping
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ApiResponse<StudentResponse>> createStudent(
@@ -52,6 +60,15 @@ public class StudentController {
             @Valid @RequestBody UpdateStudentRequest request) {
         StudentResponse response = studentService.updateStudent(id, request);
         return ResponseEntity.ok(ApiResponse.success("Student updated successfully", response));
+    }
+
+    @PatchMapping("/{id}/status")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<ApiResponse<StudentResponse>> updateStudentStatus(
+            @PathVariable Long id,
+            @Valid @RequestBody UpdateStudentStatusRequest request) {
+        StudentResponse response = studentService.updateStudentStatus(id, request);
+        return ResponseEntity.ok(ApiResponse.success("Student status updated successfully", response));
     }
 
     @DeleteMapping("/{id}")

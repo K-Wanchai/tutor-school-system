@@ -5,6 +5,7 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 @Data
@@ -15,10 +16,24 @@ public class StudentResponse {
 
     private Long id;
     private Long userId;
-    private String firstName;
-    private String lastName;
+
+    // ข้อมูล User
+    private String username;
     private String email;
+    private boolean enabled;
+
+    // ข้อมูล Student
+    private String studentCode;
+    private String fullName;
+    private String nationalId;
+    private String address;
     private String phoneNumber;
+    private LocalDate birthDate;
+    private String guardianPhoneNumber;
+    private String bankQrCode;
+    private String bankAccountName;
+    private String bankAccountNumber;
+
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 }

@@ -11,10 +11,17 @@ public interface StudentRepository extends JpaRepository<Student, Long> {
 
     Optional<Student> findByUserId(Long userId);
 
-    Optional<Student> findByUserEmail(String email);
+    Optional<Student> findByStudentCode(String studentCode);
+
+    boolean existsByStudentCode(String studentCode);
+
+    boolean existsByStudentCodeAndIdNot(String studentCode, Long id);
+
+    boolean existsByNationalId(String nationalId);
+
+    boolean existsByNationalIdAndIdNot(String nationalId, Long id);
 
     boolean existsByUserEmail(String email);
 
-    Page<Student> findByFirstNameContainingIgnoreCaseOrLastNameContainingIgnoreCase(
-            String firstName, String lastName, Pageable pageable);
+    Page<Student> findByFullNameContainingIgnoreCase(String fullName, Pageable pageable);
 }
