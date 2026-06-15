@@ -23,6 +23,9 @@ public class User implements UserDetails {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @Column(nullable = false, unique = true, length = 100)
+    private String username;
+
     @Column(nullable = false, unique = true, length = 255)
     private String email;
 
@@ -59,6 +62,7 @@ public class User implements UserDetails {
         return List.of(new SimpleGrantedAuthority("ROLE_" + role.name()));
     }
 
+    // Spring Security ใช้ email เป็น principal หลัก เพื่อให้ JWT token consistent
     @Override
     public String getUsername() {
         return email;
