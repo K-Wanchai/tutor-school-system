@@ -8,8 +8,7 @@ import org.springframework.stereotype.Component;
 public class EnrollmentMapper {
 
     public EnrollmentResponse toResponse(Enrollment enrollment) {
-        String studentName = enrollment.getStudent().getFirstName()
-                + " " + enrollment.getStudent().getLastName();
+        String studentName = enrollment.getStudent().getFullName();
 
         return EnrollmentResponse.builder()
                 .id(enrollment.getId())
