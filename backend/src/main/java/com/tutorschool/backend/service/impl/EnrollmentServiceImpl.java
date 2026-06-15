@@ -4,6 +4,7 @@ import com.tutorschool.backend.dto.request.CreateEnrollmentRequest;
 import com.tutorschool.backend.dto.request.UpdateEnrollmentRequest;
 import com.tutorschool.backend.dto.response.EnrollmentResponse;
 import com.tutorschool.backend.entity.Course;
+import com.tutorschool.backend.entity.CourseStatus;
 import com.tutorschool.backend.entity.Enrollment;
 import com.tutorschool.backend.entity.EnrollmentStatus;
 import com.tutorschool.backend.entity.Student;
@@ -60,20 +61,18 @@ public class EnrollmentServiceImpl implements EnrollmentService {
         Course course = courseRepository.findById(request.getCourseId())
                 .orElseThrow(() -> new ResourceNotFoundException("Course", request.getCourseId()));
 
-        if (!course.isActive()) {
-            throw new IllegalStateException("Course is not active");
+        if (course.getStatus() != CourseStatus.OPEN_FOR_REGISTRATION) {
+            throw new IllegalStateException("Course is not open for registration");
         }
 
         if (enrollmentRepository.existsByStudentIdAndCourseId(request.getStudentId(), request.getCourseId())) {
             throw new DuplicateResourceException("Student is already enrolled in this course");
         }
 
-        if (course.getMaxStudents() != null) {
-            long currentEnrolled = enrollmentRepository.countByCourseIdAndStatus(
-                    request.getCourseId(), EnrollmentStatus.ACTIVE);
-            if (currentEnrolled >= course.getMaxStudents()) {
-                throw new IllegalStateException("Course has reached maximum enrollment capacity");
-            }
+        long currentEnrolled = enrollmentRepository.countByCourseIdAndStatus(
+                request.getCourseId(), EnrollmentStatus.ACTIVE);
+        if (currentEnrolled >= course.getSeatLimit()) {
+            throw new IllegalStateException("Course has reached maximum enrollment capacity");
         }
 
         Enrollment enrollment = Enrollment.builder()

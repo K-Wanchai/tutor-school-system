@@ -1,33 +1,58 @@
 package com.tutorschool.backend.dto.request;
 
-import jakarta.validation.constraints.DecimalMin;
-import jakarta.validation.constraints.Min;
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
-import jakarta.validation.constraints.Size;
+import com.tutorschool.backend.entity.CourseStatus;
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.util.List;
 
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 public class CreateCourseRequest {
 
+    @NotBlank(message = "Course code is required")
+    @Size(max = 50, message = "Course code must not exceed 50 characters")
+    private String courseCode;
+
     @NotBlank(message = "Course name is required")
     @Size(max = 200, message = "Course name must not exceed 200 characters")
-    private String name;
+    private String courseName;
+
+    @NotNull(message = "Price is required")
+    @DecimalMin(value = "0.0", inclusive = true, message = "Price must not be negative")
+    private BigDecimal price;
 
     private String description;
 
-    @NotNull(message = "Price is required")
-    @DecimalMin(value = "0.0", inclusive = false, message = "Price must be greater than 0")
-    private BigDecimal price;
+    @NotNull(message = "Total hours is required")
+    @Min(value = 1, message = "Total hours must be at least 1")
+    private Integer totalHours;
 
+    @NotNull(message = "Seat limit is required")
+    @Min(value = 1, message = "Seat limit must be at least 1")
+    private Integer seatLimit;
+
+    private LocalDate registrationStartDate;
+
+    private LocalDate registrationEndDate;
+
+    @NotNull(message = "Course start date is required")
+    private LocalDate courseStartDate;
+
+    private CourseStatus status;
+
+    @NotNull(message = "Teacher ID is required")
     private Long teacherId;
 
-    @Min(value = 1, message = "Max students must be at least 1")
-    private Integer maxStudents;
+    @Valid
+    private List<CourseLessonRequest> lessons;
+
+    @Valid
+    private List<CourseTestRequest> tests;
 }
