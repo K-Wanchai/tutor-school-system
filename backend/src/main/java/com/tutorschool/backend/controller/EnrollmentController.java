@@ -1,4 +1,4 @@
-﻿package com.tutorschool.backend.controller;
+package com.tutorschool.backend.controller;
 
 import com.tutorschool.backend.dto.request.*;
 import com.tutorschool.backend.dto.response.ApiResponse;

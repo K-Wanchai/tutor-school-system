@@ -1,4 +1,4 @@
-﻿package com.tutorschool.backend.repository;
+package com.tutorschool.backend.repository;
 
 import com.tutorschool.backend.entity.Tutor;
 import org.springframework.data.domain.Page;

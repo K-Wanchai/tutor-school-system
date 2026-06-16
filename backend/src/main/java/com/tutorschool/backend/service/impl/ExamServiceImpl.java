@@ -1,4 +1,4 @@
-﻿package com.tutorschool.backend.service.impl;
+package com.tutorschool.backend.service.impl;
 
 import com.tutorschool.backend.dto.request.*;
 import com.tutorschool.backend.dto.response.*;
@@ -350,13 +350,13 @@ public class ExamServiceImpl implements ExamService {
     }
 
     private void validateTeacherOwnsCourse(Tutor Tutor, Course course) {
-        if (!course.getTeacher().getId().equals(Tutor.getId())) {
+        if (!course.getTutor().getId().equals(Tutor.getId())) {
             throw new ExamAccessDeniedException("You are not the Tutor of this course");
         }
     }
 
     private void validateTeacherOwnsExam(Tutor Tutor, Exam exam) {
-        if (!exam.getTeacher().getId().equals(Tutor.getId())) {
+        if (!exam.getTutor().getId().equals(Tutor.getId())) {
             throw new ExamAccessDeniedException("You do not have permission to modify this exam");
         }
     }

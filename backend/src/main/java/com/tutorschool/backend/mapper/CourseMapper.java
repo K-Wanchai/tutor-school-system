@@ -36,9 +36,9 @@ public class CourseMapper {
         String teacherName = null;
         Long teacherId = null;
 
-        if (course.getTeacher() != null) {
-            teacherId = course.getTeacher().getId();
-            teacherName = course.getTeacher().getFirstName() + " " + course.getTeacher().getLastName();
+        if (course.getTutor() != null) {
+            teacherId = course.getTutor().getId();
+            teacherName = course.getTutor().getFirstName() + " " + course.getTutor().getLastName();
         }
 
         return CourseResponse.builder()

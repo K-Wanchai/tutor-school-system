@@ -1,4 +1,4 @@
-﻿package com.tutorschool.backend.controller;
+package com.tutorschool.backend.controller;
 
 import com.tutorschool.backend.dto.request.CreateClassroomSessionRequest;
 import com.tutorschool.backend.dto.request.JoinClassroomSessionRequest;

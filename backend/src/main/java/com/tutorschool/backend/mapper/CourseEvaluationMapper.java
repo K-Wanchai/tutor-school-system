@@ -1,4 +1,4 @@
-﻿package com.tutorschool.backend.mapper;
+package com.tutorschool.backend.mapper;
 
 import com.tutorschool.backend.dto.response.CourseEvaluationResponse;
 import com.tutorschool.backend.entity.CourseEvaluation;
@@ -14,7 +14,7 @@ public class CourseEvaluationMapper {
         String studentName = anonymous ? "Anonymous" : evaluation.getStudent().getFullName();
         Long studentId = anonymous ? null : evaluation.getStudent().getId();
 
-        Tutor Tutor = evaluation.getTeacher();
+        Tutor Tutor = evaluation.getTutor();
         String teacherName = Tutor.getFirstName() + " " + Tutor.getLastName();
 
         return CourseEvaluationResponse.builder()
@@ -50,7 +50,7 @@ public class CourseEvaluationMapper {
 
     // สำหรับ Admin — เห็นข้อมูล student เสมอ
     public CourseEvaluationResponse toResponseForAdmin(CourseEvaluation evaluation) {
-        Tutor Tutor = evaluation.getTeacher();
+        Tutor Tutor = evaluation.getTutor();
         String teacherName = Tutor.getFirstName() + " " + Tutor.getLastName();
 
         return CourseEvaluationResponse.builder()

@@ -1,4 +1,4 @@
-﻿package com.tutorschool.backend.service.impl;
+package com.tutorschool.backend.service.impl;
 
 import com.tutorschool.backend.dto.request.CreateTutorRequest;
 import com.tutorschool.backend.dto.request.UpdateTutorRequest;
@@ -26,26 +26,26 @@ import org.springframework.transaction.annotation.Transactional;
 @RequiredArgsConstructor
 public class TutorServiceImpl implements TutorService {
 
-    private final TutorRepository TutorRepository;
+    private final TutorRepository tutorRepository;
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
-    private final TutorMapper TutorMapper;
+    private final TutorMapper tutorMapper;
 
     @Override
     @Transactional(readOnly = true)
     public PageResponse<TutorResponse> getAllTeachers(int page, int size) {
         Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
-        Page<Tutor> teacherPage = TutorRepository.findAll(pageable);
-        Page<TutorResponse> responsePage = teacherPage.map(TutorMapper::toResponse);
+        Page<Tutor> tutorPage = tutorRepository.findAll(pageable);
+        Page<TutorResponse> responsePage = tutorPage.map(tutorMapper::toResponse);
         return PageResponse.from(responsePage);
     }
 
     @Override
     @Transactional(readOnly = true)
     public TutorResponse getTeacherById(Long id) {
-        Tutor Tutor = TutorRepository.findById(id)
+        Tutor tutor = tutorRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Tutor", id));
-        return TutorMapper.toResponse(Tutor);
+        return tutorMapper.toResponse(tutor);
     }
 
     @Override
@@ -58,11 +58,11 @@ public class TutorServiceImpl implements TutorService {
         User user = User.builder()
                 .email(request.getEmail())
                 .password(passwordEncoder.encode(request.getPassword()))
-                .role(Role.Tutor)
+                .role(Role.TUTOR)
                 .build();
         user = userRepository.save(user);
 
-        Tutor Tutor = Tutor.builder()
+        Tutor tutor = Tutor.builder()
                 .user(user)
                 .firstName(request.getFirstName())
                 .lastName(request.getLastName())
@@ -71,29 +71,29 @@ public class TutorServiceImpl implements TutorService {
                 .bio(request.getBio())
                 .build();
 
-        return TutorMapper.toResponse(TutorRepository.save(Tutor));
+        return tutorMapper.toResponse(tutorRepository.save(tutor));
     }
 
     @Override
     @Transactional
     public TutorResponse updateTeacher(Long id, UpdateTutorRequest request) {
-        Tutor Tutor = TutorRepository.findById(id)
+        Tutor tutor = tutorRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Tutor", id));
 
-        Tutor.setFirstName(request.getFirstName());
-        Tutor.setLastName(request.getLastName());
-        Tutor.setPhoneNumber(request.getPhoneNumber());
-        Tutor.setSpecialization(request.getSpecialization());
-        Tutor.setBio(request.getBio());
+        tutor.setFirstName(request.getFirstName());
+        tutor.setLastName(request.getLastName());
+        tutor.setPhoneNumber(request.getPhoneNumber());
+        tutor.setSpecialization(request.getSpecialization());
+        tutor.setBio(request.getBio());
 
-        return TutorMapper.toResponse(TutorRepository.save(Tutor));
+        return tutorMapper.toResponse(tutorRepository.save(tutor));
     }
 
     @Override
     @Transactional
     public void deleteTeacher(Long id) {
-        Tutor Tutor = TutorRepository.findById(id)
+        Tutor tutor = tutorRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Tutor", id));
-        TutorRepository.delete(Tutor);
+        tutorRepository.delete(tutor);
     }
 }

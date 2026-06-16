@@ -1,4 +1,4 @@
-﻿package com.tutorschool.backend.service.impl;
+package com.tutorschool.backend.service.impl;
 
 import com.tutorschool.backend.dto.request.CreateClassroomSessionRequest;
 import com.tutorschool.backend.dto.request.JoinClassroomSessionRequest;
@@ -49,7 +49,7 @@ public class ClassroomSessionServiceImpl implements ClassroomSessionService {
             throw new InvalidSessionTimeException("End time must be after start time");
         }
 
-        Tutor Tutor = course.getTeacher();
+        Tutor Tutor = course.getTutor();
 
         if (isTeacherRole(auth)) {
             Tutor currentTeacher = getTeacherFromAuth(auth);
@@ -264,7 +264,7 @@ public class ClassroomSessionServiceImpl implements ClassroomSessionService {
     private void checkTeacherOwnership(ClassroomSession session, Authentication auth) {
         if (isTeacherRole(auth)) {
             Tutor currentTeacher = getTeacherFromAuth(auth);
-            if (!session.getTeacher().getId().equals(currentTeacher.getId())) {
+            if (!session.getTutor().getId().equals(currentTeacher.getId())) {
                 throw new ForbiddenException("You can only manage sessions for your own courses");
             }
         }

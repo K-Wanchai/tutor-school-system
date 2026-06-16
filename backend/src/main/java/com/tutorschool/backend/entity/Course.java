@@ -1,4 +1,4 @@
-﻿package com.tutorschool.backend.entity;
+package com.tutorschool.backend.entity;
 
 import jakarta.persistence.*;
 import lombok.*;

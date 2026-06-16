@@ -1,4 +1,4 @@
-﻿package com.tutorschool.backend.service.impl;
+package com.tutorschool.backend.service.impl;
 
 import com.tutorschool.backend.dto.request.UpdateAttendanceStatusRequest;
 import com.tutorschool.backend.dto.response.AttendanceRecordResponse;
@@ -49,7 +49,7 @@ public class AttendanceServiceImpl implements AttendanceService {
             }
         } else if (isTeacherRole(auth)) {
             Tutor Tutor = getTeacherFromAuth(auth);
-            if (!record.getCourse().getTeacher().getId().equals(Tutor.getId())) {
+            if (!record.getCourse().getTutor().getId().equals(Tutor.getId())) {
                 throw new ForbiddenException("You can only view attendance records for your own courses");
             }
         }
@@ -65,7 +65,7 @@ public class AttendanceServiceImpl implements AttendanceService {
 
         if (isTeacherRole(auth)) {
             Tutor Tutor = getTeacherFromAuth(auth);
-            if (!session.getTeacher().getId().equals(Tutor.getId())) {
+            if (!session.getTutor().getId().equals(Tutor.getId())) {
                 throw new ForbiddenException("You can only view attendance for your own sessions");
             }
         }
@@ -83,7 +83,7 @@ public class AttendanceServiceImpl implements AttendanceService {
 
         if (isTeacherRole(auth)) {
             Tutor Tutor = getTeacherFromAuth(auth);
-            if (!course.getTeacher().getId().equals(Tutor.getId())) {
+            if (!course.getTutor().getId().equals(Tutor.getId())) {
                 throw new ForbiddenException("You can only view attendance records for your own courses");
             }
         }
@@ -109,7 +109,7 @@ public class AttendanceServiceImpl implements AttendanceService {
                 .orElseThrow(() -> new ResourceNotFoundException("AttendanceRecord", id));
 
         Tutor Tutor = getTeacherFromAuth(auth);
-        if (!record.getCourse().getTeacher().getId().equals(Tutor.getId())) {
+        if (!record.getCourse().getTutor().getId().equals(Tutor.getId())) {
             throw new ForbiddenException("You can only update attendance records for your own courses");
         }
 
@@ -122,7 +122,7 @@ public class AttendanceServiceImpl implements AttendanceService {
                 .oldStatus(oldStatus)
                 .newStatus(request.getStatus())
                 .changedBy(auth.getName())
-                .changedRole(Role.Tutor.name())
+                .changedRole(Role.TUTOR.name())
                 .reason(request.getReason())
                 .build();
         attendanceAuditLogRepository.save(auditLog);

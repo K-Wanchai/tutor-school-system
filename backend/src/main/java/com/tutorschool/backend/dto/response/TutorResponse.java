@@ -1,4 +1,4 @@
-﻿package com.tutorschool.backend.dto.response;
+package com.tutorschool.backend.dto.response;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;

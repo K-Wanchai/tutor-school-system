@@ -1,4 +1,4 @@
-﻿package com.tutorschool.backend.controller;
+package com.tutorschool.backend.controller;
 
 import com.tutorschool.backend.dto.request.UpdateAttendanceStatusRequest;
 import com.tutorschool.backend.dto.response.ApiResponse;
@@ -62,7 +62,7 @@ public class AttendanceRecordController {
     }
 
     @PatchMapping("/{id}/status")
-    @PreAuthorize("hasRole('Tutor')")
+    @PreAuthorize("hasRole('TUTOR')")
     public ResponseEntity<ApiResponse<AttendanceRecordResponse>> updateAttendanceStatus(
             @PathVariable Long id,
             @Valid @RequestBody UpdateAttendanceStatusRequest request,

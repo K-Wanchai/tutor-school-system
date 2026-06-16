@@ -1,4 +1,4 @@
-﻿package com.tutorschool.backend.service.impl;
+package com.tutorschool.backend.service.impl;
 
 import com.tutorschool.backend.dto.request.CancelCourseScheduleRequest;
 import com.tutorschool.backend.dto.request.CreateCourseScheduleRequest;
@@ -47,7 +47,7 @@ public class CourseScheduleServiceImpl implements CourseScheduleService {
                 .orElseThrow(() -> new ResourceNotFoundException("Tutor profile not found"));
 
         // Tutor ต้องเป็นเจ้าของ course เท่านั้น
-        if (currentUser.getRole() == Role.Tutor && !course.getTeacher().getId().equals(Tutor.getId())) {
+        if (currentUser.getRole() == Role.TUTOR && !course.getTutor().getId().equals(Tutor.getId())) {
             throw new UnauthorizedScheduleAccessException("You can only create schedules for your own courses");
         }
 
@@ -213,7 +213,7 @@ public class CourseScheduleServiceImpl implements CourseScheduleService {
         Tutor Tutor = TutorRepository.findByUserId(currentUserId)
                 .orElseThrow(() -> new UnauthorizedScheduleAccessException("Tutor profile not found"));
 
-        if (!schedule.getTeacher().getId().equals(Tutor.getId())) {
+        if (!schedule.getTutor().getId().equals(Tutor.getId())) {
             throw new UnauthorizedScheduleAccessException("You can only manage your own schedules");
         }
     }
@@ -294,7 +294,7 @@ public class CourseScheduleServiceImpl implements CourseScheduleService {
 
         // แจ้ง Tutor
         try {
-            Tutor Tutor = schedule.getTeacher();
+            Tutor Tutor = schedule.getTutor();
             CreateNotificationRequest teacherReq = new CreateNotificationRequest();
             teacherReq.setUserId(Tutor.getUser().getId());
             teacherReq.setRecipientEmail(Tutor.getUser().getEmail());

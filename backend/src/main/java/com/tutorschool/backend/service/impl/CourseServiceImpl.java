@@ -1,4 +1,4 @@
-﻿package com.tutorschool.backend.service.impl;
+package com.tutorschool.backend.service.impl;
 
 import com.tutorschool.backend.dto.request.CourseLessonRequest;
 import com.tutorschool.backend.dto.request.CourseTestRequest;
@@ -153,7 +153,7 @@ public class CourseServiceImpl implements CourseService {
         course.setRegistrationStartDate(request.getRegistrationStartDate());
         course.setRegistrationEndDate(request.getRegistrationEndDate());
         course.setCourseStartDate(request.getCourseStartDate());
-        course.setTeacher(Tutor);
+        course.setTutor(Tutor);
 
         course.getLessons().clear();
         addLessonsToCoure(course, request.getLessons());

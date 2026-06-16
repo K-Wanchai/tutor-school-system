@@ -1,4 +1,4 @@
-﻿package com.tutorschool.backend.controller;
+package com.tutorschool.backend.controller;
 
 import com.tutorschool.backend.dto.request.ManualGradeRequest;
 import com.tutorschool.backend.dto.request.SubmitExamRequest;
@@ -68,7 +68,7 @@ public class ExamSubmissionController {
     // ─── Tutor: Manual grading ──────────────────────────────────────────────
 
     @PostMapping("/exam-submissions/{submissionId}/grade")
-    @PreAuthorize("hasRole('Tutor') or hasRole('ADMIN')")
+    @PreAuthorize("hasRole('TUTOR') or hasRole('ADMIN')")
     public ResponseEntity<ApiResponse<ExamSubmissionResponse>> manualGrade(
             @PathVariable Long submissionId,
             @Valid @RequestBody ManualGradeRequest request,

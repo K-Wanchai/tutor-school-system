@@ -1,4 +1,4 @@
-﻿package com.tutorschool.backend.controller;
+package com.tutorschool.backend.controller;
 
 import com.tutorschool.backend.dto.response.ApiResponse;
 import com.tutorschool.backend.dto.response.ExamResultResponse;
@@ -28,7 +28,7 @@ public class ExamResultController {
 
     // Tutor ดูผลสอบแยกตาม exam
     @GetMapping("/exam/{examId}")
-    @PreAuthorize("hasRole('Tutor') or hasRole('ADMIN')")
+    @PreAuthorize("hasRole('TUTOR') or hasRole('ADMIN')")
     public ResponseEntity<ApiResponse<List<ExamResultResponse>>> getResultsByExam(
             @PathVariable Long examId,
             Principal principal) {
@@ -38,7 +38,7 @@ public class ExamResultController {
 
     // Tutor ดูผลสอบทั้งหมดในคอร์ส
     @GetMapping("/course/{courseId}")
-    @PreAuthorize("hasRole('Tutor') or hasRole('ADMIN')")
+    @PreAuthorize("hasRole('TUTOR') or hasRole('ADMIN')")
     public ResponseEntity<ApiResponse<List<ExamResultResponse>>> getResultsByCourse(
             @PathVariable Long courseId,
             Principal principal) {

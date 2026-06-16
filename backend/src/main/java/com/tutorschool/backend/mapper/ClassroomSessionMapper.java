@@ -8,7 +8,7 @@ import org.springframework.stereotype.Component;
 public class ClassroomSessionMapper {
 
     public ClassroomSessionResponse toResponse(ClassroomSession session) {
-        String teacherName = session.getTeacher().getFirstName() + " " + session.getTeacher().getLastName();
+        String teacherName = session.getTutor().getFirstName() + " " + session.getTutor().getLastName();
 
         Long lessonId = session.getLesson() != null ? session.getLesson().getId() : null;
         String lessonTitle = session.getLesson() != null ? session.getLesson().getLessonTitle() : null;
@@ -20,7 +20,7 @@ public class ClassroomSessionMapper {
                 .courseName(session.getCourse().getCourseName())
                 .lessonId(lessonId)
                 .lessonTitle(lessonTitle)
-                .teacherId(session.getTeacher().getId())
+                .teacherId(session.getTutor().getId())
                 .teacherName(teacherName)
                 .startTime(session.getStartTime())
                 .endTime(session.getEndTime())

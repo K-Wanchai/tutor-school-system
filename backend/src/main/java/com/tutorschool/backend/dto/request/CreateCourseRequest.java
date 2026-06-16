@@ -1,4 +1,4 @@
-﻿package com.tutorschool.backend.dto.request;
+package com.tutorschool.backend.dto.request;
 
 import com.tutorschool.backend.entity.CourseStatus;
 import jakarta.validation.Valid;

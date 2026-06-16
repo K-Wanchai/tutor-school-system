@@ -1,4 +1,4 @@
-﻿package com.tutorschool.backend.service.impl;
+package com.tutorschool.backend.service.impl;
 
 import com.tutorschool.backend.dto.request.ManualGradeRequest;
 import com.tutorschool.backend.dto.request.SubmitExamAnswerRequest;
@@ -205,7 +205,7 @@ public class ExamSubmissionServiceImpl implements ExamSubmissionService {
         ExamSubmission submission = submissionRepository.findById(submissionId)
                 .orElseThrow(() -> new ExamSubmissionNotFoundException(submissionId));
 
-        if (!submission.getExam().getTeacher().getId().equals(Tutor.getId())) {
+        if (!submission.getExam().getTutor().getId().equals(Tutor.getId())) {
             throw new ExamAccessDeniedException("You do not have permission to grade this submission");
         }
 
@@ -271,7 +271,7 @@ public class ExamSubmissionServiceImpl implements ExamSubmissionService {
                 .orElseThrow(() -> new ExamAccessDeniedException("Current user is not registered as a Tutor"));
 
         Exam exam = findExamById(examId);
-        if (!exam.getTeacher().getId().equals(Tutor.getId())) {
+        if (!exam.getTutor().getId().equals(Tutor.getId())) {
             throw new ExamAccessDeniedException("You do not have permission to view results of this exam");
         }
 
@@ -287,7 +287,7 @@ public class ExamSubmissionServiceImpl implements ExamSubmissionService {
                 .orElseThrow(() -> new ExamAccessDeniedException("Current user is not registered as a Tutor"));
 
         return submissionRepository.findByExamCourseId(courseId).stream()
-                .filter(s -> s.getExam().getTeacher().getId().equals(Tutor.getId()))
+                .filter(s -> s.getExam().getTutor().getId().equals(Tutor.getId()))
                 .map(submissionMapper::toResultResponse)
                 .toList();
     }

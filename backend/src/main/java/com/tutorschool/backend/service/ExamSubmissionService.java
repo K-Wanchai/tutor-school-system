@@ -1,4 +1,4 @@
-﻿package com.tutorschool.backend.service;
+package com.tutorschool.backend.service;
 
 import com.tutorschool.backend.dto.request.ManualGradeRequest;
 import com.tutorschool.backend.dto.request.SubmitExamRequest;

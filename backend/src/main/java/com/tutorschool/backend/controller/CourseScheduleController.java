@@ -1,4 +1,4 @@
-﻿package com.tutorschool.backend.controller;
+package com.tutorschool.backend.controller;
 
 import com.tutorschool.backend.dto.request.CancelCourseScheduleRequest;
 import com.tutorschool.backend.dto.request.CreateCourseScheduleRequest;
@@ -65,7 +65,7 @@ public class CourseScheduleController {
     }
 
     @GetMapping("/tutor/me")
-    @PreAuthorize("hasRole('Tutor')")
+    @PreAuthorize("hasRole('TUTOR')")
     public ResponseEntity<ApiResponse<List<CourseScheduleResponse>>> getMySchedulesAsTeacher(
             @AuthenticationPrincipal User currentUser) {
         List<CourseScheduleResponse> schedules = courseScheduleService.getMySchedulesAsTeacher(currentUser.getId());
