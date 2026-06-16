@@ -133,6 +133,74 @@ public class GlobalExceptionHandler {
                 .body(ApiResponse.error(ex.getMessage()));
     }
 
+    @ExceptionHandler(ExamInstitutionNotFoundException.class)
+    public ResponseEntity<ApiResponse<Void>> handleExamInstitutionNotFoundException(ExamInstitutionNotFoundException ex) {
+        return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                .body(ApiResponse.error(ex.getMessage()));
+    }
+
+    @ExceptionHandler(StudentAchievementNotFoundException.class)
+    public ResponseEntity<ApiResponse<Void>> handleStudentAchievementNotFoundException(StudentAchievementNotFoundException ex) {
+        return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                .body(ApiResponse.error(ex.getMessage()));
+    }
+
+    @ExceptionHandler(UnauthorizedAchievementAccessException.class)
+    public ResponseEntity<ApiResponse<Void>> handleUnauthorizedAchievementAccessException(UnauthorizedAchievementAccessException ex) {
+        return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                .body(ApiResponse.error(ex.getMessage()));
+    }
+
+    @ExceptionHandler(DuplicateAchievementException.class)
+    public ResponseEntity<ApiResponse<Void>> handleDuplicateAchievementException(DuplicateAchievementException ex) {
+        return ResponseEntity.status(HttpStatus.CONFLICT)
+                .body(ApiResponse.error(ex.getMessage()));
+    }
+
+    // Course Schedule exceptions
+    @ExceptionHandler(CourseScheduleNotFoundException.class)
+    public ResponseEntity<ApiResponse<Void>> handleCourseScheduleNotFoundException(CourseScheduleNotFoundException ex) {
+        return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                .body(ApiResponse.error(ex.getMessage()));
+    }
+
+    @ExceptionHandler(UnauthorizedScheduleAccessException.class)
+    public ResponseEntity<ApiResponse<Void>> handleUnauthorizedScheduleAccessException(UnauthorizedScheduleAccessException ex) {
+        return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                .body(ApiResponse.error(ex.getMessage()));
+    }
+
+    @ExceptionHandler(InvalidScheduleTimeException.class)
+    public ResponseEntity<ApiResponse<Void>> handleInvalidScheduleTimeException(InvalidScheduleTimeException ex) {
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(ApiResponse.error(ex.getMessage()));
+    }
+
+    @ExceptionHandler(ScheduleAlreadyCancelledException.class)
+    public ResponseEntity<ApiResponse<Void>> handleScheduleAlreadyCancelledException(ScheduleAlreadyCancelledException ex) {
+        return ResponseEntity.status(HttpStatus.CONFLICT)
+                .body(ApiResponse.error(ex.getMessage()));
+    }
+
+    @ExceptionHandler(ScheduleTimeCannotBeChangedException.class)
+    public ResponseEntity<ApiResponse<Void>> handleScheduleTimeCannotBeChangedException(ScheduleTimeCannotBeChangedException ex) {
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(ApiResponse.error(ex.getMessage()));
+    }
+
+    // Notification exceptions
+    @ExceptionHandler(NotificationNotFoundException.class)
+    public ResponseEntity<ApiResponse<Void>> handleNotificationNotFoundException(NotificationNotFoundException ex) {
+        return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                .body(ApiResponse.error(ex.getMessage()));
+    }
+
+    @ExceptionHandler(EmailSendFailedException.class)
+    public ResponseEntity<ApiResponse<Void>> handleEmailSendFailedException(EmailSendFailedException ex) {
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(ApiResponse.error(ex.getMessage()));
+    }
+
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ApiResponse<Void>> handleGenericException(Exception ex) {
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
