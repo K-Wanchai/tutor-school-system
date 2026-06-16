@@ -1,4 +1,4 @@
-package com.tutorschool.backend.service.impl;
+﻿package com.tutorschool.backend.service.impl;
 
 import com.tutorschool.backend.dto.request.CreateCourseEvaluationRequest;
 import com.tutorschool.backend.dto.request.UpdateCourseEvaluationRequest;
@@ -26,7 +26,7 @@ public class CourseEvaluationServiceImpl implements CourseEvaluationService {
     private final CourseEvaluationRepository evaluationRepository;
     private final EnrollmentRepository enrollmentRepository;
     private final StudentRepository studentRepository;
-    private final TeacherRepository teacherRepository;
+    private final TutorRepository TutorRepository;
     private final CourseRepository courseRepository;
     private final UserRepository userRepository;
     private final CourseEvaluationMapper evaluationMapper;
@@ -57,14 +57,14 @@ public class CourseEvaluationServiceImpl implements CourseEvaluationService {
         }
 
         Course course = enrollment.getCourse();
-        Teacher teacher = course.getTeacher();
+        Tutor Tutor = course.getTeacher();
 
         // 5. สร้าง evaluation
         CourseEvaluation evaluation = CourseEvaluation.builder()
                 .student(student)
                 .course(course)
                 .enrollment(enrollment)
-                .teacher(teacher)
+                .Tutor(Tutor)
                 .rating(request.getRating())
                 .teachingScore(request.getTeachingScore())
                 .contentScore(request.getContentScore())
@@ -101,10 +101,10 @@ public class CourseEvaluationServiceImpl implements CourseEvaluationService {
             return evaluationMapper.toResponseForAdmin(evaluation);
         }
 
-        if (user.getRole() == Role.TEACHER) {
-            Teacher teacher = teacherRepository.findByUserId(user.getId())
-                    .orElseThrow(() -> new ResourceNotFoundException("Teacher profile not found"));
-            if (!evaluation.getTeacher().getId().equals(teacher.getId())) {
+        if (user.getRole() == Role.Tutor) {
+            Tutor Tutor = TutorRepository.findByUserId(user.getId())
+                    .orElseThrow(() -> new ResourceNotFoundException("Tutor profile not found"));
+            if (!evaluation.getTeacher().getId().equals(Tutor.getId())) {
                 throw new UnauthorizedEvaluationAccessException("You can only view evaluations for your own courses");
             }
             return evaluationMapper.toResponseForTeacher(evaluation);
@@ -133,12 +133,12 @@ public class CourseEvaluationServiceImpl implements CourseEvaluationService {
                     .toList();
         }
 
-        // TEACHER — ตรวจว่าเป็นคอร์สของตัวเอง
-        Teacher teacher = teacherRepository.findByUserId(user.getId())
-                .orElseThrow(() -> new ResourceNotFoundException("Teacher profile not found"));
+        // Tutor — ตรวจว่าเป็นคอร์สของตัวเอง
+        Tutor Tutor = TutorRepository.findByUserId(user.getId())
+                .orElseThrow(() -> new ResourceNotFoundException("Tutor profile not found"));
 
         return evaluationRepository.findByCourseId(courseId).stream()
-                .filter(e -> e.getTeacher().getId().equals(teacher.getId()))
+                .filter(e -> e.getTeacher().getId().equals(Tutor.getId()))
                 .map(evaluationMapper::toResponseForTeacher)
                 .toList();
     }
@@ -146,16 +146,16 @@ public class CourseEvaluationServiceImpl implements CourseEvaluationService {
     @Override
     @Transactional(readOnly = true)
     public List<CourseEvaluationResponse> getEvaluationsByTeacherId(Long teacherId, String username) {
-        if (!teacherRepository.existsById(teacherId)) {
-            throw new ResourceNotFoundException("Teacher", teacherId);
+        if (!TutorRepository.existsById(teacherId)) {
+            throw new ResourceNotFoundException("Tutor", teacherId);
         }
 
         User user = findUserByUsername(username);
 
-        if (user.getRole() == Role.TEACHER) {
-            Teacher teacher = teacherRepository.findByUserId(user.getId())
-                    .orElseThrow(() -> new ResourceNotFoundException("Teacher profile not found"));
-            if (!teacher.getId().equals(teacherId)) {
+        if (user.getRole() == Role.Tutor) {
+            Tutor Tutor = TutorRepository.findByUserId(user.getId())
+                    .orElseThrow(() -> new ResourceNotFoundException("Tutor profile not found"));
+            if (!Tutor.getId().equals(teacherId)) {
                 throw new UnauthorizedEvaluationAccessException("You can only view evaluations for your own courses");
             }
         }
@@ -234,13 +234,13 @@ public class CourseEvaluationServiceImpl implements CourseEvaluationService {
 
         long totalEvaluations = evaluationRepository.countByCourseIdAndStatus(courseId, EvaluationStatus.PUBLISHED);
 
-        Teacher teacher = course.getTeacher();
-        String teacherName = teacher.getFirstName() + " " + teacher.getLastName();
+        Tutor Tutor = course.getTeacher();
+        String teacherName = Tutor.getFirstName() + " " + Tutor.getLastName();
 
         return CourseEvaluationSummaryResponse.builder()
                 .courseId(courseId)
                 .courseName(course.getCourseName())
-                .teacherId(teacher.getId())
+                .teacherId(Tutor.getId())
                 .teacherName(teacherName)
                 .totalEvaluations(totalEvaluations)
                 .averageRating(roundToOne(evaluationRepository.findAverageRatingByCourseId(courseId)))

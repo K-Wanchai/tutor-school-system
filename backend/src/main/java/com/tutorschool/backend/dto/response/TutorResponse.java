@@ -1,4 +1,4 @@
-package com.tutorschool.backend.dto.response;
+﻿package com.tutorschool.backend.dto.response;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -11,7 +11,7 @@ import java.time.LocalDateTime;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class TeacherResponse {
+public class TutorResponse {
 
     private Long id;
     private Long userId;

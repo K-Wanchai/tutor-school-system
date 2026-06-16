@@ -1,4 +1,4 @@
-package com.tutorschool.backend.controller;
+﻿package com.tutorschool.backend.controller;
 
 import com.tutorschool.backend.dto.request.CreateQuestionOptionRequest;
 import com.tutorschool.backend.dto.request.UpdateExamQuestionRequest;
@@ -25,7 +25,7 @@ public class ExamQuestionController {
     // ─── Question endpoints ────────────────────────────────────────────────────
 
     @PutMapping("/api/v1/exam-questions/{id}")
-    @PreAuthorize("hasRole('TEACHER') or hasRole('ADMIN')")
+    @PreAuthorize("hasRole('Tutor') or hasRole('ADMIN')")
     public ResponseEntity<ApiResponse<ExamQuestionResponse>> updateQuestion(
             @PathVariable Long id,
             @Valid @RequestBody UpdateExamQuestionRequest request,
@@ -35,7 +35,7 @@ public class ExamQuestionController {
     }
 
     @DeleteMapping("/api/v1/exam-questions/{id}")
-    @PreAuthorize("hasRole('TEACHER') or hasRole('ADMIN')")
+    @PreAuthorize("hasRole('Tutor') or hasRole('ADMIN')")
     public ResponseEntity<ApiResponse<Void>> deleteQuestion(@PathVariable Long id, Principal principal) {
         examService.deleteQuestion(id, principal.getName());
         return ResponseEntity.ok(ApiResponse.success("Question deleted"));
@@ -44,7 +44,7 @@ public class ExamQuestionController {
     // ─── Option endpoints ──────────────────────────────────────────────────────
 
     @PostMapping("/api/v1/questions/{questionId}/options")
-    @PreAuthorize("hasRole('TEACHER') or hasRole('ADMIN')")
+    @PreAuthorize("hasRole('Tutor') or hasRole('ADMIN')")
     public ResponseEntity<ApiResponse<QuestionOptionResponse>> addOption(
             @PathVariable Long questionId,
             @Valid @RequestBody CreateQuestionOptionRequest request,
@@ -55,7 +55,7 @@ public class ExamQuestionController {
     }
 
     @PutMapping("/api/v1/question-options/{id}")
-    @PreAuthorize("hasRole('TEACHER') or hasRole('ADMIN')")
+    @PreAuthorize("hasRole('Tutor') or hasRole('ADMIN')")
     public ResponseEntity<ApiResponse<QuestionOptionResponse>> updateOption(
             @PathVariable Long id,
             @Valid @RequestBody UpdateQuestionOptionRequest request,
@@ -65,7 +65,7 @@ public class ExamQuestionController {
     }
 
     @DeleteMapping("/api/v1/question-options/{id}")
-    @PreAuthorize("hasRole('TEACHER') or hasRole('ADMIN')")
+    @PreAuthorize("hasRole('Tutor') or hasRole('ADMIN')")
     public ResponseEntity<ApiResponse<Void>> deleteOption(@PathVariable Long id, Principal principal) {
         examService.deleteOption(id, principal.getName());
         return ResponseEntity.ok(ApiResponse.success("Option deleted"));

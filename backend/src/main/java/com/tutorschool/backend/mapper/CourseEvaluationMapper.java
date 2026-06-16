@@ -1,8 +1,8 @@
-package com.tutorschool.backend.mapper;
+﻿package com.tutorschool.backend.mapper;
 
 import com.tutorschool.backend.dto.response.CourseEvaluationResponse;
 import com.tutorschool.backend.entity.CourseEvaluation;
-import com.tutorschool.backend.entity.Teacher;
+import com.tutorschool.backend.entity.Tutor;
 import org.springframework.stereotype.Component;
 
 @Component
@@ -14,8 +14,8 @@ public class CourseEvaluationMapper {
         String studentName = anonymous ? "Anonymous" : evaluation.getStudent().getFullName();
         Long studentId = anonymous ? null : evaluation.getStudent().getId();
 
-        Teacher teacher = evaluation.getTeacher();
-        String teacherName = teacher.getFirstName() + " " + teacher.getLastName();
+        Tutor Tutor = evaluation.getTeacher();
+        String teacherName = Tutor.getFirstName() + " " + Tutor.getLastName();
 
         return CourseEvaluationResponse.builder()
                 .id(evaluation.getId())
@@ -25,7 +25,7 @@ public class CourseEvaluationMapper {
                 .courseId(evaluation.getCourse().getId())
                 .courseName(evaluation.getCourse().getCourseName())
                 .enrollmentId(evaluation.getEnrollment().getId())
-                .teacherId(teacher.getId())
+                .teacherId(Tutor.getId())
                 .teacherName(teacherName)
                 .rating(evaluation.getRating())
                 .teachingScore(evaluation.getTeachingScore())
@@ -50,8 +50,8 @@ public class CourseEvaluationMapper {
 
     // สำหรับ Admin — เห็นข้อมูล student เสมอ
     public CourseEvaluationResponse toResponseForAdmin(CourseEvaluation evaluation) {
-        Teacher teacher = evaluation.getTeacher();
-        String teacherName = teacher.getFirstName() + " " + teacher.getLastName();
+        Tutor Tutor = evaluation.getTeacher();
+        String teacherName = Tutor.getFirstName() + " " + Tutor.getLastName();
 
         return CourseEvaluationResponse.builder()
                 .id(evaluation.getId())
@@ -61,7 +61,7 @@ public class CourseEvaluationMapper {
                 .courseId(evaluation.getCourse().getId())
                 .courseName(evaluation.getCourse().getCourseName())
                 .enrollmentId(evaluation.getEnrollment().getId())
-                .teacherId(teacher.getId())
+                .teacherId(Tutor.getId())
                 .teacherName(teacherName)
                 .rating(evaluation.getRating())
                 .teachingScore(evaluation.getTeachingScore())

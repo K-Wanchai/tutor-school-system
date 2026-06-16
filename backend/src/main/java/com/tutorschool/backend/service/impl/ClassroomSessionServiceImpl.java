@@ -1,4 +1,4 @@
-package com.tutorschool.backend.service.impl;
+﻿package com.tutorschool.backend.service.impl;
 
 import com.tutorschool.backend.dto.request.CreateClassroomSessionRequest;
 import com.tutorschool.backend.dto.request.JoinClassroomSessionRequest;
@@ -32,7 +32,7 @@ public class ClassroomSessionServiceImpl implements ClassroomSessionService {
     private final EnrollmentRepository enrollmentRepository;
     private final CourseRepository courseRepository;
     private final CourseLessonRepository courseLessonRepository;
-    private final TeacherRepository teacherRepository;
+    private final TutorRepository TutorRepository;
     private final StudentRepository studentRepository;
     private final UserRepository userRepository;
     private final ClassroomSessionMapper classroomSessionMapper;
@@ -49,11 +49,11 @@ public class ClassroomSessionServiceImpl implements ClassroomSessionService {
             throw new InvalidSessionTimeException("End time must be after start time");
         }
 
-        Teacher teacher = course.getTeacher();
+        Tutor Tutor = course.getTeacher();
 
         if (isTeacherRole(auth)) {
-            Teacher currentTeacher = getTeacherFromAuth(auth);
-            if (!teacher.getId().equals(currentTeacher.getId())) {
+            Tutor currentTeacher = getTeacherFromAuth(auth);
+            if (!Tutor.getId().equals(currentTeacher.getId())) {
                 throw new ForbiddenException("You can only create sessions for your own courses");
             }
         }
@@ -73,7 +73,7 @@ public class ClassroomSessionServiceImpl implements ClassroomSessionService {
                 .sessionCode(generateSessionCode())
                 .course(course)
                 .lesson(lesson)
-                .teacher(teacher)
+                .Tutor(Tutor)
                 .startTime(request.getStartTime())
                 .endTime(request.getEndTime())
                 .lateThresholdMinutes(threshold)
@@ -263,7 +263,7 @@ public class ClassroomSessionServiceImpl implements ClassroomSessionService {
 
     private void checkTeacherOwnership(ClassroomSession session, Authentication auth) {
         if (isTeacherRole(auth)) {
-            Teacher currentTeacher = getTeacherFromAuth(auth);
+            Tutor currentTeacher = getTeacherFromAuth(auth);
             if (!session.getTeacher().getId().equals(currentTeacher.getId())) {
                 throw new ForbiddenException("You can only manage sessions for your own courses");
             }
@@ -272,15 +272,15 @@ public class ClassroomSessionServiceImpl implements ClassroomSessionService {
 
     private boolean isTeacherRole(Authentication auth) {
         return auth.getAuthorities().stream()
-                .anyMatch(a -> a.getAuthority().equals("ROLE_TEACHER"));
+                .anyMatch(a -> a.getAuthority().equals("ROLE_TUTOR"));
     }
 
-    private Teacher getTeacherFromAuth(Authentication auth) {
+    private Tutor getTeacherFromAuth(Authentication auth) {
         String email = auth.getName();
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found"));
-        return teacherRepository.findByUserId(user.getId())
-                .orElseThrow(() -> new ResourceNotFoundException("Teacher profile not found for current user"));
+        return TutorRepository.findByUserId(user.getId())
+                .orElseThrow(() -> new ResourceNotFoundException("Tutor profile not found for current user"));
     }
 
     private Student getStudentFromAuth(Authentication auth) {

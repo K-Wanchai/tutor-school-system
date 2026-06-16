@@ -1,4 +1,4 @@
-package com.tutorschool.backend.controller;
+﻿package com.tutorschool.backend.controller;
 
 import com.tutorschool.backend.dto.request.CreateCourseRequest;
 import com.tutorschool.backend.dto.request.UpdateCourseRequest;
@@ -44,8 +44,8 @@ public class CourseController {
         return ResponseEntity.ok(ApiResponse.success("Course retrieved successfully", response));
     }
 
-    @GetMapping("/teacher/{teacherId}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'TEACHER')")
+    @GetMapping("/Tutor/{teacherId}")
+    @PreAuthorize("hasAnyRole('ADMIN', 'Tutor')")
     public ResponseEntity<ApiResponse<List<CourseResponse>>> getCoursesByTeacherId(@PathVariable Long teacherId) {
         List<CourseResponse> response = courseService.getCoursesByTeacherId(teacherId);
         return ResponseEntity.ok(ApiResponse.success("Courses retrieved successfully", response));

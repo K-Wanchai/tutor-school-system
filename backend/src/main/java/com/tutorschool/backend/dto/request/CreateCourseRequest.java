@@ -1,4 +1,4 @@
-package com.tutorschool.backend.dto.request;
+﻿package com.tutorschool.backend.dto.request;
 
 import com.tutorschool.backend.entity.CourseStatus;
 import jakarta.validation.Valid;
@@ -47,7 +47,7 @@ public class CreateCourseRequest {
 
     private CourseStatus status;
 
-    @NotNull(message = "Teacher ID is required")
+    @NotNull(message = "Tutor ID is required")
     private Long teacherId;
 
     @Valid

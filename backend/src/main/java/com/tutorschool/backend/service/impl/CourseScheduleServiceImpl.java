@@ -1,4 +1,4 @@
-package com.tutorschool.backend.service.impl;
+﻿package com.tutorschool.backend.service.impl;
 
 import com.tutorschool.backend.dto.request.CancelCourseScheduleRequest;
 import com.tutorschool.backend.dto.request.CreateCourseScheduleRequest;
@@ -27,7 +27,7 @@ public class CourseScheduleServiceImpl implements CourseScheduleService {
     private final CourseScheduleRepository courseScheduleRepository;
     private final CourseRepository courseRepository;
     private final CourseLessonRepository courseLessonRepository;
-    private final TeacherRepository teacherRepository;
+    private final TutorRepository TutorRepository;
     private final StudentRepository studentRepository;
     private final EnrollmentRepository enrollmentRepository;
     private final UserRepository userRepository;
@@ -43,11 +43,11 @@ public class CourseScheduleServiceImpl implements CourseScheduleService {
         Course course = courseRepository.findById(request.getCourseId())
                 .orElseThrow(() -> new ResourceNotFoundException("Course not found with id: " + request.getCourseId()));
 
-        Teacher teacher = teacherRepository.findByUserId(currentUserId)
-                .orElseThrow(() -> new ResourceNotFoundException("Teacher profile not found"));
+        Tutor Tutor = TutorRepository.findByUserId(currentUserId)
+                .orElseThrow(() -> new ResourceNotFoundException("Tutor profile not found"));
 
-        // TEACHER ต้องเป็นเจ้าของ course เท่านั้น
-        if (currentUser.getRole() == Role.TEACHER && !course.getTeacher().getId().equals(teacher.getId())) {
+        // Tutor ต้องเป็นเจ้าของ course เท่านั้น
+        if (currentUser.getRole() == Role.Tutor && !course.getTeacher().getId().equals(Tutor.getId())) {
             throw new UnauthorizedScheduleAccessException("You can only create schedules for your own courses");
         }
 
@@ -72,7 +72,7 @@ public class CourseScheduleServiceImpl implements CourseScheduleService {
         CourseSchedule schedule = CourseSchedule.builder()
                 .course(course)
                 .lesson(lesson)
-                .teacher(teacher)
+                .Tutor(Tutor)
                 .title(request.getTitle())
                 .description(request.getDescription())
                 .scheduleDate(request.getScheduleDate())
@@ -132,9 +132,9 @@ public class CourseScheduleServiceImpl implements CourseScheduleService {
 
     @Override
     public List<CourseScheduleResponse> getMySchedulesAsTeacher(Long teacherUserId) {
-        Teacher teacher = teacherRepository.findByUserId(teacherUserId)
-                .orElseThrow(() -> new ResourceNotFoundException("Teacher profile not found"));
-        return courseScheduleRepository.findByTeacherIdOrderByScheduleDateAscStartTimeAsc(teacher.getId())
+        Tutor Tutor = TutorRepository.findByUserId(teacherUserId)
+                .orElseThrow(() -> new ResourceNotFoundException("Tutor profile not found"));
+        return courseScheduleRepository.findByTeacherIdOrderByScheduleDateAscStartTimeAsc(Tutor.getId())
                 .stream()
                 .map(courseScheduleMapper::toResponse)
                 .toList();
@@ -185,7 +185,7 @@ public class CourseScheduleServiceImpl implements CourseScheduleService {
 
         schedule = courseScheduleRepository.save(schedule);
 
-        // ส่ง Email แจ้งยกเลิกคลาสให้นักเรียนและ teacher
+        // ส่ง Email แจ้งยกเลิกคลาสให้นักเรียนและ Tutor
         sendCancellationNotifications(schedule, request.getCancelReason());
 
         return courseScheduleMapper.toResponse(schedule);
@@ -201,7 +201,7 @@ public class CourseScheduleServiceImpl implements CourseScheduleService {
         courseScheduleRepository.deleteById(id);
     }
 
-    // ตรวจว่า Teacher เป็นเจ้าของ schedule หรือเป็น Admin
+    // ตรวจว่า Tutor เป็นเจ้าของ schedule หรือเป็น Admin
     private void checkTeacherOwnership(CourseSchedule schedule, Long currentUserId) {
         User currentUser = userRepository.findById(currentUserId)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found"));
@@ -210,10 +210,10 @@ public class CourseScheduleServiceImpl implements CourseScheduleService {
             return;
         }
 
-        Teacher teacher = teacherRepository.findByUserId(currentUserId)
-                .orElseThrow(() -> new UnauthorizedScheduleAccessException("Teacher profile not found"));
+        Tutor Tutor = TutorRepository.findByUserId(currentUserId)
+                .orElseThrow(() -> new UnauthorizedScheduleAccessException("Tutor profile not found"));
 
-        if (!schedule.getTeacher().getId().equals(teacher.getId())) {
+        if (!schedule.getTeacher().getId().equals(Tutor.getId())) {
             throw new UnauthorizedScheduleAccessException("You can only manage your own schedules");
         }
     }
@@ -292,12 +292,12 @@ public class CourseScheduleServiceImpl implements CourseScheduleService {
             }
         }
 
-        // แจ้ง Teacher
+        // แจ้ง Tutor
         try {
-            Teacher teacher = schedule.getTeacher();
+            Tutor Tutor = schedule.getTeacher();
             CreateNotificationRequest teacherReq = new CreateNotificationRequest();
-            teacherReq.setUserId(teacher.getUser().getId());
-            teacherReq.setRecipientEmail(teacher.getUser().getEmail());
+            teacherReq.setUserId(Tutor.getUser().getId());
+            teacherReq.setRecipientEmail(Tutor.getUser().getEmail());
             teacherReq.setSubject(subject);
             teacherReq.setMessage(message);
             teacherReq.setNotificationType(NotificationType.CLASS_CANCELLED);
@@ -305,7 +305,7 @@ public class CourseScheduleServiceImpl implements CourseScheduleService {
             teacherReq.setReferenceId(schedule.getId());
             notificationService.sendNotification(teacherReq);
         } catch (Exception e) {
-            log.error("Failed to notify teacher for cancellation: {}", e.getMessage());
+            log.error("Failed to notify Tutor for cancellation: {}", e.getMessage());
         }
     }
 

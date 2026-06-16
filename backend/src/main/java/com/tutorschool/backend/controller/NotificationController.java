@@ -1,4 +1,4 @@
-package com.tutorschool.backend.controller;
+﻿package com.tutorschool.backend.controller;
 
 import com.tutorschool.backend.dto.request.SendTestEmailRequest;
 import com.tutorschool.backend.dto.response.ApiResponse;
@@ -23,7 +23,7 @@ public class NotificationController {
     private final NotificationService notificationService;
 
     @GetMapping("/me")
-    @PreAuthorize("hasAnyRole('ADMIN', 'TEACHER', 'STUDENT')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'Tutor', 'STUDENT')")
     public ResponseEntity<ApiResponse<List<NotificationResponse>>> getMyNotifications(
             @AuthenticationPrincipal User currentUser) {
         List<NotificationResponse> notifications = notificationService.getMyNotifications(currentUser.getId());
@@ -38,7 +38,7 @@ public class NotificationController {
     }
 
     @GetMapping("/{id}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'TEACHER', 'STUDENT')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'Tutor', 'STUDENT')")
     public ResponseEntity<ApiResponse<NotificationResponse>> getNotificationById(@PathVariable Long id) {
         NotificationResponse notification = notificationService.getNotificationById(id);
         return ResponseEntity.ok(ApiResponse.success("Notification retrieved successfully", notification));

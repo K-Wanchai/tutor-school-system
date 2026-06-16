@@ -1,4 +1,4 @@
-package com.tutorschool.backend.controller;
+﻿package com.tutorschool.backend.controller;
 
 import com.tutorschool.backend.dto.request.CreateExamRequest;
 import com.tutorschool.backend.dto.request.CreateExamQuestionRequest;
@@ -24,10 +24,10 @@ public class ExamController {
 
     private final ExamService examService;
 
-    // ─── Admin / Teacher endpoints ────────────────────────────────────────────
+    // ─── Admin / Tutor endpoints ────────────────────────────────────────────
 
     @PostMapping
-    @PreAuthorize("hasRole('TEACHER') or hasRole('ADMIN')")
+    @PreAuthorize("hasRole('Tutor') or hasRole('ADMIN')")
     public ResponseEntity<ApiResponse<ExamResponse>> createExam(
             @Valid @RequestBody CreateExamRequest request,
             Principal principal) {
@@ -43,19 +43,19 @@ public class ExamController {
     }
 
     @GetMapping("/{id}")
-    @PreAuthorize("hasRole('TEACHER') or hasRole('ADMIN')")
+    @PreAuthorize("hasRole('Tutor') or hasRole('ADMIN')")
     public ResponseEntity<ApiResponse<ExamResponse>> getExamById(@PathVariable Long id) {
         return ResponseEntity.ok(ApiResponse.success("Exam retrieved", examService.getExamById(id)));
     }
 
     @GetMapping("/course/{courseId}")
-    @PreAuthorize("hasRole('TEACHER') or hasRole('ADMIN')")
+    @PreAuthorize("hasRole('Tutor') or hasRole('ADMIN')")
     public ResponseEntity<ApiResponse<List<ExamResponse>>> getExamsByCourse(@PathVariable Long courseId) {
         return ResponseEntity.ok(ApiResponse.success("Exams retrieved", examService.getExamsByCourse(courseId)));
     }
 
     @GetMapping("/lesson/{lessonId}")
-    @PreAuthorize("hasRole('TEACHER') or hasRole('ADMIN')")
+    @PreAuthorize("hasRole('Tutor') or hasRole('ADMIN')")
     public ResponseEntity<ApiResponse<List<ExamResponse>>> getExamsByLesson(@PathVariable Long lessonId) {
         return ResponseEntity.ok(ApiResponse.success("Exams retrieved", examService.getExamsByLesson(lessonId)));
     }
@@ -68,7 +68,7 @@ public class ExamController {
     }
 
     @PutMapping("/{id}")
-    @PreAuthorize("hasRole('TEACHER') or hasRole('ADMIN')")
+    @PreAuthorize("hasRole('Tutor') or hasRole('ADMIN')")
     public ResponseEntity<ApiResponse<ExamResponse>> updateExam(
             @PathVariable Long id,
             @Valid @RequestBody UpdateExamRequest request,
@@ -77,19 +77,19 @@ public class ExamController {
     }
 
     @PatchMapping("/{id}/open")
-    @PreAuthorize("hasRole('TEACHER') or hasRole('ADMIN')")
+    @PreAuthorize("hasRole('Tutor') or hasRole('ADMIN')")
     public ResponseEntity<ApiResponse<ExamResponse>> openExam(@PathVariable Long id, Principal principal) {
         return ResponseEntity.ok(ApiResponse.success("Exam opened", examService.openExam(id, principal.getName())));
     }
 
     @PatchMapping("/{id}/close")
-    @PreAuthorize("hasRole('TEACHER') or hasRole('ADMIN')")
+    @PreAuthorize("hasRole('Tutor') or hasRole('ADMIN')")
     public ResponseEntity<ApiResponse<ExamResponse>> closeExam(@PathVariable Long id, Principal principal) {
         return ResponseEntity.ok(ApiResponse.success("Exam closed", examService.closeExam(id, principal.getName())));
     }
 
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasRole('TEACHER') or hasRole('ADMIN')")
+    @PreAuthorize("hasRole('Tutor') or hasRole('ADMIN')")
     public ResponseEntity<ApiResponse<Void>> deleteExam(@PathVariable Long id, Principal principal) {
         examService.deleteExam(id, principal.getName());
         return ResponseEntity.ok(ApiResponse.success("Exam deleted"));
@@ -98,7 +98,7 @@ public class ExamController {
     // ─── Question management ──────────────────────────────────────────────────
 
     @PostMapping("/{examId}/questions")
-    @PreAuthorize("hasRole('TEACHER') or hasRole('ADMIN')")
+    @PreAuthorize("hasRole('Tutor') or hasRole('ADMIN')")
     public ResponseEntity<ApiResponse<ExamQuestionResponse>> addQuestion(
             @PathVariable Long examId,
             @Valid @RequestBody CreateExamQuestionRequest request,

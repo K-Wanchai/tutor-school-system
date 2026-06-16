@@ -1,4 +1,4 @@
-package com.tutorschool.backend.entity;
+﻿package com.tutorschool.backend.entity;
 
 import jakarta.persistence.*;
 import lombok.*;
@@ -33,7 +33,7 @@ public class Exam {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "teacher_id", nullable = false)
-    private Teacher teacher;
+    private Tutor Tutor;
 
     @Column(nullable = false, length = 300)
     private String title;

@@ -1,4 +1,4 @@
-package com.tutorschool.backend.service.impl;
+﻿package com.tutorschool.backend.service.impl;
 
 import com.tutorschool.backend.dto.request.CourseLessonRequest;
 import com.tutorschool.backend.dto.request.CourseTestRequest;
@@ -12,14 +12,14 @@ import com.tutorschool.backend.entity.CourseLesson;
 import com.tutorschool.backend.entity.CourseStatus;
 import com.tutorschool.backend.entity.CourseTest;
 import com.tutorschool.backend.entity.EnrollmentStatus;
-import com.tutorschool.backend.entity.Teacher;
+import com.tutorschool.backend.entity.Tutor;
 import com.tutorschool.backend.exception.DuplicateResourceException;
 import com.tutorschool.backend.exception.InvalidCourseDateException;
 import com.tutorschool.backend.exception.ResourceNotFoundException;
 import com.tutorschool.backend.mapper.CourseMapper;
 import com.tutorschool.backend.repository.CourseRepository;
 import com.tutorschool.backend.repository.EnrollmentRepository;
-import com.tutorschool.backend.repository.TeacherRepository;
+import com.tutorschool.backend.repository.TutorRepository;
 import com.tutorschool.backend.service.CourseService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -37,7 +37,7 @@ import java.util.List;
 public class CourseServiceImpl implements CourseService {
 
     private final CourseRepository courseRepository;
-    private final TeacherRepository teacherRepository;
+    private final TutorRepository TutorRepository;
     private final EnrollmentRepository enrollmentRepository;
     private final CourseMapper courseMapper;
 
@@ -77,8 +77,8 @@ public class CourseServiceImpl implements CourseService {
     @Override
     @Transactional(readOnly = true)
     public List<CourseResponse> getCoursesByTeacherId(Long teacherId) {
-        if (!teacherRepository.existsById(teacherId)) {
-            throw new ResourceNotFoundException("Teacher", teacherId);
+        if (!TutorRepository.existsById(teacherId)) {
+            throw new ResourceNotFoundException("Tutor", teacherId);
         }
         return courseRepository.findByTeacherId(teacherId).stream()
                 .map(course -> {
@@ -96,8 +96,8 @@ public class CourseServiceImpl implements CourseService {
             throw new DuplicateResourceException("Course code already exists: " + request.getCourseCode());
         }
 
-        Teacher teacher = teacherRepository.findById(request.getTeacherId())
-                .orElseThrow(() -> new ResourceNotFoundException("Teacher", request.getTeacherId()));
+        Tutor Tutor = TutorRepository.findById(request.getTeacherId())
+                .orElseThrow(() -> new ResourceNotFoundException("Tutor", request.getTeacherId()));
 
         validateCourseDates(request.getRegistrationStartDate(),
                 request.getRegistrationEndDate(),
@@ -116,7 +116,7 @@ public class CourseServiceImpl implements CourseService {
                 .registrationEndDate(request.getRegistrationEndDate())
                 .courseStartDate(request.getCourseStartDate())
                 .status(status)
-                .teacher(teacher)
+                .Tutor(Tutor)
                 .build();
 
         addLessonsToCoure(course, request.getLessons());
@@ -137,8 +137,8 @@ public class CourseServiceImpl implements CourseService {
             throw new DuplicateResourceException("Course code already exists: " + request.getCourseCode());
         }
 
-        Teacher teacher = teacherRepository.findById(request.getTeacherId())
-                .orElseThrow(() -> new ResourceNotFoundException("Teacher", request.getTeacherId()));
+        Tutor Tutor = TutorRepository.findById(request.getTeacherId())
+                .orElseThrow(() -> new ResourceNotFoundException("Tutor", request.getTeacherId()));
 
         validateCourseDates(request.getRegistrationStartDate(),
                 request.getRegistrationEndDate(),
@@ -153,7 +153,7 @@ public class CourseServiceImpl implements CourseService {
         course.setRegistrationStartDate(request.getRegistrationStartDate());
         course.setRegistrationEndDate(request.getRegistrationEndDate());
         course.setCourseStartDate(request.getCourseStartDate());
-        course.setTeacher(teacher);
+        course.setTeacher(Tutor);
 
         course.getLessons().clear();
         addLessonsToCoure(course, request.getLessons());

@@ -1,4 +1,4 @@
-package com.tutorschool.backend.controller;
+﻿package com.tutorschool.backend.controller;
 
 import com.tutorschool.backend.dto.request.UpdateAttendanceStatusRequest;
 import com.tutorschool.backend.dto.response.ApiResponse;
@@ -28,7 +28,7 @@ public class AttendanceRecordController {
     }
 
     @GetMapping("/{id}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'TEACHER', 'STUDENT')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'Tutor', 'STUDENT')")
     public ResponseEntity<ApiResponse<AttendanceRecordResponse>> getAttendanceRecordById(
             @PathVariable Long id,
             Authentication auth) {
@@ -37,7 +37,7 @@ public class AttendanceRecordController {
     }
 
     @GetMapping("/session/{sessionId}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'TEACHER')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'Tutor')")
     public ResponseEntity<ApiResponse<List<AttendanceRecordResponse>>> getAttendanceRecordsBySessionId(
             @PathVariable Long sessionId,
             Authentication auth) {
@@ -46,7 +46,7 @@ public class AttendanceRecordController {
     }
 
     @GetMapping("/course/{courseId}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'TEACHER')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'Tutor')")
     public ResponseEntity<ApiResponse<List<AttendanceRecordResponse>>> getAttendanceRecordsByCourseId(
             @PathVariable Long courseId,
             Authentication auth) {
@@ -62,7 +62,7 @@ public class AttendanceRecordController {
     }
 
     @PatchMapping("/{id}/status")
-    @PreAuthorize("hasRole('TEACHER')")
+    @PreAuthorize("hasRole('Tutor')")
     public ResponseEntity<ApiResponse<AttendanceRecordResponse>> updateAttendanceStatus(
             @PathVariable Long id,
             @Valid @RequestBody UpdateAttendanceStatusRequest request,

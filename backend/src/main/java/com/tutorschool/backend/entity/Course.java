@@ -1,4 +1,4 @@
-package com.tutorschool.backend.entity;
+﻿package com.tutorschool.backend.entity;
 
 import jakarta.persistence.*;
 import lombok.*;
@@ -56,7 +56,7 @@ public class Course {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "teacher_id", nullable = false)
-    private Teacher teacher;
+    private Tutor Tutor;
 
     @OneToMany(mappedBy = "course", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     @OrderBy("lessonOrder ASC")

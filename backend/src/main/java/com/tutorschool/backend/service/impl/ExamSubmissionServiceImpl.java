@@ -1,4 +1,4 @@
-package com.tutorschool.backend.service.impl;
+﻿package com.tutorschool.backend.service.impl;
 
 import com.tutorschool.backend.dto.request.ManualGradeRequest;
 import com.tutorschool.backend.dto.request.SubmitExamAnswerRequest;
@@ -34,7 +34,7 @@ public class ExamSubmissionServiceImpl implements ExamSubmissionService {
     private final ExamScoreAuditLogRepository auditLogRepository;
     private final EnrollmentRepository enrollmentRepository;
     private final StudentRepository studentRepository;
-    private final TeacherRepository teacherRepository;
+    private final TutorRepository TutorRepository;
     private final UserRepository userRepository;
     private final ExamMapper examMapper;
     private final ExamSubmissionMapper submissionMapper;
@@ -180,7 +180,7 @@ public class ExamSubmissionServiceImpl implements ExamSubmissionService {
         ExamSubmission submission = submissionRepository.findById(submissionId)
                 .orElseThrow(() -> new ExamSubmissionNotFoundException(submissionId));
 
-        // นักเรียนดูได้เฉพาะของตัวเอง — Teacher/Admin ดูได้ทุกคน
+        // นักเรียนดูได้เฉพาะของตัวเอง — Tutor/Admin ดูได้ทุกคน
         boolean isStudent = studentRepository.existsByUserEmail(userEmail);
         if (isStudent) {
             User user = userRepository.findByEmail(userEmail).orElseThrow();
@@ -194,18 +194,18 @@ public class ExamSubmissionServiceImpl implements ExamSubmissionService {
         return submissionMapper.toResponse(submission);
     }
 
-    // ─── Manual grading (Teacher) ─────────────────────────────────────────────
+    // ─── Manual grading (Tutor) ─────────────────────────────────────────────
 
     @Override
     @Transactional
     public ExamSubmissionResponse manualGrade(Long submissionId, ManualGradeRequest request, String teacherEmail) {
-        Teacher teacher = teacherRepository.findByUserEmail(teacherEmail)
-                .orElseThrow(() -> new ExamAccessDeniedException("Current user is not registered as a teacher"));
+        Tutor Tutor = TutorRepository.findByUserEmail(teacherEmail)
+                .orElseThrow(() -> new ExamAccessDeniedException("Current user is not registered as a Tutor"));
 
         ExamSubmission submission = submissionRepository.findById(submissionId)
                 .orElseThrow(() -> new ExamSubmissionNotFoundException(submissionId));
 
-        if (!submission.getExam().getTeacher().getId().equals(teacher.getId())) {
+        if (!submission.getExam().getTeacher().getId().equals(Tutor.getId())) {
             throw new ExamAccessDeniedException("You do not have permission to grade this submission");
         }
 
@@ -267,11 +267,11 @@ public class ExamSubmissionServiceImpl implements ExamSubmissionService {
     @Override
     @Transactional(readOnly = true)
     public List<ExamResultResponse> getResultsByExam(Long examId, String teacherEmail) {
-        Teacher teacher = teacherRepository.findByUserEmail(teacherEmail)
-                .orElseThrow(() -> new ExamAccessDeniedException("Current user is not registered as a teacher"));
+        Tutor Tutor = TutorRepository.findByUserEmail(teacherEmail)
+                .orElseThrow(() -> new ExamAccessDeniedException("Current user is not registered as a Tutor"));
 
         Exam exam = findExamById(examId);
-        if (!exam.getTeacher().getId().equals(teacher.getId())) {
+        if (!exam.getTeacher().getId().equals(Tutor.getId())) {
             throw new ExamAccessDeniedException("You do not have permission to view results of this exam");
         }
 
@@ -283,11 +283,11 @@ public class ExamSubmissionServiceImpl implements ExamSubmissionService {
     @Override
     @Transactional(readOnly = true)
     public List<ExamResultResponse> getResultsByCourse(Long courseId, String teacherEmail) {
-        Teacher teacher = teacherRepository.findByUserEmail(teacherEmail)
-                .orElseThrow(() -> new ExamAccessDeniedException("Current user is not registered as a teacher"));
+        Tutor Tutor = TutorRepository.findByUserEmail(teacherEmail)
+                .orElseThrow(() -> new ExamAccessDeniedException("Current user is not registered as a Tutor"));
 
         return submissionRepository.findByExamCourseId(courseId).stream()
-                .filter(s -> s.getExam().getTeacher().getId().equals(teacher.getId()))
+                .filter(s -> s.getExam().getTeacher().getId().equals(Tutor.getId()))
                 .map(submissionMapper::toResultResponse)
                 .toList();
     }

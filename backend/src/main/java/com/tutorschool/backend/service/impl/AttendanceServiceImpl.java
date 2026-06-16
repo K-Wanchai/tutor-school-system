@@ -1,4 +1,4 @@
-package com.tutorschool.backend.service.impl;
+﻿package com.tutorschool.backend.service.impl;
 
 import com.tutorschool.backend.dto.request.UpdateAttendanceStatusRequest;
 import com.tutorschool.backend.dto.response.AttendanceRecordResponse;
@@ -24,7 +24,7 @@ public class AttendanceServiceImpl implements AttendanceService {
     private final ClassroomSessionRepository classroomSessionRepository;
     private final CourseRepository courseRepository;
     private final StudentRepository studentRepository;
-    private final TeacherRepository teacherRepository;
+    private final TutorRepository TutorRepository;
     private final UserRepository userRepository;
     private final AttendanceRecordMapper attendanceRecordMapper;
 
@@ -48,8 +48,8 @@ public class AttendanceServiceImpl implements AttendanceService {
                 throw new ForbiddenException("You can only view your own attendance records");
             }
         } else if (isTeacherRole(auth)) {
-            Teacher teacher = getTeacherFromAuth(auth);
-            if (!record.getCourse().getTeacher().getId().equals(teacher.getId())) {
+            Tutor Tutor = getTeacherFromAuth(auth);
+            if (!record.getCourse().getTeacher().getId().equals(Tutor.getId())) {
                 throw new ForbiddenException("You can only view attendance records for your own courses");
             }
         }
@@ -64,8 +64,8 @@ public class AttendanceServiceImpl implements AttendanceService {
                 .orElseThrow(() -> new ResourceNotFoundException("ClassroomSession", sessionId));
 
         if (isTeacherRole(auth)) {
-            Teacher teacher = getTeacherFromAuth(auth);
-            if (!session.getTeacher().getId().equals(teacher.getId())) {
+            Tutor Tutor = getTeacherFromAuth(auth);
+            if (!session.getTeacher().getId().equals(Tutor.getId())) {
                 throw new ForbiddenException("You can only view attendance for your own sessions");
             }
         }
@@ -82,8 +82,8 @@ public class AttendanceServiceImpl implements AttendanceService {
                 .orElseThrow(() -> new ResourceNotFoundException("Course", courseId));
 
         if (isTeacherRole(auth)) {
-            Teacher teacher = getTeacherFromAuth(auth);
-            if (!course.getTeacher().getId().equals(teacher.getId())) {
+            Tutor Tutor = getTeacherFromAuth(auth);
+            if (!course.getTeacher().getId().equals(Tutor.getId())) {
                 throw new ForbiddenException("You can only view attendance records for your own courses");
             }
         }
@@ -108,8 +108,8 @@ public class AttendanceServiceImpl implements AttendanceService {
         AttendanceRecord record = attendanceRecordRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("AttendanceRecord", id));
 
-        Teacher teacher = getTeacherFromAuth(auth);
-        if (!record.getCourse().getTeacher().getId().equals(teacher.getId())) {
+        Tutor Tutor = getTeacherFromAuth(auth);
+        if (!record.getCourse().getTeacher().getId().equals(Tutor.getId())) {
             throw new ForbiddenException("You can only update attendance records for your own courses");
         }
 
@@ -122,7 +122,7 @@ public class AttendanceServiceImpl implements AttendanceService {
                 .oldStatus(oldStatus)
                 .newStatus(request.getStatus())
                 .changedBy(auth.getName())
-                .changedRole(Role.TEACHER.name())
+                .changedRole(Role.Tutor.name())
                 .reason(request.getReason())
                 .build();
         attendanceAuditLogRepository.save(auditLog);
@@ -132,7 +132,7 @@ public class AttendanceServiceImpl implements AttendanceService {
 
     private boolean isTeacherRole(Authentication auth) {
         return auth.getAuthorities().stream()
-                .anyMatch(a -> a.getAuthority().equals("ROLE_TEACHER"));
+                .anyMatch(a -> a.getAuthority().equals("ROLE_TUTOR"));
     }
 
     private boolean isStudentRole(Authentication auth) {
@@ -140,12 +140,12 @@ public class AttendanceServiceImpl implements AttendanceService {
                 .anyMatch(a -> a.getAuthority().equals("ROLE_STUDENT"));
     }
 
-    private Teacher getTeacherFromAuth(Authentication auth) {
+    private Tutor getTeacherFromAuth(Authentication auth) {
         String email = auth.getName();
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found"));
-        return teacherRepository.findByUserId(user.getId())
-                .orElseThrow(() -> new ResourceNotFoundException("Teacher profile not found for current user"));
+        return TutorRepository.findByUserId(user.getId())
+                .orElseThrow(() -> new ResourceNotFoundException("Tutor profile not found for current user"));
     }
 
     private Student getStudentFromAuth(Authentication auth) {

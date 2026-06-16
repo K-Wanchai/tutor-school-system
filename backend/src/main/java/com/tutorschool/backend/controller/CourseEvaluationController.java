@@ -1,4 +1,4 @@
-package com.tutorschool.backend.controller;
+﻿package com.tutorschool.backend.controller;
 
 import com.tutorschool.backend.dto.request.CreateCourseEvaluationRequest;
 import com.tutorschool.backend.dto.request.UpdateCourseEvaluationRequest;
@@ -45,7 +45,7 @@ public class CourseEvaluationController {
 
     // GET /api/v1/course-evaluations/{id} — ดูตาม ID
     @GetMapping("/{id}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'TEACHER', 'STUDENT')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'Tutor', 'STUDENT')")
     public ResponseEntity<ApiResponse<CourseEvaluationResponse>> getEvaluationById(
             @PathVariable Long id,
             Authentication authentication) {
@@ -55,7 +55,7 @@ public class CourseEvaluationController {
 
     // GET /api/v1/course-evaluations/course/{courseId} — ดูรีวิวของคอร์ส
     @GetMapping("/course/{courseId}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'TEACHER')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'Tutor')")
     public ResponseEntity<ApiResponse<List<CourseEvaluationResponse>>> getEvaluationsByCourseId(
             @PathVariable Long courseId,
             Authentication authentication) {
@@ -63,9 +63,9 @@ public class CourseEvaluationController {
         return ResponseEntity.ok(ApiResponse.success("Evaluations retrieved successfully", response));
     }
 
-    // GET /api/v1/course-evaluations/tutor/{tutorId} — ดูรีวิวของ Teacher
+    // GET /api/v1/course-evaluations/tutor/{tutorId} — ดูรีวิวของ Tutor
     @GetMapping("/tutor/{tutorId}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'TEACHER')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'Tutor')")
     public ResponseEntity<ApiResponse<List<CourseEvaluationResponse>>> getEvaluationsByTeacherId(
             @PathVariable Long tutorId,
             Authentication authentication) {
@@ -84,7 +84,7 @@ public class CourseEvaluationController {
 
     // GET /api/v1/course-evaluations/course/{courseId}/summary — ดู summary คะแนน
     @GetMapping("/course/{courseId}/summary")
-    @PreAuthorize("hasAnyRole('ADMIN', 'TEACHER')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'Tutor')")
     public ResponseEntity<ApiResponse<CourseEvaluationSummaryResponse>> getCourseSummary(
             @PathVariable Long courseId) {
         CourseEvaluationSummaryResponse response = evaluationService.getCourseSummary(courseId);

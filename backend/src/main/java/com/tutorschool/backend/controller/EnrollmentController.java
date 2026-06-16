@@ -1,4 +1,4 @@
-package com.tutorschool.backend.controller;
+﻿package com.tutorschool.backend.controller;
 
 import com.tutorschool.backend.dto.request.*;
 import com.tutorschool.backend.dto.response.ApiResponse;
@@ -28,14 +28,14 @@ public class EnrollmentController {
     }
 
     @GetMapping("/{id}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'TEACHER', 'STUDENT')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'Tutor', 'STUDENT')")
     public ResponseEntity<ApiResponse<EnrollmentResponse>> getEnrollmentById(@PathVariable Long id) {
         EnrollmentResponse response = enrollmentService.getEnrollmentById(id);
         return ResponseEntity.ok(ApiResponse.success("Enrollment retrieved successfully", response));
     }
 
     @GetMapping("/student/{studentId}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'TEACHER', 'STUDENT')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'Tutor', 'STUDENT')")
     public ResponseEntity<ApiResponse<List<EnrollmentResponse>>> getEnrollmentsByStudentId(
             @PathVariable Long studentId) {
         List<EnrollmentResponse> response = enrollmentService.getEnrollmentsByStudentId(studentId);
@@ -43,7 +43,7 @@ public class EnrollmentController {
     }
 
     @GetMapping("/course/{courseId}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'TEACHER')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'Tutor')")
     public ResponseEntity<ApiResponse<List<EnrollmentResponse>>> getEnrollmentsByCourseId(
             @PathVariable Long courseId) {
         List<EnrollmentResponse> response = enrollmentService.getEnrollmentsByCourseId(courseId);

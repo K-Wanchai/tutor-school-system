@@ -1,4 +1,4 @@
-package com.tutorschool.backend.service;
+﻿package com.tutorschool.backend.service;
 
 import com.tutorschool.backend.dto.request.ManualGradeRequest;
 import com.tutorschool.backend.dto.request.SubmitExamRequest;
@@ -18,7 +18,7 @@ public interface ExamSubmissionService {
     List<ExamSubmissionResponse> getMySubmissions(String studentEmail);
     ExamSubmissionResponse getSubmissionById(Long submissionId, String userEmail);
 
-    // Manual grading (Teacher)
+    // Manual grading (Tutor)
     ExamSubmissionResponse manualGrade(Long submissionId, ManualGradeRequest request, String teacherEmail);
 
     // Results

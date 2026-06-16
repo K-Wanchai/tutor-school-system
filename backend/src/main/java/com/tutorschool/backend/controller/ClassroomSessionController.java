@@ -1,4 +1,4 @@
-package com.tutorschool.backend.controller;
+﻿package com.tutorschool.backend.controller;
 
 import com.tutorschool.backend.dto.request.CreateClassroomSessionRequest;
 import com.tutorschool.backend.dto.request.JoinClassroomSessionRequest;
@@ -26,7 +26,7 @@ public class ClassroomSessionController {
     private final ClassroomSessionService classroomSessionService;
 
     @PostMapping
-    @PreAuthorize("hasAnyRole('ADMIN', 'TEACHER')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'Tutor')")
     public ResponseEntity<ApiResponse<ClassroomSessionResponse>> createSession(
             @Valid @RequestBody CreateClassroomSessionRequest request,
             Authentication auth) {
@@ -43,14 +43,14 @@ public class ClassroomSessionController {
     }
 
     @GetMapping("/{id}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'TEACHER', 'STUDENT')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'Tutor', 'STUDENT')")
     public ResponseEntity<ApiResponse<ClassroomSessionResponse>> getSessionById(@PathVariable Long id) {
         ClassroomSessionResponse response = classroomSessionService.getSessionById(id);
         return ResponseEntity.ok(ApiResponse.success("Classroom session retrieved successfully", response));
     }
 
     @GetMapping("/course/{courseId}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'TEACHER', 'STUDENT')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'Tutor', 'STUDENT')")
     public ResponseEntity<ApiResponse<List<ClassroomSessionResponse>>> getSessionsByCourseId(
             @PathVariable Long courseId) {
         List<ClassroomSessionResponse> response = classroomSessionService.getSessionsByCourseId(courseId);
@@ -58,7 +58,7 @@ public class ClassroomSessionController {
     }
 
     @PatchMapping("/{id}/open")
-    @PreAuthorize("hasAnyRole('ADMIN', 'TEACHER')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'Tutor')")
     public ResponseEntity<ApiResponse<ClassroomSessionResponse>> openSession(
             @PathVariable Long id,
             Authentication auth) {
@@ -67,7 +67,7 @@ public class ClassroomSessionController {
     }
 
     @PatchMapping("/{id}/close")
-    @PreAuthorize("hasAnyRole('ADMIN', 'TEACHER')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'Tutor')")
     public ResponseEntity<ApiResponse<ClassroomSessionResponse>> closeSession(
             @PathVariable Long id,
             Authentication auth) {
@@ -76,7 +76,7 @@ public class ClassroomSessionController {
     }
 
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'TEACHER')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'Tutor')")
     public ResponseEntity<ApiResponse<Void>> deleteSession(
             @PathVariable Long id,
             Authentication auth) {

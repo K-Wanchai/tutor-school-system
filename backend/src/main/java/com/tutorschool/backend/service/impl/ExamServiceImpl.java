@@ -1,4 +1,4 @@
-package com.tutorschool.backend.service.impl;
+﻿package com.tutorschool.backend.service.impl;
 
 import com.tutorschool.backend.dto.request.*;
 import com.tutorschool.backend.dto.response.*;
@@ -23,7 +23,7 @@ public class ExamServiceImpl implements ExamService {
     private final ExamQuestionOptionRepository optionRepository;
     private final CourseRepository courseRepository;
     private final CourseLessonRepository lessonRepository;
-    private final TeacherRepository teacherRepository;
+    private final TutorRepository TutorRepository;
     private final ExamMapper examMapper;
     private final ExamQuestionMapper questionMapper;
 
@@ -32,11 +32,11 @@ public class ExamServiceImpl implements ExamService {
     @Override
     @Transactional
     public ExamResponse createExam(CreateExamRequest request, String teacherEmail) {
-        Teacher teacher = getTeacherByEmail(teacherEmail);
+        Tutor Tutor = getTeacherByEmail(teacherEmail);
         Course course = courseRepository.findById(request.getCourseId())
                 .orElseThrow(() -> new ResourceNotFoundException("Course", request.getCourseId()));
 
-        validateTeacherOwnsCourse(teacher, course);
+        validateTeacherOwnsCourse(Tutor, course);
         validateExamDates(request.getStartTime(), request.getEndTime());
 
         CourseLesson lesson = null;
@@ -51,7 +51,7 @@ public class ExamServiceImpl implements ExamService {
         Exam exam = Exam.builder()
                 .course(course)
                 .lesson(lesson)
-                .teacher(teacher)
+                .Tutor(Tutor)
                 .title(request.getTitle())
                 .description(request.getDescription())
                 .passingScore(request.getPassingScore())
@@ -121,9 +121,9 @@ public class ExamServiceImpl implements ExamService {
     @Override
     @Transactional
     public ExamResponse updateExam(Long id, UpdateExamRequest request, String teacherEmail) {
-        Teacher teacher = getTeacherByEmail(teacherEmail);
+        Tutor Tutor = getTeacherByEmail(teacherEmail);
         Exam exam = findExamById(id);
-        validateTeacherOwnsExam(teacher, exam);
+        validateTeacherOwnsExam(Tutor, exam);
 
         if (exam.getStatus() == ExamStatus.OPEN) {
             throw new IllegalStateException("Cannot edit an exam that is currently OPEN. Close it first.");
@@ -154,9 +154,9 @@ public class ExamServiceImpl implements ExamService {
     @Override
     @Transactional
     public ExamResponse openExam(Long id, String teacherEmail) {
-        Teacher teacher = getTeacherByEmail(teacherEmail);
+        Tutor Tutor = getTeacherByEmail(teacherEmail);
         Exam exam = findExamById(id);
-        validateTeacherOwnsExam(teacher, exam);
+        validateTeacherOwnsExam(Tutor, exam);
 
         if (exam.getStatus() == ExamStatus.OPEN) {
             throw new IllegalStateException("Exam is already OPEN");
@@ -175,9 +175,9 @@ public class ExamServiceImpl implements ExamService {
     @Override
     @Transactional
     public ExamResponse closeExam(Long id, String teacherEmail) {
-        Teacher teacher = getTeacherByEmail(teacherEmail);
+        Tutor Tutor = getTeacherByEmail(teacherEmail);
         Exam exam = findExamById(id);
-        validateTeacherOwnsExam(teacher, exam);
+        validateTeacherOwnsExam(Tutor, exam);
 
         if (exam.getStatus() != ExamStatus.OPEN) {
             throw new IllegalStateException("Exam is not currently OPEN");
@@ -190,9 +190,9 @@ public class ExamServiceImpl implements ExamService {
     @Override
     @Transactional
     public void deleteExam(Long id, String teacherEmail) {
-        Teacher teacher = getTeacherByEmail(teacherEmail);
+        Tutor Tutor = getTeacherByEmail(teacherEmail);
         Exam exam = findExamById(id);
-        validateTeacherOwnsExam(teacher, exam);
+        validateTeacherOwnsExam(Tutor, exam);
 
         if (exam.getStatus() == ExamStatus.OPEN) {
             throw new IllegalStateException("Cannot delete an exam that is currently OPEN. Close it first.");
@@ -206,9 +206,9 @@ public class ExamServiceImpl implements ExamService {
     @Override
     @Transactional
     public ExamQuestionResponse addQuestion(Long examId, CreateExamQuestionRequest request, String teacherEmail) {
-        Teacher teacher = getTeacherByEmail(teacherEmail);
+        Tutor Tutor = getTeacherByEmail(teacherEmail);
         Exam exam = findExamById(examId);
-        validateTeacherOwnsExam(teacher, exam);
+        validateTeacherOwnsExam(Tutor, exam);
 
         if (exam.getStatus() == ExamStatus.OPEN) {
             throw new IllegalStateException("Cannot add questions to an OPEN exam. Close it first.");
@@ -246,9 +246,9 @@ public class ExamServiceImpl implements ExamService {
     @Override
     @Transactional
     public ExamQuestionResponse updateQuestion(Long questionId, UpdateExamQuestionRequest request, String teacherEmail) {
-        Teacher teacher = getTeacherByEmail(teacherEmail);
+        Tutor Tutor = getTeacherByEmail(teacherEmail);
         ExamQuestion question = findQuestionById(questionId);
-        validateTeacherOwnsExam(teacher, question.getExam());
+        validateTeacherOwnsExam(Tutor, question.getExam());
 
         if (question.getExam().getStatus() == ExamStatus.OPEN) {
             throw new IllegalStateException("Cannot edit questions of an OPEN exam. Close it first.");
@@ -270,10 +270,10 @@ public class ExamServiceImpl implements ExamService {
     @Override
     @Transactional
     public void deleteQuestion(Long questionId, String teacherEmail) {
-        Teacher teacher = getTeacherByEmail(teacherEmail);
+        Tutor Tutor = getTeacherByEmail(teacherEmail);
         ExamQuestion question = findQuestionById(questionId);
         Exam exam = question.getExam();
-        validateTeacherOwnsExam(teacher, exam);
+        validateTeacherOwnsExam(Tutor, exam);
 
         if (exam.getStatus() == ExamStatus.OPEN) {
             throw new IllegalStateException("Cannot delete questions from an OPEN exam. Close it first.");
@@ -288,9 +288,9 @@ public class ExamServiceImpl implements ExamService {
     @Override
     @Transactional
     public QuestionOptionResponse addOption(Long questionId, CreateQuestionOptionRequest request, String teacherEmail) {
-        Teacher teacher = getTeacherByEmail(teacherEmail);
+        Tutor Tutor = getTeacherByEmail(teacherEmail);
         ExamQuestion question = findQuestionById(questionId);
-        validateTeacherOwnsExam(teacher, question.getExam());
+        validateTeacherOwnsExam(Tutor, question.getExam());
 
         ExamQuestionOption option = ExamQuestionOption.builder()
                 .question(question)
@@ -306,9 +306,9 @@ public class ExamServiceImpl implements ExamService {
     @Override
     @Transactional
     public QuestionOptionResponse updateOption(Long optionId, UpdateQuestionOptionRequest request, String teacherEmail) {
-        Teacher teacher = getTeacherByEmail(teacherEmail);
+        Tutor Tutor = getTeacherByEmail(teacherEmail);
         ExamQuestionOption option = findOptionById(optionId);
-        validateTeacherOwnsExam(teacher, option.getQuestion().getExam());
+        validateTeacherOwnsExam(Tutor, option.getQuestion().getExam());
 
         if (request.getOptionText() != null) option.setOptionText(request.getOptionText());
         if (request.getCorrect() != null) option.setCorrect(request.getCorrect());
@@ -320,18 +320,18 @@ public class ExamServiceImpl implements ExamService {
     @Override
     @Transactional
     public void deleteOption(Long optionId, String teacherEmail) {
-        Teacher teacher = getTeacherByEmail(teacherEmail);
+        Tutor Tutor = getTeacherByEmail(teacherEmail);
         ExamQuestionOption option = findOptionById(optionId);
-        validateTeacherOwnsExam(teacher, option.getQuestion().getExam());
+        validateTeacherOwnsExam(Tutor, option.getQuestion().getExam());
 
         optionRepository.delete(option);
     }
 
     // ─── Private helpers ──────────────────────────────────────────────────────
 
-    private Teacher getTeacherByEmail(String email) {
-        return teacherRepository.findByUserEmail(email)
-                .orElseThrow(() -> new ExamAccessDeniedException("Current user is not registered as a teacher"));
+    private Tutor getTeacherByEmail(String email) {
+        return TutorRepository.findByUserEmail(email)
+                .orElseThrow(() -> new ExamAccessDeniedException("Current user is not registered as a Tutor"));
     }
 
     private Exam findExamById(Long id) {
@@ -349,14 +349,14 @@ public class ExamServiceImpl implements ExamService {
                 .orElseThrow(() -> new ResourceNotFoundException("ExamQuestionOption", id));
     }
 
-    private void validateTeacherOwnsCourse(Teacher teacher, Course course) {
-        if (!course.getTeacher().getId().equals(teacher.getId())) {
-            throw new ExamAccessDeniedException("You are not the teacher of this course");
+    private void validateTeacherOwnsCourse(Tutor Tutor, Course course) {
+        if (!course.getTeacher().getId().equals(Tutor.getId())) {
+            throw new ExamAccessDeniedException("You are not the Tutor of this course");
         }
     }
 
-    private void validateTeacherOwnsExam(Teacher teacher, Exam exam) {
-        if (!exam.getTeacher().getId().equals(teacher.getId())) {
+    private void validateTeacherOwnsExam(Tutor Tutor, Exam exam) {
+        if (!exam.getTeacher().getId().equals(Tutor.getId())) {
             throw new ExamAccessDeniedException("You do not have permission to modify this exam");
         }
     }

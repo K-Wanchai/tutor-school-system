@@ -1,4 +1,4 @@
-package com.tutorschool.backend.dto.request;
+﻿package com.tutorschool.backend.dto.request;
 
 import com.tutorschool.backend.entity.CourseStatus;
 import jakarta.validation.Valid;
@@ -45,7 +45,7 @@ public class UpdateCourseRequest {
     @NotNull(message = "Course start date is required")
     private LocalDate courseStartDate;
 
-    @NotNull(message = "Teacher ID is required")
+    @NotNull(message = "Tutor ID is required")
     private Long teacherId;
 
     @Valid

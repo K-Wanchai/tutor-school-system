@@ -1,4 +1,4 @@
-package com.tutorschool.backend.entity;
+﻿package com.tutorschool.backend.entity;
 
 import jakarta.persistence.*;
 import lombok.*;
@@ -31,7 +31,7 @@ public class ClassroomSession {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "teacher_id", nullable = false)
-    private Teacher teacher;
+    private Tutor Tutor;
 
     @Column(name = "start_time", nullable = false)
     private LocalDateTime startTime;
