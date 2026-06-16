@@ -64,7 +64,7 @@ public class CourseEvaluationServiceImpl implements CourseEvaluationService {
                 .student(student)
                 .course(course)
                 .enrollment(enrollment)
-                .Tutor(Tutor)
+                .tutor(Tutor)
                 .rating(request.getRating())
                 .teachingScore(request.getTeachingScore())
                 .contentScore(request.getContentScore())
@@ -160,7 +160,7 @@ public class CourseEvaluationServiceImpl implements CourseEvaluationService {
             }
         }
 
-        return evaluationRepository.findByTeacherId(teacherId).stream()
+        return evaluationRepository.findByTutorId(teacherId).stream()
                 .map(e -> user.getRole() == Role.ADMIN
                         ? evaluationMapper.toResponseForAdmin(e)
                         : evaluationMapper.toResponseForTeacher(e))

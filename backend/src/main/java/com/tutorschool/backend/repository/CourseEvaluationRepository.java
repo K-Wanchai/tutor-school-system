@@ -13,7 +13,7 @@ public interface CourseEvaluationRepository extends JpaRepository<CourseEvaluati
 
     List<CourseEvaluation> findByCourseId(Long courseId);
 
-    List<CourseEvaluation> findByTeacherId(Long teacherId);
+    List<CourseEvaluation> findByTutorId(Long tutorId);
 
     List<CourseEvaluation> findByStudentId(Long studentId);
 

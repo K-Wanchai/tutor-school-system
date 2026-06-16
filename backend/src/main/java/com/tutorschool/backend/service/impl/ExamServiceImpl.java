@@ -51,7 +51,7 @@ public class ExamServiceImpl implements ExamService {
         Exam exam = Exam.builder()
                 .course(course)
                 .lesson(lesson)
-                .Tutor(Tutor)
+                .tutor(Tutor)
                 .title(request.getTitle())
                 .description(request.getDescription())
                 .passingScore(request.getPassingScore())

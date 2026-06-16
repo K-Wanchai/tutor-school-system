@@ -72,7 +72,7 @@ public class CourseScheduleServiceImpl implements CourseScheduleService {
         CourseSchedule schedule = CourseSchedule.builder()
                 .course(course)
                 .lesson(lesson)
-                .Tutor(Tutor)
+                .tutor(Tutor)
                 .title(request.getTitle())
                 .description(request.getDescription())
                 .scheduleDate(request.getScheduleDate())
@@ -134,7 +134,7 @@ public class CourseScheduleServiceImpl implements CourseScheduleService {
     public List<CourseScheduleResponse> getMySchedulesAsTeacher(Long teacherUserId) {
         Tutor Tutor = TutorRepository.findByUserId(teacherUserId)
                 .orElseThrow(() -> new ResourceNotFoundException("Tutor profile not found"));
-        return courseScheduleRepository.findByTeacherIdOrderByScheduleDateAscStartTimeAsc(Tutor.getId())
+        return courseScheduleRepository.findByTutorIdOrderByScheduleDateAscStartTimeAsc(Tutor.getId())
                 .stream()
                 .map(courseScheduleMapper::toResponse)
                 .toList();

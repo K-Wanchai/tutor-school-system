@@ -80,7 +80,7 @@ public class CourseServiceImpl implements CourseService {
         if (!TutorRepository.existsById(teacherId)) {
             throw new ResourceNotFoundException("Tutor", teacherId);
         }
-        return courseRepository.findByTeacherId(teacherId).stream()
+        return courseRepository.findByTutorId(teacherId).stream()
                 .map(course -> {
                     long count = enrollmentRepository.countByCourseIdAndStatusIn(course.getId(),
                             List.of(EnrollmentStatus.PENDING, EnrollmentStatus.APPROVED));
@@ -116,7 +116,7 @@ public class CourseServiceImpl implements CourseService {
                 .registrationEndDate(request.getRegistrationEndDate())
                 .courseStartDate(request.getCourseStartDate())
                 .status(status)
-                .Tutor(Tutor)
+                .tutor(Tutor)
                 .build();
 
         addLessonsToCoure(course, request.getLessons());

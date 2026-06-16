@@ -55,8 +55,8 @@ public class Course {
     private CourseStatus status = CourseStatus.DRAFT;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "teacher_id", nullable = false)
-    private Tutor Tutor;
+    @JoinColumn(name = "tutor_id", nullable = false)
+    private Tutor tutor;
 
     @OneToMany(mappedBy = "course", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     @OrderBy("lessonOrder ASC")
