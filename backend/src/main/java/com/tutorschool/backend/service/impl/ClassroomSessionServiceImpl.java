@@ -73,7 +73,7 @@ public class ClassroomSessionServiceImpl implements ClassroomSessionService {
                 .sessionCode(generateSessionCode())
                 .course(course)
                 .lesson(lesson)
-                .Tutor(Tutor)
+                .tutor(Tutor)
                 .startTime(request.getStartTime())
                 .endTime(request.getEndTime())
                 .lateThresholdMinutes(threshold)

@@ -35,8 +35,8 @@ public class CourseEvaluation {
     private Enrollment enrollment;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "teacher_id", nullable = false)
-    private Tutor Tutor;
+    @JoinColumn(name = "tutor_id", nullable = false)
+    private Tutor tutor;
 
     @Column(nullable = false)
     private Integer rating;

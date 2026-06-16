@@ -32,8 +32,8 @@ public class CourseSchedule {
     private CourseLesson lesson;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "teacher_id", nullable = false)
-    private Tutor Tutor;
+    @JoinColumn(name = "tutor_id", nullable = false)
+    private Tutor tutor;
 
     @Column(nullable = false, length = 300)
     private String title;

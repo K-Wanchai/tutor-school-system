@@ -30,8 +30,8 @@ public class ClassroomSession {
     private CourseLesson lesson;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "teacher_id", nullable = false)
-    private Tutor Tutor;
+    @JoinColumn(name = "tutor_id", nullable = false)
+    private Tutor tutor;
 
     @Column(name = "start_time", nullable = false)
     private LocalDateTime startTime;
