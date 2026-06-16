@@ -61,6 +61,7 @@ public class GlobalExceptionHandler {
                 .body(ApiResponse.error("Access denied: you do not have permission to perform this action"));
     }
 
+    // Payment exceptions
     @ExceptionHandler(PaymentNotFoundException.class)
     public ResponseEntity<ApiResponse<Void>> handlePaymentNotFoundException(PaymentNotFoundException ex) {
         return ResponseEntity.status(HttpStatus.NOT_FOUND)
@@ -91,6 +92,7 @@ public class GlobalExceptionHandler {
                 .body(ApiResponse.error(ex.getMessage()));
     }
 
+    // Exam exceptions
     @ExceptionHandler(ExamNotFoundException.class)
     public ResponseEntity<ApiResponse<Void>> handleExamNotFoundException(ExamNotFoundException ex) {
         return ResponseEntity.status(HttpStatus.NOT_FOUND)
@@ -129,6 +131,31 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(ExamMaxAttemptsExceededException.class)
     public ResponseEntity<ApiResponse<Void>> handleExamMaxAttemptsExceededException(ExamMaxAttemptsExceededException ex) {
+        return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                .body(ApiResponse.error(ex.getMessage()));
+    }
+
+    // Course Evaluation exceptions
+    @ExceptionHandler(CourseEvaluationNotFoundException.class)
+    public ResponseEntity<ApiResponse<Void>> handleCourseEvaluationNotFoundException(CourseEvaluationNotFoundException ex) {
+        return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                .body(ApiResponse.error(ex.getMessage()));
+    }
+
+    @ExceptionHandler(EvaluationAlreadyExistsException.class)
+    public ResponseEntity<ApiResponse<Void>> handleEvaluationAlreadyExistsException(EvaluationAlreadyExistsException ex) {
+        return ResponseEntity.status(HttpStatus.CONFLICT)
+                .body(ApiResponse.error(ex.getMessage()));
+    }
+
+    @ExceptionHandler(EnrollmentNotCompletedException.class)
+    public ResponseEntity<ApiResponse<Void>> handleEnrollmentNotCompletedException(EnrollmentNotCompletedException ex) {
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(ApiResponse.error(ex.getMessage()));
+    }
+
+    @ExceptionHandler(UnauthorizedEvaluationAccessException.class)
+    public ResponseEntity<ApiResponse<Void>> handleUnauthorizedEvaluationAccessException(UnauthorizedEvaluationAccessException ex) {
         return ResponseEntity.status(HttpStatus.FORBIDDEN)
                 .body(ApiResponse.error(ex.getMessage()));
     }
