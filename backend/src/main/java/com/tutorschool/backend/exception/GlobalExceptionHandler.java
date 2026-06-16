@@ -62,6 +62,24 @@ public class GlobalExceptionHandler {
                 .body(ApiResponse.error("Access denied: you do not have permission to perform this action"));
     }
 
+    @ExceptionHandler(StudentNotEnrolledException.class)
+    public ResponseEntity<ApiResponse<Void>> handleStudentNotEnrolledException(StudentNotEnrolledException ex) {
+        return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                .body(ApiResponse.error(ex.getMessage()));
+    }
+
+    @ExceptionHandler(ClassroomSessionClosedException.class)
+    public ResponseEntity<ApiResponse<Void>> handleClassroomSessionClosedException(ClassroomSessionClosedException ex) {
+        return ResponseEntity.status(HttpStatus.CONFLICT)
+                .body(ApiResponse.error(ex.getMessage()));
+    }
+
+    @ExceptionHandler(InvalidSessionTimeException.class)
+    public ResponseEntity<ApiResponse<Void>> handleInvalidSessionTimeException(InvalidSessionTimeException ex) {
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(ApiResponse.error(ex.getMessage()));
+    }
+
     @ExceptionHandler(IllegalStateException.class)
     public ResponseEntity<ApiResponse<Void>> handleIllegalStateException(IllegalStateException ex) {
         return ResponseEntity.status(HttpStatus.BAD_REQUEST)
