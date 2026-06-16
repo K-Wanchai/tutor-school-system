@@ -42,8 +42,22 @@ public class SecurityConfig {
                 .sessionManagement(session -> session
                         .sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
+                        // Auth endpoints
                         .requestMatchers("/api/v1/auth/**").permitAll()
+                        // Public read-only endpoints
                         .requestMatchers(HttpMethod.GET, "/api/v1/institution-profile").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/v1/exam-institutions").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/v1/exam-institutions/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/v1/student-achievements/featured").permitAll()
+                        // Swagger UI
+                        .requestMatchers(
+                                "/swagger-ui.html",
+                                "/swagger-ui/**",
+                                "/v3/api-docs",
+                                "/v3/api-docs/**",
+                                "/swagger-resources",
+                                "/swagger-resources/**"
+                        ).permitAll()
                         .anyRequest().authenticated())
                 .authenticationProvider(authenticationProvider())
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
