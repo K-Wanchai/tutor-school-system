@@ -15,6 +15,7 @@ import java.util.Map;
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
+    // Generic / shared exceptions
     @ExceptionHandler(ResourceNotFoundException.class)
     public ResponseEntity<ApiResponse<Void>> handleResourceNotFoundException(ResourceNotFoundException ex) {
         return ResponseEntity.status(HttpStatus.NOT_FOUND)
@@ -61,6 +62,12 @@ public class GlobalExceptionHandler {
                 .body(ApiResponse.error("Access denied: you do not have permission to perform this action"));
     }
 
+    @ExceptionHandler(IllegalStateException.class)
+    public ResponseEntity<ApiResponse<Void>> handleIllegalStateException(IllegalStateException ex) {
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(ApiResponse.error(ex.getMessage()));
+    }
+
     // Payment exceptions
     @ExceptionHandler(PaymentNotFoundException.class)
     public ResponseEntity<ApiResponse<Void>> handlePaymentNotFoundException(PaymentNotFoundException ex) {
@@ -83,12 +90,6 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(UnauthorizedPaymentAccessException.class)
     public ResponseEntity<ApiResponse<Void>> handleUnauthorizedPaymentAccessException(UnauthorizedPaymentAccessException ex) {
         return ResponseEntity.status(HttpStatus.FORBIDDEN)
-                .body(ApiResponse.error(ex.getMessage()));
-    }
-
-    @ExceptionHandler(IllegalStateException.class)
-    public ResponseEntity<ApiResponse<Void>> handleIllegalStateException(IllegalStateException ex) {
-        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                 .body(ApiResponse.error(ex.getMessage()));
     }
 
@@ -135,6 +136,76 @@ public class GlobalExceptionHandler {
                 .body(ApiResponse.error(ex.getMessage()));
     }
 
+    // Exam Institution exceptions
+    @ExceptionHandler(ExamInstitutionNotFoundException.class)
+    public ResponseEntity<ApiResponse<Void>> handleExamInstitutionNotFoundException(ExamInstitutionNotFoundException ex) {
+        return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                .body(ApiResponse.error(ex.getMessage()));
+    }
+
+    // Student Achievement exceptions
+    @ExceptionHandler(StudentAchievementNotFoundException.class)
+    public ResponseEntity<ApiResponse<Void>> handleStudentAchievementNotFoundException(StudentAchievementNotFoundException ex) {
+        return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                .body(ApiResponse.error(ex.getMessage()));
+    }
+
+    @ExceptionHandler(UnauthorizedAchievementAccessException.class)
+    public ResponseEntity<ApiResponse<Void>> handleUnauthorizedAchievementAccessException(UnauthorizedAchievementAccessException ex) {
+        return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                .body(ApiResponse.error(ex.getMessage()));
+    }
+
+    @ExceptionHandler(DuplicateAchievementException.class)
+    public ResponseEntity<ApiResponse<Void>> handleDuplicateAchievementException(DuplicateAchievementException ex) {
+        return ResponseEntity.status(HttpStatus.CONFLICT)
+                .body(ApiResponse.error(ex.getMessage()));
+    }
+
+    // Course Schedule exceptions
+    @ExceptionHandler(CourseScheduleNotFoundException.class)
+    public ResponseEntity<ApiResponse<Void>> handleCourseScheduleNotFoundException(CourseScheduleNotFoundException ex) {
+        return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                .body(ApiResponse.error(ex.getMessage()));
+    }
+
+    @ExceptionHandler(UnauthorizedScheduleAccessException.class)
+    public ResponseEntity<ApiResponse<Void>> handleUnauthorizedScheduleAccessException(UnauthorizedScheduleAccessException ex) {
+        return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                .body(ApiResponse.error(ex.getMessage()));
+    }
+
+    @ExceptionHandler(InvalidScheduleTimeException.class)
+    public ResponseEntity<ApiResponse<Void>> handleInvalidScheduleTimeException(InvalidScheduleTimeException ex) {
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(ApiResponse.error(ex.getMessage()));
+    }
+
+    @ExceptionHandler(ScheduleAlreadyCancelledException.class)
+    public ResponseEntity<ApiResponse<Void>> handleScheduleAlreadyCancelledException(ScheduleAlreadyCancelledException ex) {
+        return ResponseEntity.status(HttpStatus.CONFLICT)
+                .body(ApiResponse.error(ex.getMessage()));
+    }
+
+    @ExceptionHandler(ScheduleTimeCannotBeChangedException.class)
+    public ResponseEntity<ApiResponse<Void>> handleScheduleTimeCannotBeChangedException(ScheduleTimeCannotBeChangedException ex) {
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(ApiResponse.error(ex.getMessage()));
+    }
+
+    // Notification exceptions
+    @ExceptionHandler(NotificationNotFoundException.class)
+    public ResponseEntity<ApiResponse<Void>> handleNotificationNotFoundException(NotificationNotFoundException ex) {
+        return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                .body(ApiResponse.error(ex.getMessage()));
+    }
+
+    @ExceptionHandler(EmailSendFailedException.class)
+    public ResponseEntity<ApiResponse<Void>> handleEmailSendFailedException(EmailSendFailedException ex) {
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(ApiResponse.error(ex.getMessage()));
+    }
+
     // Course Evaluation exceptions
     @ExceptionHandler(CourseEvaluationNotFoundException.class)
     public ResponseEntity<ApiResponse<Void>> handleCourseEvaluationNotFoundException(CourseEvaluationNotFoundException ex) {
@@ -156,6 +227,25 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(UnauthorizedEvaluationAccessException.class)
     public ResponseEntity<ApiResponse<Void>> handleUnauthorizedEvaluationAccessException(UnauthorizedEvaluationAccessException ex) {
+        return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                .body(ApiResponse.error(ex.getMessage()));
+    }
+
+    // Classroom Session exceptions
+    @ExceptionHandler(ClassroomSessionClosedException.class)
+    public ResponseEntity<ApiResponse<Void>> handleClassroomSessionClosedException(ClassroomSessionClosedException ex) {
+        return ResponseEntity.status(HttpStatus.CONFLICT)
+                .body(ApiResponse.error(ex.getMessage()));
+    }
+
+    @ExceptionHandler(InvalidSessionTimeException.class)
+    public ResponseEntity<ApiResponse<Void>> handleInvalidSessionTimeException(InvalidSessionTimeException ex) {
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(ApiResponse.error(ex.getMessage()));
+    }
+
+    @ExceptionHandler(StudentNotEnrolledException.class)
+    public ResponseEntity<ApiResponse<Void>> handleStudentNotEnrolledException(StudentNotEnrolledException ex) {
         return ResponseEntity.status(HttpStatus.FORBIDDEN)
                 .body(ApiResponse.error(ex.getMessage()));
     }

@@ -1,0 +1,15 @@
+package com.tutorschool.backend.entity;
+
+public enum NotificationType {
+    COURSE_ENROLLMENT,
+    PAYMENT_VERIFIED,
+    PAYMENT_REJECTED,
+    COURSE_SCHEDULE_CREATED,
+    CLASS_CANCELLED,
+    CLASSROOM_SESSION_OPENED,
+    EXAM_OPENED,
+    EXAM_RESULT_RELEASED,
+    ATTENDANCE,
+    PASSWORD_CHANGED,
+    SYSTEM
+}
