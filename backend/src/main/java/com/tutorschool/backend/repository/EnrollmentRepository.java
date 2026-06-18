@@ -23,4 +23,6 @@ public interface EnrollmentRepository extends JpaRepository<Enrollment, Long> {
     List<Enrollment> findByPaymentStatus(PaymentStatus paymentStatus);
 
     List<Enrollment> findByStatus(EnrollmentStatus status);
+
+    List<Enrollment> findTop5ByOrderByCreatedAtDesc();
 }

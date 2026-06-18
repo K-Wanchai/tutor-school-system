@@ -44,10 +44,10 @@ public class CourseController {
         return ResponseEntity.ok(ApiResponse.success("Course retrieved successfully", response));
     }
 
-    @GetMapping("/Tutor/{teacherId}")
+    @GetMapping("/Tutor/{tutorId}")
     @PreAuthorize("hasAnyRole('ADMIN', 'Tutor')")
-    public ResponseEntity<ApiResponse<List<CourseResponse>>> getCoursesByTeacherId(@PathVariable Long teacherId) {
-        List<CourseResponse> response = courseService.getCoursesByTeacherId(teacherId);
+    public ResponseEntity<ApiResponse<List<CourseResponse>>> getCoursesBytutorId(@PathVariable Long tutorId) {
+        List<CourseResponse> response = courseService.getCoursesBytutorId(tutorId);
         return ResponseEntity.ok(ApiResponse.success("Courses retrieved successfully", response));
     }
 

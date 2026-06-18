@@ -1,0 +1,97 @@
+.auth-unauthorized-page {
+  min-height: 100vh;
+  background: #f5f7fb;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
+
+.auth-unauthorized-card {
+  background: white;
+  border-radius: 16px;
+  padding: 56px 48px;
+  max-width: 440px;
+  width: 100%;
+  text-align: center;
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.07);
+  border: 1px solid #e5e7eb;
+}
+
+.auth-unauthorized-icon {
+  width: 72px;
+  height: 72px;
+  margin: 0 auto 24px;
+}
+
+.auth-unauthorized-icon svg {
+  width: 100%;
+  height: 100%;
+}
+
+.auth-unauthorized-title {
+  font-size: 28px;
+  font-weight: 700;
+  color: #111827;
+  margin: 0 0 12px;
+  letter-spacing: -0.3px;
+}
+
+.auth-unauthorized-subtitle {
+  font-size: 14px;
+  color: #6b7280;
+  line-height: 1.6;
+  margin: 0 0 32px;
+}
+
+.auth-unauthorized-actions {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+}
+
+.auth-unauthorized-btn-primary {
+  height: 42px;
+  padding: 0 24px;
+  background: #2563eb;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.auth-unauthorized-btn-primary:hover {
+  background: #1d4ed8;
+}
+
+.auth-unauthorized-btn-secondary {
+  height: 42px;
+  padding: 0 24px;
+  background: white;
+  color: #374151;
+  border: 1.5px solid #e5e7eb;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+
+.auth-unauthorized-btn-secondary:hover {
+  border-color: #2563eb;
+  color: #2563eb;
+  background: #eff6ff;
+}
+
+@media (max-width: 480px) {
+  .auth-unauthorized-card {
+    padding: 40px 24px;
+  }
+
+  .auth-unauthorized-actions {
+    flex-direction: column;
+  }
+}

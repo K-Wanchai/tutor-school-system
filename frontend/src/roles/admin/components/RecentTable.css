@@ -1,0 +1,96 @@
+/* ===== Recent Table ===== */
+.recent-table-wrapper {
+  background: white;
+  border-radius: 12px;
+  border: 1px solid #e5e7eb;
+  overflow: hidden;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.04);
+}
+
+.recent-table-title {
+  font-size: 15px;
+  font-weight: 700;
+  color: #111827;
+  margin: 0;
+  padding: 18px 20px 14px;
+  border-bottom: 1px solid #f3f4f6;
+}
+
+.recent-table-scroll {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.recent-table {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 500px;
+}
+
+.recent-table-head {
+  background: #f9fafb;
+}
+
+.recent-table-th {
+  padding: 11px 16px;
+  text-align: left;
+  font-size: 11.5px;
+  font-weight: 700;
+  color: #6b7280;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  border-bottom: 1px solid #e5e7eb;
+  white-space: nowrap;
+}
+
+.recent-table-tr {
+  border-bottom: 1px solid #f3f4f6;
+  transition: background 0.12s ease;
+}
+
+.recent-table-tr:last-child {
+  border-bottom: none;
+}
+
+.recent-table-tr:hover {
+  background: #f9fafb;
+}
+
+.recent-table-td {
+  padding: 13px 16px;
+  font-size: 13.5px;
+  color: #374151;
+  vertical-align: middle;
+  white-space: nowrap;
+}
+
+.recent-table-empty {
+  padding: 32px 16px;
+  text-align: center;
+  font-size: 14px;
+  color: #9ca3af;
+}
+
+/* Scrollbar */
+.recent-table-scroll::-webkit-scrollbar {
+  height: 4px;
+}
+.recent-table-scroll::-webkit-scrollbar-track {
+  background: #f9fafb;
+}
+.recent-table-scroll::-webkit-scrollbar-thumb {
+  background: #d1d5db;
+  border-radius: 2px;
+}
+
+@media (max-width: 640px) {
+  .recent-table-title {
+    font-size: 14px;
+    padding: 14px 16px 12px;
+  }
+  .recent-table-th,
+  .recent-table-td {
+    padding: 10px 12px;
+    font-size: 12.5px;
+  }
+}

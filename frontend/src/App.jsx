@@ -1,10 +1,8 @@
+import AppRoutes from './routes/AppRoutes';
+import './App.css';
+
 function App() {
-  return (
-    <div>
-      <h1>Tutor School System</h1>
-      <p>Frontend is running...</p>
-    </div>
-  );
+  return <AppRoutes />;
 }
 
 export default App;

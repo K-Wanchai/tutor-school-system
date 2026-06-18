@@ -1,21 +1,40 @@
 package com.tutorschool.backend.service.impl;
 
+import java.time.LocalDateTime;
+import java.util.List;
+
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
 import com.tutorschool.backend.dto.request.CreateCourseEvaluationRequest;
 import com.tutorschool.backend.dto.request.UpdateCourseEvaluationRequest;
 import com.tutorschool.backend.dto.request.UpdateEvaluationStatusRequest;
 import com.tutorschool.backend.dto.response.CourseEvaluationResponse;
 import com.tutorschool.backend.dto.response.CourseEvaluationSummaryResponse;
-import com.tutorschool.backend.entity.*;
-import com.tutorschool.backend.exception.*;
+import com.tutorschool.backend.entity.Course;
+import com.tutorschool.backend.entity.CourseEvaluation;
+import com.tutorschool.backend.entity.Enrollment;
+import com.tutorschool.backend.entity.EnrollmentStatus;
+import com.tutorschool.backend.entity.EvaluationStatus;
+import com.tutorschool.backend.entity.Role;
+import com.tutorschool.backend.entity.Student;
+import com.tutorschool.backend.entity.Tutor;
+import com.tutorschool.backend.entity.User;
+import com.tutorschool.backend.exception.CourseEvaluationNotFoundException;
+import com.tutorschool.backend.exception.EnrollmentNotCompletedException;
+import com.tutorschool.backend.exception.EvaluationAlreadyExistsException;
+import com.tutorschool.backend.exception.ResourceNotFoundException;
+import com.tutorschool.backend.exception.UnauthorizedEvaluationAccessException;
 import com.tutorschool.backend.mapper.CourseEvaluationMapper;
-import com.tutorschool.backend.repository.*;
+import com.tutorschool.backend.repository.CourseEvaluationRepository;
+import com.tutorschool.backend.repository.CourseRepository;
+import com.tutorschool.backend.repository.EnrollmentRepository;
+import com.tutorschool.backend.repository.StudentRepository;
+import com.tutorschool.backend.repository.TutorRepository;
+import com.tutorschool.backend.repository.UserRepository;
 import com.tutorschool.backend.service.CourseEvaluationService;
-import lombok.RequiredArgsConstructor;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDateTime;
-import java.util.List;
+import lombok.RequiredArgsConstructor;
 
 @Service
 @RequiredArgsConstructor
@@ -145,7 +164,7 @@ public class CourseEvaluationServiceImpl implements CourseEvaluationService {
 
     @Override
     @Transactional(readOnly = true)
-    public List<CourseEvaluationResponse> getEvaluationsByTeacherId(Long teacherId, String username) {
+    public List<CourseEvaluationResponse> getEvaluationsByTutorId(Long teacherId, String username) {
         if (!TutorRepository.existsById(teacherId)) {
             throw new ResourceNotFoundException("Tutor", teacherId);
         }
@@ -240,7 +259,7 @@ public class CourseEvaluationServiceImpl implements CourseEvaluationService {
         return CourseEvaluationSummaryResponse.builder()
                 .courseId(courseId)
                 .courseName(course.getCourseName())
-                .teacherId(Tutor.getId())
+                .tutorId(Tutor.getId())
                 .teacherName(teacherName)
                 .totalEvaluations(totalEvaluations)
                 .averageRating(roundToOne(evaluationRepository.findAverageRatingByCourseId(courseId)))

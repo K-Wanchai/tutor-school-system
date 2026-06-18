@@ -18,4 +18,8 @@ public interface PaymentRepository extends JpaRepository<Payment, Long> {
     List<Payment> findByStudentId(Long studentId);
 
     boolean existsByEnrollmentIdAndPaymentStatusIn(Long enrollmentId, List<PaymentVerificationStatus> statuses);
+
+    long countByPaymentStatus(PaymentVerificationStatus paymentStatus);
+
+    List<Payment> findTop5ByOrderByCreatedAtDesc();
 }

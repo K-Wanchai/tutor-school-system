@@ -46,7 +46,7 @@ public class UpdateCourseRequest {
     private LocalDate courseStartDate;
 
     @NotNull(message = "Tutor ID is required")
-    private Long teacherId;
+    private Long tutorId;
 
     @Valid
     private List<CourseLessonRequest> lessons;

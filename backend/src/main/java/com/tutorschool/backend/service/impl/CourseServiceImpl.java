@@ -1,5 +1,15 @@
 package com.tutorschool.backend.service.impl;
 
+import java.time.LocalDate;
+import java.util.List;
+
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
 import com.tutorschool.backend.dto.request.CourseLessonRequest;
 import com.tutorschool.backend.dto.request.CourseTestRequest;
 import com.tutorschool.backend.dto.request.CreateCourseRequest;
@@ -21,16 +31,8 @@ import com.tutorschool.backend.repository.CourseRepository;
 import com.tutorschool.backend.repository.EnrollmentRepository;
 import com.tutorschool.backend.repository.TutorRepository;
 import com.tutorschool.backend.service.CourseService;
-import lombok.RequiredArgsConstructor;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDate;
-import java.util.List;
+import lombok.RequiredArgsConstructor;
 
 @Service
 @RequiredArgsConstructor
@@ -76,11 +78,11 @@ public class CourseServiceImpl implements CourseService {
 
     @Override
     @Transactional(readOnly = true)
-    public List<CourseResponse> getCoursesByTeacherId(Long teacherId) {
-        if (!TutorRepository.existsById(teacherId)) {
-            throw new ResourceNotFoundException("Tutor", teacherId);
+    public List<CourseResponse> getCoursesByTutorId(Long tutorId) {
+        if (!TutorRepository.existsById(tutorId)) {
+            throw new ResourceNotFoundException("Tutor", tutorId);
         }
-        return courseRepository.findByTutorId(teacherId).stream()
+        return courseRepository.findByTutorId(tutorId).stream()
                 .map(course -> {
                     long count = enrollmentRepository.countByCourseIdAndStatusIn(course.getId(),
                             List.of(EnrollmentStatus.PENDING, EnrollmentStatus.APPROVED));
@@ -96,8 +98,8 @@ public class CourseServiceImpl implements CourseService {
             throw new DuplicateResourceException("Course code already exists: " + request.getCourseCode());
         }
 
-        Tutor Tutor = TutorRepository.findById(request.getTeacherId())
-                .orElseThrow(() -> new ResourceNotFoundException("Tutor", request.getTeacherId()));
+        Tutor Tutor = TutorRepository.findById(request.getTutorId())
+                .orElseThrow(() -> new ResourceNotFoundException("Tutor", request.getTutorId()));
 
         validateCourseDates(request.getRegistrationStartDate(),
                 request.getRegistrationEndDate(),
@@ -137,8 +139,8 @@ public class CourseServiceImpl implements CourseService {
             throw new DuplicateResourceException("Course code already exists: " + request.getCourseCode());
         }
 
-        Tutor Tutor = TutorRepository.findById(request.getTeacherId())
-                .orElseThrow(() -> new ResourceNotFoundException("Tutor", request.getTeacherId()));
+        Tutor Tutor = TutorRepository.findById(request.getTutorId())
+                .orElseThrow(() -> new ResourceNotFoundException("Tutor", request.getTutorId()));
 
         validateCourseDates(request.getRegistrationStartDate(),
                 request.getRegistrationEndDate(),

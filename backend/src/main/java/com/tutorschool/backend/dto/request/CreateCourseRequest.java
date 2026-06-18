@@ -48,7 +48,7 @@ public class CreateCourseRequest {
     private CourseStatus status;
 
     @NotNull(message = "Tutor ID is required")
-    private Long teacherId;
+    private Long tutorId;
 
     @Valid
     private List<CourseLessonRequest> lessons;

@@ -1,0 +1,34 @@
+/* ===== Admin Layout ===== */
+.admin-layout {
+  display: flex;
+  min-height: 100vh;
+  background: #f5f7fb;
+}
+
+.admin-layout-main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.admin-layout-content {
+  flex: 1;
+  padding: 28px 28px;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+/* ===== Responsive ===== */
+@media (max-width: 1024px) {
+  .admin-layout-content {
+    padding: 24px 20px;
+  }
+}
+
+@media (max-width: 640px) {
+  .admin-layout-content {
+    padding: 20px 16px;
+  }
+}

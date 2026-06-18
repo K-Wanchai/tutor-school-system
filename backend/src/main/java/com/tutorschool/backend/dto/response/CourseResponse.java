@@ -28,7 +28,7 @@ public class CourseResponse {
     private LocalDate registrationEndDate;
     private LocalDate courseStartDate;
     private CourseStatus status;
-    private Long teacherId;
+    private Long tutorId;
     private String teacherName;
     private long enrolledCount;
     private List<CourseLessonResponse> lessons;

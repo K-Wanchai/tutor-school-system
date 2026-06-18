@@ -9,8 +9,8 @@ public class CourseEvaluationSummaryResponse {
 
     private Long courseId;
     private String courseName;
-
-    private Long teacherId;
+    
+    private Long tutorId;
     private String teacherName;
 
     private long totalEvaluations;

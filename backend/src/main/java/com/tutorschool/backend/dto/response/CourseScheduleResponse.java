@@ -24,7 +24,7 @@ public class CourseScheduleResponse {
     private Long lessonId;
     private String lessonTitle;
 
-    private Long teacherId;
+    private Long tutorId;
     private String teacherName;
 
     private String title;

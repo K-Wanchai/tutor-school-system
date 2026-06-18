@@ -20,7 +20,7 @@ public class ClassroomSessionMapper {
                 .courseName(session.getCourse().getCourseName())
                 .lessonId(lessonId)
                 .lessonTitle(lessonTitle)
-                .teacherId(session.getTutor().getId())
+                .tutorId(session.getTutor().getId())
                 .teacherName(teacherName)
                 .startTime(session.getStartTime())
                 .endTime(session.getEndTime())

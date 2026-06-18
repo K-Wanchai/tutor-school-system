@@ -15,7 +15,7 @@ public class CourseScheduleMapper {
                 .courseName(schedule.getCourse().getCourseName())
                 .lessonId(schedule.getLesson() != null ? schedule.getLesson().getId() : null)
                 .lessonTitle(schedule.getLesson() != null ? schedule.getLesson().getLessonTitle() : null)
-                .teacherId(schedule.getTutor().getId())
+                .tutorId(schedule.getTutor().getId())
                 .teacherName(schedule.getTutor().getFirstName() + " " + schedule.getTutor().getLastName())
                 .title(schedule.getTitle())
                 .description(schedule.getDescription())

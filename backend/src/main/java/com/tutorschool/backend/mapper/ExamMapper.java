@@ -17,7 +17,7 @@ public class ExamMapper {
                 .courseName(exam.getCourse().getCourseName())
                 .lessonId(exam.getLesson() != null ? exam.getLesson().getId() : null)
                 .lessonTitle(exam.getLesson() != null ? exam.getLesson().getLessonTitle() : null)
-                .teacherId(exam.getTutor().getId())
+                .tutorId(exam.getTutor().getId())
                 .teacherName(exam.getTutor().getFirstName() + " " + exam.getTutor().getLastName())
                 .title(exam.getTitle())
                 .description(exam.getDescription())

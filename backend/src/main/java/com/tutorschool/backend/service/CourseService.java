@@ -16,7 +16,7 @@ public interface CourseService {
 
     CourseResponse getCourseByCode(String courseCode);
 
-    List<CourseResponse> getCoursesByTeacherId(Long teacherId);
+    List<CourseResponse> getCoursesBytutorId(Long tutorId);
 
     CourseResponse createCourse(CreateCourseRequest request);
 

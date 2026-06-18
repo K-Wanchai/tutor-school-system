@@ -18,7 +18,7 @@ public interface CourseEvaluationService {
 
     List<CourseEvaluationResponse> getEvaluationsByCourseId(Long courseId, String username);
 
-    List<CourseEvaluationResponse> getEvaluationsByTeacherId(Long teacherId, String username);
+    List<CourseEvaluationResponse> getEvaluationsBytutorId(Long tutorId, String username);
 
     List<CourseEvaluationResponse> getMyEvaluations(String username);
 

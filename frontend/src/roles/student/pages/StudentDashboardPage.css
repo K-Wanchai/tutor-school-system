@@ -1,0 +1,66 @@
+.student-dashboard-page { display: flex; flex-direction: column; gap: 28px; }
+
+.student-dashboard-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.student-dashboard-title { font-size: 26px; font-weight: 800; color: #111827; margin: 0 0 4px; letter-spacing: -0.4px; }
+.student-dashboard-date { font-size: 13px; color: #9ca3af; margin: 0; }
+
+.student-dashboard-welcome {
+  font-size: 14px;
+  color: #6b7280;
+  padding: 8px 16px;
+  background: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  white-space: nowrap;
+  align-self: flex-start;
+}
+.student-dashboard-welcome strong { color: #111827; }
+
+.student-dashboard-placeholder {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 64px 24px;
+  background: white;
+  border-radius: 16px;
+  border: 1px solid #e5e7eb;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.04);
+  gap: 16px;
+}
+
+.student-dashboard-placeholder-title { font-size: 22px; font-weight: 700; color: #111827; margin: 0; }
+.student-dashboard-placeholder-desc { font-size: 14px; color: #6b7280; line-height: 1.7; margin: 0; }
+
+.student-dashboard-coming-soon {
+  display: inline-flex;
+  align-items: center;
+  padding: 6px 18px;
+  background: #f5f3ff;
+  color: #7c3aed;
+  border: 1px solid #ddd6fe;
+  border-radius: 20px;
+  font-size: 13px;
+  font-weight: 600;
+  margin-top: 4px;
+}
+
+@media (max-width: 768px) {
+  .student-dashboard-header { flex-direction: column; gap: 12px; }
+  .student-dashboard-welcome { align-self: stretch; text-align: center; }
+  .student-dashboard-title { font-size: 22px; }
+}
+
+@media (max-width: 480px) {
+  .student-dashboard-page { gap: 16px; }
+  .student-dashboard-title { font-size: 20px; }
+  .student-dashboard-placeholder { padding: 40px 16px; }
+  .student-dashboard-placeholder-title { font-size: 18px; }
+}

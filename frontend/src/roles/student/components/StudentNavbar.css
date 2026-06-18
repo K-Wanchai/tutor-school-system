@@ -1,0 +1,97 @@
+.student-navbar {
+  height: 64px;
+  background: white;
+  border-bottom: 1px solid #e5e7eb;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 24px;
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  flex-shrink: 0;
+  gap: 16px;
+}
+
+.student-navbar-left { display: flex; align-items: center; gap: 16px; min-width: 0; }
+
+.student-navbar-menu-btn {
+  display: none;
+  background: none;
+  border: none;
+  padding: 6px;
+  border-radius: 6px;
+  cursor: pointer;
+  color: #6b7280;
+  transition: background 0.15s ease, color 0.15s ease;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.student-navbar-menu-btn:hover { background: #f3f4f6; color: #111827; }
+
+.student-navbar-title { display: flex; align-items: center; gap: 6px; font-size: 14px; color: #6b7280; white-space: nowrap; overflow: hidden; }
+.student-navbar-title-sep { color: #d1d5db; }
+.student-navbar-breadcrumb { color: #111827; font-weight: 600; overflow: hidden; text-overflow: ellipsis; }
+
+.student-navbar-right { display: flex; align-items: center; gap: 12px; flex-shrink: 0; }
+
+.student-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 10px;
+  background: #f5f3ff;
+  color: #7c3aed;
+  border: 1px solid #ddd6fe;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+}
+
+.student-navbar-profile { display: flex; align-items: center; gap: 10px; }
+
+.student-navbar-avatar {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #7c3aed, #6d28d9);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.student-navbar-user-info { display: flex; flex-direction: column; gap: 1px; }
+.student-navbar-username { font-size: 13px; font-weight: 600; color: #111827; line-height: 1; }
+.student-navbar-role { font-size: 11px; color: #9ca3af; line-height: 1; }
+
+.student-navbar-logout-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  height: 36px;
+  padding: 0 14px;
+  background: white;
+  border: 1.5px solid #e5e7eb;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 500;
+  color: #6b7280;
+  cursor: pointer;
+  transition: border-color 0.15s ease, color 0.15s ease, background 0.15s ease;
+  white-space: nowrap;
+}
+.student-navbar-logout-btn:hover { border-color: #ef4444; color: #ef4444; background: #fef2f2; }
+
+@media (max-width: 1024px) { .student-navbar-menu-btn { display: flex; } }
+@media (max-width: 640px) {
+  .student-navbar { padding: 0 16px; gap: 12px; }
+  .student-navbar-user-info { display: none; }
+  .student-badge { display: none; }
+  .student-navbar-logout-btn span { display: none; }
+  .student-navbar-logout-btn { width: 36px; padding: 0; justify-content: center; }
+}

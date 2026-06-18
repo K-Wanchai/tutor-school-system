@@ -22,7 +22,7 @@ public class CourseEvaluationResponse {
 
     private Long enrollmentId;
 
-    private Long teacherId;
+    private Long tutorId;
     private String teacherName;
 
     private Integer rating;

@@ -66,10 +66,10 @@ public class CourseEvaluationController {
     // GET /api/v1/course-evaluations/tutor/{tutorId} — ดูรีวิวของ Tutor
     @GetMapping("/tutor/{tutorId}")
     @PreAuthorize("hasAnyRole('ADMIN', 'Tutor')")
-    public ResponseEntity<ApiResponse<List<CourseEvaluationResponse>>> getEvaluationsByTeacherId(
+    public ResponseEntity<ApiResponse<List<CourseEvaluationResponse>>> getEvaluationsBytutorId(
             @PathVariable Long tutorId,
             Authentication authentication) {
-        List<CourseEvaluationResponse> response = evaluationService.getEvaluationsByTeacherId(tutorId, authentication.getName());
+        List<CourseEvaluationResponse> response = evaluationService.getEvaluationsBytutorId(tutorId, authentication.getName());
         return ResponseEntity.ok(ApiResponse.success("Evaluations retrieved successfully", response));
     }
 

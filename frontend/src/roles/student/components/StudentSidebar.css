@@ -1,0 +1,72 @@
+.student-sidebar {
+  width: 260px;
+  min-width: 260px;
+  height: 100vh;
+  background: #1e1b4b;
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+  overflow-x: hidden;
+  position: sticky;
+  top: 0;
+  flex-shrink: 0;
+  transition: transform 0.25s ease;
+}
+
+.student-sidebar::-webkit-scrollbar { width: 4px; }
+.student-sidebar::-webkit-scrollbar-track { background: transparent; }
+.student-sidebar::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 2px; }
+
+.student-sidebar-brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 20px 20px 16px;
+  border-bottom: 1px solid rgba(255,255,255,0.07);
+  flex-shrink: 0;
+}
+
+.student-sidebar-logo { width: 36px; height: 36px; flex-shrink: 0; }
+.student-sidebar-logo svg { width: 100%; height: 100%; }
+
+.student-sidebar-brand-text { display: flex; flex-direction: column; gap: 2px; overflow: hidden; }
+.student-sidebar-brand-name { font-size: 15px; font-weight: 700; color: white; line-height: 1; white-space: nowrap; }
+.student-sidebar-brand-sub { font-size: 11px; color: rgba(255,255,255,0.4); white-space: nowrap; }
+
+.student-sidebar-nav { flex: 1; padding: 12px; overflow-y: auto; }
+.student-sidebar-nav-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 2px; }
+.student-sidebar-nav-item { width: 100%; }
+
+.student-sidebar-nav-link {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  text-decoration: none;
+  color: rgba(255,255,255,0.6);
+  font-size: 13.5px;
+  font-weight: 500;
+  transition: background 0.15s ease, color 0.15s ease;
+  white-space: nowrap;
+}
+
+.student-sidebar-nav-link:hover { background: rgba(255,255,255,0.07); color: rgba(255,255,255,0.9); }
+
+.student-sidebar-nav-link--active { background: rgba(124,58,237,0.3); color: #c4b5fd; }
+.student-sidebar-nav-link--active:hover { background: rgba(124,58,237,0.35); color: #c4b5fd; }
+
+.student-sidebar-nav-icon { display: flex; align-items: center; flex-shrink: 0; opacity: 0.8; }
+.student-sidebar-nav-link--active .student-sidebar-nav-icon { opacity: 1; }
+.student-sidebar-nav-label { flex: 1; }
+
+.student-sidebar-footer { padding: 14px 20px; border-top: 1px solid rgba(255,255,255,0.07); flex-shrink: 0; }
+.student-sidebar-version { font-size: 11px; color: rgba(255,255,255,0.25); }
+
+.student-sidebar-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 99; }
+
+@media (max-width: 1024px) {
+  .student-sidebar { position: fixed; top: 0; left: 0; height: 100vh; z-index: 100; transform: translateX(-100%); }
+  .student-sidebar--open { transform: translateX(0); }
+  .student-sidebar-overlay { display: block; }
+}

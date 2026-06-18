@@ -1,27 +1,51 @@
 package com.tutorschool.backend.service.impl;
 
+import java.time.LocalDateTime;
+import java.time.temporal.ChronoUnit;
+import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
+
+import org.springframework.security.core.Authentication;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
 import com.tutorschool.backend.dto.request.CreateClassroomSessionRequest;
 import com.tutorschool.backend.dto.request.JoinClassroomSessionRequest;
 import com.tutorschool.backend.dto.request.LeaveClassroomSessionRequest;
 import com.tutorschool.backend.dto.response.AttendanceRecordResponse;
 import com.tutorschool.backend.dto.response.ClassroomSessionResponse;
 import com.tutorschool.backend.dto.response.JoinClassroomSessionResponse;
-import com.tutorschool.backend.entity.*;
-import com.tutorschool.backend.exception.*;
+import com.tutorschool.backend.entity.AttendanceMethod;
+import com.tutorschool.backend.entity.AttendanceRecord;
+import com.tutorschool.backend.entity.AttendanceStatus;
+import com.tutorschool.backend.entity.ClassroomSession;
+import com.tutorschool.backend.entity.ClassroomSessionStatus;
+import com.tutorschool.backend.entity.Course;
+import com.tutorschool.backend.entity.CourseLesson;
+import com.tutorschool.backend.entity.Enrollment;
+import com.tutorschool.backend.entity.EnrollmentStatus;
+import com.tutorschool.backend.entity.Student;
+import com.tutorschool.backend.entity.Tutor;
+import com.tutorschool.backend.entity.User;
+import com.tutorschool.backend.exception.ClassroomSessionClosedException;
+import com.tutorschool.backend.exception.ForbiddenException;
+import com.tutorschool.backend.exception.InvalidSessionTimeException;
+import com.tutorschool.backend.exception.ResourceNotFoundException;
+import com.tutorschool.backend.exception.StudentNotEnrolledException;
 import com.tutorschool.backend.mapper.AttendanceRecordMapper;
 import com.tutorschool.backend.mapper.ClassroomSessionMapper;
-import com.tutorschool.backend.repository.*;
+import com.tutorschool.backend.repository.AttendanceRecordRepository;
+import com.tutorschool.backend.repository.ClassroomSessionRepository;
+import com.tutorschool.backend.repository.CourseLessonRepository;
+import com.tutorschool.backend.repository.CourseRepository;
+import com.tutorschool.backend.repository.EnrollmentRepository;
+import com.tutorschool.backend.repository.StudentRepository;
+import com.tutorschool.backend.repository.TutorRepository;
+import com.tutorschool.backend.repository.UserRepository;
 import com.tutorschool.backend.service.ClassroomSessionService;
-import lombok.RequiredArgsConstructor;
-import org.springframework.security.core.Authentication;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDateTime;
-import java.time.temporal.ChronoUnit;
-import java.util.List;
-import java.util.Optional;
-import java.util.UUID;
+import lombok.RequiredArgsConstructor;
 
 @Service
 @RequiredArgsConstructor

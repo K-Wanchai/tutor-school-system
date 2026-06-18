@@ -34,10 +34,10 @@ public class CourseMapper {
                                          List<CourseLessonResponse> lessons,
                                          List<CourseTestResponse> tests) {
         String teacherName = null;
-        Long teacherId = null;
+        Long tutorId = null;
 
         if (course.getTutor() != null) {
-            teacherId = course.getTutor().getId();
+            tutorId = course.getTutor().getId();
             teacherName = course.getTutor().getFirstName() + " " + course.getTutor().getLastName();
         }
 
@@ -53,7 +53,7 @@ public class CourseMapper {
                 .registrationEndDate(course.getRegistrationEndDate())
                 .courseStartDate(course.getCourseStartDate())
                 .status(course.getStatus())
-                .teacherId(teacherId)
+                .tutorId(tutorId)
                 .teacherName(teacherName)
                 .enrolledCount(enrolledCount)
                 .lessons(lessons)
