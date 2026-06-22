@@ -1,7 +1,22 @@
-﻿import { useState, useRef } from 'react';
+import { useState, useRef } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { register } from '../services/authService';
 import './RegisterStudentPage.css';
+
+const THAI_BANKS = [
+  'กสิกรไทย',
+  'กรุงเทพ',
+  'กรุงไทย',
+  'กรุงศรีอยุธยา',
+  'ไทยพาณิชย์',
+  'ทหารไทยธนชาต',
+  'ออมสิน',
+  'ธนาคารเพื่อการเกษตรและสหกรณ์การเกษตร',
+  'ซีไอเอ็มบีไทย',
+  'ยูโอบี',
+  'ธนาคารอาคารสงเคราะห์',
+  'อื่นๆ',
+];
 
 const THAI_MONTHS = [
   { num: '1',  name: 'มกราคม' },
@@ -19,7 +34,7 @@ const THAI_MONTHS = [
 ];
 
 const BE_YEAR_START = 2490;
-const BE_YEAR_END   = 2569;
+const BE_YEAR_END   = 2550;
 
 function getDaysInMonth(monthNum, yearBE) {
   if (!monthNum) return 31;
@@ -31,6 +46,7 @@ export default function RegisterStudentPage() {
   const navigate = useNavigate();
   const qrInputRef = useRef(null);
 
+  // field names ต้องตรงกับ backend RegisterRequest DTO ทุกตัว
   const [form, setForm] = useState({
     firstName: '',
     lastName: '',
@@ -40,22 +56,28 @@ export default function RegisterStudentPage() {
     confirmPassword: '',
     nationalId: '',
     birthDate: '',
-    phone: '',
+    phone: '',          // → RegisterRequest.phone → Student.phoneNumber
     address: '',
-    parentPhone: '',
-    bankQrCode: '',
-    accountName: '',
-    accountNumber: '',
+    parentPhone: '',    // → RegisterRequest.parentPhone → Student.guardianPhoneNumber
+    bankName: 'กสิกรไทย',
+    accountName: '',    // → RegisterRequest.accountName → Student.bankAccountName
+    accountNumber: '',  // → RegisterRequest.accountNumber → Student.bankAccountNumber
+    promptPayQrCode: '', // → RegisterRequest.promptPayQrCode → Student.bankQrCode
   });
+
   const [birthParts, setBirthParts] = useState({ day: '', month: '', yearBE: '' });
+  const [customBankName, setCustomBankName] = useState('');
+  const [qrFile, setQrFile] = useState(null);
   const [qrFileName, setQrFileName] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [fieldErrors, setFieldErrors] = useState({});
   const [success, setSuccess] = useState('');
 
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
     setError('');
+    setFieldErrors({});
   };
 
   const handleBirthPartChange = (field, value) => {
@@ -71,8 +93,8 @@ export default function RegisterStudentPage() {
     setError('');
     if (next.day && next.month && next.yearBE) {
       const yearCE = parseInt(next.yearBE) - 543;
-      const mm = next.month.padStart(2, '0');
-      const dd = next.day.padStart(2, '0');
+      const mm = String(next.month).padStart(2, '0');
+      const dd = String(next.day).padStart(2, '0');
       setForm((prev) => ({ ...prev, birthDate: `${yearCE}-${mm}-${dd}` }));
     } else {
       setForm((prev) => ({ ...prev, birthDate: '' }));
@@ -83,49 +105,53 @@ export default function RegisterStudentPage() {
     const file = e.target.files[0];
     if (!file) return;
     if (!file.type.startsWith('image/')) {
-      setError('กรุณาอัปโหลดไฟล์รูปภาพเท่านั้น (PNG, JPG, GIF)');
+      setError('กรุณาอัปโหลดไฟล์รูปภาพเท่านั้น (PNG, JPG)');
       return;
     }
     if (file.size > 3 * 1024 * 1024) {
       setError('ขนาดไฟล์ต้องไม่เกิน 3MB');
       return;
     }
+    setQrFile(file);
+    setQrFileName(file.name);
+    setError('');
+    // ใช้ FileReader เฉพาะ preview เท่านั้น — ไม่ส่ง base64 ไป backend
     const reader = new FileReader();
     reader.onload = (ev) => {
-      setForm((prev) => ({ ...prev, bankQrCode: ev.target.result }));
-      setQrFileName(file.name);
-      setError('');
+      setForm((prev) => ({ ...prev, promptPayQrCode: ev.target.result }));
     };
     reader.readAsDataURL(file);
   };
 
   const handleRemoveQr = (e) => {
     e.stopPropagation();
-    setForm((prev) => ({ ...prev, bankQrCode: '' }));
+    setQrFile(null);
     setQrFileName('');
+    setForm((prev) => ({ ...prev, promptPayQrCode: '' }));
     if (qrInputRef.current) qrInputRef.current.value = '';
   };
 
   const validate = () => {
+    if (!form.firstName.trim()) return 'กรุณากรอกชื่อ';
+    if (!form.lastName.trim()) return 'กรุณากรอกนามสกุล';
     if (!form.username.trim()) return 'กรุณากรอก Username';
     if (!form.email.trim()) return 'กรุณากรอก Email';
     if (!form.password) return 'กรุณากรอกรหัสผ่าน';
     if (form.password.length < 8) return 'รหัสผ่านต้องมีอย่างน้อย 8 ตัวอักษร';
     if (!form.confirmPassword) return 'กรุณายืนยันรหัสผ่าน';
     if (form.confirmPassword !== form.password) return 'รหัสผ่านและยืนยันรหัสผ่านไม่ตรงกัน';
-    if (!form.firstName.trim()) return 'กรุณากรอกชื่อ';
-    if (!form.lastName.trim()) return 'กรุณากรอกนามสกุล';
     if (!form.nationalId) return 'กรุณากรอกเลขบัตรประชาชน';
-    if (!/^\d{13}$/.test(form.nationalId)) return 'เลขบัตรประชาชนต้องมี 13 หลักและเป็นตัวเลขเท่านั้น';
-    if (!form.birthDate) return 'กรุณาเลือกวันเกิด (วัน เดือน ปี) ให้ครบ';
+    if (!/^\d{13}$/.test(form.nationalId)) return 'เลขบัตรประชาชนต้องเป็นตัวเลข 13 หลักเท่านั้น';
+    if (!form.birthDate) return 'กรุณาเลือกวันเกิด (วัน / เดือน / ปี) ให้ครบ';
     if (!form.phone.trim()) return 'กรุณากรอกเบอร์โทรศัพท์';
-    if (!/^\d+$/.test(form.phone)) return 'เบอร์โทรศัพท์ต้องเป็นตัวเลขเท่านั้น';
-    if (!form.parentPhone.trim()) return 'กรุณากรอกเบอร์โทรผู้ปกครอง';
-    if (!/^\d+$/.test(form.parentPhone)) return 'เบอร์โทรผู้ปกครองต้องเป็นตัวเลขเท่านั้น';
+    if (!/^\d{10}$/.test(form.phone.trim())) return 'เบอร์โทรศัพท์ต้องเป็นตัวเลข 10 หลักเท่านั้น';
     if (!form.address.trim()) return 'กรุณากรอกที่อยู่';
+    if (!form.parentPhone.trim()) return 'กรุณากรอกเบอร์โทรผู้ปกครอง';
+    if (!form.bankName.trim()) return 'กรุณาเลือกธนาคาร';
+    if (form.bankName === 'อื่นๆ' && !customBankName.trim()) return 'กรุณาระบุชื่อธนาคาร';
     if (!form.accountName.trim()) return 'กรุณากรอกชื่อบัญชีธนาคาร';
     if (!form.accountNumber.trim()) return 'กรุณากรอกเลขบัญชีธนาคาร';
-    if (!form.bankQrCode) return 'กรุณาอัปโหลดรูป QR Code พร้อมเพย์';
+    if (!qrFile) return 'กรุณาอัปโหลดรูป QR Code พร้อมเพย์';
     return null;
   };
 
@@ -138,20 +164,51 @@ export default function RegisterStudentPage() {
     }
     setLoading(true);
     setError('');
+    setFieldErrors({});
     try {
-      const { confirmPassword, ...payload } = form;
-      await register(payload);
+      // ตัด confirmPassword และ promptPayQrCode ออก — ไม่ส่งไป backend
+      const { confirmPassword, promptPayQrCode, ...rest } = form;
+      const payload = {
+        ...rest,
+        birthDate: form.birthDate || null,
+        bankName: form.bankName === 'อื่นๆ' ? customBankName.trim() : form.bankName,
+      };
+
+      const formData = new FormData();
+      formData.append(
+        'data',
+        new Blob([JSON.stringify(payload)], { type: 'application/json' }),
+      );
+      if (qrFile) {
+        formData.append('qrCodeFile', qrFile);
+      }
+
+      await register(formData);
       setSuccess('สมัครสมาชิกสำเร็จ! กำลังไปหน้าเข้าสู่ระบบ...');
       setTimeout(() => navigate('/login'), 1800);
     } catch (err) {
-      const msg = err.response?.data?.message || 'สมัครสมาชิกไม่สำเร็จ กรุณาลองใหม่อีกครั้ง';
-      setError(msg);
+      const data = err.response?.data;
+      const status = err.response?.status;
+
+      // แสดง field-level errors จาก backend ถ้ามี
+      if (data?.errors && Object.keys(data.errors).length > 0) {
+        setFieldErrors(data.errors);
+      }
+
+      // ข้อความหลักตาม HTTP status code
+      if (status === 400) {
+        setError(data?.message || 'กรุณาตรวจสอบข้อมูลที่กรอก');
+      } else if (status === 409) {
+        setError(data?.message || 'ชื่อผู้ใช้ อีเมล หรือเลขบัตรประชาชนนี้ถูกใช้งานแล้ว');
+      } else if (status === 500) {
+        setError('เกิดข้อผิดพลาดจากระบบ');
+      } else {
+        setError(data?.message || 'สมัครสมาชิกไม่สำเร็จ กรุณาลองใหม่อีกครั้ง');
+      }
     } finally {
       setLoading(false);
     }
   };
-
-  const maxDays = getDaysInMonth(birthParts.month, birthParts.yearBE);
 
   return (
     <div className="auth-register-page">
@@ -176,12 +233,21 @@ export default function RegisterStudentPage() {
             <p className="auth-register-subtitle">กรอกข้อมูลให้ครบทุกช่องเพื่อสมัครสมาชิกในระบบ</p>
           </div>
 
-          {error && (
+          {(error || Object.keys(fieldErrors).length > 0) && (
             <div className="auth-error-alert">
-              <svg viewBox="0 0 20 20" fill="currentColor" width="16" height="16">
+              <svg viewBox="0 0 20 20" fill="currentColor" width="16" height="16" style={{ flexShrink: 0 }}>
                 <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
               </svg>
-              <span>{error}</span>
+              <div>
+                {error && <div>{error}</div>}
+                {Object.keys(fieldErrors).length > 0 && (
+                  <ul style={{ margin: '4px 0 0 0', paddingLeft: '16px' }}>
+                    {Object.entries(fieldErrors).map(([field, msg]) => (
+                      <li key={field}><strong>{field}:</strong> {msg}</li>
+                    ))}
+                  </ul>
+                )}
+              </div>
             </div>
           )}
 
@@ -211,7 +277,6 @@ export default function RegisterStudentPage() {
                   placeholder="ชื่อผู้ใช้งาน"
                   value={form.username}
                   onChange={handleChange}
-                  required
                   autoComplete="username"
                 />
                 <span className="auth-form-hint">ต้องไม่ซ้ำกับผู้ใช้งานคนอื่น</span>
@@ -229,7 +294,6 @@ export default function RegisterStudentPage() {
                   placeholder="อีเมล"
                   value={form.email}
                   onChange={handleChange}
-                  required
                   autoComplete="email"
                 />
                 <span className="auth-form-hint">ต้องไม่ซ้ำกับผู้ใช้งานคนอื่น</span>
@@ -247,7 +311,6 @@ export default function RegisterStudentPage() {
                   placeholder="อย่างน้อย 8 ตัวอักษร"
                   value={form.password}
                   onChange={handleChange}
-                  required
                   autoComplete="new-password"
                 />
               </div>
@@ -264,7 +327,6 @@ export default function RegisterStudentPage() {
                   placeholder="กรอกรหัสผ่านอีกครั้ง"
                   value={form.confirmPassword}
                   onChange={handleChange}
-                  required
                   autoComplete="new-password"
                 />
               </div>
@@ -285,7 +347,6 @@ export default function RegisterStudentPage() {
                   placeholder="ชื่อจริง"
                   value={form.firstName}
                   onChange={handleChange}
-                  required
                 />
               </div>
 
@@ -301,7 +362,6 @@ export default function RegisterStudentPage() {
                   placeholder="นามสกุล"
                   value={form.lastName}
                   onChange={handleChange}
-                  required
                 />
               </div>
 
@@ -314,16 +374,14 @@ export default function RegisterStudentPage() {
                   type="text"
                   name="nationalId"
                   className="auth-form-input"
-                  placeholder="13 หลัก"
+                  placeholder="ตัวเลข 13 หลัก"
                   value={form.nationalId}
                   onChange={handleChange}
-                  required
                   maxLength={13}
                 />
                 <span className="auth-form-hint">ต้องไม่ซ้ำกับผู้ใช้งานคนอื่น</span>
               </div>
 
-              {/* Thai Date Picker */}
               <div className="auth-form-group">
                 <label className="auth-form-label">
                   วันเกิด <span className="auth-required">*</span>
@@ -336,7 +394,10 @@ export default function RegisterStudentPage() {
                     onChange={(e) => handleBirthPartChange('day', e.target.value)}
                   >
                     <option value="">วัน</option>
-                    {Array.from({ length: maxDays }, (_, i) => i + 1).map((d) => (
+                    {Array.from(
+                      { length: getDaysInMonth(birthParts.month, birthParts.yearBE) },
+                      (_, i) => i + 1,
+                    ).map((d) => (
                       <option key={d} value={String(d)}>{d}</option>
                     ))}
                   </select>
@@ -381,10 +442,10 @@ export default function RegisterStudentPage() {
                   type="tel"
                   name="phone"
                   className="auth-form-input"
-                  placeholder="เบอร์โทรศัพท์ (ตัวเลข)"
+                  placeholder="ตัวเลข 10 หลัก"
                   value={form.phone}
                   onChange={handleChange}
-                  required
+                  maxLength={10}
                 />
               </div>
 
@@ -397,10 +458,9 @@ export default function RegisterStudentPage() {
                   type="tel"
                   name="parentPhone"
                   className="auth-form-input"
-                  placeholder="เบอร์โทรผู้ปกครอง (ตัวเลข)"
+                  placeholder="เบอร์โทรผู้ปกครอง"
                   value={form.parentPhone}
                   onChange={handleChange}
-                  required
                 />
               </div>
 
@@ -413,10 +473,9 @@ export default function RegisterStudentPage() {
                   type="text"
                   name="address"
                   className="auth-form-input"
-                  placeholder="ที่อยู่"
+                  placeholder="บ้านเลขที่ ถนน ตำบล อำเภอ จังหวัด รหัสไปรษณีย์"
                   value={form.address}
                   onChange={handleChange}
-                  required
                 />
               </div>
             </div>
@@ -424,6 +483,39 @@ export default function RegisterStudentPage() {
             {/* ── Section 4: ข้อมูลบัญชีธนาคาร ── */}
             <div className="auth-register-section-label" style={{ marginTop: '12px' }}>ข้อมูลบัญชีธนาคาร</div>
             <div className="auth-form-grid">
+              <div className="auth-form-group">
+                <label className="auth-form-label" htmlFor="bankName">
+                  ธนาคาร <span className="auth-required">*</span>
+                </label>
+                <select
+                  id="bankName"
+                  name="bankName"
+                  className="auth-form-input"
+                  value={form.bankName}
+                  onChange={(e) => {
+                    handleChange(e);
+                    if (e.target.value !== 'อื่นๆ') setCustomBankName('');
+                  }}
+                >
+                  {THAI_BANKS.map((b) => (
+                    <option key={b} value={b}>{b}</option>
+                  ))}
+                </select>
+                {form.bankName === 'อื่นๆ' && (
+                  <input
+                    type="text"
+                    className="auth-form-input"
+                    style={{ marginTop: '8px' }}
+                    placeholder="ระบุชื่อธนาคาร"
+                    value={customBankName}
+                    onChange={(e) => {
+                      setCustomBankName(e.target.value);
+                      setError('');
+                    }}
+                  />
+                )}
+              </div>
+
               <div className="auth-form-group">
                 <label className="auth-form-label" htmlFor="accountName">
                   ชื่อบัญชี <span className="auth-required">*</span>
@@ -436,7 +528,6 @@ export default function RegisterStudentPage() {
                   placeholder="ชื่อบัญชีธนาคาร"
                   value={form.accountName}
                   onChange={handleChange}
-                  required
                 />
               </div>
 
@@ -452,7 +543,6 @@ export default function RegisterStudentPage() {
                   placeholder="เลขบัญชีธนาคาร"
                   value={form.accountNumber}
                   onChange={handleChange}
-                  required
                 />
               </div>
 
@@ -462,19 +552,19 @@ export default function RegisterStudentPage() {
                 </label>
                 <input
                   ref={qrInputRef}
-                  id="bankQrCode"
+                  id="promptPayQrCode"
                   type="file"
                   accept="image/*"
                   onChange={handleQrCodeChange}
                   style={{ display: 'none' }}
                 />
                 <div
-                  className={`auth-qr-upload-area${form.bankQrCode ? ' has-image' : ''}`}
+                  className={`auth-qr-upload-area${form.promptPayQrCode ? ' has-image' : ''}`}
                   onClick={() => qrInputRef.current && qrInputRef.current.click()}
                 >
-                  {form.bankQrCode ? (
+                  {form.promptPayQrCode ? (
                     <div className="auth-qr-preview">
-                      <img src={form.bankQrCode} alt="QR Code Preview" />
+                      <img src={form.promptPayQrCode} alt="QR Code Preview" />
                       <div className="auth-qr-preview-info">
                         <span className="auth-qr-preview-name">{qrFileName}</span>
                         <span className="auth-qr-preview-sub">คลิกเพื่อเปลี่ยนรูป</span>

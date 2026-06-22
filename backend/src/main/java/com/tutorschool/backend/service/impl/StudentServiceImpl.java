@@ -82,10 +82,20 @@ public class StudentServiceImpl implements StudentService {
                 .build();
         user = userRepository.save(user);
 
+        // derive firstName/lastName from fullName if not explicitly provided
+        String fullName = request.getFullName().trim();
+        String[] nameParts = fullName.split(" ", 2);
+        String firstName = (request.getFirstName() != null && !request.getFirstName().isBlank())
+                ? request.getFirstName().trim() : nameParts[0];
+        String lastName = (request.getLastName() != null && !request.getLastName().isBlank())
+                ? request.getLastName().trim() : (nameParts.length > 1 ? nameParts[1] : nameParts[0]);
+
         Student student = Student.builder()
                 .user(user)
                 .studentCode(request.getStudentCode())
-                .fullName(request.getFullName())
+                .firstName(firstName)
+                .lastName(lastName)
+                .fullName(fullName)
                 .nationalId(request.getNationalId())
                 .address(request.getAddress())
                 .phoneNumber(request.getPhoneNumber())

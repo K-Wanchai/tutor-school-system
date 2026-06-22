@@ -1,12 +1,12 @@
 package com.tutorschool.backend.service;
 
+import java.util.List;
+
 import com.tutorschool.backend.dto.request.CreateCourseEvaluationRequest;
 import com.tutorschool.backend.dto.request.UpdateCourseEvaluationRequest;
 import com.tutorschool.backend.dto.request.UpdateEvaluationStatusRequest;
 import com.tutorschool.backend.dto.response.CourseEvaluationResponse;
 import com.tutorschool.backend.dto.response.CourseEvaluationSummaryResponse;
-
-import java.util.List;
 
 public interface CourseEvaluationService {
 
@@ -18,7 +18,7 @@ public interface CourseEvaluationService {
 
     List<CourseEvaluationResponse> getEvaluationsByCourseId(Long courseId, String username);
 
-    List<CourseEvaluationResponse> getEvaluationsBytutorId(Long tutorId, String username);
+    List<CourseEvaluationResponse> getEvaluationsByTutorId(Long tutorId, String username);
 
     List<CourseEvaluationResponse> getMyEvaluations(String username);
 

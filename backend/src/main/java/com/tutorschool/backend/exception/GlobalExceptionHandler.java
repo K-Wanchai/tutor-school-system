@@ -1,6 +1,7 @@
 package com.tutorschool.backend.exception;
 
 import com.tutorschool.backend.dto.response.ApiResponse;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.AccessDeniedException;
@@ -8,6 +9,7 @@ import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.multipart.MaxUploadSizeExceededException;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -26,6 +28,12 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ApiResponse<Void>> handleDuplicateResourceException(DuplicateResourceException ex) {
         return ResponseEntity.status(HttpStatus.CONFLICT)
                 .body(ApiResponse.error(ex.getMessage()));
+    }
+
+    @ExceptionHandler(DuplicateFieldsException.class)
+    public ResponseEntity<ApiResponse<Void>> handleDuplicateFieldsException(DuplicateFieldsException ex) {
+        return ResponseEntity.status(HttpStatus.CONFLICT)
+                .body(ApiResponse.validationError(ex.getMessage(), ex.getErrors()));
     }
 
     @ExceptionHandler(UnauthorizedException.class)
@@ -64,6 +72,18 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(IllegalStateException.class)
     public ResponseEntity<ApiResponse<Void>> handleIllegalStateException(IllegalStateException ex) {
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(ApiResponse.error(ex.getMessage()));
+    }
+
+    @ExceptionHandler(MaxUploadSizeExceededException.class)
+    public ResponseEntity<ApiResponse<Void>> handleMaxUploadSizeExceededException(MaxUploadSizeExceededException ex) {
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(ApiResponse.error("ขนาดไฟล์ใหญ่เกินไป ต้องไม่เกิน 5MB"));
+    }
+
+    @ExceptionHandler(IllegalArgumentException.class)
+    public ResponseEntity<ApiResponse<Void>> handleIllegalArgumentException(IllegalArgumentException ex) {
         return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                 .body(ApiResponse.error(ex.getMessage()));
     }
@@ -248,6 +268,17 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ApiResponse<Void>> handleStudentNotEnrolledException(StudentNotEnrolledException ex) {
         return ResponseEntity.status(HttpStatus.FORBIDDEN)
                 .body(ApiResponse.error(ex.getMessage()));
+    }
+
+    @ExceptionHandler(DataIntegrityViolationException.class)
+    public ResponseEntity<ApiResponse<Void>> handleDataIntegrityViolationException(DataIntegrityViolationException ex) {
+        String msg = ex.getMostSpecificCause().getMessage();
+        if (msg != null && msg.contains("unique") || msg != null && msg.contains("duplicate")) {
+            return ResponseEntity.status(HttpStatus.CONFLICT)
+                    .body(ApiResponse.error("ข้อมูลนี้มีอยู่ในระบบแล้ว กรุณาตรวจสอบ username, email หรือเลขบัตรประชาชน"));
+        }
+        return ResponseEntity.status(HttpStatus.CONFLICT)
+                .body(ApiResponse.error("ข้อมูลขัดแย้งกับข้อมูลที่มีอยู่ในระบบ: " + ex.getMostSpecificCause().getMessage()));
     }
 
     @ExceptionHandler(Exception.class)

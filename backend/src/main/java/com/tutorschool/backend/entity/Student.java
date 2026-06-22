@@ -26,6 +26,12 @@ public class Student {
     @Column(name = "student_code", nullable = false, unique = true, length = 50)
     private String studentCode;
 
+    @Column(name = "first_name", nullable = false, length = 100)
+    private String firstName;
+
+    @Column(name = "last_name", nullable = false, length = 100)
+    private String lastName;
+
     @Column(name = "full_name", nullable = false, length = 255)
     private String fullName;
 
@@ -44,7 +50,10 @@ public class Student {
     @Column(name = "guardian_phone_number", length = 20)
     private String guardianPhoneNumber;
 
-    @Column(name = "bank_qr_code", length = 500)
+    @Column(name = "bank_name", length = 100)
+    private String bankName;
+
+    @Column(name = "bank_qr_code", columnDefinition = "TEXT")
     private String bankQrCode;
 
     @Column(name = "bank_account_name", length = 255)

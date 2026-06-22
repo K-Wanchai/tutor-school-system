@@ -30,6 +30,12 @@ public class CreateStudentRequest {
     @Size(max = 50, message = "Student code must not exceed 50 characters")
     private String studentCode;
 
+    @Size(max = 100, message = "First name must not exceed 100 characters")
+    private String firstName;
+
+    @Size(max = 100, message = "Last name must not exceed 100 characters")
+    private String lastName;
+
     @NotBlank(message = "Full name is required")
     @Size(max = 255, message = "Full name must not exceed 255 characters")
     private String fullName;

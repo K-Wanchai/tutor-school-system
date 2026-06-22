@@ -24,12 +24,15 @@ public class StudentResponse {
 
     // ข้อมูล Student
     private String studentCode;
+    private String firstName;
+    private String lastName;
     private String fullName;
     private String nationalId;
     private String address;
     private String phoneNumber;
     private LocalDate birthDate;
     private String guardianPhoneNumber;
+    private String bankName;
     private String bankQrCode;
     private String bankAccountName;
     private String bankAccountNumber;

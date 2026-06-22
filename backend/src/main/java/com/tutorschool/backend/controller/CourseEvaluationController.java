@@ -1,5 +1,21 @@
 package com.tutorschool.backend.controller;
 
+import java.util.List;
+
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+
 import com.tutorschool.backend.dto.request.CreateCourseEvaluationRequest;
 import com.tutorschool.backend.dto.request.UpdateCourseEvaluationRequest;
 import com.tutorschool.backend.dto.request.UpdateEvaluationStatusRequest;
@@ -7,15 +23,9 @@ import com.tutorschool.backend.dto.response.ApiResponse;
 import com.tutorschool.backend.dto.response.CourseEvaluationResponse;
 import com.tutorschool.backend.dto.response.CourseEvaluationSummaryResponse;
 import com.tutorschool.backend.service.CourseEvaluationService;
+
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.security.core.Authentication;
-import org.springframework.web.bind.annotation.*;
-
-import java.util.List;
 
 @RestController
 @RequestMapping("/api/v1/course-evaluations")
@@ -66,10 +76,10 @@ public class CourseEvaluationController {
     // GET /api/v1/course-evaluations/tutor/{tutorId} — ดูรีวิวของ Tutor
     @GetMapping("/tutor/{tutorId}")
     @PreAuthorize("hasAnyRole('ADMIN', 'Tutor')")
-    public ResponseEntity<ApiResponse<List<CourseEvaluationResponse>>> getEvaluationsBytutorId(
+    public ResponseEntity<ApiResponse<List<CourseEvaluationResponse>>> getEvaluationsByTutorId(
             @PathVariable Long tutorId,
             Authentication authentication) {
-        List<CourseEvaluationResponse> response = evaluationService.getEvaluationsBytutorId(tutorId, authentication.getName());
+        List<CourseEvaluationResponse> response = evaluationService.getEvaluationsByTutorId(tutorId, authentication.getName());
         return ResponseEntity.ok(ApiResponse.success("Evaluations retrieved successfully", response));
     }
 

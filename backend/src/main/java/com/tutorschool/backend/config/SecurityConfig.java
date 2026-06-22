@@ -46,6 +46,8 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         // Auth endpoints
                         .requestMatchers("/api/v1/auth/**").permitAll()
+                        // Static uploaded files (QR codes, etc.)
+                        .requestMatchers(HttpMethod.GET, "/uploads/**").permitAll()
                         // Public read-only endpoints
                         .requestMatchers(HttpMethod.GET, "/api/v1/institution-profile").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/v1/exam-institutions").permitAll()
