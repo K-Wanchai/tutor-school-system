@@ -28,7 +28,6 @@ public class NotificationServiceImpl implements NotificationService {
     private final NotificationMapper notificationMapper;
 
     @Override
-    @Transactional
     public NotificationResponse sendNotification(CreateNotificationRequest request) {
         User user = null;
         if (request.getUserId() != null) {
@@ -47,24 +46,35 @@ public class NotificationServiceImpl implements NotificationService {
                 .deliveryStatus(DeliveryStatus.PENDING)
                 .build();
 
+        // บันทึก PENDING และปล่อย connection ก่อนส่ง email
+        // (แต่ละ save ใช้ transaction ของ repository ตัวเอง)
         notification = notificationRepository.save(notification);
         notification.setNotificationCode("NOTIF-" + String.format("%08d", notification.getId()));
+        notification = notificationRepository.save(notification);
 
+        // ส่ง email นอก transaction — ไม่ยึด DB connection ระหว่าง SMTP call
+        boolean sent = false;
+        String failedReason = null;
         try {
             emailService.sendEmail(request.getRecipientEmail(), request.getSubject(), request.getMessage());
-            notification.setDeliveryStatus(DeliveryStatus.SENT);
-            notification.setSentAt(LocalDateTime.now());
+            sent = true;
         } catch (Exception e) {
             log.error("Notification #{} failed: {}", notification.getId(), e.getMessage());
-            notification.setDeliveryStatus(DeliveryStatus.FAILED);
-            notification.setFailedReason(e.getMessage());
+            failedReason = e.getMessage();
         }
 
+        notification.setDeliveryStatus(sent ? DeliveryStatus.SENT : DeliveryStatus.FAILED);
+        if (sent) {
+            notification.setSentAt(LocalDateTime.now());
+        } else {
+            notification.setFailedReason(failedReason);
+        }
         notification = notificationRepository.save(notification);
         return notificationMapper.toResponse(notification);
     }
 
     @Override
+    @Transactional(readOnly = true)
     public List<NotificationResponse> getMyNotifications(Long userId) {
         return notificationRepository.findByUserIdOrderByCreatedAtDesc(userId)
                 .stream()
@@ -73,6 +83,7 @@ public class NotificationServiceImpl implements NotificationService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public List<NotificationResponse> getAllNotifications() {
         return notificationRepository.findAllByOrderByCreatedAtDesc()
                 .stream()
@@ -81,6 +92,7 @@ public class NotificationServiceImpl implements NotificationService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public NotificationResponse getNotificationById(Long id) {
         Notification notification = notificationRepository.findById(id)
                 .orElseThrow(() -> new NotificationNotFoundException("Notification not found with id: " + id));
@@ -88,6 +100,7 @@ public class NotificationServiceImpl implements NotificationService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public List<NotificationResponse> getNotificationsByStatus(DeliveryStatus status) {
         return notificationRepository.findByDeliveryStatusOrderByCreatedAtDesc(status)
                 .stream()
