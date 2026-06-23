@@ -8,7 +8,7 @@ import com.tutorschool.backend.dto.response.StudentResponse;
 
 public interface StudentService {
 
-    PageResponse<StudentResponse> getAllStudents(int page, int size);
+    PageResponse<StudentResponse> getAllStudents(int page, int size, String keyword);
 
     StudentResponse getStudentById(Long id);
 

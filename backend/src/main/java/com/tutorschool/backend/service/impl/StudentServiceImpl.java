@@ -34,9 +34,11 @@ public class StudentServiceImpl implements StudentService {
 
     @Override
     @Transactional(readOnly = true)
-    public PageResponse<StudentResponse> getAllStudents(int page, int size) {
+    public PageResponse<StudentResponse> getAllStudents(int page, int size, String keyword) {
         Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
-        Page<Student> studentPage = studentRepository.findAll(pageable);
+        Page<Student> studentPage = (keyword != null && !keyword.trim().isEmpty())
+                ? studentRepository.searchStudents(keyword.trim(), pageable)
+                : studentRepository.findAll(pageable);
         Page<StudentResponse> responsePage = studentPage.map(studentMapper::toResponse);
         return PageResponse.from(responsePage);
     }
@@ -115,11 +117,33 @@ public class StudentServiceImpl implements StudentService {
         Student student = studentRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Student not found with id: " + id));
 
-        student.setFullName(request.getFullName());
+        // Determine firstName / lastName / fullName
+        boolean hasFn = request.getFirstName() != null && !request.getFirstName().isBlank();
+        boolean hasLn = request.getLastName()  != null && !request.getLastName().isBlank();
+
+        String firstName, lastName, fullName;
+        if (hasFn && hasLn) {
+            firstName = request.getFirstName().trim();
+            lastName  = request.getLastName().trim();
+            fullName  = (firstName + " " + lastName).trim();
+        } else {
+            // Fall back to splitting the provided fullName
+            fullName  = request.getFullName().trim();
+            String[] parts = fullName.split(" ", 2);
+            firstName = hasFn ? request.getFirstName().trim() : parts[0];
+            lastName  = hasLn ? request.getLastName().trim()  : (parts.length > 1 ? parts[1] : parts[0]);
+        }
+
+        student.setFirstName(firstName);
+        student.setLastName(lastName);
+        student.setFullName(fullName);
         student.setAddress(request.getAddress());
         student.setPhoneNumber(request.getPhoneNumber());
         student.setBirthDate(request.getBirthDate());
         student.setGuardianPhoneNumber(request.getGuardianPhoneNumber());
+        if (request.getBankName() != null) {
+            student.setBankName(request.getBankName());
+        }
         student.setBankQrCode(request.getBankQrCode());
         student.setBankAccountName(request.getBankAccountName());
         student.setBankAccountNumber(request.getBankAccountNumber());

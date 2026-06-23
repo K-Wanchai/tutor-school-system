@@ -17,6 +17,13 @@ public class UpdateStudentRequest {
     @Size(max = 255, message = "Full name must not exceed 255 characters")
     private String fullName;
 
+    // Optional: when provided, used to update firstName/lastName individually
+    @Size(max = 100)
+    private String firstName;
+
+    @Size(max = 100)
+    private String lastName;
+
     private String address;
 
     @NotBlank(message = "Phone number is required")
@@ -26,6 +33,9 @@ public class UpdateStudentRequest {
     private LocalDate birthDate;
 
     private String guardianPhoneNumber;
+
+    @Size(max = 100)
+    private String bankName;
 
     private String bankQrCode;
 

@@ -8,12 +8,14 @@ import org.springframework.stereotype.Component;
 public class StudentMapper {
 
     public StudentResponse toResponse(Student student) {
+        boolean enabled = student.getUser().isEnabled();
         return StudentResponse.builder()
                 .id(student.getId())
                 .userId(student.getUser().getId())
                 .username(student.getUser().getUsername())
                 .email(student.getUser().getEmail())
-                .enabled(student.getUser().isEnabled())
+                .enabled(enabled)
+                .status(enabled ? "ACTIVE" : "INACTIVE")
                 .studentCode(student.getStudentCode())
                 .firstName(student.getFirstName())
                 .lastName(student.getLastName())

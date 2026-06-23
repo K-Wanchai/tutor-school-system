@@ -25,8 +25,9 @@ public class StudentController {
     @PreAuthorize("hasAnyRole('ADMIN', 'Tutor')")
     public ResponseEntity<ApiResponse<PageResponse<StudentResponse>>> getAllStudents(
             @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size) {
-        PageResponse<StudentResponse> response = studentService.getAllStudents(page, size);
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(required = false, defaultValue = "") String keyword) {
+        PageResponse<StudentResponse> response = studentService.getAllStudents(page, size, keyword);
         return ResponseEntity.ok(ApiResponse.success("Students retrieved successfully", response));
     }
 

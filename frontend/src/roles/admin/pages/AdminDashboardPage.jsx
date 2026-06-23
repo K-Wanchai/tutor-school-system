@@ -66,7 +66,7 @@ export default function AdminDashboardPage() {
   useEffect(() => {
     getDashboardStats()
       .then(setStats)
-      .catch(() => setError('ไม่สามารถโหลดข้อมูล Dashboard ได้ กรุณาลองใหม่อีกครั้ง'))
+      .catch((err) => setError(err.message || 'ไม่สามารถโหลดข้อมูล Dashboard ได้'))
       .finally(() => setLoading(false));
   }, []);
 

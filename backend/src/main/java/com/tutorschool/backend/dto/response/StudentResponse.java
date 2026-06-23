@@ -39,4 +39,7 @@ public class StudentResponse {
 
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
+
+    // Computed from enabled for frontend convenience
+    private String status;
 }

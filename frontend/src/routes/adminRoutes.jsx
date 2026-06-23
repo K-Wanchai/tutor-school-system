@@ -2,6 +2,7 @@ import { Route } from 'react-router-dom';
 import ProtectedRoute from './ProtectedRoute';
 import AdminLayout from '../roles/admin/layouts/AdminLayout';
 import AdminDashboardPage from '../roles/admin/pages/AdminDashboardPage';
+import AdminStudentManagementPage from '../roles/admin/pages/AdminStudentManagementPage';
 
 const adminRoutes = (
   <Route
@@ -13,6 +14,7 @@ const adminRoutes = (
     }
   >
     <Route path="dashboard" element={<AdminDashboardPage />} />
+    <Route path="students" element={<AdminStudentManagementPage />} />
   </Route>
 );
 
