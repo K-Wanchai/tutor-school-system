@@ -355,7 +355,6 @@ export default function AdminStudentManagementPage() {
   const [editStudent, setEditStudent]     = useState(null);
   const [saving, setSaving]               = useState(false);
   const [saveError, setSaveError]         = useState('');
-  const [openDropdown, setOpenDropdown]   = useState(null);
   const [toast, setToast]                 = useState({ type: '', msg: '' });
   const debounceTimer                     = useRef(null);
 
@@ -412,7 +411,6 @@ export default function AdminStudentManagementPage() {
   }
 
   async function handleViewDetail(student) {
-    setOpenDropdown(null);
     try {
       const detail = await getStudentById(student.id);
       setDetailStudent(detail);
@@ -424,7 +422,6 @@ export default function AdminStudentManagementPage() {
   function handleEdit(student) {
     setSaveError('');
     setEditStudent(student);
-    setOpenDropdown(null);
   }
 
   async function handleSave(formData) {
@@ -445,7 +442,6 @@ export default function AdminStudentManagementPage() {
 
   async function handleDeactivate(student) {
     if (!window.confirm(`ยืนยันการปิดใช้งานบัญชี "${student.firstName} ${student.lastName}" ?`)) return;
-    setOpenDropdown(null);
     try {
       await deactivateStudent(student.id);
       showToast('success', 'ปิดใช้งานบัญชีสำเร็จ');
@@ -455,14 +451,6 @@ export default function AdminStudentManagementPage() {
       showToast('error', err.message || 'ไม่สามารถปิดใช้งานบัญชีได้');
     }
   }
-
-  useEffect(() => {
-    function closeDropdown(e) {
-      if (!e.target.closest('.sm-action-dropdown')) setOpenDropdown(null);
-    }
-    document.addEventListener('mousedown', closeDropdown);
-    return () => document.removeEventListener('mousedown', closeDropdown);
-  }, []);
 
   function pageNumbers() {
     const pages = [];
@@ -636,7 +624,7 @@ export default function AdminStudentManagementPage() {
                     <th>เบอร์โทร</th>
                     <th>วันที่สมัคร</th>
                     <th>สถานะ</th>
-                    <th className="sm-th-center">การจัดการ</th>
+                    <th>การจัดการ</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -658,52 +646,41 @@ export default function AdminStudentManagementPage() {
                       <td className="sm-text-secondary">{student.phoneNumber || '—'}</td>
                       <td className="sm-text-date">{formatDate(student.createdAt)}</td>
                       <td><StatusBadge student={student} /></td>
-                      <td className="sm-td-center">
-                        <div className="sm-action-dropdown">
+                      <td>
+                        <div className="sm-row-actions">
                           <button
-                            className="sm-action-btn"
-                            onClick={() =>
-                              setOpenDropdown(openDropdown === student.id ? null : student.id)
-                            }
-                            aria-label="เมนูการจัดการ"
+                            className="sm-row-btn sm-row-btn--icon"
+                            onClick={() => handleViewDetail(student)}
+                            data-tooltip="ดูรายละเอียด"
+                            aria-label="ดูรายละเอียด"
                           >
                             <svg viewBox="0 0 20 20" fill="currentColor" width="16" height="16">
-                              <path d="M6 10a2 2 0 11-4 0 2 2 0 014 0zM12 10a2 2 0 11-4 0 2 2 0 014 0zM16 12a2 2 0 100-4 2 2 0 000 4z" />
+                              <path d="M10 12a2 2 0 100-4 2 2 0 000 4z" />
+                              <path fillRule="evenodd" d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.064 7-9.542 7S1.732 14.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z" clipRule="evenodd" />
                             </svg>
                           </button>
-                          {openDropdown === student.id && (
-                            <div className="sm-dropdown-menu">
-                              <button
-                                className="sm-dropdown-item"
-                                onClick={() => handleViewDetail(student)}
-                              >
-                                <svg viewBox="0 0 20 20" fill="currentColor" width="14" height="14">
-                                  <path d="M10 12a2 2 0 100-4 2 2 0 000 4z" />
-                                  <path fillRule="evenodd" d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.064 7-9.542 7S1.732 14.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z" clipRule="evenodd" />
-                                </svg>
-                                ดูรายละเอียด
-                              </button>
-                              <button
-                                className="sm-dropdown-item"
-                                onClick={() => handleEdit(student)}
-                              >
-                                <svg viewBox="0 0 20 20" fill="currentColor" width="14" height="14">
-                                  <path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z" />
-                                </svg>
-                                แก้ไข
-                              </button>
-                              {isActive(student) && (
-                                <button
-                                  className="sm-dropdown-item sm-dropdown-item--danger"
-                                  onClick={() => handleDeactivate(student)}
-                                >
-                                  <svg viewBox="0 0 20 20" fill="currentColor" width="14" height="14">
-                                    <path fillRule="evenodd" d="M13.477 14.89A6 6 0 015.11 6.524L13.477 14.89zm1.414-1.414L6.524 5.11a6 6 0 018.367 8.367zM18 10a8 8 0 11-16 0 8 8 0 0116 0z" clipRule="evenodd" />
-                                  </svg>
-                                  ปิดใช้งาน
-                                </button>
-                              )}
-                            </div>
+                          <button
+                            className="sm-row-btn sm-row-btn--icon"
+                            onClick={() => handleEdit(student)}
+                            data-tooltip="แก้ไข"
+                            aria-label="แก้ไข"
+                          >
+                            <svg viewBox="0 0 20 20" fill="currentColor" width="15" height="15">
+                              <path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z" />
+                            </svg>
+                          </button>
+                          {isActive(student) && (
+                            <button
+                              className="sm-row-btn sm-row-btn--danger"
+                              onClick={() => handleDeactivate(student)}
+                              data-tooltip="ปิดการใช้งานนักเรียน"
+                              aria-label="ปิดการใช้งาน"
+                            >
+                              <svg viewBox="0 0 20 20" fill="currentColor" width="14" height="14">
+                                <path fillRule="evenodd" d="M13.477 14.89A6 6 0 015.11 6.524L13.477 14.89zm1.414-1.414L6.524 5.11a6 6 0 018.367 8.367zM18 10a8 8 0 11-16 0 8 8 0 0116 0z" clipRule="evenodd" />
+                              </svg>
+                              <span>ปิดการใช้งาน</span>
+                            </button>
                           )}
                         </div>
                       </td>
