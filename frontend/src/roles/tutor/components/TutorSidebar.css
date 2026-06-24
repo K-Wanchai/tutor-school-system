@@ -70,3 +70,18 @@
   .tutor-sidebar--open { transform: translateX(0); }
   .tutor-sidebar-overlay { display: block; }
 }
+.tutor-sidebar {
+  width: 260px;
+  min-width: 260px;
+  height: 100vh;
+  min-height: 100vh;
+  background: #064e3b;
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+  overflow-x: hidden;
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 100;
+}

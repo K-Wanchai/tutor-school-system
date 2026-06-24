@@ -1,0 +1,257 @@
+.tas-detail-page {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.tas-back-btn {
+  width: fit-content;
+  height: 38px;
+  padding: 0 14px;
+  border: 1px solid #e5e7eb;
+  background: white;
+  border-radius: 10px;
+  color: #374151;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.tas-detail-hero {
+  background: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 18px;
+  padding: 22px;
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.04);
+}
+
+.tas-course-icon {
+  width: 64px;
+  height: 64px;
+  border-radius: 16px;
+  background: linear-gradient(135deg, #059669, #047857);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 26px;
+  font-weight: 800;
+}
+
+.tas-course-main {
+  flex: 1;
+}
+
+.tas-course-main span {
+  color: #059669;
+  font-weight: 800;
+}
+
+.tas-course-main h1 {
+  margin: 6px 0;
+  color: #111827;
+  font-size: 24px;
+}
+
+.tas-course-main p {
+  margin: 0;
+  color: #6b7280;
+}
+
+.tas-rate-box {
+  background: #ecfdf5;
+  border: 1px solid #a7f3d0;
+  border-radius: 16px;
+  padding: 18px 22px;
+  min-width: 220px;
+}
+
+.tas-rate-box span {
+  display: block;
+  color: #047857;
+  font-size: 13px;
+  margin-bottom: 8px;
+}
+
+.tas-rate-box strong {
+  color: #059669;
+  font-size: 32px;
+}
+
+.tas-detail-summary {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 14px;
+}
+
+.tas-summary-card {
+  background: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 16px;
+  padding: 18px;
+}
+
+.tas-summary-card span {
+  color: #6b7280;
+  font-size: 13px;
+}
+
+.tas-summary-card strong {
+  display: block;
+  margin-top: 10px;
+  color: #059669;
+  font-size: 28px;
+}
+
+.tas-summary-card p {
+  margin: 4px 0 0;
+  color: #9ca3af;
+  font-size: 12px;
+}
+
+.tas-table-card {
+  background: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 18px;
+  padding: 20px;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.04);
+}
+
+.tas-table-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 18px;
+}
+
+.tas-table-head h2 {
+  margin: 0 0 4px;
+  color: #111827;
+}
+
+.tas-table-head p {
+  margin: 0;
+  color: #6b7280;
+  font-size: 13px;
+}
+
+.tas-table-head button {
+  border: none;
+  background: #059669;
+  color: white;
+  border-radius: 10px;
+  padding: 10px 16px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.tas-table-wrap {
+  overflow-x: auto;
+}
+
+.tas-score-table {
+  width: 100%;
+  min-width: 1100px;
+  border-collapse: collapse;
+}
+
+.tas-score-table th {
+  background: #dff7ed;
+  color: #064e3b;
+  padding: 13px;
+  text-align: center;
+  font-size: 13px;
+  white-space: nowrap;
+}
+
+.tas-score-table th small {
+  display: block;
+  color: #6b7280;
+  font-weight: 500;
+  margin-top: 3px;
+}
+
+.tas-score-table td {
+  border-top: 1px solid #edf2f7;
+  padding: 14px 13px;
+  text-align: center;
+  font-size: 14px;
+  color: #374151;
+}
+
+.tas-score-table td:nth-child(2) {
+  text-align: left;
+  min-width: 180px;
+}
+
+.tas-score-table td strong {
+  color: #111827;
+}
+
+.tas-score-table td span {
+  display: block;
+  color: #9ca3af;
+  font-size: 12px;
+  margin-top: 3px;
+}
+
+.present {
+  color: #059669 !important;
+  font-weight: 800;
+}
+
+.absent {
+  color: #ef4444 !important;
+  font-weight: 800;
+}
+
+.leave {
+  color: #f97316 !important;
+  font-weight: 800;
+}
+
+.late {
+  color: #2563eb !important;
+  font-weight: 800;
+}
+
+.total-score {
+  color: #059669 !important;
+  font-size: 16px;
+}
+
+.tas-detail-empty {
+  background: #f9fafb;
+  border: 1px dashed #d1d5db;
+  border-radius: 14px;
+  padding: 50px;
+  text-align: center;
+  color: #9ca3af;
+}
+
+@media (max-width: 1100px) {
+  .tas-detail-summary {
+    grid-template-columns: repeat(3, 1fr);
+  }
+
+  .tas-detail-hero {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .tas-rate-box {
+    width: 100%;
+  }
+}
+
+@media (max-width: 640px) {
+  .tas-detail-summary {
+    grid-template-columns: 1fr;
+  }
+
+  .tas-table-head {
+    flex-direction: column;
+  }
+}

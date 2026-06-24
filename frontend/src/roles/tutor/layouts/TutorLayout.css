@@ -4,3 +4,37 @@
 
 @media (max-width: 1024px) { .tutor-layout-content { padding: 24px 20px; } }
 @media (max-width: 640px)  { .tutor-layout-content { padding: 20px 16px; } }
+.tutor-layout {
+  min-height: 100vh;
+  background: #f5f7fb;
+}
+
+.tutor-layout-main {
+  margin-left: 260px;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.tutor-layout-content {
+  flex: 1;
+  padding: 28px;
+  overflow-x: hidden;
+}
+
+@media (max-width: 1024px) {
+  .tutor-layout-main {
+    margin-left: 0;
+  }
+
+  .tutor-layout-content {
+    padding: 24px 20px;
+  }
+}
+
+@media (max-width: 640px) {
+  .tutor-layout-content {
+    padding: 20px 16px;
+  }
+}
