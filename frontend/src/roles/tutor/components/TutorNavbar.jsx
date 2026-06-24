@@ -1,8 +1,34 @@
+import { useLocation } from 'react-router-dom';
 import { logout } from '../../../auth/services/authService';
 import './TutorNavbar.css';
 
+const PAGE_TITLES = {
+  '/tutor/dashboard':        'แดชบอร์ด',
+  '/tutor/courses':          'คอร์สของฉัน',
+  '/tutor/notifications':    'การแจ้งเตือน',
+  '/tutor/schedule':         'ตารางสอน',
+  '/tutor/attendance-scores':'การเข้าเรียน/คะแนนสอบ',
+  '/tutor/classroom':        'ห้องเรียน',
+  '/tutor/evaluations':      'การประเมิน',
+  '/tutor/exams':            'ข้อสอบ',
+  '/tutor/reports':          'รายงาน',
+  '/tutor/students':         'นักเรียน',
+};
+
+function getPageTitle(pathname) {
+  // exact match first
+  if (PAGE_TITLES[pathname]) return PAGE_TITLES[pathname];
+  // prefix match for nested routes (e.g. /tutor/attendance-scores/123)
+  const match = Object.keys(PAGE_TITLES)
+    .filter(p => pathname.startsWith(p))
+    .sort((a, b) => b.length - a.length)[0];
+  return match ? PAGE_TITLES[match] : 'TutorSchool';
+}
+
 export default function TutorNavbar({ onMenuToggle }) {
   const username = localStorage.getItem('username') || 'ติวเตอร์';
+  const { pathname } = useLocation();
+  const pageTitle = getPageTitle(pathname);
 
   return (
     <header className="tutor-navbar">
@@ -15,7 +41,7 @@ export default function TutorNavbar({ onMenuToggle }) {
         <div className="tutor-navbar-title">
           <span>TutorSchool</span>
           <span className="tutor-navbar-title-sep">/</span>
-          <span className="tutor-navbar-breadcrumb">แดชบอร์ด</span>
+          <span className="tutor-navbar-breadcrumb">{pageTitle}</span>
         </div>
       </div>
 

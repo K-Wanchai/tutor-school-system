@@ -286,6 +286,22 @@ public class CourseServiceImpl implements CourseService {
                     .lessonOrder(req.getLessonOrder())
                     .build();
             course.getLessons().add(lesson);
+
+            // เพิ่มแบบทดสอบที่ผูกกับบทนี้
+            if (req.getTests() != null) {
+                int testOrder = 1;
+                for (CourseTestRequest t : req.getTests()) {
+                    if (t.getTestTitle() == null || t.getTestTitle().isBlank()) continue;
+                    CourseTest test = CourseTest.builder()
+                            .course(course)
+                            .testTitle(t.getTestTitle())
+                            .testDescription(t.getTestDescription())
+                            .testOrder(testOrder++)
+                            .lessonOrder(req.getLessonOrder())
+                            .build();
+                    course.getTests().add(test);
+                }
+            }
         }
     }
 

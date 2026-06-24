@@ -86,6 +86,7 @@ public class CourseMapper {
                 .testTitle(test.getTestTitle())
                 .testDescription(test.getTestDescription())
                 .testOrder(test.getTestOrder())
+                .lessonOrder(test.getLessonOrder())
                 .createdAt(test.getCreatedAt())
                 .updatedAt(test.getUpdatedAt())
                 .build();

@@ -8,6 +8,8 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.util.List;
+
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
@@ -22,4 +24,6 @@ public class CourseLessonRequest {
     @NotNull(message = "Lesson order is required")
     @Min(value = 1, message = "Lesson order must be at least 1")
     private Integer lessonOrder;
+
+    private List<CourseTestRequest> tests;
 }

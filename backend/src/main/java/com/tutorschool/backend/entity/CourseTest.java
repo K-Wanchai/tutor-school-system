@@ -4,6 +4,8 @@ import jakarta.persistence.*;
 import lombok.*;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity
 @Table(name = "course_tests")
@@ -30,6 +32,14 @@ public class CourseTest {
 
     @Column(name = "test_order", nullable = false)
     private Integer testOrder;
+
+    @Column(name = "lesson_order")
+    private Integer lessonOrder;
+
+    @OneToMany(mappedBy = "courseTest", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
+    @OrderBy("questionOrder ASC")
+    @Builder.Default
+    private List<TestQuestion> questions = new ArrayList<>();
 
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;

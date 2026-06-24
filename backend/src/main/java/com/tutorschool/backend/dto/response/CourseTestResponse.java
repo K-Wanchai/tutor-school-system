@@ -17,6 +17,7 @@ public class CourseTestResponse {
     private String testTitle;
     private String testDescription;
     private Integer testOrder;
+    private Integer lessonOrder;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 }

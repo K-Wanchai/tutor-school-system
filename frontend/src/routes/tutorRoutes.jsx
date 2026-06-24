@@ -4,12 +4,12 @@ import TutorLayout from '../roles/tutor/layouts/TutorLayout';
 import TutorDashboardPage from '../roles/tutor/pages/TutorDashboardPage';
 import TutorCoursesPage from '../roles/tutor/pages/TutorCoursesPage';
 import TutorNotificationsPage from '../roles/tutor/pages/TutorNotificationsPage';
-
 import TutorSchedulesPage from '../roles/tutor/pages/TutorSchedulesPage';
 import TutorAttendanceScoresPage from '../roles/tutor/pages/TutorAttendanceScoresPage';
 import TutorAttendanceScoreDetailPage from '../roles/tutor/pages/TutorAttendanceScoreDetailPage';
 import TutorClassroomsPage from '../roles/tutor/pages/TutorClassroomsPage';
 import TutorEvaluationsPage from '../roles/tutor/pages/TutorEvaluationsPage';
+
 const tutorRoutes = (
   <Route
     path="/tutor"
@@ -21,6 +21,7 @@ const tutorRoutes = (
   >
     <Route path="dashboard" element={<TutorDashboardPage />} />
     <Route path="courses" element={<TutorCoursesPage />} />
+    <Route path="notifications" element={<TutorNotificationsPage />} />
     <Route path="schedule" element={<TutorSchedulesPage />} />
     <Route path="attendance-scores" element={<TutorAttendanceScoresPage />} />
     <Route path="attendance-scores/:courseId" element={<TutorAttendanceScoreDetailPage />} />
