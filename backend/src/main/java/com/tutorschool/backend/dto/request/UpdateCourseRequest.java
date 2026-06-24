@@ -24,7 +24,6 @@ public class UpdateCourseRequest {
     @Size(max = 200, message = "Course name must not exceed 200 characters")
     private String courseName;
 
-    @NotNull(message = "Price is required")
     @DecimalMin(value = "0.0", inclusive = true, message = "Price must not be negative")
     private BigDecimal price;
 

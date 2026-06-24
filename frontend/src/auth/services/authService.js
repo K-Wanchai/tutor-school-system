@@ -1,5 +1,5 @@
 import api from '../../shared/services/api';
-import { setToken, setRole, clearAuth } from '../../shared/utils/tokenUtils';
+import { setToken, setRole, setRefreshToken, clearAuth } from '../../shared/utils/tokenUtils';
 
 const setUsername = (val) => localStorage.setItem('username', val ?? '');
 
@@ -9,6 +9,7 @@ export const login = async (payload) => {
   setToken(data.accessToken);
   setRole(data.role);
   setUsername(data.username);
+  if (data.refreshToken) setRefreshToken(data.refreshToken);
   return data;
 };
 

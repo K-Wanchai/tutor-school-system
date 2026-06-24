@@ -484,12 +484,6 @@ export default function AdminStudentManagementPage() {
               onChange={handleSearchChange}
             />
           </div>
-          <button className="sm-btn sm-btn--primary">
-            <svg viewBox="0 0 20 20" fill="currentColor" width="15" height="15">
-              <path fillRule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clipRule="evenodd" />
-            </svg>
-            เพิ่มนักเรียน
-          </button>
         </div>
       </div>
 

@@ -102,4 +102,14 @@ public class TutorServiceImpl implements TutorService {
                 .orElseThrow(() -> new ResourceNotFoundException("Tutor", id));
         tutorRepository.delete(tutor);
     }
+
+    @Override
+    @Transactional
+    public TutorResponse toggleStatus(Long id, boolean enabled) {
+        Tutor tutor = tutorRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Tutor", id));
+        tutor.getUser().setEnabled(enabled);
+        userRepository.save(tutor.getUser());
+        return tutorMapper.toResponse(tutor);
+    }
 }

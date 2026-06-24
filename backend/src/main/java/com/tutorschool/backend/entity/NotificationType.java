@@ -1,6 +1,7 @@
 package com.tutorschool.backend.entity;
 
 public enum NotificationType {
+    COURSE_ASSIGNED,
     COURSE_ENROLLMENT,
     PAYMENT_VERIFIED,
     PAYMENT_REJECTED,

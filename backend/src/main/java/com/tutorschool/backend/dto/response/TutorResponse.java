@@ -15,12 +15,14 @@ public class TutorResponse {
 
     private Long id;
     private Long userId;
+    private String username;
     private String firstName;
     private String lastName;
     private String email;
     private String phoneNumber;
     private String specialization;
     private String bio;
+    private boolean enabled;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 }

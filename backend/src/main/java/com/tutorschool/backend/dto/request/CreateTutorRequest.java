@@ -32,7 +32,8 @@ public class CreateTutorRequest {
     @Size(min = 8, message = "Password must be at least 8 characters")
     private String password;
 
-    @Pattern(regexp = "^[0-9]{10}$", message = "Phone number must be 10 digits")
+    @NotBlank(message = "Phone number is required")
+    @Pattern(regexp = "^[0-9]{10}$", message = "Phone number must be exactly 10 digits")
     private String phoneNumber;
 
     @Size(max = 200, message = "Specialization must not exceed 200 characters")

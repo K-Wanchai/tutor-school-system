@@ -30,6 +30,8 @@ public class CourseResponse {
     private CourseStatus status;
     private Long tutorId;
     private String teacherName;
+    private String tutorEmail;
+    private String tutorRemark;
     private long enrolledCount;
     private List<CourseLessonResponse> lessons;
     private List<CourseTestResponse> tests;

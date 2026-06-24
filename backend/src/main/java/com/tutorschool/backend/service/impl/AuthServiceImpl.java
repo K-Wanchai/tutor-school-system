@@ -47,10 +47,12 @@ public class AuthServiceImpl implements AuthService {
         User user = userRepository.findByEmailOrUsername(request.getUsernameOrEmail())
                 .orElseThrow(() -> new ResourceNotFoundException("User not found"));
 
-        String accessToken = jwtService.generateAccessToken(user);
+        String accessToken  = jwtService.generateAccessToken(user);
+        String refreshToken = jwtService.generateRefreshToken(user);
 
         return AuthResponse.builder()
                 .accessToken(accessToken)
+                .refreshToken(refreshToken)
                 .tokenType("Bearer")
                 .userId(user.getId())
                 .username(user.getUsername())
@@ -119,10 +121,12 @@ public class AuthServiceImpl implements AuthService {
             studentRepository.save(student);
             log.info("student created: id={}, code={}", student.getId(), studentCode);
 
-            String accessToken = jwtService.generateAccessToken(user);
+            String accessToken  = jwtService.generateAccessToken(user);
+            String refreshToken = jwtService.generateRefreshToken(user);
 
             return AuthResponse.builder()
                     .accessToken(accessToken)
+                    .refreshToken(refreshToken)
                     .tokenType("Bearer")
                     .userId(user.getId())
                     .username(user.getUsername())

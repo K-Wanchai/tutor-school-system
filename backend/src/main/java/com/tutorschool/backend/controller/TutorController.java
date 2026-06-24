@@ -8,6 +8,7 @@ import com.tutorschool.backend.dto.response.TutorResponse;
 import com.tutorschool.backend.service.TutorService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import java.util.Map;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -52,6 +53,17 @@ public class TutorController {
             @Valid @RequestBody UpdateTutorRequest request) {
         TutorResponse response = TutorService.updateTeacher(id, request);
         return ResponseEntity.ok(ApiResponse.success("Tutor updated successfully", response));
+    }
+
+    @PatchMapping("/{id}/status")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<ApiResponse<TutorResponse>> toggleStatus(
+            @PathVariable Long id,
+            @RequestBody Map<String, Boolean> body) {
+        boolean enabled = Boolean.TRUE.equals(body.get("enabled"));
+        TutorResponse response = TutorService.toggleStatus(id, enabled);
+        String msg = enabled ? "Tutor activated successfully" : "Tutor deactivated successfully";
+        return ResponseEntity.ok(ApiResponse.success(msg, response));
     }
 
     @DeleteMapping("/{id}")

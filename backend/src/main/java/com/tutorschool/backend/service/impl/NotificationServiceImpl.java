@@ -12,6 +12,7 @@ import com.tutorschool.backend.service.NotificationService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
@@ -28,6 +29,7 @@ public class NotificationServiceImpl implements NotificationService {
     private final NotificationMapper notificationMapper;
 
     @Override
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
     public NotificationResponse sendNotification(CreateNotificationRequest request) {
         User user = null;
         if (request.getUserId() != null) {

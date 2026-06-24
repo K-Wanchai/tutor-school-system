@@ -62,6 +62,11 @@ public class User implements UserDetails {
         return List.of(new SimpleGrantedAuthority("ROLE_" + role.name()));
     }
 
+    // ดึง username จริง (แยกจาก getUsername() ที่ Spring Security ใช้)
+    public String getLoginUsername() {
+        return username;
+    }
+
     // Spring Security ใช้ email เป็น principal หลัก เพื่อให้ JWT token consistent
     @Override
     public String getUsername() {

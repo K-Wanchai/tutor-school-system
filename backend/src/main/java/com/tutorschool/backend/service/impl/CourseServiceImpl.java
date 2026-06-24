@@ -1,5 +1,6 @@
 package com.tutorschool.backend.service.impl;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
 
@@ -13,6 +14,8 @@ import org.springframework.transaction.annotation.Transactional;
 import com.tutorschool.backend.dto.request.CourseLessonRequest;
 import com.tutorschool.backend.dto.request.CourseTestRequest;
 import com.tutorschool.backend.dto.request.CreateCourseRequest;
+import com.tutorschool.backend.dto.request.CreateNotificationRequest;
+import com.tutorschool.backend.dto.request.TutorCourseResponseRequest;
 import com.tutorschool.backend.dto.request.UpdateCourseRequest;
 import com.tutorschool.backend.dto.request.UpdateCourseStatusRequest;
 import com.tutorschool.backend.dto.response.CourseResponse;
@@ -22,6 +25,8 @@ import com.tutorschool.backend.entity.CourseLesson;
 import com.tutorschool.backend.entity.CourseStatus;
 import com.tutorschool.backend.entity.CourseTest;
 import com.tutorschool.backend.entity.EnrollmentStatus;
+import com.tutorschool.backend.entity.NotificationType;
+import com.tutorschool.backend.entity.ReferenceType;
 import com.tutorschool.backend.entity.Tutor;
 import com.tutorschool.backend.exception.DuplicateResourceException;
 import com.tutorschool.backend.exception.InvalidCourseDateException;
@@ -31,9 +36,12 @@ import com.tutorschool.backend.repository.CourseRepository;
 import com.tutorschool.backend.repository.EnrollmentRepository;
 import com.tutorschool.backend.repository.TutorRepository;
 import com.tutorschool.backend.service.CourseService;
+import com.tutorschool.backend.service.NotificationService;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class CourseServiceImpl implements CourseService {
@@ -42,6 +50,7 @@ public class CourseServiceImpl implements CourseService {
     private final TutorRepository TutorRepository;
     private final EnrollmentRepository enrollmentRepository;
     private final CourseMapper courseMapper;
+    private final NotificationService notificationService;
 
     @Override
     @Transactional(readOnly = true)
@@ -92,40 +101,83 @@ public class CourseServiceImpl implements CourseService {
     }
 
     @Override
+    @Transactional(readOnly = true)
+    public List<CourseResponse> getCoursesByTutorUserId(Long userId) {
+        Tutor tutor = TutorRepository.findByUserId(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("Tutor profile not found for user", userId));
+        return courseRepository.findByTutorId(tutor.getId()).stream()
+                .map(course -> {
+                    long count = enrollmentRepository.countByCourseIdAndStatusIn(course.getId(),
+                            List.of(EnrollmentStatus.PENDING, EnrollmentStatus.APPROVED));
+                    return courseMapper.toDetailResponse(course, count);
+                })
+                .toList();
+    }
+
+    @Override
     @Transactional
     public CourseResponse createCourse(CreateCourseRequest request) {
         if (courseRepository.existsByCourseCode(request.getCourseCode())) {
             throw new DuplicateResourceException("Course code already exists: " + request.getCourseCode());
         }
 
-        Tutor Tutor = TutorRepository.findById(request.getTutorId())
+        Tutor tutor = TutorRepository.findById(request.getTutorId())
                 .orElseThrow(() -> new ResourceNotFoundException("Tutor", request.getTutorId()));
 
         validateCourseDates(request.getRegistrationStartDate(),
                 request.getRegistrationEndDate(),
                 request.getCourseStartDate());
 
-        CourseStatus status = (request.getStatus() != null) ? request.getStatus() : CourseStatus.DRAFT;
+        BigDecimal price = (request.getPrice() != null) ? request.getPrice() : BigDecimal.ZERO;
 
         Course course = Course.builder()
                 .courseCode(request.getCourseCode())
                 .courseName(request.getCourseName())
-                .price(request.getPrice())
+                .price(price)
                 .description(request.getDescription())
                 .totalHours(request.getTotalHours())
                 .seatLimit(request.getSeatLimit())
                 .registrationStartDate(request.getRegistrationStartDate())
                 .registrationEndDate(request.getRegistrationEndDate())
                 .courseStartDate(request.getCourseStartDate())
-                .status(status)
-                .tutor(Tutor)
+                .status(CourseStatus.DRAFT)
+                .tutor(tutor)
                 .build();
 
         addLessonsToCoure(course, request.getLessons());
         addTestsToCourse(course, request.getTests());
 
         course = courseRepository.save(course);
+
+        sendCourseAssignedNotification(course, tutor);
+
         return courseMapper.toDetailResponse(course, 0L);
+    }
+
+    private void sendCourseAssignedNotification(Course course, Tutor tutor) {
+        try {
+            String tutorEmail = tutor.getUser().getEmail();
+            String tutorName = tutor.getFirstName() + " " + tutor.getLastName();
+            CreateNotificationRequest notif = new CreateNotificationRequest();
+            notif.setUserId(tutor.getUser().getId());
+            notif.setRecipientEmail(tutorEmail);
+            notif.setSubject("มอบหมายคอร์สใหม่: " + course.getCourseName());
+            notif.setMessage(
+                "เรียน " + tutorName + "\n\n" +
+                "แอดมินได้มอบหมายคอร์สใหม่ให้คุณ:\n" +
+                "รหัสคอร์ส: " + course.getCourseCode() + "\n" +
+                "ชื่อคอร์ส: " + course.getCourseName() + "\n" +
+                "วันที่เริ่มสอน: " + course.getCourseStartDate() + "\n" +
+                "จำนวนที่นั่ง: " + course.getSeatLimit() + " คน\n\n" +
+                "กรุณาเข้าสู่ระบบเพื่อตอบรับหรือปฏิเสธคอร์สนี้"
+            );
+            notif.setNotificationType(NotificationType.COURSE_ASSIGNED);
+            notif.setReferenceType(ReferenceType.COURSE);
+            notif.setReferenceId(course.getId());
+            notificationService.sendNotification(notif);
+        } catch (Exception e) {
+            log.warn("Failed to send course-assigned notification for course {}: {}", course.getId(), e.getMessage());
+        }
     }
 
     @Override
@@ -180,6 +232,40 @@ public class CourseServiceImpl implements CourseService {
         long enrolledCount = enrollmentRepository.countByCourseIdAndStatusIn(id,
                 List.of(EnrollmentStatus.PENDING, EnrollmentStatus.APPROVED));
         return courseMapper.toSummaryResponse(course, enrolledCount);
+    }
+
+    @Override
+    @Transactional
+    public CourseResponse tutorRespondToCourse(Long courseId, TutorCourseResponseRequest request, Long tutorUserId) {
+        Course course = courseRepository.findById(courseId)
+                .orElseThrow(() -> new ResourceNotFoundException("Course", courseId));
+
+        Tutor tutor = TutorRepository.findByUserId(tutorUserId)
+                .orElseThrow(() -> new ResourceNotFoundException("Tutor profile not found"));
+
+        if (!course.getTutor().getId().equals(tutor.getId())) {
+            throw new IllegalStateException("You are not assigned to this course");
+        }
+
+        if (request.isAccepted()) {
+            course.setStatus(CourseStatus.OPEN_FOR_REGISTRATION);
+            if (request.getLessons() != null && !request.getLessons().isEmpty()) {
+                course.getLessons().clear();
+                addLessonsToCoure(course, request.getLessons());
+            }
+            if (request.getTests() != null && !request.getTests().isEmpty()) {
+                course.getTests().clear();
+                addTestsToCourse(course, request.getTests());
+            }
+        } else {
+            course.setStatus(CourseStatus.CANCELLED);
+            course.setTutorRemark(request.getRemark());
+        }
+
+        course = courseRepository.save(course);
+        long enrolledCount = enrollmentRepository.countByCourseIdAndStatusIn(courseId,
+                List.of(EnrollmentStatus.PENDING, EnrollmentStatus.APPROVED));
+        return courseMapper.toDetailResponse(course, enrolledCount);
     }
 
     @Override
