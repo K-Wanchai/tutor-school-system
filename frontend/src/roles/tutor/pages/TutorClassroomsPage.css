@@ -1,0 +1,241 @@
+.tutor-classroom-page {
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+}
+
+.tutor-classroom-header {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.tutor-classroom-header h1 {
+  margin: 0 0 6px;
+  font-size: 28px;
+  font-weight: 800;
+  color: #111827;
+}
+
+.tutor-classroom-header p {
+  margin: 0;
+  color: #6b7280;
+  font-size: 14px;
+}
+
+.tutor-classroom-header button {
+  height: 42px;
+  border: none;
+  background: #059669;
+  color: white;
+  border-radius: 10px;
+  padding: 0 16px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.tutor-classroom-summary {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+}
+
+.tutor-classroom-summary-card {
+  background: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 16px;
+  padding: 20px;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.04);
+}
+
+.tutor-classroom-summary-card span {
+  color: #6b7280;
+  font-size: 13px;
+}
+
+.tutor-classroom-summary-card strong {
+  display: block;
+  margin-top: 10px;
+  font-size: 32px;
+  color: #059669;
+}
+
+.tutor-classroom-summary-card p {
+  margin: 4px 0 0;
+  color: #9ca3af;
+  font-size: 12px;
+}
+
+.tutor-classroom-toolbar {
+  display: flex;
+  gap: 12px;
+  background: white;
+  border: 1px solid #e5e7eb;
+  padding: 16px;
+  border-radius: 16px;
+}
+
+.tutor-classroom-toolbar input,
+.tutor-classroom-toolbar select {
+  height: 42px;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  padding: 0 12px;
+  font-size: 14px;
+  outline: none;
+}
+
+.tutor-classroom-toolbar input {
+  flex: 1;
+}
+
+.tutor-classroom-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 18px;
+}
+
+.tutor-classroom-card {
+  background: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 18px;
+  padding: 20px;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.04);
+}
+
+.tutor-classroom-card-top {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 14px;
+}
+
+.tutor-classroom-card-top span {
+  color: #047857;
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.tutor-classroom-card h2 {
+  margin: 0 0 16px;
+  color: #111827;
+  font-size: 20px;
+}
+
+.tutor-classroom-info {
+  display: grid;
+  gap: 10px;
+}
+
+.tutor-classroom-info-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  background: #f9fafb;
+  border-radius: 12px;
+  padding: 12px;
+}
+
+.tutor-classroom-info-row span {
+  color: #6b7280;
+  font-size: 13px;
+}
+
+.tutor-classroom-info-row strong {
+  color: #111827;
+  font-size: 13px;
+}
+
+.tutor-classroom-status {
+  border-radius: 999px;
+  padding: 4px 10px;
+  font-size: 11px;
+  font-weight: 800;
+  background: #f3f4f6;
+  color: #6b7280;
+}
+
+.tutor-classroom-status.open,
+.tutor-classroom-status.active,
+.tutor-classroom-status.in_progress {
+  background: #ecfdf5;
+  color: #059669;
+  border: 1px solid #a7f3d0;
+}
+
+.tutor-classroom-status.closed,
+.tutor-classroom-status.completed {
+  background: #eff6ff;
+  color: #2563eb;
+}
+
+.tutor-classroom-status.cancelled {
+  background: #fef2f2;
+  color: #dc2626;
+}
+
+.tutor-classroom-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 18px;
+}
+
+.tutor-classroom-actions button {
+  flex: 1;
+  height: 40px;
+  border-radius: 10px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.tutor-classroom-actions button:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.tutor-classroom-actions .open {
+  border: none;
+  background: #059669;
+  color: white;
+}
+
+.tutor-classroom-actions .close {
+  border: 1px solid #fecaca;
+  background: #fef2f2;
+  color: #dc2626;
+}
+
+.tutor-classroom-empty {
+  background: white;
+  border: 1px dashed #d1d5db;
+  border-radius: 16px;
+  padding: 60px 24px;
+  text-align: center;
+  color: #9ca3af;
+}
+
+.tutor-classroom-empty h2 {
+  margin: 0 0 8px;
+  color: #111827;
+}
+
+@media (max-width: 1200px) {
+  .tutor-classroom-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .tutor-classroom-summary {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 768px) {
+  .tutor-classroom-header,
+  .tutor-classroom-toolbar {
+    flex-direction: column;
+  }
+
+  .tutor-classroom-grid,
+  .tutor-classroom-summary {
+    grid-template-columns: 1fr;
+  }
+}

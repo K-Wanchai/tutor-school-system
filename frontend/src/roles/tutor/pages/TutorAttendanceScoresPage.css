@@ -1,0 +1,151 @@
+.tas-page {
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+}
+
+.tas-header {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.tas-header h1 {
+  margin: 0 0 6px;
+  font-size: 28px;
+  font-weight: 800;
+  color: #111827;
+}
+
+.tas-header p {
+  margin: 0;
+  color: #6b7280;
+  font-size: 14px;
+}
+
+.tas-header button,
+.tas-detail-btn {
+  border: none;
+  background: #059669;
+  color: white;
+  border-radius: 10px;
+  padding: 10px 16px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.tas-toolbar {
+  background: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 16px;
+  padding: 16px;
+}
+
+.tas-toolbar input {
+  width: 100%;
+  height: 44px;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  padding: 0 14px;
+  outline: none;
+}
+
+.tas-course-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 18px;
+}
+
+.tas-course-card {
+  background: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 18px;
+  padding: 20px;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.04);
+}
+
+.tas-course-top {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 14px;
+}
+
+.tas-course-top span {
+  color: #047857;
+  font-weight: 800;
+}
+
+.tas-course-top b {
+  background: #ecfdf5;
+  color: #059669;
+  border: 1px solid #a7f3d0;
+  border-radius: 999px;
+  padding: 4px 10px;
+  font-size: 11px;
+}
+
+.tas-course-card h2 {
+  margin: 0 0 8px;
+  color: #111827;
+  font-size: 20px;
+}
+
+.tas-course-card p {
+  color: #6b7280;
+  line-height: 1.6;
+  min-height: 44px;
+}
+
+.tas-course-meta {
+  display: grid;
+  gap: 10px;
+  margin: 16px 0;
+}
+
+.tas-course-meta div {
+  display: flex;
+  justify-content: space-between;
+  background: #f9fafb;
+  padding: 12px;
+  border-radius: 12px;
+}
+
+.tas-course-meta span {
+  color: #6b7280;
+  font-size: 13px;
+}
+
+.tas-course-meta strong {
+  color: #111827;
+  font-size: 13px;
+}
+
+.tas-detail-btn {
+  width: 100%;
+  height: 42px;
+}
+
+.tas-empty {
+  background: white;
+  border: 1px dashed #d1d5db;
+  border-radius: 16px;
+  padding: 60px;
+  text-align: center;
+  color: #9ca3af;
+}
+
+@media (max-width: 1200px) {
+  .tas-course-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 768px) {
+  .tas-header {
+    flex-direction: column;
+  }
+
+  .tas-course-grid {
+    grid-template-columns: 1fr;
+  }
+}
