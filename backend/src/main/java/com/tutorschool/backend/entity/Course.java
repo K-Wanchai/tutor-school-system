@@ -28,7 +28,7 @@ public class Course {
     @Column(name = "course_name", nullable = false, length = 200)
     private String courseName;
 
-    @Column(nullable = false, precision = 10, scale = 2)
+    @Column(precision = 10, scale = 2)
     private BigDecimal price;
 
     @Column(columnDefinition = "TEXT")
@@ -67,6 +67,9 @@ public class Course {
     @OrderBy("testOrder ASC")
     @Builder.Default
     private List<CourseTest> tests = new ArrayList<>();
+
+    @Column(name = "tutor_remark", columnDefinition = "TEXT")
+    private String tutorRemark;
 
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;

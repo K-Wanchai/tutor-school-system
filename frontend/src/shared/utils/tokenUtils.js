@@ -1,11 +1,16 @@
-export const getToken = () => localStorage.getItem('token');
-export const getRole = () => localStorage.getItem('role');
-export const setToken = (token) => localStorage.setItem('token', token);
-export const setRole = (role) => localStorage.setItem('role', role);
+export const getToken        = ()    => localStorage.getItem('token');
+export const getRole         = ()    => localStorage.getItem('role');
+export const getRefreshToken = ()    => localStorage.getItem('refreshToken');
+export const setToken        = (v)   => localStorage.setItem('token', v);
+export const setRole         = (v)   => localStorage.setItem('role', v);
+export const setRefreshToken = (v)   => localStorage.setItem('refreshToken', v);
 
 export const clearAuth = () => {
   localStorage.removeItem('token');
+  localStorage.removeItem('refreshToken');
   localStorage.removeItem('role');
+  localStorage.removeItem('userId');
+  localStorage.removeItem('username');
 };
 
 export const isAuthenticated = () => !!getToken();

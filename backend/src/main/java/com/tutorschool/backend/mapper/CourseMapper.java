@@ -34,11 +34,15 @@ public class CourseMapper {
                                          List<CourseLessonResponse> lessons,
                                          List<CourseTestResponse> tests) {
         String teacherName = null;
+        String tutorEmail = null;
         Long tutorId = null;
 
         if (course.getTutor() != null) {
             tutorId = course.getTutor().getId();
             teacherName = course.getTutor().getFirstName() + " " + course.getTutor().getLastName();
+            if (course.getTutor().getUser() != null) {
+                tutorEmail = course.getTutor().getUser().getEmail();
+            }
         }
 
         return CourseResponse.builder()
@@ -55,6 +59,8 @@ public class CourseMapper {
                 .status(course.getStatus())
                 .tutorId(tutorId)
                 .teacherName(teacherName)
+                .tutorEmail(tutorEmail)
+                .tutorRemark(course.getTutorRemark())
                 .enrolledCount(enrolledCount)
                 .lessons(lessons)
                 .tests(tests)

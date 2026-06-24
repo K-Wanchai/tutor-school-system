@@ -5,6 +5,7 @@ import java.util.List;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
@@ -17,11 +18,13 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.tutorschool.backend.dto.request.CreateCourseRequest;
+import com.tutorschool.backend.dto.request.TutorCourseResponseRequest;
 import com.tutorschool.backend.dto.request.UpdateCourseRequest;
 import com.tutorschool.backend.dto.request.UpdateCourseStatusRequest;
 import com.tutorschool.backend.dto.response.ApiResponse;
 import com.tutorschool.backend.dto.response.CourseResponse;
 import com.tutorschool.backend.dto.response.PageResponse;
+import com.tutorschool.backend.entity.User;
 import com.tutorschool.backend.service.CourseService;
 
 import jakarta.validation.Valid;
@@ -34,7 +37,6 @@ public class CourseController {
 
     private final CourseService courseService;
 
-    // TODO: STUDENT เห็นได้เฉพาะ OPEN_FOR_REGISTRATION — เพิ่ม filter เมื่อ SecurityConfig พร้อม
     @GetMapping
     public ResponseEntity<ApiResponse<PageResponse<CourseResponse>>> getAllCourses(
             @RequestParam(defaultValue = "0") int page,
@@ -55,11 +57,19 @@ public class CourseController {
         return ResponseEntity.ok(ApiResponse.success("Course retrieved successfully", response));
     }
 
-    @GetMapping("/Tutor/{tutorId}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'Tutor')")
+    @GetMapping("/tutor/{tutorId}")
+    @PreAuthorize("hasAnyRole('ADMIN', 'TUTOR')")
     public ResponseEntity<ApiResponse<List<CourseResponse>>> getCoursesByTutorId(@PathVariable Long tutorId) {
         List<CourseResponse> response = courseService.getCoursesByTutorId(tutorId);
         return ResponseEntity.ok(ApiResponse.success("Courses retrieved successfully", response));
+    }
+
+    @GetMapping("/my-courses")
+    @PreAuthorize("hasRole('TUTOR')")
+    public ResponseEntity<ApiResponse<List<CourseResponse>>> getMyCourses(
+            @AuthenticationPrincipal User currentUser) {
+        List<CourseResponse> response = courseService.getCoursesByTutorUserId(currentUser.getId());
+        return ResponseEntity.ok(ApiResponse.success("My courses retrieved successfully", response));
     }
 
     @PostMapping
@@ -87,6 +97,17 @@ public class CourseController {
             @Valid @RequestBody UpdateCourseStatusRequest request) {
         CourseResponse response = courseService.updateCourseStatus(id, request);
         return ResponseEntity.ok(ApiResponse.success("Course status updated successfully", response));
+    }
+
+    @PatchMapping("/{id}/tutor-response")
+    @PreAuthorize("hasRole('TUTOR')")
+    public ResponseEntity<ApiResponse<CourseResponse>> tutorRespondToCourse(
+            @PathVariable Long id,
+            @RequestBody TutorCourseResponseRequest request,
+            @AuthenticationPrincipal User currentUser) {
+        CourseResponse response = courseService.tutorRespondToCourse(id, request, currentUser.getId());
+        String msg = request.isAccepted() ? "ตอบรับคอร์สสำเร็จ" : "ปฏิเสธคอร์สสำเร็จ";
+        return ResponseEntity.ok(ApiResponse.success(msg, response));
     }
 
     @DeleteMapping("/{id}")

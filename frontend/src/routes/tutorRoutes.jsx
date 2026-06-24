@@ -3,6 +3,7 @@ import ProtectedRoute from './ProtectedRoute';
 import TutorLayout from '../roles/tutor/layouts/TutorLayout';
 import TutorDashboardPage from '../roles/tutor/pages/TutorDashboardPage';
 import TutorCoursesPage from '../roles/tutor/pages/TutorCoursesPage';
+import TutorNotificationsPage from '../roles/tutor/pages/TutorNotificationsPage';
 
 const tutorRoutes = (
   <Route

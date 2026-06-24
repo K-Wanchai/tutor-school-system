@@ -16,4 +16,6 @@ public interface TutorService {
     TutorResponse updateTeacher(Long id, UpdateTutorRequest request);
 
     void deleteTeacher(Long id);
+
+    TutorResponse toggleStatus(Long id, boolean enabled);
 }
