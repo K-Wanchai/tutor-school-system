@@ -64,6 +64,9 @@ public class CourseMapper {
                 .enrolledCount(enrolledCount)
                 .lessons(lessons)
                 .tests(tests)
+                .scheduleDays(course.getScheduleDays())
+                .scheduleStartTime(course.getScheduleStartTime())
+                .scheduleEndTime(course.getScheduleEndTime())
                 .createdAt(course.getCreatedAt())
                 .updatedAt(course.getUpdatedAt())
                 .build();

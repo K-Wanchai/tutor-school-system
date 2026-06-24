@@ -1,4 +1,4 @@
-package com.tutorschool.backend.controller;
+﻿package com.tutorschool.backend.controller;
 
 import java.util.List;
 
@@ -34,7 +34,7 @@ public class CourseEvaluationController {
 
     private final CourseEvaluationService evaluationService;
 
-    // POST /api/v1/course-evaluations — นักเรียนส่งรีวิว
+    // POST /api/v1/course-evaluations â€” à¸™à¸±à¸à¹€à¸£à¸µà¸¢à¸™à¸ªà¹ˆà¸‡à¸£à¸µà¸§à¸´à¸§
     @PostMapping
     @PreAuthorize("hasRole('STUDENT')")
     public ResponseEntity<ApiResponse<CourseEvaluationResponse>> createEvaluation(
@@ -45,7 +45,7 @@ public class CourseEvaluationController {
                 .body(ApiResponse.success("Evaluation submitted successfully", response));
     }
 
-    // GET /api/v1/course-evaluations — Admin ดูทั้งหมด
+    // GET /api/v1/course-evaluations â€” Admin à¸”à¸¹à¸—à¸±à¹‰à¸‡à¸«à¸¡à¸”
     @GetMapping
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ApiResponse<List<CourseEvaluationResponse>>> getAllEvaluations() {
@@ -53,9 +53,9 @@ public class CourseEvaluationController {
         return ResponseEntity.ok(ApiResponse.success("Evaluations retrieved successfully", response));
     }
 
-    // GET /api/v1/course-evaluations/{id} — ดูตาม ID
+    // GET /api/v1/course-evaluations/{id} â€” à¸”à¸¹à¸•à¸²à¸¡ ID
     @GetMapping("/{id}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'Tutor', 'STUDENT')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'TUTOR', 'STUDENT')")
     public ResponseEntity<ApiResponse<CourseEvaluationResponse>> getEvaluationById(
             @PathVariable Long id,
             Authentication authentication) {
@@ -63,9 +63,9 @@ public class CourseEvaluationController {
         return ResponseEntity.ok(ApiResponse.success("Evaluation retrieved successfully", response));
     }
 
-    // GET /api/v1/course-evaluations/course/{courseId} — ดูรีวิวของคอร์ส
+    // GET /api/v1/course-evaluations/course/{courseId} â€” à¸”à¸¹à¸£à¸µà¸§à¸´à¸§à¸‚à¸­à¸‡à¸„à¸­à¸£à¹Œà¸ª
     @GetMapping("/course/{courseId}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'Tutor')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'TUTOR')")
     public ResponseEntity<ApiResponse<List<CourseEvaluationResponse>>> getEvaluationsByCourseId(
             @PathVariable Long courseId,
             Authentication authentication) {
@@ -73,9 +73,18 @@ public class CourseEvaluationController {
         return ResponseEntity.ok(ApiResponse.success("Evaluations retrieved successfully", response));
     }
 
-    // GET /api/v1/course-evaluations/tutor/{tutorId} — ดูรีวิวของ Tutor
+    // GET /api/v1/course-evaluations/tutor/me
+    @GetMapping("/tutor/me")
+    @PreAuthorize("hasRole('TUTOR')")
+    public ResponseEntity<ApiResponse<List<CourseEvaluationResponse>>> getMyEvaluationsAsTutor(
+            Authentication authentication) {
+        List<CourseEvaluationResponse> response = evaluationService.getMyEvaluationsAsTutor(authentication.getName());
+        return ResponseEntity.ok(ApiResponse.success("My evaluations retrieved successfully", response));
+    }
+
+    // GET /api/v1/course-evaluations/tutor/{tutorId} â€” à¸”à¸¹à¸£à¸µà¸§à¸´à¸§à¸‚à¸­à¸‡ Tutor
     @GetMapping("/tutor/{tutorId}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'Tutor')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'TUTOR')")
     public ResponseEntity<ApiResponse<List<CourseEvaluationResponse>>> getEvaluationsByTutorId(
             @PathVariable Long tutorId,
             Authentication authentication) {
@@ -83,7 +92,7 @@ public class CourseEvaluationController {
         return ResponseEntity.ok(ApiResponse.success("Evaluations retrieved successfully", response));
     }
 
-    // GET /api/v1/course-evaluations/student/me — นักเรียนดูรีวิวตัวเอง
+    // GET /api/v1/course-evaluations/student/me â€” à¸™à¸±à¸à¹€à¸£à¸µà¸¢à¸™à¸”à¸¹à¸£à¸µà¸§à¸´à¸§à¸•à¸±à¸§à¹€à¸­à¸‡
     @GetMapping("/student/me")
     @PreAuthorize("hasRole('STUDENT')")
     public ResponseEntity<ApiResponse<List<CourseEvaluationResponse>>> getMyEvaluations(
@@ -92,16 +101,16 @@ public class CourseEvaluationController {
         return ResponseEntity.ok(ApiResponse.success("My evaluations retrieved successfully", response));
     }
 
-    // GET /api/v1/course-evaluations/course/{courseId}/summary — ดู summary คะแนน
+    // GET /api/v1/course-evaluations/course/{courseId}/summary â€” à¸”à¸¹ summary à¸„à¸°à¹à¸™à¸™
     @GetMapping("/course/{courseId}/summary")
-    @PreAuthorize("hasAnyRole('ADMIN', 'Tutor')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'TUTOR')")
     public ResponseEntity<ApiResponse<CourseEvaluationSummaryResponse>> getCourseSummary(
             @PathVariable Long courseId) {
         CourseEvaluationSummaryResponse response = evaluationService.getCourseSummary(courseId);
         return ResponseEntity.ok(ApiResponse.success("Course evaluation summary retrieved successfully", response));
     }
 
-    // PUT /api/v1/course-evaluations/{id} — นักเรียนแก้ไขรีวิว (ภายใน 24 ชม.)
+    // PUT /api/v1/course-evaluations/{id} â€” à¸™à¸±à¸à¹€à¸£à¸µà¸¢à¸™à¹à¸à¹‰à¹„à¸‚à¸£à¸µà¸§à¸´à¸§ (à¸ à¸²à¸¢à¹ƒà¸™ 24 à¸Šà¸¡.)
     @PutMapping("/{id}")
     @PreAuthorize("hasRole('STUDENT')")
     public ResponseEntity<ApiResponse<CourseEvaluationResponse>> updateEvaluation(
@@ -112,7 +121,7 @@ public class CourseEvaluationController {
         return ResponseEntity.ok(ApiResponse.success("Evaluation updated successfully", response));
     }
 
-    // PATCH /api/v1/course-evaluations/{id}/status — Admin เปลี่ยน status
+    // PATCH /api/v1/course-evaluations/{id}/status â€” Admin à¹€à¸›à¸¥à¸µà¹ˆà¸¢à¸™ status
     @PatchMapping("/{id}/status")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ApiResponse<CourseEvaluationResponse>> updateEvaluationStatus(
@@ -122,7 +131,7 @@ public class CourseEvaluationController {
         return ResponseEntity.ok(ApiResponse.success("Evaluation status updated successfully", response));
     }
 
-    // DELETE /api/v1/course-evaluations/{id} — Admin ลบรีวิว
+    // DELETE /api/v1/course-evaluations/{id} â€” Admin à¸¥à¸šà¸£à¸µà¸§à¸´à¸§
     @DeleteMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ApiResponse<Void>> deleteEvaluation(@PathVariable Long id) {
@@ -130,3 +139,4 @@ public class CourseEvaluationController {
         return ResponseEntity.ok(ApiResponse.success("Evaluation deleted successfully"));
     }
 }
+

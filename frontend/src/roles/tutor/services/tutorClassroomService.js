@@ -8,7 +8,7 @@ const unwrap = (response) => {
 };
 
 export async function getClassroomSessions() {
-  const response = await api.get('/classroom-sessions');
+  const response = await api.get('/classroom-sessions/tutor/me');
   return unwrap(response);
 }
 

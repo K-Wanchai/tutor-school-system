@@ -1,4 +1,4 @@
-package com.tutorschool.backend.controller;
+﻿package com.tutorschool.backend.controller;
 
 import com.tutorschool.backend.dto.request.CreateStudentRequest;
 import com.tutorschool.backend.dto.request.UpdateStudentRequest;
@@ -22,7 +22,7 @@ public class StudentController {
     private final StudentService studentService;
 
     @GetMapping
-    @PreAuthorize("hasAnyRole('ADMIN', 'Tutor')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'TUTOR')")
     public ResponseEntity<ApiResponse<PageResponse<StudentResponse>>> getAllStudents(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,
@@ -32,14 +32,14 @@ public class StudentController {
     }
 
     @GetMapping("/{id}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'Tutor', 'STUDENT')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'TUTOR', 'STUDENT')")
     public ResponseEntity<ApiResponse<StudentResponse>> getStudentById(@PathVariable Long id) {
         StudentResponse response = studentService.getStudentById(id);
         return ResponseEntity.ok(ApiResponse.success("Student retrieved successfully", response));
     }
 
     @GetMapping("/code/{studentCode}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'Tutor')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'TUTOR')")
     public ResponseEntity<ApiResponse<StudentResponse>> getStudentByCode(@PathVariable String studentCode) {
         StudentResponse response = studentService.getStudentByCode(studentCode);
         return ResponseEntity.ok(ApiResponse.success("Student retrieved successfully", response));
@@ -79,3 +79,4 @@ public class StudentController {
         return ResponseEntity.ok(ApiResponse.success("Student deleted successfully"));
     }
 }
+

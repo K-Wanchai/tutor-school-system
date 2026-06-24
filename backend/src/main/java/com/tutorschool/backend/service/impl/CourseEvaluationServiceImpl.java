@@ -188,6 +188,17 @@ public class CourseEvaluationServiceImpl implements CourseEvaluationService {
 
     @Override
     @Transactional(readOnly = true)
+    public List<CourseEvaluationResponse> getMyEvaluationsAsTutor(String username) {
+        User user = findUserByUsername(username);
+        Tutor tutor = TutorRepository.findByUserId(user.getId())
+                .orElseThrow(() -> new ResourceNotFoundException("Tutor profile not found"));
+        return evaluationRepository.findByTutorId(tutor.getId()).stream()
+                .map(evaluationMapper::toResponseForTeacher)
+                .toList();
+    }
+
+    @Override
+    @Transactional(readOnly = true)
     public List<CourseEvaluationResponse> getMyEvaluations(String username) {
         Student student = findStudentByUsername(username);
         return evaluationRepository.findByStudentId(student.getId()).stream()

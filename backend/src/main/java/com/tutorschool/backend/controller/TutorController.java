@@ -1,4 +1,4 @@
-package com.tutorschool.backend.controller;
+﻿package com.tutorschool.backend.controller;
 
 import com.tutorschool.backend.dto.request.CreateTutorRequest;
 import com.tutorschool.backend.dto.request.UpdateTutorRequest;
@@ -22,7 +22,7 @@ public class TutorController {
     private final TutorService TutorService;
 
     @GetMapping
-    @PreAuthorize("hasAnyRole('ADMIN', 'Tutor', 'STUDENT')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'TUTOR', 'STUDENT')")
     public ResponseEntity<ApiResponse<PageResponse<TutorResponse>>> getAllTeachers(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size) {
@@ -31,7 +31,7 @@ public class TutorController {
     }
 
     @GetMapping("/{id}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'Tutor', 'STUDENT')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'TUTOR', 'STUDENT')")
     public ResponseEntity<ApiResponse<TutorResponse>> getTeacherById(@PathVariable Long id) {
         TutorResponse response = TutorService.getTeacherById(id);
         return ResponseEntity.ok(ApiResponse.success("Tutor retrieved successfully", response));
@@ -73,3 +73,4 @@ public class TutorController {
         return ResponseEntity.ok(ApiResponse.success("Tutor deleted successfully"));
     }
 }
+

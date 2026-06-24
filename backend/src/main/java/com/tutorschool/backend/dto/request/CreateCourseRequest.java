@@ -9,6 +9,7 @@ import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.LocalTime;
 import java.util.List;
 
 @Data
@@ -54,4 +55,8 @@ public class CreateCourseRequest {
 
     @Valid
     private List<CourseTestRequest> tests;
+
+    private String scheduleDays;
+    private LocalTime scheduleStartTime;
+    private LocalTime scheduleEndTime;
 }

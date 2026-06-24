@@ -8,12 +8,6 @@ const unwrap = (response) => {
 };
 
 export async function getTutorCourses() {
-  const tutorId = localStorage.getItem('tutorId') || localStorage.getItem('userId');
-
-  if (!tutorId) {
-    return [];
-  }
-
-  const response = await api.get(`/courses/tutor/${tutorId}`);
+  const response = await api.get('/courses/my-courses');
   return unwrap(response);
 }

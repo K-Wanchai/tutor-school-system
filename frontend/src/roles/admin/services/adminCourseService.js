@@ -56,6 +56,9 @@ export async function createCourse(form) {
     registrationEndDate:   form.registrationEndDate || null,
     courseStartDate:       form.courseStartDate,
     tutorId:               Number(form.tutorId),
+    scheduleDays:          form.scheduleDays || null,
+    scheduleStartTime:     form.scheduleStartTime || null,
+    scheduleEndTime:       form.scheduleEndTime || null,
   };
   try {
     const res = await api.post('/courses', payload);
@@ -79,6 +82,9 @@ export async function updateCourse(id, form) {
     tutorId:               Number(form.tutorId),
     lessons:               form.lessons || [],
     tests:                 form.tests || [],
+    scheduleDays:          form.scheduleDays || null,
+    scheduleStartTime:     form.scheduleStartTime || null,
+    scheduleEndTime:       form.scheduleEndTime || null,
   };
   try {
     const res = await api.put(`/courses/${id}`, payload);

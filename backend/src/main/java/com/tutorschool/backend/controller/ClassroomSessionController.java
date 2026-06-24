@@ -26,13 +26,20 @@ public class ClassroomSessionController {
     private final ClassroomSessionService classroomSessionService;
 
     @PostMapping
-    @PreAuthorize("hasAnyRole('ADMIN', 'Tutor')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'TUTOR')")
     public ResponseEntity<ApiResponse<ClassroomSessionResponse>> createSession(
             @Valid @RequestBody CreateClassroomSessionRequest request,
             Authentication auth) {
         ClassroomSessionResponse response = classroomSessionService.createSession(request, auth);
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(ApiResponse.success("Classroom session created successfully", response));
+    }
+
+    @GetMapping("/tutor/me")
+    @PreAuthorize("hasRole('TUTOR')")
+    public ResponseEntity<ApiResponse<List<ClassroomSessionResponse>>> getMySessionsAsTutor(Authentication auth) {
+        List<ClassroomSessionResponse> response = classroomSessionService.getMySessionsAsTutor(auth);
+        return ResponseEntity.ok(ApiResponse.success("Classroom sessions retrieved successfully", response));
     }
 
     @GetMapping
@@ -43,14 +50,14 @@ public class ClassroomSessionController {
     }
 
     @GetMapping("/{id}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'Tutor', 'STUDENT')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'TUTOR', 'STUDENT')")
     public ResponseEntity<ApiResponse<ClassroomSessionResponse>> getSessionById(@PathVariable Long id) {
         ClassroomSessionResponse response = classroomSessionService.getSessionById(id);
         return ResponseEntity.ok(ApiResponse.success("Classroom session retrieved successfully", response));
     }
 
     @GetMapping("/course/{courseId}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'Tutor', 'STUDENT')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'TUTOR', 'STUDENT')")
     public ResponseEntity<ApiResponse<List<ClassroomSessionResponse>>> getSessionsByCourseId(
             @PathVariable Long courseId) {
         List<ClassroomSessionResponse> response = classroomSessionService.getSessionsByCourseId(courseId);
@@ -58,7 +65,7 @@ public class ClassroomSessionController {
     }
 
     @PatchMapping("/{id}/open")
-    @PreAuthorize("hasAnyRole('ADMIN', 'Tutor')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'TUTOR')")
     public ResponseEntity<ApiResponse<ClassroomSessionResponse>> openSession(
             @PathVariable Long id,
             Authentication auth) {
@@ -67,7 +74,7 @@ public class ClassroomSessionController {
     }
 
     @PatchMapping("/{id}/close")
-    @PreAuthorize("hasAnyRole('ADMIN', 'Tutor')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'TUTOR')")
     public ResponseEntity<ApiResponse<ClassroomSessionResponse>> closeSession(
             @PathVariable Long id,
             Authentication auth) {
@@ -76,7 +83,7 @@ public class ClassroomSessionController {
     }
 
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'Tutor')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'TUTOR')")
     public ResponseEntity<ApiResponse<Void>> deleteSession(
             @PathVariable Long id,
             Authentication auth) {

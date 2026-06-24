@@ -4,7 +4,6 @@ import './TutorDashboardPage.css';
 
 export default function TutorDashboardPage() {
   const username = localStorage.getItem('username') || 'ติวเตอร์';
-  const tutorId = localStorage.getItem('tutorId') || localStorage.getItem('userId');
 
   const [loading, setLoading] = useState(true);
   const [courses, setCourses] = useState([]);
@@ -31,16 +30,10 @@ export default function TutorDashboardPage() {
         setLoading(true);
 
         const requests = [
-          tutorId
-            ? api.get(`/courses/tutor/${tutorId}`).catch(() => ({ data: [] }))
-            : Promise.resolve({ data: [] }),
-
+          api.get('/courses/my-courses').catch(() => ({ data: [] })),
           api.get('/course-schedules/tutor/me').catch(() => ({ data: [] })),
-          api.get('/classroom-sessions').catch(() => ({ data: [] })),
-
-          tutorId
-            ? api.get(`/course-evaluations/tutor/${tutorId}`).catch(() => ({ data: [] }))
-            : Promise.resolve({ data: [] }),
+          api.get('/classroom-sessions/tutor/me').catch(() => ({ data: [] })),
+          api.get('/course-evaluations/tutor/me').catch(() => ({ data: [] })),
         ];
 
         const [coursesRes, schedulesRes, sessionsRes, evaluationsRes] = await Promise.all(requests);
@@ -55,7 +48,7 @@ export default function TutorDashboardPage() {
     }
 
     loadDashboard();
-  }, [tutorId]);
+  }, []);
 
   const summary = useMemo(() => {
     const activeCourses = courses.filter((c) =>

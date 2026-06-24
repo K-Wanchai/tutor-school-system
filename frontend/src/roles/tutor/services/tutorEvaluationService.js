@@ -8,15 +8,6 @@ const unwrap = (response) => {
 };
 
 export async function getTutorEvaluations() {
-  const tutorId =
-    localStorage.getItem('tutorId') ||
-    localStorage.getItem('userId') ||
-    localStorage.getItem('id');
-
-  if (!tutorId) {
-    return [];
-  }
-
-  const response = await api.get(`/course-evaluations/tutor/${tutorId}`);
+  const response = await api.get('/course-evaluations/tutor/me');
   return unwrap(response);
 }

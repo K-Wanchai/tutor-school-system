@@ -1,5 +1,6 @@
 package com.tutorschool.backend.dto.response;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import com.tutorschool.backend.entity.CourseStatus;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -9,6 +10,7 @@ import lombok.NoArgsConstructor;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.util.List;
 
 @Data
@@ -35,6 +37,11 @@ public class CourseResponse {
     private long enrolledCount;
     private List<CourseLessonResponse> lessons;
     private List<CourseTestResponse> tests;
+    private String scheduleDays;
+    @JsonFormat(pattern = "HH:mm")
+    private LocalTime scheduleStartTime;
+    @JsonFormat(pattern = "HH:mm")
+    private LocalTime scheduleEndTime;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 }

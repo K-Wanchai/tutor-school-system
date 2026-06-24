@@ -1,4 +1,4 @@
-package com.tutorschool.backend.controller;
+﻿package com.tutorschool.backend.controller;
 
 import com.tutorschool.backend.dto.request.UpdateAttendanceStatusRequest;
 import com.tutorschool.backend.dto.response.ApiResponse;
@@ -28,7 +28,7 @@ public class AttendanceRecordController {
     }
 
     @GetMapping("/{id}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'Tutor', 'STUDENT')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'TUTOR', 'STUDENT')")
     public ResponseEntity<ApiResponse<AttendanceRecordResponse>> getAttendanceRecordById(
             @PathVariable Long id,
             Authentication auth) {
@@ -37,7 +37,7 @@ public class AttendanceRecordController {
     }
 
     @GetMapping("/session/{sessionId}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'Tutor')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'TUTOR')")
     public ResponseEntity<ApiResponse<List<AttendanceRecordResponse>>> getAttendanceRecordsBySessionId(
             @PathVariable Long sessionId,
             Authentication auth) {
@@ -46,7 +46,7 @@ public class AttendanceRecordController {
     }
 
     @GetMapping("/course/{courseId}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'Tutor')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'TUTOR')")
     public ResponseEntity<ApiResponse<List<AttendanceRecordResponse>>> getAttendanceRecordsByCourseId(
             @PathVariable Long courseId,
             Authentication auth) {
@@ -71,3 +71,4 @@ public class AttendanceRecordController {
         return ResponseEntity.ok(ApiResponse.success("Attendance status updated successfully", response));
     }
 }
+

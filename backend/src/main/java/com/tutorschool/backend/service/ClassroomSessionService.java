@@ -16,6 +16,8 @@ public interface ClassroomSessionService {
 
     List<ClassroomSessionResponse> getAllSessions();
 
+    List<ClassroomSessionResponse> getMySessionsAsTutor(Authentication auth);
+
     ClassroomSessionResponse getSessionById(Long id);
 
     List<ClassroomSessionResponse> getSessionsByCourseId(Long courseId);

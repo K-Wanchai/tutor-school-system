@@ -6,6 +6,7 @@ import lombok.*;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -70,6 +71,16 @@ public class Course {
 
     @Column(name = "tutor_remark", columnDefinition = "TEXT")
     private String tutorRemark;
+
+    /** วันสอนในสัปดาห์ เก็บเป็น comma-separated เช่น "MON,WED,FRI" */
+    @Column(name = "schedule_days", length = 100)
+    private String scheduleDays;
+
+    @Column(name = "schedule_start_time")
+    private LocalTime scheduleStartTime;
+
+    @Column(name = "schedule_end_time")
+    private LocalTime scheduleEndTime;
 
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;

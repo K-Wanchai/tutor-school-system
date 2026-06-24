@@ -1,4 +1,4 @@
-package com.tutorschool.backend.controller;
+﻿package com.tutorschool.backend.controller;
 
 import com.tutorschool.backend.dto.request.CancelCourseScheduleRequest;
 import com.tutorschool.backend.dto.request.CreateCourseScheduleRequest;
@@ -25,7 +25,7 @@ public class CourseScheduleController {
     private final CourseScheduleService courseScheduleService;
 
     @PostMapping
-    @PreAuthorize("hasAnyRole('ADMIN', 'Tutor')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'TUTOR')")
     public ResponseEntity<ApiResponse<CourseScheduleResponse>> createSchedule(
             @Valid @RequestBody CreateCourseScheduleRequest request,
             @AuthenticationPrincipal User currentUser) {
@@ -42,14 +42,14 @@ public class CourseScheduleController {
     }
 
     @GetMapping("/{id}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'Tutor', 'STUDENT')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'TUTOR', 'STUDENT')")
     public ResponseEntity<ApiResponse<CourseScheduleResponse>> getScheduleById(@PathVariable Long id) {
         CourseScheduleResponse response = courseScheduleService.getScheduleById(id);
         return ResponseEntity.ok(ApiResponse.success("Schedule retrieved successfully", response));
     }
 
     @GetMapping("/course/{courseId}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'Tutor', 'STUDENT')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'TUTOR', 'STUDENT')")
     public ResponseEntity<ApiResponse<List<CourseScheduleResponse>>> getSchedulesByCourse(
             @PathVariable Long courseId) {
         List<CourseScheduleResponse> schedules = courseScheduleService.getSchedulesByCourseId(courseId);
@@ -73,7 +73,7 @@ public class CourseScheduleController {
     }
 
     @PutMapping("/{id}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'Tutor')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'TUTOR')")
     public ResponseEntity<ApiResponse<CourseScheduleResponse>> updateSchedule(
             @PathVariable Long id,
             @Valid @RequestBody UpdateCourseScheduleRequest request,
@@ -83,7 +83,7 @@ public class CourseScheduleController {
     }
 
     @PatchMapping("/{id}/cancel")
-    @PreAuthorize("hasAnyRole('ADMIN', 'Tutor')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'TUTOR')")
     public ResponseEntity<ApiResponse<CourseScheduleResponse>> cancelSchedule(
             @PathVariable Long id,
             @Valid @RequestBody CancelCourseScheduleRequest request,
@@ -93,7 +93,7 @@ public class CourseScheduleController {
     }
 
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'Tutor')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'TUTOR')")
     public ResponseEntity<ApiResponse<Void>> deleteSchedule(
             @PathVariable Long id,
             @AuthenticationPrincipal User currentUser) {
@@ -101,3 +101,4 @@ public class CourseScheduleController {
         return ResponseEntity.ok(ApiResponse.success("Schedule deleted successfully", null));
     }
 }
+

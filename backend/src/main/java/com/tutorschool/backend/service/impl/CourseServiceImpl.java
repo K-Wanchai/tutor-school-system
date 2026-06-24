@@ -142,6 +142,9 @@ public class CourseServiceImpl implements CourseService {
                 .courseStartDate(request.getCourseStartDate())
                 .status(CourseStatus.DRAFT)
                 .tutor(tutor)
+                .scheduleDays(request.getScheduleDays())
+                .scheduleStartTime(request.getScheduleStartTime())
+                .scheduleEndTime(request.getScheduleEndTime())
                 .build();
 
         addLessonsToCoure(course, request.getLessons());
@@ -208,6 +211,9 @@ public class CourseServiceImpl implements CourseService {
         course.setRegistrationEndDate(request.getRegistrationEndDate());
         course.setCourseStartDate(request.getCourseStartDate());
         course.setTutor(Tutor);
+        course.setScheduleDays(request.getScheduleDays());
+        course.setScheduleStartTime(request.getScheduleStartTime());
+        course.setScheduleEndTime(request.getScheduleEndTime());
 
         course.getLessons().clear();
         addLessonsToCoure(course, request.getLessons());

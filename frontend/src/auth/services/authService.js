@@ -2,6 +2,8 @@ import api from '../../shared/services/api';
 import { setToken, setRole, setRefreshToken, clearAuth } from '../../shared/utils/tokenUtils';
 
 const setUsername = (val) => localStorage.setItem('username', val ?? '');
+const setUserId   = (val) => { if (val != null) localStorage.setItem('userId', String(val)); };
+const setEmail    = (val) => { if (val)         localStorage.setItem('email',  val); };
 
 export const login = async (payload) => {
   const response = await api.post('/auth/login', payload);
@@ -9,6 +11,8 @@ export const login = async (payload) => {
   setToken(data.accessToken);
   setRole(data.role);
   setUsername(data.username);
+  setUserId(data.userId);
+  setEmail(data.email);
   if (data.refreshToken) setRefreshToken(data.refreshToken);
   return data;
 };

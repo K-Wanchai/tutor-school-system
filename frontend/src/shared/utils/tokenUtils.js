@@ -11,6 +11,7 @@ export const clearAuth = () => {
   localStorage.removeItem('role');
   localStorage.removeItem('userId');
   localStorage.removeItem('username');
+  localStorage.removeItem('email');
 };
 
 export const isAuthenticated = () => !!getToken();

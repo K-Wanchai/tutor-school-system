@@ -120,8 +120,75 @@
 .cm-toast-success { background: #d1fae5; color: #065f46; border: 1px solid #a7f3d0; }
 .cm-toast-error   { background: #fee2e2; color: #991b1b; border: 1px solid #fca5a5; }
 
+/* ── Schedule Section (in form) ── */
+.cm-schedule-section {
+  background: #f0fdfa;
+  border: 1.5px solid #99f6e4;
+  border-radius: 12px;
+  padding: 16px;
+  display: flex; flex-direction: column; gap: 12px;
+}
+.cm-schedule-section-title {
+  display: flex; align-items: center; gap: 8px;
+  font-size: 0.95rem; font-weight: 700; color: #0f766e;
+}
+.cm-schedule-icon { font-size: 1.1rem; }
+.cm-schedule-optional {
+  font-size: 0.72rem; font-weight: 500; color: #9ca3af;
+  background: #f3f4f6; padding: 2px 8px; border-radius: 9999px; margin-left: 4px;
+}
+
+/* Time range input */
+.cm-time-range-input {
+  width: 100%; padding: 9px 12px;
+  border: 1.5px solid #d1d5db; border-radius: 8px;
+  font-size: 1rem; font-weight: 600; color: #111827; background: #fff;
+  letter-spacing: 0.03em;
+}
+.cm-time-range-input:focus { outline: none; border-color: #0d9488; box-shadow: 0 0 0 3px rgba(13,148,136,.12); }
+.cm-time-range-input::placeholder { color: #9ca3af; font-weight: 400; }
+
+/* Day pills */
+.cm-day-pills { display: flex; gap: 6px; flex-wrap: wrap; }
+.cm-day-pill {
+  width: 40px; height: 40px;
+  border-radius: 50%;
+  border: 2px solid #d1fae5;
+  background: #fff;
+  font-size: 0.82rem; font-weight: 700; color: #6b7280;
+  cursor: pointer; transition: all .15s;
+  display: flex; align-items: center; justify-content: center;
+}
+.cm-day-pill:hover { border-color: #0d9488; color: #0d9488; background: #f0fdfa; }
+.cm-day-pill--on { background: #0d9488; border-color: #0d9488; color: #fff; }
+
+/* Schedule type pills */
+.cm-type-pills { display: flex; gap: 8px; flex-wrap: wrap; }
+.cm-type-pill {
+  border: 2px solid #d1d5db; border-radius: 9999px;
+  padding: 6px 16px; font-size: 0.83rem; font-weight: 600;
+  color: #6b7280; background: #fff; cursor: pointer; transition: all .15s;
+}
+.cm-type-pill:hover { border-color: #0d9488; color: #0d9488; }
+.cm-type-pill--on { background: #0d9488; border-color: #0d9488; color: #fff; }
+
+/* Schedule info box in detail modal */
+.cm-schedule-info-box {
+  background: #f0fdfa; border: 1.5px solid #99f6e4;
+  border-radius: 12px; padding: 14px; margin-bottom: 16px;
+}
+.cm-schedule-info-title {
+  font-size: 0.88rem; font-weight: 700; color: #0f766e; margin-bottom: 10px;
+}
+.cm-schedule-info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.cm-schedule-info-grid div { display: flex; flex-direction: column; gap: 2px; }
+.cm-schedule-info-grid label { font-size: 0.72rem; font-weight: 600; color: #9ca3af; text-transform: uppercase; }
+.cm-schedule-info-grid span, .cm-schedule-info-grid a { font-size: 0.88rem; color: #111827; font-weight: 500; }
+.cm-link { color: #0d9488; text-decoration: underline; word-break: break-all; }
+
 @media (max-width: 640px) {
   .cm-form-row   { grid-template-columns: 1fr; }
   .cm-detail-grid { grid-template-columns: 1fr; }
   .cm-modal { max-width: 100%; border-radius: 12px; }
+  .cm-schedule-info-grid { grid-template-columns: 1fr; }
 }

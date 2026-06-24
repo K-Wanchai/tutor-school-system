@@ -119,6 +119,15 @@ public class ClassroomSessionServiceImpl implements ClassroomSessionService {
 
     @Override
     @Transactional(readOnly = true)
+    public List<ClassroomSessionResponse> getMySessionsAsTutor(Authentication auth) {
+        Tutor tutor = getTeacherFromAuth(auth);
+        return classroomSessionRepository.findByTutorId(tutor.getId()).stream()
+                .map(classroomSessionMapper::toResponse)
+                .toList();
+    }
+
+    @Override
+    @Transactional(readOnly = true)
     public ClassroomSessionResponse getSessionById(Long id) {
         ClassroomSession session = classroomSessionRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("ClassroomSession", id));

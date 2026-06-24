@@ -46,11 +46,153 @@ function genCourseCode() {
   return `CRS-${yy}${mm}-${rnd}`;
 }
 
+const DAYS = [
+  { key: 'MON', label: 'จ' },
+  { key: 'TUE', label: 'อ' },
+  { key: 'WED', label: 'พ' },
+  { key: 'THU', label: 'พฤ' },
+  { key: 'FRI', label: 'ศ' },
+  { key: 'SAT', label: 'ส' },
+  { key: 'SUN', label: 'อา' },
+];
+
+const DAY_LABEL_TH = { MON:'จันทร์', TUE:'อังคาร', WED:'พุธ', THU:'พฤหัส', FRI:'ศุกร์', SAT:'เสาร์', SUN:'อาทิตย์' };
+
+function parseDays(str) {
+  if (!str) return [];
+  return str.split(',').filter(Boolean);
+}
+
+function formatDays(arr) {
+  return arr.join(',');
+}
+
+function formatTimeRange(digits) {
+  // digits = สูงสุด 8 ตัว → HH:MM - HH:MM
+  const d = digits.slice(0, 8);
+  let out = '';
+  if (d.length >= 1) out += d.slice(0, 2).padEnd(d.length < 2 ? d.length : 2, '');
+  if (d.length >= 3) out += ':' + d.slice(2, 4).padEnd(d.length < 4 ? d.length - 2 : 2, '');
+  else if (d.length === 2) out += ':';
+  if (d.length >= 5) out += ' - ' + d.slice(4, 6).padEnd(d.length < 6 ? d.length - 4 : 2, '');
+  else if (d.length === 4) out += ' - ';
+  if (d.length >= 7) out += ':' + d.slice(6, 8).padEnd(d.length < 8 ? d.length - 6 : 2, '');
+  else if (d.length === 6) out += ':';
+  return out;
+}
+
+function TimeRangeInput({ startTime, endTime, onChangeStart, onChangeEnd }) {
+  const initDigits = (() => {
+    if (!startTime && !endTime) return '';
+    const s = (startTime || '00:00').replace(':', '');
+    const e = (endTime   || '00:00').replace(':', '');
+    return s + e;
+  })();
+
+  const [digits, setDigits] = useState(initDigits);
+
+  function handleKeyDown(e) {
+    if (e.key === 'Backspace') {
+      e.preventDefault();
+      const next = digits.slice(0, -1);
+      setDigits(next);
+      if (next.length < 4) { onChangeStart(''); onChangeEnd(''); }
+      else if (next.length < 8) {
+        onChangeStart(`${next.slice(0,2)}:${next.slice(2,4)}`);
+        onChangeEnd('');
+      } else {
+        onChangeStart(`${next.slice(0,2)}:${next.slice(2,4)}`);
+        onChangeEnd(`${next.slice(4,6)}:${next.slice(6,8)}`);
+      }
+    }
+  }
+
+  function handleInput(e) {
+    const key = e.nativeEvent?.data;
+    if (!key || !/\d/.test(key)) return;
+    if (digits.length >= 8) return;
+    const next = digits + key;
+    setDigits(next);
+    if (next.length >= 4) onChangeStart(`${next.slice(0,2)}:${next.slice(2,4)}`);
+    if (next.length >= 8) onChangeEnd(`${next.slice(4,6)}:${next.slice(6,8)}`);
+  }
+
+  return (
+    <input
+      type="text"
+      className="cm-time-range-input"
+      placeholder="10:00 - 12:00"
+      value={formatTimeRange(digits)}
+      onKeyDown={handleKeyDown}
+      onChange={handleInput}
+      inputMode="numeric"
+    />
+  );
+}
+
+function ScheduleSection({ form, fld }) {
+  const selectedDays = parseDays(form.scheduleDays);
+
+  function toggleDay(key) {
+    const next = selectedDays.includes(key)
+      ? selectedDays.filter(d => d !== key)
+      : [...selectedDays, key];
+    // เรียงตาม DAYS order
+    const ordered = DAYS.map(d => d.key).filter(k => next.includes(k));
+    fld('scheduleDays', formatDays(ordered));
+  }
+
+  return (
+    <div className="cm-schedule-section">
+      <div className="cm-schedule-section-title">
+        <span className="cm-schedule-icon">📅</span>
+        <span>ตารางสอน</span>
+        <span className="cm-schedule-optional">ไม่บังคับ</span>
+      </div>
+
+      {/* วันสอน */}
+      <div className="cm-field">
+        <label>วันที่สอน</label>
+        <div className="cm-day-pills">
+          {DAYS.map(d => (
+            <button
+              key={d.key}
+              type="button"
+              className={`cm-day-pill ${selectedDays.includes(d.key) ? 'cm-day-pill--on' : ''}`}
+              onClick={() => toggleDay(d.key)}
+            >
+              {d.label}
+            </button>
+          ))}
+        </div>
+        {selectedDays.length > 0 && (
+          <span className="cm-field-hint">
+            ทุก{selectedDays.map(k => DAY_LABEL_TH[k]).join(', ')}
+          </span>
+        )}
+      </div>
+
+      {/* เวลา */}
+      <div className="cm-field">
+        <label>เวลาสอน</label>
+        <TimeRangeInput
+          startTime={form.scheduleStartTime}
+          endTime={form.scheduleEndTime}
+          onChangeStart={v => fld('scheduleStartTime', v)}
+          onChangeEnd={v => fld('scheduleEndTime', v)}
+        />
+      </div>
+
+    </div>
+  );
+}
+
 const EMPTY_FORM = {
   courseCode: '', courseName: '', tutorId: '', price: '',
   totalHours: '', seatLimit: '',
   registrationStartDate: '', registrationEndDate: '',
   courseStartDate: '', description: '',
+  scheduleDays: '', scheduleStartTime: '', scheduleEndTime: '',
 };
 
 // ──────────────── component ────────────────
@@ -164,6 +306,9 @@ export default function AdminCourseManagementPage() {
       registrationEndDate:   c.registrationEndDate ?? '',
       courseStartDate:       c.courseStartDate ?? '',
       description:           c.description ?? '',
+      scheduleDays:          c.scheduleDays ?? '',
+      scheduleStartTime:     c.scheduleStartTime ?? '',
+      scheduleEndTime:       c.scheduleEndTime ?? '',
     });
     setFormErr({});
     setShowEdit(true);
@@ -425,6 +570,9 @@ export default function AdminCourseManagementPage() {
                 {formErr.courseStartDate && <span className="cm-err">{formErr.courseStartDate}</span>}
               </div>
 
+              {/* ตารางสอน */}
+              <ScheduleSection form={form} fld={fld} />
+
               {/* รายละเอียด — อยู่ล่างสุด */}
               <div className="cm-field">
                 <label>รายละเอียดคอร์ส</label>
@@ -518,6 +666,9 @@ export default function AdminCourseManagementPage() {
                 {formErr.courseStartDate && <span className="cm-err">{formErr.courseStartDate}</span>}
               </div>
 
+              {/* ตารางสอน */}
+              <ScheduleSection form={form} fld={fld} />
+
               <div className="cm-field">
                 <label>รายละเอียดคอร์ส</label>
                 <textarea rows={4} value={form.description} onChange={e => fld('description', e.target.value)} />
@@ -610,6 +761,27 @@ export default function AdminCourseManagementPage() {
                 <div><label>เปิดรับสมัคร</label><span>{selected.registrationStartDate || '—'}</span></div>
                 <div><label>ปิดรับสมัคร</label><span>{selected.registrationEndDate || '—'}</span></div>
               </div>
+
+              {/* ตารางสอน */}
+              {(selected.scheduleDays || selected.scheduleStartTime) && (
+                <div className="cm-schedule-info-box">
+                  <div className="cm-schedule-info-title">📅 ตารางสอน</div>
+                  <div className="cm-schedule-info-grid">
+                    {selected.scheduleDays && (
+                      <div>
+                        <label>วันที่สอน</label>
+                        <span>{parseDays(selected.scheduleDays).map(k => DAY_LABEL_TH[k]).join(', ')}</span>
+                      </div>
+                    )}
+                    {selected.scheduleStartTime && (
+                      <div>
+                        <label>เวลา</label>
+                        <span>{selected.scheduleStartTime}-{selected.scheduleEndTime || '?'} น.</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
 
               {selected.tutorRemark && (
                 <div className="cm-remark-box">
