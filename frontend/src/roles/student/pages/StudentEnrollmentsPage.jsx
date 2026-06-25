@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   enrollCourse,
   getAvailableCourses,
@@ -7,6 +8,7 @@ import {
 import './StudentEnrollmentsPage.css';
 
 export default function StudentEnrollmentsPage() {
+  const navigate = useNavigate();
   const [courses, setCourses] = useState([]);
   const [myEnrollments, setMyEnrollments] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -142,14 +144,14 @@ export default function StudentEnrollmentsPage() {
       ) : (
         <div className="student-course-grid">
           {courses.map((course) => {
-            const isOpen = course.status === 'OPEN_FOR_REGISTRATION';
             const isAlreadyEnrolled = enrolledCourseIds.has(course.id);
+            const isOpen = course.status === 'OPEN_FOR_REGISTRATION';
             const isFull =
               course.seatLimit != null &&
               course.enrolledCount >= course.seatLimit;
 
             const disabled =
-              !isOpen || isAlreadyEnrolled || isFull || enrollingId === course.id;
+              !isOpen || isFull || enrollingId === course.id;
 
             return (
               <div className="student-enroll-card" key={course.id}>
@@ -221,21 +223,28 @@ export default function StudentEnrollmentsPage() {
                   </div>
                 </div>
 
-                <button
-                  className="student-enroll-btn"
-                  disabled={disabled}
-                  onClick={() => handleEnroll(course.id)}
-                >
-                  {enrollingId === course.id
-                    ? 'กำลังสมัคร...'
-                    : isAlreadyEnrolled
-                      ? 'สมัครแล้ว'
+                {isAlreadyEnrolled ? (
+                  <button
+                    className="student-enroll-btn payment"
+                    onClick={() => navigate('/student/payments')}
+                  >
+                    ชำระเงิน
+                  </button>
+                ) : (
+                  <button
+                    className="student-enroll-btn"
+                    disabled={disabled}
+                    onClick={() => handleEnroll(course.id)}
+                  >
+                    {enrollingId === course.id
+                      ? 'กำลังสมัคร...'
                       : isFull
                         ? 'ที่นั่งเต็ม'
                         : isOpen
                           ? 'สมัครเรียน'
                           : 'ยังไม่เปิดรับสมัคร'}
-                </button>
+                  </button>
+                )}
               </div>
             );
           })}

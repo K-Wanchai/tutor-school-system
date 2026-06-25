@@ -180,6 +180,13 @@ public class EnrollmentServiceImpl implements EnrollmentService {
 
     private void validateEnrollmentEligibility(Long studentId, Long courseId, Course course) {
         if (course.getStatus() != CourseStatus.OPEN_FOR_REGISTRATION) {
+            LocalDate today = LocalDate.now();
+            if (course.getRegistrationStartDate() != null && today.isBefore(course.getRegistrationStartDate())) {
+                throw new IllegalStateException("Registration has not started yet");
+            }
+            if (course.getRegistrationEndDate() != null && today.isAfter(course.getRegistrationEndDate())) {
+                throw new IllegalStateException("Registration period has ended");
+            }
             throw new IllegalStateException("Course is not open for registration");
         }
 
@@ -191,14 +198,6 @@ public class EnrollmentServiceImpl implements EnrollmentService {
                 courseId, List.of(EnrollmentStatus.PENDING, EnrollmentStatus.APPROVED));
         if (occupied >= course.getSeatLimit()) {
             throw new IllegalStateException("Course has reached maximum enrollment capacity");
-        }
-
-        LocalDate today = LocalDate.now();
-        if (course.getRegistrationStartDate() != null && today.isBefore(course.getRegistrationStartDate())) {
-            throw new IllegalStateException("Registration has not started yet");
-        }
-        if (course.getRegistrationEndDate() != null && today.isAfter(course.getRegistrationEndDate())) {
-            throw new IllegalStateException("Registration period has ended");
         }
     }
 }

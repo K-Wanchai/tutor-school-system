@@ -122,6 +122,14 @@
   cursor: not-allowed;
 }
 
+.student-enroll-btn.payment {
+  background: #16a34a;
+}
+
+.student-enroll-btn.payment:hover {
+  background: #15803d;
+}
+
 .student-enroll-alert {
   padding: 14px 16px;
   border-radius: 14px;

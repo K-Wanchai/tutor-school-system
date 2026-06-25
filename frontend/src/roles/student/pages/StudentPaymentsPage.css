@@ -1,0 +1,244 @@
+.payment-page {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.payment-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  padding: 60px;
+  color: #6b7280;
+}
+
+.payment-spinner {
+  width: 32px;
+  height: 32px;
+  border: 3px solid #e5e7eb;
+  border-top-color: #7c3aed;
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.payment-header {
+  background: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 22px;
+  padding: 26px;
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.05);
+}
+
+.payment-header h1 {
+  margin: 0;
+  font-size: 26px;
+  color: #111827;
+}
+
+.payment-header p {
+  margin: 6px 0 0;
+  color: #6b7280;
+  font-size: 14px;
+}
+
+.payment-alert {
+  padding: 14px 18px;
+  border-radius: 12px;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.payment-alert.error {
+  background: #fef2f2;
+  color: #dc2626;
+  border: 1px solid #fecaca;
+}
+
+.payment-alert.success {
+  background: #f0fdf4;
+  color: #16a34a;
+  border: 1px solid #bbf7d0;
+}
+
+.payment-empty {
+  background: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 22px;
+  padding: 60px;
+  text-align: center;
+  color: #6b7280;
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.05);
+}
+
+.payment-empty h2 {
+  margin: 0 0 8px;
+  color: #374151;
+}
+
+.payment-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.payment-card {
+  background: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 22px;
+  padding: 24px;
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.05);
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.payment-card-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.payment-code {
+  font-size: 13px;
+  font-weight: 600;
+  color: #7c3aed;
+  background: #f5f3ff;
+  padding: 4px 10px;
+  border-radius: 8px;
+}
+
+.payment-badges {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.payment-badge {
+  font-size: 12px;
+  font-weight: 600;
+  padding: 4px 10px;
+  border-radius: 8px;
+}
+
+.payment-badge.enrollment-pending {
+  background: #fef9c3;
+  color: #92400e;
+}
+
+.payment-badge.enrollment-approved {
+  background: #d1fae5;
+  color: #065f46;
+}
+
+.payment-badge.payment-unpaid {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+.payment-badge.payment-pending_verification {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.payment-badge.payment-paid {
+  background: #d1fae5;
+  color: #065f46;
+}
+
+.payment-card h2 {
+  margin: 0;
+  font-size: 20px;
+  color: #111827;
+}
+
+.payment-info {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+}
+
+.payment-info > div {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.payment-info span {
+  font-size: 12px;
+  color: #9ca3af;
+}
+
+.payment-info strong {
+  font-size: 14px;
+  color: #111827;
+}
+
+.payment-slip-preview {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: #6b7280;
+}
+
+.payment-slip-preview a {
+  color: #7c3aed;
+  text-decoration: underline;
+}
+
+.payment-upload {
+  display: flex;
+  gap: 10px;
+}
+
+.payment-upload input {
+  flex: 1;
+  padding: 10px 14px;
+  border: 1px solid #d1d5db;
+  border-radius: 12px;
+  font-size: 14px;
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+.payment-upload input:focus {
+  border-color: #7c3aed;
+}
+
+.payment-upload button {
+  padding: 10px 20px;
+  background: #7c3aed;
+  color: white;
+  border: none;
+  border-radius: 12px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s;
+  white-space: nowrap;
+}
+
+.payment-upload button:hover:not(:disabled) {
+  background: #6d28d9;
+}
+
+.payment-upload button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.payment-waiting-note {
+  font-size: 13px;
+  color: #92400e;
+  background: #fef9c3;
+  border: 1px solid #fde68a;
+  border-radius: 10px;
+  padding: 10px 14px;
+}
