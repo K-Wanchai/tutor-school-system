@@ -78,7 +78,11 @@ public class SecurityConfig {
                 "http://localhost:5173",
                 "http://localhost:5174",
                 "http://localhost:5175",
-                "http://localhost:3000"
+                "http://localhost:3000",
+                "http://172.24.179.112:5173",
+                "http://172.24.179.112:5174",
+                "http://172.24.179.112:5175",
+                "http://172.24.179.112:3000"
         ));
         configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
         configuration.setAllowedHeaders(List.of("Authorization", "Content-Type", "Accept"));

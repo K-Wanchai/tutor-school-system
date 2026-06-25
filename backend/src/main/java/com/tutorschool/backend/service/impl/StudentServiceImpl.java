@@ -53,6 +53,14 @@ public class StudentServiceImpl implements StudentService {
 
     @Override
     @Transactional(readOnly = true)
+    public StudentResponse getStudentByUserId(Long userId) {
+        Student student = studentRepository.findByUserId(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("Student profile not found for user id: " + userId));
+        return studentMapper.toResponse(student);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
     public StudentResponse getStudentByCode(String studentCode) {
         Student student = studentRepository.findByStudentCode(studentCode)
                 .orElseThrow(() -> new ResourceNotFoundException("Student not found with code: " + studentCode));
