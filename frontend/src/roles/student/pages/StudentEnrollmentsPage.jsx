@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   getAvailableCourses,
@@ -15,9 +15,23 @@ export default function StudentEnrollmentsPage() {
   const [errorMessage, setErrorMessage] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
 
-  // Confirmed enrollments from DB + pending items from sessionStorage
-  const pendingPayments = useMemo(() => {
-    try { return JSON.parse(sessionStorage.getItem('pendingPayments') || '[]'); } catch { return []; }
+  // Live pending payments — reads and prunes expired items
+  const [pendingPayments, setPendingPayments] = useState(() => {
+    try {
+      const now = Date.now();
+      const all = JSON.parse(sessionStorage.getItem('pendingPayments') || '[]');
+      const valid = all.filter((p) => new Date(p.enrolledAt).getTime() + 5 * 60 * 1000 > now);
+      if (valid.length !== all.length) sessionStorage.setItem('pendingPayments', JSON.stringify(valid));
+      return valid;
+    } catch { return []; }
+  });
+
+  const refreshPending = useCallback(() => {
+    const now = Date.now();
+    const all = (() => { try { return JSON.parse(sessionStorage.getItem('pendingPayments') || '[]'); } catch { return []; } })();
+    const valid = all.filter((p) => new Date(p.enrolledAt).getTime() + 5 * 60 * 1000 > now);
+    if (valid.length !== all.length) sessionStorage.setItem('pendingPayments', JSON.stringify(valid));
+    setPendingPayments(valid);
   }, []);
 
   const enrolledCourseIds = useMemo(() => {
@@ -28,7 +42,10 @@ export default function StudentEnrollmentsPage() {
 
   useEffect(() => {
     loadPageData();
-  }, []);
+    // ตรวจ expiry ทุก 10 วินาที
+    const id = setInterval(refreshPending, 10000);
+    return () => clearInterval(id);
+  }, [refreshPending]);
 
   async function loadPageData() {
     try {
@@ -56,7 +73,12 @@ export default function StudentEnrollmentsPage() {
     const course = courses.find((c) => c.id === courseId);
     if (!course) return;
 
-    // Save to sessionStorage — no API call yet
+    const price = course.price != null ? `${Number(course.price).toLocaleString('th-TH')} บาท` : '-';
+    const ok = window.confirm(
+      `ยืนยันการสมัครเรียน?\n\nคอร์ส: ${course.courseName}\nราคา: ${price}\n\nคุณจะต้องชำระเงินภายใน 5 นาที มิฉะนั้นการสมัครจะถูกยกเลิกอัตโนมัติ`
+    );
+    if (!ok) return;
+
     const existing = (() => {
       try { return JSON.parse(sessionStorage.getItem('pendingPayments') || '[]'); } catch { return []; }
     })();
