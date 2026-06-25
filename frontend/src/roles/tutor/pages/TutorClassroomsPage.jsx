@@ -4,167 +4,321 @@ import {
   getClassroomSessions,
   openClassroomSession,
 } from '../services/tutorClassroomService';
+import { getMyCourses } from '../services/tutorCourseService';
+import TestEditorModal from '../components/TestEditorModal';
 import './TutorClassroomsPage.css';
 
 export default function TutorClassroomsPage() {
-  const [sessions, setSessions] = useState([]);
+  const [courses, setCourses] = useState([]);
   const [keyword, setKeyword] = useState('');
   const [status, setStatus] = useState('ALL');
+  const [editingTest, setEditingTest] = useState(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    loadSessions();
+    loadClassroomPage();
   }, []);
 
-  async function loadSessions() {
+  async function loadClassroomPage() {
     try {
       setLoading(true);
-      const data = await getClassroomSessions();
-      setSessions(Array.isArray(data) ? data : []);
+
+      const [sessionData, courseData] = await Promise.all([
+        getClassroomSessions(),
+        getMyCourses(),
+      ]);
+
+      const sessions = Array.isArray(sessionData) ? sessionData : [];
+      const courseList = Array.isArray(courseData) ? courseData : [];
+
+      const merged = courseList.map((course) => {
+        const courseSessions = sessions.filter(
+          (session) => String(session.courseId) === String(course.id)
+        );
+
+        return {
+          ...course,
+          sessions: courseSessions,
+          lessons: course.lessons || [],
+          tests: course.tests || [],
+        };
+      });
+
+      setCourses(merged);
     } catch (error) {
-      console.error('Load classroom sessions error:', error);
-      setSessions([]);
+      console.error('Load classroom page error:', error);
+      setCourses([]);
     } finally {
       setLoading(false);
     }
   }
 
-  async function handleOpen(id) {
+  async function handleOpen(sessionId) {
     try {
-      await openClassroomSession(id);
-      await loadSessions();
+      await openClassroomSession(sessionId);
+      await loadClassroomPage();
     } catch (error) {
       alert('เปิดห้องเรียนไม่สำเร็จ');
       console.error(error);
     }
   }
 
-  async function handleClose(id) {
+  async function handleClose(sessionId) {
     try {
-      await closeClassroomSession(id);
-      await loadSessions();
+      await closeClassroomSession(sessionId);
+      await loadClassroomPage();
     } catch (error) {
       alert('ปิดห้องเรียนไม่สำเร็จ');
       console.error(error);
     }
   }
 
-  const filteredSessions = useMemo(() => {
-    return sessions.filter((item) => {
+  function handleOpenTestEditor(test, course, lesson) {
+    setEditingTest({
+      ...test,
+      courseId: course.id,
+      courseName: course.courseName,
+      courseCode: course.courseCode,
+      lessonTitle: lesson?.lessonTitle,
+      lessonOrder: test.lessonOrder || lesson?.lessonOrder,
+    });
+  }
+
+  function handleCloseTestEditor() {
+    setEditingTest(null);
+    loadClassroomPage();
+  }
+
+  const filteredCourses = useMemo(() => {
+    return courses.filter((course) => {
       const text = `
-        ${item.sessionCode || ''}
-        ${item.courseName || ''}
-        ${item.status || ''}
+        ${course.courseCode || ''}
+        ${course.courseName || ''}
+        ${course.status || ''}
+        ${(course.tests || []).map((t) => t.testTitle).join(' ')}
       `.toLowerCase();
 
       const matchKeyword = text.includes(keyword.toLowerCase());
-      const matchStatus = status === 'ALL' || item.status === status;
+      const matchStatus = status === 'ALL' || course.status === status;
 
       return matchKeyword && matchStatus;
     });
-  }, [sessions, keyword, status]);
+  }, [courses, keyword, status]);
 
   const summary = useMemo(() => {
+    const allSessions = courses.flatMap((course) => course.sessions || []);
+    const allTests = courses.flatMap((course) => course.tests || []);
+
     return {
-      total: sessions.length,
-      open: sessions.filter((s) => ['OPEN', 'ACTIVE', 'IN_PROGRESS'].includes(s.status)).length,
-      closed: sessions.filter((s) => ['CLOSED', 'COMPLETED'].includes(s.status)).length,
-      cancelled: sessions.filter((s) => s.status === 'CANCELLED').length,
+      courses: courses.length,
+      sessions: allSessions.length,
+      openSessions: allSessions.filter((s) =>
+        ['OPEN', 'ACTIVE', 'IN_PROGRESS'].includes(s.status)
+      ).length,
+      tests: allTests.length,
     };
-  }, [sessions]);
+  }, [courses]);
 
   return (
     <div className="tutor-classroom-page">
       <div className="tutor-classroom-header">
         <div>
-          <h1>ห้องเรียน</h1>
-          <p>จัดการห้องเรียนออนไลน์/ห้องเรียนของคอร์สที่เปิดสอน</p>
+          <span className="tutor-classroom-kicker">COURSE CLASSROOM PLAN</span>
+          <h1>ห้องเรียนและรอบการสอบ</h1>
+          <p>แสดงห้องเรียน บทเรียน และแบบทดสอบที่กำหนดไว้ในแต่ละคอร์ส</p>
         </div>
 
-        <button onClick={loadSessions}>รีเฟรชข้อมูล</button>
+        <button onClick={loadClassroomPage}>รีเฟรชข้อมูล</button>
       </div>
 
       <div className="tutor-classroom-summary">
-        <SummaryCard title="ห้องเรียนทั้งหมด" value={summary.total} />
-        <SummaryCard title="เปิดอยู่" value={summary.open} />
-        <SummaryCard title="ปิดแล้ว" value={summary.closed} />
-        <SummaryCard title="ยกเลิก" value={summary.cancelled} />
+        <SummaryCard title="คอร์สทั้งหมด" value={summary.courses} unit="คอร์ส" />
+        <SummaryCard title="ห้องเรียนทั้งหมด" value={summary.sessions} unit="ห้อง" />
+        <SummaryCard title="ห้องเรียนเปิดอยู่" value={summary.openSessions} unit="ห้อง" />
+        <SummaryCard title="รอบสอบ/แบบทดสอบ" value={summary.tests} unit="รอบ" />
       </div>
 
       <div className="tutor-classroom-toolbar">
         <input
           value={keyword}
           onChange={(e) => setKeyword(e.target.value)}
-          placeholder="ค้นหารหัสห้องเรียนหรือชื่อคอร์ส..."
+          placeholder="ค้นหาชื่อคอร์ส รหัสคอร์ส หรือชื่อแบบทดสอบ..."
         />
 
         <select value={status} onChange={(e) => setStatus(e.target.value)}>
           <option value="ALL">ทุกสถานะ</option>
-          <option value="OPEN">OPEN</option>
-          <option value="ACTIVE">ACTIVE</option>
-          <option value="IN_PROGRESS">IN_PROGRESS</option>
-          <option value="CLOSED">CLOSED</option>
+          <option value="DRAFT">DRAFT</option>
+          <option value="OPEN_FOR_REGISTRATION">OPEN_FOR_REGISTRATION</option>
+          <option value="ONGOING">ONGOING</option>
           <option value="COMPLETED">COMPLETED</option>
+          <option value="CLOSED">CLOSED</option>
           <option value="CANCELLED">CANCELLED</option>
         </select>
       </div>
 
       {loading ? (
-        <div className="tutor-classroom-empty">กำลังโหลดข้อมูลห้องเรียน...</div>
-      ) : filteredSessions.length === 0 ? (
+        <div className="tutor-classroom-empty">กำลังโหลดข้อมูล...</div>
+      ) : filteredCourses.length === 0 ? (
         <div className="tutor-classroom-empty">
-          <h2>ยังไม่มีห้องเรียน</h2>
-          <p>ถ้ามีข้อมูลในฐานข้อมูลแล้ว ให้ตรวจสอบ API /classroom-sessions</p>
+          <h2>ยังไม่มีข้อมูลห้องเรียน</h2>
+          <p>ถ้ามีคอร์สแล้ว ให้ตรวจสอบ API getMyCourses และ /classroom-sessions</p>
         </div>
       ) : (
-        <div className="tutor-classroom-grid">
-          {filteredSessions.map((item) => (
-            <div className="tutor-classroom-card" key={item.id}>
-              <div className="tutor-classroom-card-top">
-                <span>{item.sessionCode || `SESSION-${item.id}`}</span>
-                <StatusBadge status={item.status} />
+        <div className="tutor-classroom-course-list">
+          {filteredCourses.map((course) => (
+            <article className="tutor-classroom-course-card" key={course.id}>
+              <div className="tutor-classroom-course-left">
+                <div className="tutor-classroom-course-icon">
+                  {(course.courseName || 'C').charAt(0)}
+                </div>
+
+                <div>
+                  <div className="tutor-classroom-course-top">
+                    <span>{course.courseCode || '-'}</span>
+                    <StatusBadge status={course.status} />
+                  </div>
+
+                  <h2>{course.courseName || 'ไม่ระบุชื่อคอร์ส'}</h2>
+                  <p>{course.description || 'ไม่มีรายละเอียดคอร์ส'}</p>
+
+                  <div className="tutor-classroom-course-meta">
+                    <Info label="วันเริ่มสอน" value={course.courseStartDate || course.startDate || '-'} />
+                    <Info label="ที่นั่ง" value={`${course.seatLimit || course.maxSeats || 0} คน`} />
+                    <Info label="ชั่วโมงรวม" value={`${course.totalHours || 0} ชม.`} />
+                    <Info label="ผู้สมัคร" value={`${course.enrolledCount || 0} คน`} />
+                  </div>
+                </div>
               </div>
 
-              <h2>{item.courseName || 'ไม่ระบุชื่อคอร์ส'}</h2>
+              <div className="tutor-classroom-course-right">
+                <section className="tutor-classroom-section">
+                  <div className="tutor-classroom-section-head">
+                    <h3>ห้องเรียน</h3>
+                    <span>{course.sessions?.length || 0} ห้อง</span>
+                  </div>
 
-              <div className="tutor-classroom-info">
-                <Info label="วันที่เรียน" value={item.scheduleDate || '-'} />
-                <Info label="เวลา" value={`${item.startTime || '-'} - ${item.endTime || '-'}`} />
-                <Info label="Lesson ID" value={item.lessonId || '-'} />
-                <Info label="Course ID" value={item.courseId || '-'} />
+                  {course.sessions?.length === 0 ? (
+                    <div className="tutor-classroom-mini-empty">ยังไม่มีห้องเรียน</div>
+                  ) : (
+                    <div className="tutor-classroom-session-list">
+                      {course.sessions.map((session) => (
+                        <div className="tutor-classroom-session" key={session.id}>
+                          <div>
+                            <strong>{session.sessionCode || `SESSION-${session.id}`}</strong>
+                            <p>
+                              {session.scheduleDate || '-'} · {session.startTime || '-'} - {session.endTime || '-'}
+                            </p>
+                          </div>
+
+                          <StatusBadge status={session.status} />
+
+                          <div className="tutor-classroom-session-actions">
+                            <button
+                              className="open"
+                              disabled={['OPEN', 'ACTIVE', 'IN_PROGRESS'].includes(session.status)}
+                              onClick={() => handleOpen(session.id)}
+                            >
+                              เปิด
+                            </button>
+
+                            <button
+                              className="close"
+                              disabled={['CLOSED', 'COMPLETED', 'CANCELLED'].includes(session.status)}
+                              onClick={() => handleClose(session.id)}
+                            >
+                              ปิด
+                            </button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </section>
+
+                <section className="tutor-classroom-section">
+                  <div className="tutor-classroom-section-head">
+                    <h3>บทเรียนและรอบสอบ</h3>
+                    <span>{course.tests?.length || 0} รอบ</span>
+                  </div>
+
+                  {course.lessons?.length === 0 && course.tests?.length === 0 ? (
+                    <div className="tutor-classroom-mini-empty">ยังไม่มีบทเรียนหรือแบบทดสอบ</div>
+                  ) : (
+                    <div className="tutor-classroom-exam-timeline">
+                      {(course.lessons || []).map((lesson) => {
+                        const lessonTests = (course.tests || []).filter(
+                          (test) => String(test.lessonOrder) === String(lesson.lessonOrder)
+                        );
+
+                        return (
+                          <div className="tutor-classroom-lesson-block" key={lesson.id || lesson.lessonOrder}>
+                            <div className="tutor-classroom-lesson-title">
+                              <span>บทที่ {lesson.lessonOrder}</span>
+                              <strong>{lesson.lessonTitle}</strong>
+                            </div>
+
+                            {lessonTests.length === 0 ? (
+                              <div className="tutor-classroom-test-empty">ไม่มีแบบทดสอบในบทนี้</div>
+                            ) : (
+                              <div className="tutor-classroom-test-list">
+                                {lessonTests.map((test, index) => (
+                                  <button
+                                    type="button"
+                                    className="tutor-classroom-test-card"
+                                    key={test.id || index}
+                                    onClick={() => handleOpenTestEditor(test, course, lesson)}
+                                  >
+                                    <span>รอบที่ {index + 1}</span>
+                                    <strong>{test.testTitle}</strong>
+                                    <p>{test.testDescription || 'ไม่มีคำอธิบาย'}</p>
+                                    <small>คลิกเพื่อแก้ไขข้อสอบ</small>
+                                  </button>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })}
+
+                      {course.lessons?.length === 0 &&
+                        (course.tests || []).map((test, index) => (
+                          <button
+                            type="button"
+                            className="tutor-classroom-test-card"
+                            key={test.id || index}
+                            onClick={() => handleOpenTestEditor(test, course, null)}
+                          >
+                            <span>รอบที่ {index + 1}</span>
+                            <strong>{test.testTitle}</strong>
+                            <p>{test.testDescription || 'ไม่มีคำอธิบาย'}</p>
+                            <small>คลิกเพื่อแก้ไขข้อสอบ</small>
+                          </button>
+                        ))}
+                    </div>
+                  )}
+                </section>
               </div>
-
-              <div className="tutor-classroom-actions">
-                <button
-                  className="open"
-                  onClick={() => handleOpen(item.id)}
-                  disabled={['OPEN', 'ACTIVE', 'IN_PROGRESS'].includes(item.status)}
-                >
-                  เปิดห้องเรียน
-                </button>
-
-                <button
-                  className="close"
-                  onClick={() => handleClose(item.id)}
-                  disabled={['CLOSED', 'COMPLETED', 'CANCELLED'].includes(item.status)}
-                >
-                  ปิดห้องเรียน
-                </button>
-              </div>
-            </div>
+            </article>
           ))}
         </div>
+      )}
+
+      {editingTest && (
+        <TestEditorModal
+          test={editingTest}
+          onClose={handleCloseTestEditor}
+        />
       )}
     </div>
   );
 }
 
-function SummaryCard({ title, value }) {
+function SummaryCard({ title, value, unit }) {
   return (
     <div className="tutor-classroom-summary-card">
       <span>{title}</span>
       <strong>{value}</strong>
-      <p>ห้อง</p>
+      <p>{unit}</p>
     </div>
   );
 }
@@ -180,7 +334,7 @@ function Info({ label, value }) {
 
 function StatusBadge({ status }) {
   return (
-    <span className={`tutor-classroom-status ${status?.toLowerCase() || 'unknown'}`}>
+    <span className={`tutor-classroom-status ${String(status || 'unknown').toLowerCase()}`}>
       {status || 'UNKNOWN'}
     </span>
   );

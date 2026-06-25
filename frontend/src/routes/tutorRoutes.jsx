@@ -9,6 +9,7 @@ import TutorAttendanceScoresPage from '../roles/tutor/pages/TutorAttendanceScore
 import TutorAttendanceScoreDetailPage from '../roles/tutor/pages/TutorAttendanceScoreDetailPage';
 import TutorClassroomsPage from '../roles/tutor/pages/TutorClassroomsPage';
 import TutorEvaluationsPage from '../roles/tutor/pages/TutorEvaluationsPage';
+import TutorReportsPage from '../roles/tutor/pages/TutorReportsPage';
 
 const tutorRoutes = (
   <Route
@@ -27,6 +28,7 @@ const tutorRoutes = (
     <Route path="attendance-scores/:courseId" element={<TutorAttendanceScoreDetailPage />} />
     <Route path="classroom" element={<TutorClassroomsPage />} />
     <Route path="evaluations" element={<TutorEvaluationsPage />} />
+    <Route path="reports" element={<TutorReportsPage />} />
   </Route>
 );
 
