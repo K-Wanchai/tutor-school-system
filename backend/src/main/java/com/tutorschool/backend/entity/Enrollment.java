@@ -64,6 +64,9 @@ public class Enrollment {
     @Column(columnDefinition = "TEXT")
     private String note;
 
+    @Column(name = "payment_deadline")
+    private LocalDateTime paymentDeadline;
+
     @Column(name = "approved_by", length = 100)
     private String approvedBy;
 

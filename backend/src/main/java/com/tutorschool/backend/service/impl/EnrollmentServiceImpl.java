@@ -95,6 +95,7 @@ public class EnrollmentServiceImpl implements EnrollmentService {
                 .discountAmount(discountAmount)
                 .finalAmount(finalAmount)
                 .note(request.getNote())
+                .paymentDeadline(LocalDateTime.now().plusMinutes(5))
                 .build();
 
         Enrollment saved = enrollmentRepository.save(enrollment);

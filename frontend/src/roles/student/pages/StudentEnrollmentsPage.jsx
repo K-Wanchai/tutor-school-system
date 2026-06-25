@@ -1,6 +1,7 @@
-import { useEffect, useMemo, useState, useCallback } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
+  enrollCourse,
   getAvailableCourses,
   getMyEnrollments,
 } from '../services/studentEnrollmentService';
@@ -15,37 +16,12 @@ export default function StudentEnrollmentsPage() {
   const [errorMessage, setErrorMessage] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
 
-  // Live pending payments — reads and prunes expired items
-  const [pendingPayments, setPendingPayments] = useState(() => {
-    try {
-      const now = Date.now();
-      const all = JSON.parse(sessionStorage.getItem('pendingPayments') || '[]');
-      const valid = all.filter((p) => new Date(p.enrolledAt).getTime() + 5 * 60 * 1000 > now);
-      if (valid.length !== all.length) sessionStorage.setItem('pendingPayments', JSON.stringify(valid));
-      return valid;
-    } catch { return []; }
-  });
-
-  const refreshPending = useCallback(() => {
-    const now = Date.now();
-    const all = (() => { try { return JSON.parse(sessionStorage.getItem('pendingPayments') || '[]'); } catch { return []; } })();
-    const valid = all.filter((p) => new Date(p.enrolledAt).getTime() + 5 * 60 * 1000 > now);
-    if (valid.length !== all.length) sessionStorage.setItem('pendingPayments', JSON.stringify(valid));
-    setPendingPayments(valid);
-  }, []);
-
+  // enrollments ที่ active (PENDING/APPROVED, ไม่ใช่ CANCELLED)
   const enrolledCourseIds = useMemo(() => {
-    const dbIds = myEnrollments.filter((item) => item.status !== 'CANCELLED').map((item) => item.courseId);
-    const pendingIds = pendingPayments.map((p) => p.courseId);
-    return new Set([...dbIds, ...pendingIds]);
-  }, [myEnrollments, pendingPayments]);
+    return new Set(myEnrollments.filter((item) => item.status !== 'CANCELLED').map((item) => item.courseId));
+  }, [myEnrollments]);
 
-  useEffect(() => {
-    loadPageData();
-    // ตรวจ expiry ทุก 10 วินาที
-    const id = setInterval(refreshPending, 10000);
-    return () => clearInterval(id);
-  }, [refreshPending]);
+  useEffect(() => { loadPageData(); }, []);
 
   async function loadPageData() {
     try {
@@ -69,7 +45,7 @@ export default function StudentEnrollmentsPage() {
     }
   }
 
-  function handleEnroll(courseId) {
+  async function handleEnroll(courseId) {
     const course = courses.find((c) => c.id === courseId);
     if (!course) return;
 
@@ -79,18 +55,16 @@ export default function StudentEnrollmentsPage() {
     );
     if (!ok) return;
 
-    const existing = (() => {
-      try { return JSON.parse(sessionStorage.getItem('pendingPayments') || '[]'); } catch { return []; }
-    })();
-    const filtered = existing.filter((p) => p.courseId !== courseId);
-    filtered.push({
-      courseId: course.id,
-      courseName: course.courseName,
-      price: course.price,
-      enrolledAt: new Date().toISOString(),
-    });
-    sessionStorage.setItem('pendingPayments', JSON.stringify(filtered));
-    navigate('/student/payments');
+    try {
+      setEnrollingId(courseId);
+      setErrorMessage('');
+      await enrollCourse(courseId);
+      navigate('/student/payments');
+    } catch (error) {
+      setErrorMessage(error?.response?.data?.message || 'ไม่สามารถสมัครเรียนคอร์สนี้ได้');
+    } finally {
+      setEnrollingId(null);
+    }
   }
 
   function getStatusLabel(status) {

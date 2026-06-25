@@ -24,6 +24,7 @@ public class EnrollmentMapper {
                 .finalAmount(enrollment.getFinalAmount())
                 .paymentSlipUrl(enrollment.getPaymentSlipUrl())
                 .note(enrollment.getNote())
+                .paymentDeadline(enrollment.getPaymentDeadline())
                 .approvedBy(enrollment.getApprovedBy())
                 .approvedAt(enrollment.getApprovedAt())
                 .createdAt(enrollment.getCreatedAt())

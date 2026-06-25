@@ -7,6 +7,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -33,4 +34,6 @@ public interface EnrollmentRepository extends JpaRepository<Enrollment, Long> {
 
     List<Enrollment> findTop5ByOrderByCreatedAtDesc();
 
+    @Query("SELECT e FROM Enrollment e WHERE e.paymentStatus = 'UNPAID' AND e.paymentDeadline IS NOT NULL AND e.paymentDeadline < :now AND e.status != 'CANCELLED'")
+    List<Enrollment> findExpiredUnpaidEnrollments(@Param("now") LocalDateTime now);
 }
