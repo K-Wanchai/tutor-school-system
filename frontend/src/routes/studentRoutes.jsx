@@ -1,7 +1,10 @@
 import { Route } from 'react-router-dom';
 import ProtectedRoute from './ProtectedRoute';
+
 import StudentLayout from '../roles/student/layouts/StudentLayout';
+
 import StudentDashboardPage from '../roles/student/pages/StudentDashboardPage';
+import StudentEnrollmentsPage from '../roles/student/pages/StudentEnrollmentsPage';
 
 const studentRoutes = (
   <Route
@@ -13,6 +16,9 @@ const studentRoutes = (
     }
   >
     <Route path="dashboard" element={<StudentDashboardPage />} />
+
+    {/* เพิ่มตรงนี้ */}
+    <Route path="enrollments" element={<StudentEnrollmentsPage />} />
   </Route>
 );
 

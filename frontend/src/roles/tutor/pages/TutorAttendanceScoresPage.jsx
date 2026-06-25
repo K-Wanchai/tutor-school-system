@@ -89,7 +89,7 @@ export default function TutorAttendanceScoresPage() {
                 className="tas-detail-btn"
                 onClick={() => navigate(`/tutor/attendance-scores/${course.id}`)}
               >
-                ดูรายละเอียด →
+                ดูคะแนน
               </button>
             </div>
           ))}

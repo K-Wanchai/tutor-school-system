@@ -1,10 +1,14 @@
 import axios from 'axios';
 
-const BASE_URL = 'http://localhost:8080/api/v1';
+const BASE_URL = 'http://172.24.179.112:8080/api/v1';
 
 const api = axios.create({
   baseURL: BASE_URL,
   headers: { 'Content-Type': 'application/json' },
+  baseURL: 'http://172.24.179.112:8080/api/v1',
+  headers: {
+    'Content-Type': 'application/json',
+  },
 });
 
 // ── attach access token to every request
