@@ -1,4 +1,4 @@
-﻿package com.tutorschool.backend.controller;
+package com.tutorschool.backend.controller;
 
 import com.tutorschool.backend.dto.request.CreateStudentRequest;
 import com.tutorschool.backend.dto.request.UpdateStudentRequest;
@@ -6,12 +6,14 @@ import com.tutorschool.backend.dto.request.UpdateStudentStatusRequest;
 import com.tutorschool.backend.dto.response.ApiResponse;
 import com.tutorschool.backend.dto.response.PageResponse;
 import com.tutorschool.backend.dto.response.StudentResponse;
+import com.tutorschool.backend.entity.User;
 import com.tutorschool.backend.service.StudentService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -29,6 +31,14 @@ public class StudentController {
             @RequestParam(required = false, defaultValue = "") String keyword) {
         PageResponse<StudentResponse> response = studentService.getAllStudents(page, size, keyword);
         return ResponseEntity.ok(ApiResponse.success("Students retrieved successfully", response));
+    }
+
+    @GetMapping("/me")
+    @PreAuthorize("hasRole('STUDENT')")
+    public ResponseEntity<ApiResponse<StudentResponse>> getMyProfile(
+            @AuthenticationPrincipal User currentUser) {
+        StudentResponse response = studentService.getStudentByUserId(currentUser.getId());
+        return ResponseEntity.ok(ApiResponse.success("Student profile retrieved successfully", response));
     }
 
     @GetMapping("/{id}")

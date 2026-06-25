@@ -184,8 +184,8 @@ export default function RegisterStudentPage() {
       }
 
       await register(formData);
-      setSuccess('สมัครสมาชิกสำเร็จ! กำลังไปหน้าเข้าสู่ระบบ...');
-      setTimeout(() => navigate('/login'), 1800);
+      window.alert('สมัครสมาชิกสำเร็จ! กรุณาเข้าสู่ระบบด้วยบัญชีที่สมัครไว้');
+      navigate('/login');
     } catch (err) {
       const data = err.response?.data;
       const status = err.response?.status;
