@@ -67,15 +67,7 @@ const NAV_ITEMS = [
       </svg>
     ),
   },
-  {
-    label: 'ข้อสอบ',
-    path: '/tutor/exams',
-    icon: (
-      <svg viewBox="0 0 20 20" fill="currentColor" width="18" height="18">
-        <path fillRule="evenodd" d="M6 2a2 2 0 00-2 2v12a2 2 0 002 2h8a2 2 0 002-2V7.414A2 2 0 0015.414 6L12 2.586A2 2 0 0010.586 2H6zm2 10a1 1 0 10-2 0v3a1 1 0 102 0v-3zm2-3a1 1 0 011 1v5a1 1 0 11-2 0v-5a1 1 0 011-1zm4-1a1 1 0 10-2 0v7a1 1 0 102 0V8z" clipRule="evenodd" />
-      </svg>
-    ),
-  },
+ 
   {
     label: 'รายงาน',
     path: '/tutor/reports',
@@ -125,6 +117,28 @@ export default function TutorSidebar({ isOpen, onClose }) {
           </ul>
         </nav>
 
+    <div className="tutor-sidebar-help-card">
+  <div className="tutor-sidebar-help-text">
+    <h4>สอนอย่างมืออาชีพ</h4>
+    <p>
+      ติดตามผลการเรียน
+      <br />
+      ได้อย่างไร้ขีดจำกัด
+    </p>
+  </div>
+
+  <div className="tutor-help-person">
+    <div className="tutor-help-head" />
+    <div className="tutor-help-hair" />
+    <div className="tutor-help-body" />
+    <div className="tutor-help-arm" />
+    <div className="tutor-help-hand" />
+    <div className="tutor-help-tablet" />
+  </div>
+</div>
+
+        
+
         <div className="tutor-sidebar-footer">
           <div className="tutor-sidebar-version">v1.0.0</div>
         </div>
@@ -132,3 +146,4 @@ export default function TutorSidebar({ isOpen, onClose }) {
     </>
   );
 }
+

@@ -10,7 +10,6 @@ const PAGE_TITLES = {
   '/tutor/attendance-scores':'การเข้าเรียน/คะแนนสอบ',
   '/tutor/classroom':        'ห้องเรียน',
   '/tutor/evaluations':      'การประเมิน',
-  '/tutor/exams':            'ข้อสอบ',
   '/tutor/reports':          'รายงาน',
   '/tutor/students':         'นักเรียน',
 };
