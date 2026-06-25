@@ -10,14 +10,12 @@
   flex-direction: column;
   min-width: 0;
   margin-left: 260px;
-  min-height: 100vh;
 }
 
 .student-layout-content {
   flex: 1;
   padding: 28px;
-  overflow-y: auto;
-  overflow-x: hidden;
+  padding-top: calc(64px + 28px);
 }
 
 /* Tablet / Mobile */
@@ -28,11 +26,13 @@
 
   .student-layout-content {
     padding: 24px 20px;
+    padding-top: calc(64px + 24px);
   }
 }
 
 @media (max-width: 640px) {
   .student-layout-content {
     padding: 20px 16px;
+    padding-top: calc(64px + 20px);
   }
 }

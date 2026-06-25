@@ -6,11 +6,18 @@
   align-items: center;
   justify-content: space-between;
   padding: 0 24px;
-  position: sticky;
+  position: fixed;
   top: 0;
-  z-index: 50;
-  flex-shrink: 0;
+  left: 260px;
+  right: 0;
+  z-index: 100;
   gap: 16px;
+}
+
+@media (max-width: 1024px) {
+  .student-navbar {
+    left: 0;
+  }
 }
 
 .student-navbar-left { display: flex; align-items: center; gap: 16px; min-width: 0; }

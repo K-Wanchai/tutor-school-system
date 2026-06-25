@@ -27,6 +27,8 @@
   margin: 0;
   font-size: 32px;
   font-weight: 800;
+  word-break: break-all;
+  overflow-wrap: break-word;
 }
 
 .student-hero-card p {

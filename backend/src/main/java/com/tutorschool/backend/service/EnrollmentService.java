@@ -17,6 +17,8 @@ public interface EnrollmentService {
 
     EnrollmentResponse enrollStudent(CreateEnrollmentRequest request);
 
+    EnrollmentResponse confirmEnrollmentWithPayment(Long studentId, ConfirmEnrollmentRequest request);
+
     EnrollmentResponse updateEnrollmentStatus(Long id, UpdateEnrollmentRequest request);
 
     EnrollmentResponse updatePayment(Long id, UpdatePaymentRequest request);

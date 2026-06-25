@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
-  enrollCourse,
   getAvailableCourses,
   getMyEnrollments,
 } from '../services/studentEnrollmentService';
@@ -16,9 +15,16 @@ export default function StudentEnrollmentsPage() {
   const [errorMessage, setErrorMessage] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
 
+  // Confirmed enrollments from DB + pending items from sessionStorage
+  const pendingPayments = useMemo(() => {
+    try { return JSON.parse(sessionStorage.getItem('pendingPayments') || '[]'); } catch { return []; }
+  }, []);
+
   const enrolledCourseIds = useMemo(() => {
-    return new Set(myEnrollments.map((item) => item.courseId));
-  }, [myEnrollments]);
+    const dbIds = myEnrollments.filter((item) => item.status !== 'CANCELLED').map((item) => item.courseId);
+    const pendingIds = pendingPayments.map((p) => p.courseId);
+    return new Set([...dbIds, ...pendingIds]);
+  }, [myEnrollments, pendingPayments]);
 
   useEffect(() => {
     loadPageData();
@@ -46,26 +52,23 @@ export default function StudentEnrollmentsPage() {
     }
   }
 
-  async function handleEnroll(courseId) {
-    const confirmed = window.confirm('ยืนยันการสมัครเรียนคอร์สนี้หรือไม่?');
-    if (!confirmed) return;
+  function handleEnroll(courseId) {
+    const course = courses.find((c) => c.id === courseId);
+    if (!course) return;
 
-    try {
-      setEnrollingId(courseId);
-      setErrorMessage('');
-      setSuccessMessage('');
-
-      await enrollCourse(courseId);
-
-      setSuccessMessage('สมัครเรียนสำเร็จ กรุณารอเจ้าหน้าที่ตรวจสอบการชำระเงิน');
-      await loadPageData();
-    } catch (error) {
-      setErrorMessage(
-        error?.response?.data?.message || 'ไม่สามารถสมัครเรียนคอร์สนี้ได้'
-      );
-    } finally {
-      setEnrollingId(null);
-    }
+    // Save to sessionStorage — no API call yet
+    const existing = (() => {
+      try { return JSON.parse(sessionStorage.getItem('pendingPayments') || '[]'); } catch { return []; }
+    })();
+    const filtered = existing.filter((p) => p.courseId !== courseId);
+    filtered.push({
+      courseId: course.id,
+      courseName: course.courseName,
+      price: course.price,
+      enrolledAt: new Date().toISOString(),
+    });
+    sessionStorage.setItem('pendingPayments', JSON.stringify(filtered));
+    navigate('/student/payments');
   }
 
   function getStatusLabel(status) {

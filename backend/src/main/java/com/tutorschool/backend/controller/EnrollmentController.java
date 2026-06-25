@@ -1,6 +1,7 @@
 package com.tutorschool.backend.controller;
 
 import com.tutorschool.backend.dto.request.*;
+import com.tutorschool.backend.dto.request.ConfirmEnrollmentRequest;
 import com.tutorschool.backend.dto.request.EnrollMyselfRequest;
 import com.tutorschool.backend.dto.response.ApiResponse;
 import com.tutorschool.backend.dto.response.EnrollmentResponse;
@@ -89,6 +90,19 @@ public class EnrollmentController {
         EnrollmentResponse response = enrollmentService.enrollStudent(createRequest);
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(ApiResponse.success("Enrolled successfully", response));
+    }
+
+    @PostMapping("/my/confirm")
+    @PreAuthorize("hasRole('STUDENT')")
+    public ResponseEntity<ApiResponse<EnrollmentResponse>> confirmEnrollmentWithPayment(
+            @AuthenticationPrincipal User currentUser,
+            @Valid @RequestBody ConfirmEnrollmentRequest request) {
+        Long studentId = studentRepository.findByUserId(currentUser.getId())
+                .orElseThrow(() -> new ResourceNotFoundException("Student profile not found"))
+                .getId();
+        EnrollmentResponse response = enrollmentService.confirmEnrollmentWithPayment(studentId, request);
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(ApiResponse.success("Enrollment confirmed successfully", response));
     }
 
     @PatchMapping("/{id}/status")

@@ -4,6 +4,8 @@ import com.tutorschool.backend.entity.Enrollment;
 import com.tutorschool.backend.entity.EnrollmentStatus;
 import com.tutorschool.backend.entity.PaymentStatus;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
 import java.util.List;
 import java.util.Optional;
@@ -18,11 +20,17 @@ public interface EnrollmentRepository extends JpaRepository<Enrollment, Long> {
 
     boolean existsByStudentIdAndCourseId(Long studentId, Long courseId);
 
+    boolean existsByStudentIdAndCourseIdAndStatusNot(Long studentId, Long courseId, EnrollmentStatus status);
+
     long countByCourseIdAndStatusIn(Long courseId, List<EnrollmentStatus> statuses);
+
+    @Query("SELECT COUNT(e) FROM Enrollment e WHERE e.course.id = :courseId AND e.paymentStatus IN ('PENDING_VERIFICATION','PAID') AND e.status != 'CANCELLED'")
+    long countConfirmedPaymentsByCourseId(@Param("courseId") Long courseId);
 
     List<Enrollment> findByPaymentStatus(PaymentStatus paymentStatus);
 
     List<Enrollment> findByStatus(EnrollmentStatus status);
 
     List<Enrollment> findTop5ByOrderByCreatedAtDesc();
+
 }

@@ -6,6 +6,7 @@ import StudentLayout from '../roles/student/layouts/StudentLayout';
 import StudentDashboardPage from '../roles/student/pages/StudentDashboardPage';
 import StudentEnrollmentsPage from '../roles/student/pages/StudentEnrollmentsPage';
 import StudentPaymentsPage from '../roles/student/pages/StudentPaymentsPage';
+import StudentEnrollmentHistoryPage from '../roles/student/pages/StudentEnrollmentHistoryPage';
 
 const studentRoutes = (
   <Route
@@ -21,6 +22,7 @@ const studentRoutes = (
     {/* เพิ่มตรงนี้ */}
     <Route path="enrollments" element={<StudentEnrollmentsPage />} />
     <Route path="payments" element={<StudentPaymentsPage />} />
+    <Route path="enrollment-history" element={<StudentEnrollmentHistoryPage />} />
   </Route>
 );
 
