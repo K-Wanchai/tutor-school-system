@@ -44,4 +44,6 @@ public interface CourseEvaluationRepository extends JpaRepository<CourseEvaluati
     Double findAverageValueScoreByCourseId(@Param("courseId") Long courseId);
 
     long countByCourseIdAndStatus(Long courseId, EvaluationStatus status);
+
+    void deleteByCourseId(Long courseId);
 }

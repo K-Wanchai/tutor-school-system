@@ -36,4 +36,6 @@ public interface EnrollmentRepository extends JpaRepository<Enrollment, Long> {
 
     @Query("SELECT e FROM Enrollment e WHERE e.paymentStatus = 'UNPAID' AND e.paymentDeadline IS NOT NULL AND e.paymentDeadline < :now AND e.status != 'CANCELLED'")
     List<Enrollment> findExpiredUnpaidEnrollments(@Param("now") LocalDateTime now);
+
+    void deleteByCourseId(Long courseId);
 }

@@ -18,4 +18,6 @@ public interface ClassroomSessionRepository extends JpaRepository<ClassroomSessi
     List<ClassroomSession> findByTutorId(Long tutorId);
 
     List<ClassroomSession> findByStatus(ClassroomSessionStatus status);
+
+    void deleteByCourseId(Long courseId);
 }

@@ -7,6 +7,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 
@@ -22,6 +23,21 @@ public interface CourseScheduleRepository extends JpaRepository<CourseSchedule, 
     List<CourseSchedule> findByTutorIdOrderByScheduleDateAscStartTimeAsc(Long tutorId);
 
     List<CourseSchedule> findByCourseIdAndStatus(Long courseId, ScheduleStatus status);
+
+    void deleteByCourseId(Long courseId);
+
+    // ดึง busy slots ของ Tutor ในวันที่ระบุ (ยกเว้น CANCELLED)
+    @Query("""
+            SELECT cs FROM CourseSchedule cs
+            WHERE cs.tutor.id = :tutorId
+              AND cs.scheduleDate = :date
+              AND cs.status != 'CANCELLED'
+            ORDER BY cs.startTime ASC
+            """)
+    List<CourseSchedule> findBusySlotsByTutorAndDate(
+            @Param("tutorId") Long tutorId,
+            @Param("date") LocalDate date
+    );
 
     // ดึง schedules ของ course ที่ student คนนี้ enrollment อยู่
     @Query("""

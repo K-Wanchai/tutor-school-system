@@ -22,4 +22,6 @@ public interface PaymentRepository extends JpaRepository<Payment, Long> {
     long countByPaymentStatus(PaymentVerificationStatus paymentStatus);
 
     List<Payment> findTop5ByOrderByCreatedAtDesc();
+
+    void deleteByEnrollmentIdIn(List<Long> enrollmentIds);
 }

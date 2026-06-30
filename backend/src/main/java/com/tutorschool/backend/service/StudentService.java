@@ -22,5 +22,7 @@ public interface StudentService {
 
     StudentResponse getStudentByUserId(Long userId);
 
+    StudentResponse updateMyProfile(Long userId, UpdateStudentRequest request);
+
     void deleteStudent(Long id);
 }

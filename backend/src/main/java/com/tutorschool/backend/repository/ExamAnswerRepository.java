@@ -13,4 +13,6 @@ public interface ExamAnswerRepository extends JpaRepository<ExamAnswer, Long> {
     List<ExamAnswer> findBySubmissionId(Long submissionId);
 
     Optional<ExamAnswer> findBySubmissionIdAndQuestionId(Long submissionId, Long questionId);
+
+    void deleteBySubmissionIdIn(List<Long> submissionIds);
 }

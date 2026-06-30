@@ -111,6 +111,30 @@ export async function deleteCourse(id) {
   }
 }
 
+// ดึง availability ของ Tutor ทั้งสัปดาห์ (จ–อา ของสัปดาห์ปัจจุบัน)
+export async function getTutorWeeklyAvailability(tutorId) {
+  const now = new Date();
+  const dow = now.getDay(); // 0=อา
+  const monday = new Date(now);
+  monday.setDate(now.getDate() - (dow === 0 ? 6 : dow - 1));
+
+  const DAY_KEYS = ['MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT', 'SUN'];
+  const results = await Promise.all(
+    DAY_KEYS.map(async (key, i) => {
+      const d = new Date(monday);
+      d.setDate(monday.getDate() + i);
+      const dateStr = d.toISOString().slice(0, 10);
+      try {
+        const res = await api.get(`/course-schedules/tutor/${tutorId}/availability`, { params: { date: dateStr } });
+        return { key, data: res.data?.data };
+      } catch {
+        return { key, data: null };
+      }
+    })
+  );
+  return Object.fromEntries(results.map(r => [r.key, r.data]));
+}
+
 export async function getCourseStats() {
   try {
     const res = await api.get('/courses', { params: { page: 0, size: 5000 } });

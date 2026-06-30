@@ -4,7 +4,9 @@ import com.tutorschool.backend.dto.request.CancelCourseScheduleRequest;
 import com.tutorschool.backend.dto.request.CreateCourseScheduleRequest;
 import com.tutorschool.backend.dto.request.UpdateCourseScheduleRequest;
 import com.tutorschool.backend.dto.response.CourseScheduleResponse;
+import com.tutorschool.backend.dto.response.TutorAvailabilityResponse;
 
+import java.time.LocalDate;
 import java.util.List;
 
 public interface CourseScheduleService {
@@ -26,4 +28,6 @@ public interface CourseScheduleService {
     CourseScheduleResponse cancelSchedule(Long id, CancelCourseScheduleRequest request, Long currentUserId);
 
     void deleteSchedule(Long id, Long currentUserId);
+
+    TutorAvailabilityResponse getTutorAvailability(Long tutorId, LocalDate date);
 }
