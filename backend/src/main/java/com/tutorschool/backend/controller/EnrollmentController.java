@@ -1,14 +1,20 @@
-﻿package com.tutorschool.backend.controller;
+package com.tutorschool.backend.controller;
 
 import com.tutorschool.backend.dto.request.*;
+import com.tutorschool.backend.dto.request.ConfirmEnrollmentRequest;
+import com.tutorschool.backend.dto.request.EnrollMyselfRequest;
 import com.tutorschool.backend.dto.response.ApiResponse;
 import com.tutorschool.backend.dto.response.EnrollmentResponse;
+import com.tutorschool.backend.entity.User;
+import com.tutorschool.backend.repository.StudentRepository;
+import com.tutorschool.backend.exception.ResourceNotFoundException;
 import com.tutorschool.backend.service.EnrollmentService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -19,11 +25,23 @@ import java.util.List;
 public class EnrollmentController {
 
     private final EnrollmentService enrollmentService;
+    private final StudentRepository studentRepository;
 
     @GetMapping
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ApiResponse<List<EnrollmentResponse>>> getAllEnrollments() {
         List<EnrollmentResponse> response = enrollmentService.getAllEnrollments();
+        return ResponseEntity.ok(ApiResponse.success("Enrollments retrieved successfully", response));
+    }
+
+    @GetMapping("/my")
+    @PreAuthorize("hasRole('STUDENT')")
+    public ResponseEntity<ApiResponse<List<EnrollmentResponse>>> getMyEnrollments(
+            @AuthenticationPrincipal User currentUser) {
+        Long studentId = studentRepository.findByUserId(currentUser.getId())
+                .orElseThrow(() -> new ResourceNotFoundException("Student profile not found"))
+                .getId();
+        List<EnrollmentResponse> response = enrollmentService.getEnrollmentsByStudentId(studentId);
         return ResponseEntity.ok(ApiResponse.success("Enrollments retrieved successfully", response));
     }
 
@@ -57,6 +75,34 @@ public class EnrollmentController {
         EnrollmentResponse response = enrollmentService.enrollStudent(request);
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(ApiResponse.success("Student enrolled successfully", response));
+    }
+
+    @PostMapping("/my")
+    @PreAuthorize("hasRole('STUDENT')")
+    public ResponseEntity<ApiResponse<EnrollmentResponse>> enrollMyself(
+            @AuthenticationPrincipal User currentUser,
+            @RequestBody EnrollMyselfRequest request) {
+        Long studentId = studentRepository.findByUserId(currentUser.getId())
+                .orElseThrow(() -> new ResourceNotFoundException("Student profile not found"))
+                .getId();
+        CreateEnrollmentRequest createRequest = new CreateEnrollmentRequest(
+                studentId, request.getCourseId(), request.getPaymentMethod(), request.getNote());
+        EnrollmentResponse response = enrollmentService.enrollStudent(createRequest);
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(ApiResponse.success("Enrolled successfully", response));
+    }
+
+    @PostMapping("/my/confirm")
+    @PreAuthorize("hasRole('STUDENT')")
+    public ResponseEntity<ApiResponse<EnrollmentResponse>> confirmEnrollmentWithPayment(
+            @AuthenticationPrincipal User currentUser,
+            @Valid @RequestBody ConfirmEnrollmentRequest request) {
+        Long studentId = studentRepository.findByUserId(currentUser.getId())
+                .orElseThrow(() -> new ResourceNotFoundException("Student profile not found"))
+                .getId();
+        EnrollmentResponse response = enrollmentService.confirmEnrollmentWithPayment(studentId, request);
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(ApiResponse.success("Enrollment confirmed successfully", response));
     }
 
     @PatchMapping("/{id}/status")

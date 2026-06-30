@@ -268,6 +268,28 @@ export default function TutorSidebar({ isOpen, onClose }) {
           </ul>
         </nav>
 
+    <div className="tutor-sidebar-help-card">
+  <div className="tutor-sidebar-help-text">
+    <h4>สอนอย่างมืออาชีพ</h4>
+    <p>
+      ติดตามผลการเรียน
+      <br />
+      ได้อย่างไร้ขีดจำกัด
+    </p>
+  </div>
+
+  <div className="tutor-help-person">
+    <div className="tutor-help-head" />
+    <div className="tutor-help-hair" />
+    <div className="tutor-help-body" />
+    <div className="tutor-help-arm" />
+    <div className="tutor-help-hand" />
+    <div className="tutor-help-tablet" />
+  </div>
+</div>
+
+        
+
         <div className="tutor-sidebar-footer">
           <div className="tutor-sidebar-version">v1.0.0</div>
         </div>
@@ -275,3 +297,4 @@ export default function TutorSidebar({ isOpen, onClose }) {
     </>
   );
 }
+

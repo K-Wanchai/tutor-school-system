@@ -32,6 +32,7 @@ public class EnrollmentResponse {
     private BigDecimal finalAmount;
     private String paymentSlipUrl;
     private String note;
+    private LocalDateTime paymentDeadline;
     private String approvedBy;
     private LocalDateTime approvedAt;
     private LocalDateTime createdAt;

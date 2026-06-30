@@ -255,3 +255,155 @@
     flex-direction: column;
   }
 }
+.tas-course-grade {
+  display: inline-flex;
+  width: fit-content;
+  margin: 6px 0 10px;
+  padding: 6px 12px;
+  border-radius: 999px;
+  background: #ecfdf5;
+  color: #059669;
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.tas-mode-switch {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  background: #f3f4f6;
+  border-radius: 16px;
+  padding: 6px;
+  margin-bottom: 18px;
+  gap: 6px;
+}
+
+.tas-mode-switch button {
+  height: 44px;
+  border: none;
+  border-radius: 12px;
+  background: transparent;
+  color: #6b7280;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.tas-mode-switch button.active {
+  background: #059669;
+  color: white;
+  box-shadow: 0 8px 18px rgba(5, 150, 105, 0.18);
+}
+
+.tas-status-pill,
+.tas-grade-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 54px;
+  padding: 5px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.tas-status-pill.good,
+.tas-grade-badge.good {
+  background: #dcfce7;
+  color: #059669;
+}
+
+.tas-status-pill.warning,
+.tas-grade-badge.warning {
+  background: #fef3c7;
+  color: #d97706;
+}
+
+.tas-status-pill.danger,
+.tas-grade-badge.danger {
+  background: #fee2e2;
+  color: #dc2626;
+}
+
+.tas-grade-badge.normal {
+  background: #dbeafe;
+  color: #2563eb;
+}
+
+.tas-grade-badge.orange {
+  background: #ffedd5;
+  color: #ea580c;
+}
+.tas-course-grade {
+  display: inline-flex;
+  width: fit-content;
+  margin: 6px 0 10px;
+  padding: 6px 12px;
+  border-radius: 999px;
+  background: #ecfdf5;
+  color: #059669;
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.tas-mode-switch {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  background: #f3f4f6;
+  border-radius: 16px;
+  padding: 6px;
+  margin-bottom: 18px;
+  gap: 6px;
+}
+
+.tas-mode-switch button {
+  height: 44px;
+  border: none;
+  border-radius: 12px;
+  background: transparent;
+  color: #6b7280;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.tas-mode-switch button.active {
+  background: #059669;
+  color: white;
+}
+
+.tas-status-pill,
+.tas-grade-badge {
+  display: inline-flex;
+  justify-content: center;
+  min-width: 54px;
+  padding: 5px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.tas-status-pill.good,
+.tas-grade-badge.good {
+  background: #dcfce7;
+  color: #059669;
+}
+
+.tas-status-pill.warning,
+.tas-grade-badge.warning {
+  background: #fef3c7;
+  color: #d97706;
+}
+
+.tas-status-pill.danger,
+.tas-grade-badge.danger {
+  background: #fee2e2;
+  color: #dc2626;
+}
+
+.tas-grade-badge.normal {
+  background: #dbeafe;
+  color: #2563eb;
+}
+
+.tas-grade-badge.orange {
+  background: #ffedd5;
+  color: #ea580c;
+}

@@ -201,40 +201,140 @@
 .tutor-sidebar-overlay {
   display: none;
   position: fixed;
-  inset: 0;
-  background: rgba(0, 0, 0, 0.5);
-  z-index: 99;
+  top: 0;
+  left: 0;
+  z-index: 100;
+}
+.tutor-sidebar-help-card {
+  position: relative;
+  margin: 16px;
+  min-height: 220px;
+  border-radius: 20px;
+  overflow: hidden;
+  background:
+    radial-gradient(circle at 20% 10%, rgba(255,255,255,0.14), transparent 28%),
+    linear-gradient(180deg, #059669 0%, #047857 100%);
+  border: 1px solid rgba(255,255,255,0.1);
+  flex-shrink: 0;
 }
 
-@media (max-width: 1024px) {
-  .tutor-sidebar {
-    position: fixed;
-    top: 0;
-    left: 0;
-    height: 100vh;
-    z-index: 100;
-    transform: translateX(-100%);
-  }
-
-  .tutor-sidebar--open {
-    transform: translateX(0);
-  }
-
-  .tutor-sidebar-overlay {
-    display: block;
-  }
+.tutor-sidebar-help-text {
+  position: relative;
+  z-index: 3;
+  padding: 20px 18px 0;
 }
 
-@media (max-width: 768px) {
-  .tutor-sidebar-brand {
-    min-height: 78px;
-    padding-right: 74px;
-  }
+.tutor-sidebar-help-text h4 {
+  margin: 0 0 8px;
+  color: white;
+  font-size: 18px;
+  font-weight: 900;
+}
 
-  .tutor-sidebar-notification-btn {
-    display: inline-flex;
-    position: absolute;
-    top: 20px;
-    right: 20px;
-  }
+.tutor-sidebar-help-text p {
+  margin: 0;
+  color: rgba(255,255,255,0.78);
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+.tutor-sidebar-help-card::before {
+  content: '';
+  position: absolute;
+  right: -22px;
+  bottom: 12px;
+  width: 140px;
+  height: 135px;
+  border-radius: 28px;
+  background: rgba(255,255,255,0.06);
+}
+
+.tutor-sidebar-help-card::after {
+  content: '';
+  position: absolute;
+  right: 58px;
+  top: 92px;
+  width: 50px;
+  height: 26px;
+  background:
+    radial-gradient(circle, rgba(255,255,255,0.95) 2px, transparent 3px);
+  background-size: 16px 12px;
+  transform: rotate(-18deg);
+  opacity: 0.85;
+}
+
+.tutor-help-person {
+  position: absolute;
+  left: 10px;
+  bottom: -4px;
+  width: 150px;
+  height: 130px;
+}
+
+.tutor-help-head {
+  position: absolute;
+  left: 36px;
+  top: 28px;
+  width: 46px;
+  height: 46px;
+  background: #f7c59f;
+  border-radius: 50%;
+  z-index: 3;
+}
+
+.tutor-help-hair {
+  position: absolute;
+  left: 30px;
+  top: 20px;
+  width: 54px;
+  height: 28px;
+  background: #111827;
+  border-radius: 28px 28px 14px 14px;
+  z-index: 4;
+}
+
+.tutor-help-body {
+  position: absolute;
+  left: 14px;
+  bottom: -2px;
+  width: 92px;
+  height: 82px;
+  background: #10b981;
+  border-radius: 40px 40px 10px 10px;
+  z-index: 2;
+}
+
+.tutor-help-arm {
+  position: absolute;
+  left: 84px;
+  top: 56px;
+  width: 52px;
+  height: 11px;
+  background: #f7c59f;
+  border-radius: 999px;
+  transform: rotate(-48deg);
+  z-index: 3;
+}
+
+.tutor-help-hand {
+  position: absolute;
+  left: 121px;
+  top: 31px;
+  width: 14px;
+  height: 14px;
+  background: #f7c59f;
+  border-radius: 50%;
+  z-index: 4;
+}
+
+.tutor-help-tablet {
+  position: absolute;
+  left: 42px;
+  bottom: 14px;
+  width: 40px;
+  height: 52px;
+  background: #374151;
+  border-radius: 8px;
+  transform: rotate(-8deg);
+  z-index: 5;
 }

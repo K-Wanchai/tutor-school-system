@@ -5,17 +5,15 @@ import api from '../../../shared/services/api';
 import './TutorNavbar.css';
 
 const PAGE_TITLES = {
-  '/tutor/dashboard': 'แดชบอร์ด',
-  '/tutor/courses': 'คอร์สของฉัน',
-  '/tutor/notifications': 'การแจ้งเตือน',
-  '/tutor/schedule': 'ตารางสอน',
-  '/tutor/attendance-scores': 'การเข้าเรียน/คะแนนสอบ',
-  '/tutor/classroom': 'ห้องเรียน',
-  '/tutor/evaluations': 'การประเมิน',
-  '/tutor/exams': 'ข้อสอบ',
-  '/tutor/reports': 'รายงาน',
-  '/tutor/students': 'นักเรียน',
-  '/tutor/profile': 'โปรไฟล์',
+  '/tutor/dashboard':        'แดชบอร์ด',
+  '/tutor/courses':          'คอร์สของฉัน',
+  '/tutor/notifications':    'การแจ้งเตือน',
+  '/tutor/schedule':         'ตารางสอน',
+  '/tutor/attendance-scores':'การเข้าเรียน/คะแนนสอบ',
+  '/tutor/classroom':        'ห้องเรียน',
+  '/tutor/evaluations':      'การประเมิน',
+  '/tutor/reports':          'รายงาน',
+  '/tutor/students':         'นักเรียน',
 };
 
 function getPageTitle(pathname) {
