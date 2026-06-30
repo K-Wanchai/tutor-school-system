@@ -7,23 +7,23 @@ import StudentDashboardPage from '../roles/student/pages/StudentDashboardPage';
 import StudentEnrollmentsPage from '../roles/student/pages/StudentEnrollmentsPage';
 import StudentPaymentsPage from '../roles/student/pages/StudentPaymentsPage';
 import StudentEnrollmentHistoryPage from '../roles/student/pages/StudentEnrollmentHistoryPage';
+import StudentProfilePage from '../roles/student/pages/StudentProfilePage';
 
 const studentRoutes = (
   <Route
-    path="/student"
-    element={
-      <ProtectedRoute allowedRoles={['STUDENT']}>
-        <StudentLayout />
-      </ProtectedRoute>
-    }
-  >
-    <Route path="dashboard" element={<StudentDashboardPage />} />
-
-    {/* เพิ่มตรงนี้ */}
-    <Route path="enrollments" element={<StudentEnrollmentsPage />} />
-    <Route path="payments" element={<StudentPaymentsPage />} />
-    <Route path="enrollment-history" element={<StudentEnrollmentHistoryPage />} />
-  </Route>
+  path="/student"
+  element={
+    <ProtectedRoute allowedRoles={['STUDENT']}>
+      <StudentLayout />
+    </ProtectedRoute>
+  }
+>
+  <Route path="dashboard" element={<StudentDashboardPage />} />
+  <Route path="enrollments" element={<StudentEnrollmentsPage />} />
+  <Route path="payments" element={<StudentPaymentsPage />} />
+  <Route path="enrollment-history" element={<StudentEnrollmentHistoryPage />} />
+  <Route path="profile" element={<StudentProfilePage />} />
+</Route>
 );
 
 export default studentRoutes;
