@@ -1,5 +1,7 @@
-import { useLocation } from 'react-router-dom';
+import { useEffect, useState } from 'react';
+import { NavLink, useLocation, useNavigate } from 'react-router-dom';
 import { logout } from '../../../auth/services/authService';
+import api from '../../../shared/services/api';
 import './TutorNavbar.css';
 
 const PAGE_TITLES = {
@@ -15,28 +17,119 @@ const PAGE_TITLES = {
 };
 
 function getPageTitle(pathname) {
-  // exact match first
-  if (PAGE_TITLES[pathname]) return PAGE_TITLES[pathname];
-  // prefix match for nested routes (e.g. /tutor/attendance-scores/123)
+  if (PAGE_TITLES[pathname]) {
+    return PAGE_TITLES[pathname];
+  }
+
   const match = Object.keys(PAGE_TITLES)
-    .filter(p => pathname.startsWith(p))
+    .filter((path) => pathname.startsWith(path))
     .sort((a, b) => b.length - a.length)[0];
+
   return match ? PAGE_TITLES[match] : 'TutorSchool';
 }
 
+function BellIcon() {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      width="20"
+      height="20"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <path d="M18 8a6 6 0 00-12 0c0 7-3 8-3 8h18s-3-1-3-8" />
+      <path d="M13.73 21a2 2 0 01-3.46 0" />
+    </svg>
+  );
+}
+
+function countUnreadNotifications(data) {
+  if (typeof data === 'number') return data;
+  if (typeof data?.unreadCount === 'number') return data.unreadCount;
+  if (typeof data?.count === 'number') return data.count;
+  if (typeof data?.totalElements === 'number') return data.totalElements;
+  if (typeof data?.total === 'number') return data.total;
+
+  const list = Array.isArray(data)
+    ? data
+    : Array.isArray(data?.content)
+      ? data.content
+      : [];
+
+  const unreadList = list.filter((item) => {
+    if (typeof item?.read === 'boolean') return item.read === false;
+    if (typeof item?.isRead === 'boolean') return item.isRead === false;
+    if ('readAt' in item) return item.readAt === null || item.readAt === '';
+    if (item?.status) return item.status === 'UNREAD';
+    return false;
+  });
+
+  if (unreadList.length === 0 && list.length > 0) {
+    return list.length;
+  }
+
+  return unreadList.length;
+}
+
 export default function TutorNavbar({ onMenuToggle }) {
+  const navigate = useNavigate();
+  const location = useLocation();
+
   const username = localStorage.getItem('username') || 'ติวเตอร์';
-  const { pathname } = useLocation();
-  const pageTitle = getPageTitle(pathname);
+  const pageTitle = getPageTitle(location.pathname);
+
+  const [unreadCount, setUnreadCount] = useState(0);
+
+  useEffect(() => {
+    let active = true;
+
+    const loadUnreadNotifications = async () => {
+      try {
+        const res = await api.get('/notifications');
+
+        if (res.data?.success === false) {
+          throw new Error(res.data?.message || 'โหลดการแจ้งเตือนไม่สำเร็จ');
+        }
+
+        const data = res.data?.data ?? res.data;
+        const count = countUnreadNotifications(data);
+
+        if (active) {
+          setUnreadCount(count);
+        }
+      } catch {
+        if (active) {
+          setUnreadCount(0);
+        }
+      }
+    };
+
+    loadUnreadNotifications();
+
+    const timer = setInterval(loadUnreadNotifications, 60000);
+
+    return () => {
+      active = false;
+      clearInterval(timer);
+    };
+  }, []);
 
   return (
     <header className="tutor-navbar">
       <div className="tutor-navbar-left">
-        <button className="tutor-navbar-menu-btn" onClick={onMenuToggle} aria-label="Toggle sidebar">
-          <svg viewBox="0 0 20 20" fill="currentColor" width="20" height="20">
-            <path fillRule="evenodd" d="M3 5a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zM3 10a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zM3 15a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1z" clipRule="evenodd" />
-          </svg>
+        <button
+          type="button"
+          className="tutor-navbar-menu-btn"
+          onClick={onMenuToggle}
+          aria-label="เปิดเมนู"
+        >
+          ☰
         </button>
+
         <div className="tutor-navbar-title">
           <span>TutorSchool</span>
           <span className="tutor-navbar-title-sep">/</span>
@@ -45,19 +138,52 @@ export default function TutorNavbar({ onMenuToggle }) {
       </div>
 
       <div className="tutor-navbar-right">
-        <div className="tutor-badge">TUTOR</div>
-        <div className="tutor-navbar-profile">
-          <div className="tutor-navbar-avatar">{username.charAt(0).toUpperCase()}</div>
-          <div className="tutor-navbar-user-info">
-            <span className="tutor-navbar-username">{username}</span>
-            <span className="tutor-navbar-role">ติวเตอร์</span>
+        <NavLink
+          to="/tutor/notifications"
+          className={({ isActive }) =>
+            `tutor-navbar-notification-btn${
+              isActive ? ' tutor-navbar-notification-btn--active' : ''
+            }`
+          }
+          aria-label="การแจ้งเตือน"
+          title="การแจ้งเตือน"
+        >
+          <span className="tutor-navbar-notification-icon">
+            <BellIcon />
+          </span>
+
+          {unreadCount > 0 && (
+            <span className="tutor-navbar-notification-badge">
+              {unreadCount > 99 ? '99+' : unreadCount}
+            </span>
+          )}
+        </NavLink>
+
+        <button
+          type="button"
+          className="tutor-navbar-profile-click"
+          onClick={() => navigate('/tutor/profile')}
+        >
+          <div className="tutor-badge">TUTOR</div>
+
+          <div className="tutor-navbar-profile">
+            <div className="tutor-navbar-avatar">
+              {username.charAt(0).toUpperCase()}
+            </div>
+
+            <div className="tutor-navbar-user-info">
+              <span className="tutor-navbar-username">{username}</span>
+              <span className="tutor-navbar-role">ติวเตอร์</span>
+            </div>
           </div>
-        </div>
-        <button className="tutor-navbar-logout-btn" onClick={logout} title="ออกจากระบบ">
-          <svg viewBox="0 0 20 20" fill="currentColor" width="16" height="16">
-            <path fillRule="evenodd" d="M3 3a1 1 0 00-1 1v12a1 1 0 102 0V4a1 1 0 00-1-1zm10.293 9.293a1 1 0 001.414 1.414l3-3a1 1 0 000-1.414l-3-3a1 1 0 10-1.414 1.414L14.586 9H7a1 1 0 100 2h7.586l-1.293 1.293z" clipRule="evenodd" />
-          </svg>
-          <span>ออกจากระบบ</span>
+        </button>
+
+        <button
+          type="button"
+          className="tutor-navbar-logout-btn"
+          onClick={logout}
+        >
+          ออกจากระบบ
         </button>
       </div>
     </header>
