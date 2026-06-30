@@ -192,3 +192,74 @@
   .cm-modal { max-width: 100%; border-radius: 12px; }
   .cm-schedule-info-grid { grid-template-columns: 1fr; }
 }
+
+/* ── Tutor Availability Panel ── */
+.cm-avail-panel {
+  background: #f0fdf4; border: 1.5px solid #86efac;
+  border-radius: 10px; padding: 12px 14px; margin-bottom: 14px;
+}
+.cm-avail-loading { color: #6b7280; font-size: 0.85rem; }
+.cm-avail-title {
+  font-size: 0.78rem; font-weight: 700; color: #166534;
+  text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 8px;
+}
+.cm-avail-rows { display: flex; flex-direction: column; gap: 5px; }
+.cm-avail-row {
+  display: flex; align-items: baseline; gap: 10px; font-size: 0.84rem;
+}
+.cm-avail-day {
+  min-width: 56px; font-weight: 600; color: #374151;
+}
+.cm-avail-slots { display: flex; flex-wrap: wrap; gap: 4px; }
+.cm-avail-slot {
+  background: #dcfce7; color: #15803d;
+  border-radius: 5px; padding: 1px 7px; font-size: 0.8rem; font-weight: 500;
+}
+.cm-avail-no { color: #dc2626; font-size: 0.82rem; font-weight: 500; }
+.cm-avail-row.cm-avail-busy .cm-avail-day { color: #9ca3af; }
+
+/* ── Time Conflict Warning ── */
+.cm-avail-conflict {
+  background: #fef2f2; border: 1.5px solid #fca5a5;
+  border-radius: 8px; padding: 10px 13px; margin-top: 8px;
+  font-size: 0.83rem; color: #991b1b; display: flex; flex-direction: column; gap: 3px;
+}
+.cm-avail-conflict strong { font-weight: 700; }
+.cm-avail-conflict-hint { color: #b91c1c; font-size: 0.78rem; margin-top: 2px; }
+
+/* ── Per-day schedule slots ── */
+.cm-per-day-slots {
+  display: flex; flex-direction: column; gap: 8px;
+  margin-top: 6px;
+}
+.cm-per-day-row {
+  display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+}
+.cm-per-day-row--conflict .cm-time-range-input {
+  border-color: #f87171; background: #fff5f5;
+}
+.cm-per-day-label {
+  min-width: 56px; font-size: 0.86rem; font-weight: 600; color: #374151;
+}
+.cm-per-day-conflict-msg {
+  font-size: 0.78rem; color: #dc2626; font-weight: 500;
+}
+.cm-per-day-time-display {
+  font-size: 0.88rem; color: #111827; font-weight: 500;
+}
+.cm-per-day-slots--readonly .cm-per-day-row {
+  padding: 4px 0; border-bottom: 1px solid #e5e7eb;
+}
+.cm-per-day-slots--readonly .cm-per-day-row:last-child {
+  border-bottom: none;
+}
+
+/* ── Per-day hint (ยังไม่ได้ใส่เวลา) ── */
+.cm-per-day-hint-msg {
+  font-size: 0.76rem; color: #9ca3af; font-style: italic;
+}
+
+/* ── Schedule section title required ── */
+.cm-schedule-section-title span:first-of-type + span {
+  font-weight: 700;
+}

@@ -51,6 +51,14 @@ public class TutorServiceImpl implements TutorService {
     }
 
     @Override
+    @Transactional(readOnly = true)
+    public TutorResponse getTutorByUserId(Long userId) {
+        Tutor tutor = tutorRepository.findByUserId(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("Tutor profile not found for user id: " + userId));
+        return tutorMapper.toResponse(tutor);
+    }
+
+    @Override
     @Transactional
     public TutorResponse createTeacher(CreateTutorRequest request) {
         if (userRepository.existsByEmail(request.getEmail())) {
@@ -93,6 +101,14 @@ public class TutorServiceImpl implements TutorService {
         tutor.setBio(request.getBio());
 
         return tutorMapper.toResponse(tutorRepository.save(tutor));
+    }
+
+    @Override
+    @Transactional
+    public TutorResponse updateMyProfile(Long userId, UpdateTutorRequest request) {
+        Tutor tutor = tutorRepository.findByUserId(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("Tutor profile not found for user id: " + userId));
+        return updateTeacher(tutor.getId(), request);
     }
 
     @Override

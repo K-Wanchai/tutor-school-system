@@ -16,7 +16,11 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.tutorschool.backend.dto.response.TutorAvailabilityResponse;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
+import java.util.ArrayList;
 import java.util.List;
 
 @Slf4j
@@ -329,6 +333,63 @@ public class CourseScheduleServiceImpl implements CourseScheduleService {
         sb.append("\nกรุณาตรวจสอบตารางเรียนของคุณในระบบ\n\n");
         sb.append("ขอแสดงความนับถือ\nTutor School System");
         return sb.toString();
+    }
+
+    @Override
+    public TutorAvailabilityResponse getTutorAvailability(Long tutorId, LocalDate date) {
+        Tutor tutor = TutorRepository.findById(tutorId)
+                .orElseThrow(() -> new ResourceNotFoundException("Tutor not found with id: " + tutorId));
+
+        List<CourseSchedule> busySchedules = courseScheduleRepository
+                .findBusySlotsByTutorAndDate(tutor.getId(), date);
+
+        List<TutorAvailabilityResponse.TimeSlot> busySlots = busySchedules.stream()
+                .map(cs -> TutorAvailabilityResponse.TimeSlot.builder()
+                        .startTime(cs.getStartTime())
+                        .endTime(cs.getEndTime())
+                        .courseTitle(cs.getCourse().getCourseName())
+                        .scheduleCode(cs.getScheduleCode())
+                        .build())
+                .toList();
+
+        List<TutorAvailabilityResponse.TimeSlot> freeSlots = computeFreeSlots(busySchedules);
+
+        return TutorAvailabilityResponse.builder()
+                .tutorId(tutorId)
+                .date(date)
+                .busySlots(busySlots)
+                .freeSlots(freeSlots)
+                .build();
+    }
+
+    // คำนวณ free slots จาก busy slots โดยแบ่งช่วงเวลาระหว่าง 08:00-22:00
+    private List<TutorAvailabilityResponse.TimeSlot> computeFreeSlots(List<CourseSchedule> busySchedules) {
+        final LocalTime DAY_START = LocalTime.of(8, 0);
+        final LocalTime DAY_END = LocalTime.of(22, 0);
+
+        List<TutorAvailabilityResponse.TimeSlot> freeSlots = new ArrayList<>();
+        LocalTime cursor = DAY_START;
+
+        for (CourseSchedule cs : busySchedules) {
+            if (cursor.isBefore(cs.getStartTime())) {
+                freeSlots.add(TutorAvailabilityResponse.TimeSlot.builder()
+                        .startTime(cursor)
+                        .endTime(cs.getStartTime())
+                        .build());
+            }
+            if (cs.getEndTime().isAfter(cursor)) {
+                cursor = cs.getEndTime();
+            }
+        }
+
+        if (cursor.isBefore(DAY_END)) {
+            freeSlots.add(TutorAvailabilityResponse.TimeSlot.builder()
+                    .startTime(cursor)
+                    .endTime(DAY_END)
+                    .build());
+        }
+
+        return freeSlots;
     }
 
     private String buildCancelMessage(String courseName, String scheduleDate,

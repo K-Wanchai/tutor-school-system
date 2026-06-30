@@ -11,9 +11,13 @@ public interface TutorService {
 
     TutorResponse getTeacherById(Long id);
 
+    TutorResponse getTutorByUserId(Long userId);
+
     TutorResponse createTeacher(CreateTutorRequest request);
 
     TutorResponse updateTeacher(Long id, UpdateTutorRequest request);
+
+    TutorResponse updateMyProfile(Long userId, UpdateTutorRequest request);
 
     void deleteTeacher(Long id);
 

@@ -1,14 +1,10 @@
 import axios from 'axios';
 
-const BASE_URL = 'http://172.24.179.112:8080/api/v1';
+const BASE_URL = 'http://172.24.176.111:8080/api/v1';
 
 const api = axios.create({
   baseURL: BASE_URL,
   headers: { 'Content-Type': 'application/json' },
-  baseURL: 'http://172.24.179.112:8080/api/v1',
-  headers: {
-    'Content-Type': 'application/json',
-  },
 });
 
 // ── attach access token to every request
@@ -53,7 +49,7 @@ api.interceptors.response.use(
       original.url?.includes('/auth/refresh') ||
       original.url?.includes('/auth/register');
 
-    if ((error.response?.status === 401 || error.response?.status === 403) && !isAuthEndpoint && !original._retry) {
+    if (error.response?.status === 401 && !isAuthEndpoint && !original._retry) {
       // ถ้ากำลัง refresh อยู่ → รอในคิวก่อน
       if (isRefreshing) {
         return new Promise((resolve, reject) => {

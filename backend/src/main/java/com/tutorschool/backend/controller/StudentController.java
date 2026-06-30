@@ -64,6 +64,15 @@ public class StudentController {
                 .body(ApiResponse.success("Student created successfully", response));
     }
 
+    @PutMapping("/me")
+    @PreAuthorize("hasRole('STUDENT')")
+    public ResponseEntity<ApiResponse<StudentResponse>> updateMyProfile(
+            @AuthenticationPrincipal User currentUser,
+            @Valid @RequestBody UpdateStudentRequest request) {
+        StudentResponse response = studentService.updateMyProfile(currentUser.getId(), request);
+        return ResponseEntity.ok(ApiResponse.success("Profile updated successfully", response));
+    }
+
     @PutMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ApiResponse<StudentResponse>> updateStudent(

@@ -5,15 +5,19 @@ import com.tutorschool.backend.dto.request.CreateCourseScheduleRequest;
 import com.tutorschool.backend.dto.request.UpdateCourseScheduleRequest;
 import com.tutorschool.backend.dto.response.ApiResponse;
 import com.tutorschool.backend.dto.response.CourseScheduleResponse;
+import com.tutorschool.backend.dto.response.TutorAvailabilityResponse;
 import com.tutorschool.backend.entity.User;
 import com.tutorschool.backend.service.CourseScheduleService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
+
+import java.time.LocalDate;
 
 import java.util.List;
 
@@ -62,6 +66,15 @@ public class CourseScheduleController {
             @AuthenticationPrincipal User currentUser) {
         List<CourseScheduleResponse> schedules = courseScheduleService.getMySchedulesAsStudent(currentUser.getId());
         return ResponseEntity.ok(ApiResponse.success("My schedules retrieved successfully", schedules));
+    }
+
+    @GetMapping("/tutor/{tutorId}/availability")
+    @PreAuthorize("hasAnyRole('ADMIN', 'TUTOR')")
+    public ResponseEntity<ApiResponse<TutorAvailabilityResponse>> getTutorAvailability(
+            @PathVariable Long tutorId,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date) {
+        TutorAvailabilityResponse response = courseScheduleService.getTutorAvailability(tutorId, date);
+        return ResponseEntity.ok(ApiResponse.success("Tutor availability retrieved successfully", response));
     }
 
     @GetMapping("/tutor/me")

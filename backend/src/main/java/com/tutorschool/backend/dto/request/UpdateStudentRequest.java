@@ -13,11 +13,9 @@ import java.time.LocalDate;
 @AllArgsConstructor
 public class UpdateStudentRequest {
 
-    @NotBlank(message = "Full name is required")
     @Size(max = 255, message = "Full name must not exceed 255 characters")
     private String fullName;
 
-    // Optional: when provided, used to update firstName/lastName individually
     @Size(max = 100)
     private String firstName;
 

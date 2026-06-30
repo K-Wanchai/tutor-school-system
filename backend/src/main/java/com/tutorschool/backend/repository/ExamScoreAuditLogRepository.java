@@ -10,4 +10,6 @@ import java.util.List;
 public interface ExamScoreAuditLogRepository extends JpaRepository<ExamScoreAuditLog, Long> {
 
     List<ExamScoreAuditLog> findBySubmissionId(Long submissionId);
+
+    void deleteBySubmissionIdIn(List<Long> submissionIds);
 }

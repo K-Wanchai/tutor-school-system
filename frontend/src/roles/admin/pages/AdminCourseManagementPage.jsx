@@ -5,6 +5,7 @@ import {
   deleteCourse,
   getCourseStats,
   getCourses,
+  getTutorWeeklyAvailability,
   updateCourse,
   updateCourseStatus,
 } from '../services/adminCourseService';
@@ -58,13 +59,41 @@ const DAYS = [
 
 const DAY_LABEL_TH = { MON:'จันทร์', TUE:'อังคาร', WED:'พุธ', THU:'พฤหัส', FRI:'ศุกร์', SAT:'เสาร์', SUN:'อาทิตย์' };
 
-function parseDays(str) {
-  if (!str) return [];
-  return str.split(',').filter(Boolean);
+// รูปแบบใหม่: "MON:10:00-12:00,WED:13:00-15:00"
+function parseDaySlots(str) {
+  if (!str) return {};
+  const slots = {};
+  str.split(',').filter(Boolean).forEach(part => {
+    const colonIdx = part.indexOf(':');
+    if (colonIdx > 0 && colonIdx < part.length - 1) {
+      const day = part.slice(0, colonIdx);
+      const timeRange = part.slice(colonIdx + 1);
+      const dashIdx = timeRange.lastIndexOf('-');
+      slots[day] = dashIdx > 0
+        ? { start: timeRange.slice(0, dashIdx), end: timeRange.slice(dashIdx + 1) }
+        : { start: timeRange, end: '' };
+    } else {
+      // old format (just day name)
+      slots[part] = { start: '', end: '' };
+    }
+  });
+  return slots;
 }
 
-function formatDays(arr) {
-  return arr.join(',');
+function encodeDaySlots(slots) {
+  return DAYS.map(d => d.key)
+    .filter(k => k in slots)
+    .map(k => {
+      const { start, end } = slots[k];
+      return start && end ? `${k}:${start}-${end}` : k;
+    })
+    .join(',');
+}
+
+// compat: ใช้ใน detail modal
+function parseDays(str) {
+  if (!str) return [];
+  return str.split(',').filter(Boolean).map(p => p.split(':')[0]);
 }
 
 function formatTimeRange(digits) {
@@ -130,59 +159,143 @@ function TimeRangeInput({ startTime, endTime, onChangeStart, onChangeEnd }) {
   );
 }
 
-function ScheduleSection({ form, fld }) {
-  const selectedDays = parseDays(form.scheduleDays);
+// ── helper: แปลง "HH:MM" เป็นนาที
+function toMin(t) {
+  if (!t) return 0;
+  const [h, m] = t.split(':').map(Number);
+  return h * 60 + m;
+}
+
+function overlaps(s1, e1, s2, e2) {
+  return toMin(s1) < toMin(e2) && toMin(e1) > toMin(s2);
+}
+
+// ── ตรวจ conflict แต่ละวัน (per-day slots)
+function findConflictDays(scheduleSlots, avail) {
+  if (!avail || !scheduleSlots) return [];
+  return Object.entries(scheduleSlots).flatMap(([day, { start, end }]) => {
+    if (!start || !end) return [];
+    const busy = avail[day]?.busySlots ?? [];
+    return busy
+      .filter(b => overlaps(start, end, b.startTime, b.endTime))
+      .map(b => ({ day, start: b.startTime, end: b.endTime, course: b.courseTitle }));
+  });
+}
+
+// ── panel แสดงตารางว่างของติวเตอร์
+function TutorAvailabilityPanel({ avail, loading }) {
+  if (loading) {
+    return (
+      <div className="cm-avail-panel cm-avail-loading">
+        กำลังโหลดตารางว่างของติวเตอร์...
+      </div>
+    );
+  }
+  if (!avail) return null;
+
+  return (
+    <div className="cm-avail-panel">
+      <div className="cm-avail-title">ตารางว่างของติวเตอร์ (สัปดาห์นี้)</div>
+      <div className="cm-avail-rows">
+        {DAYS.map(({ key }) => {
+          const data = avail[key];
+          const freeSlots = data?.freeSlots ?? [];
+          const hasFree = freeSlots.length > 0;
+          return (
+            <div key={key} className={`cm-avail-row ${hasFree ? 'cm-avail-free' : 'cm-avail-busy'}`}>
+              <span className="cm-avail-day">{DAY_LABEL_TH[key]}</span>
+              <span className="cm-avail-slots">
+                {hasFree
+                  ? freeSlots.map((s, i) => (
+                      <span key={i} className="cm-avail-slot">
+                        {s.startTime}–{s.endTime}
+                      </span>
+                    ))
+                  : <span className="cm-avail-no">ไม่ว่าง</span>
+                }
+              </span>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+function ScheduleSection({ form, fld, avail, err }) {
+  const slots = form.scheduleSlots || {};
+  const orderedSelected = DAYS.map(d => d.key).filter(k => k in slots);
+  const conflicts = findConflictDays(slots, avail);
+  const conflictDaySet = new Set(conflicts.map(c => c.day));
 
   function toggleDay(key) {
-    const next = selectedDays.includes(key)
-      ? selectedDays.filter(d => d !== key)
-      : [...selectedDays, key];
-    // เรียงตาม DAYS order
-    const ordered = DAYS.map(d => d.key).filter(k => next.includes(k));
-    fld('scheduleDays', formatDays(ordered));
+    const next = { ...slots };
+    if (key in next) {
+      delete next[key];
+    } else {
+      next[key] = { start: '', end: '' };
+    }
+    fld('scheduleSlots', next);
+  }
+
+  function setSlotTime(day, field, value) {
+    fld('scheduleSlots', { ...slots, [day]: { ...slots[day], [field]: value } });
   }
 
   return (
     <div className="cm-schedule-section">
       <div className="cm-schedule-section-title">
         <span className="cm-schedule-icon">📅</span>
-        <span>ตารางสอน</span>
-        <span className="cm-schedule-optional">ไม่บังคับ</span>
+        <span>ตารางสอน *</span>
       </div>
 
-      {/* วันสอน */}
+      {/* เลือกวัน */}
       <div className="cm-field">
-        <label>วันที่สอน</label>
+        <label>กดเลือกวันที่สอน และใส่เวลาแต่ละวัน <span className="cm-lbl-hint">(08:00–22:00)</span></label>
         <div className="cm-day-pills">
           {DAYS.map(d => (
-            <button
-              key={d.key}
-              type="button"
-              className={`cm-day-pill ${selectedDays.includes(d.key) ? 'cm-day-pill--on' : ''}`}
-              onClick={() => toggleDay(d.key)}
-            >
+            <button key={d.key} type="button"
+              className={`cm-day-pill ${d.key in slots ? 'cm-day-pill--on' : ''}`}
+              onClick={() => toggleDay(d.key)}>
               {d.label}
             </button>
           ))}
         </div>
-        {selectedDays.length > 0 && (
-          <span className="cm-field-hint">
-            ทุก{selectedDays.map(k => DAY_LABEL_TH[k]).join(', ')}
-          </span>
-        )}
       </div>
 
-      {/* เวลา */}
-      <div className="cm-field">
-        <label>เวลาสอน</label>
-        <TimeRangeInput
-          startTime={form.scheduleStartTime}
-          endTime={form.scheduleEndTime}
-          onChangeStart={v => fld('scheduleStartTime', v)}
-          onChangeEnd={v => fld('scheduleEndTime', v)}
-        />
-      </div>
+      {/* เวลาแต่ละวัน */}
+      {orderedSelected.length > 0 && (
+        <div className="cm-per-day-slots">
+          {orderedSelected.map(key => {
+            const slot = slots[key];
+            const conflict = conflicts.find(c => c.day === key);
+            return (
+              <div key={key} className={`cm-per-day-row ${conflictDaySet.has(key) ? 'cm-per-day-row--conflict' : ''}`}>
+                <span className="cm-per-day-label">{DAY_LABEL_TH[key]}</span>
+                <TimeRangeInput
+                  key={key}
+                  startTime={slot.start}
+                  endTime={slot.end}
+                  onChangeStart={v => setSlotTime(key, 'start', v)}
+                  onChangeEnd={v => setSlotTime(key, 'end', v)}
+                />
+                {conflict ? (
+                  <span className="cm-per-day-conflict-msg">
+                    ซ้ำ {conflict.start}–{conflict.end}{conflict.course ? ` (${conflict.course})` : ''}
+                  </span>
+                ) : (!slot.start || !slot.end) ? (
+                  <span className="cm-per-day-hint-msg">ยังไม่ได้ใส่เวลา</span>
+                ) : null}
+              </div>
+            );
+          })}
+        </div>
+      )}
 
+      {/* error จาก validate (submit) */}
+      {err && (
+        <div className="cm-avail-conflict"><strong>{err}</strong></div>
+      )}
     </div>
   );
 }
@@ -192,7 +305,7 @@ const EMPTY_FORM = {
   totalHours: '', seatLimit: '',
   registrationStartDate: '', registrationEndDate: '',
   courseStartDate: '', description: '',
-  scheduleDays: '', scheduleStartTime: '', scheduleEndTime: '',
+  scheduleSlots: {},
 };
 
 // ──────────────── component ────────────────
@@ -205,6 +318,9 @@ export default function AdminCourseManagementPage() {
   const [totalPages, setTotalPages] = useState(0);
   const [loading, setLoading]       = useState(true);
   const [toast, setToast]           = useState(null);
+
+  const [tutorAvail, setTutorAvail]   = useState(null);
+  const [availLoading, setAvailLoading] = useState(false);
 
   const [showCreate, setShowCreate]   = useState(false);
   const [showEdit, setShowEdit]       = useState(false);
@@ -253,6 +369,16 @@ export default function AdminCourseManagementPage() {
       .finally(() => setTutorLoading(false));
   }, []); // eslint-disable-line
 
+  // ── โหลด availability เมื่อเลือก tutorId
+  useEffect(() => {
+    if (!form.tutorId) { setTutorAvail(null); return; }
+    setAvailLoading(true);
+    getTutorWeeklyAvailability(form.tutorId)
+      .then(setTutorAvail)
+      .catch(() => setTutorAvail(null))
+      .finally(() => setAvailLoading(false));
+  }, [form.tutorId]); // eslint-disable-line
+
   // ── validate
   function validate(f, priceRequired = true) {
     const e = {};
@@ -264,6 +390,27 @@ export default function AdminCourseManagementPage() {
     if (!f.totalHours || isNaN(f.totalHours) || Number(f.totalHours) < 1) e.totalHours = 'ต้องมากกว่า 0';
     if (!f.seatLimit  || isNaN(f.seatLimit)  || Number(f.seatLimit)  < 1) e.seatLimit  = 'ต้องมากกว่า 0';
     if (!f.courseStartDate) e.courseStartDate = 'กรุณาเลือกวันที่เริ่มสอน';
+
+    // บังคับตารางสอน
+    const slots = f.scheduleSlots || {};
+    const selectedDayKeys = Object.keys(slots);
+    if (selectedDayKeys.length === 0) {
+      e.scheduleTime = 'กรุณาเลือกวันสอนอย่างน้อย 1 วัน';
+    } else {
+      const missingTime = selectedDayKeys.filter(k => !slots[k].start || !slots[k].end);
+      if (missingTime.length > 0) {
+        e.scheduleTime = `กรุณาใส่เวลาให้ครบทุกวัน: ${missingTime.map(k => DAY_LABEL_TH[k]).join(', ')}`;
+      }
+    }
+
+    // ตรวจ time conflict กับตารางของติวเตอร์
+    const conflicts = findConflictDays(f.scheduleSlots, tutorAvail);
+    if (conflicts.length > 0) {
+      e.scheduleTime = conflicts.map(c =>
+        `วัน${DAY_LABEL_TH[c.day]} ${c.start}–${c.end}${c.course ? ` (${c.course})` : ''}`
+      ).join(', ');
+    }
+
     return e;
   }
 
@@ -284,7 +431,8 @@ export default function AdminCourseManagementPage() {
     if (Object.keys(err).length) { setFormErr(err); return; }
     setSaving(true);
     try {
-      await createCourse({ ...form, price: Number(form.price) });
+      const scheduleDays = encodeDaySlots(form.scheduleSlots || {});
+      await createCourse({ ...form, price: Number(form.price), scheduleDays, scheduleStartTime: null, scheduleEndTime: null });
       notify('สร้างคอร์สสำเร็จ และส่งการแจ้งเตือนไปยังติวเตอร์แล้ว');
       setShowCreate(false);
       load(0); setPage(0);
@@ -306,9 +454,7 @@ export default function AdminCourseManagementPage() {
       registrationEndDate:   c.registrationEndDate ?? '',
       courseStartDate:       c.courseStartDate ?? '',
       description:           c.description ?? '',
-      scheduleDays:          c.scheduleDays ?? '',
-      scheduleStartTime:     c.scheduleStartTime ?? '',
-      scheduleEndTime:       c.scheduleEndTime ?? '',
+      scheduleSlots:         parseDaySlots(c.scheduleDays),
     });
     setFormErr({});
     setShowEdit(true);
@@ -319,7 +465,8 @@ export default function AdminCourseManagementPage() {
     if (Object.keys(err).length) { setFormErr(err); return; }
     setSaving(true);
     try {
-      await updateCourse(selected.id, form);
+      const scheduleDays = encodeDaySlots(form.scheduleSlots || {});
+      await updateCourse(selected.id, { ...form, scheduleDays, scheduleStartTime: null, scheduleEndTime: null });
       notify('อัปเดตคอร์สสำเร็จ');
       setShowEdit(false);
       load(page);
@@ -366,22 +513,27 @@ export default function AdminCourseManagementPage() {
     );
   }
 
-  // ── shared tutor select
+  // ── shared tutor select + availability panel
   function TutorSelect({ value, onChange, err }) {
     return (
-      <div className="cm-field">
-        <label>ติวเตอร์ * <span className="cm-lbl-hint">(เลือกจากระบบ)</span></label>
-        <select value={value} onChange={e => onChange(e.target.value)} disabled={tutorLoading}>
-          <option value="">
-            {tutorLoading ? 'กำลังโหลดรายชื่อ...' : tutors.length === 0 ? 'ไม่พบติวเตอร์ในระบบ' : '— เลือกติวเตอร์ —'}
-          </option>
-          {tutors.map(t => <TutorOption key={t.id} t={t} />)}
-        </select>
-        {err && <span className="cm-err">{err}</span>}
-        {tutors.length > 0 && !tutorLoading && (
-          <span className="cm-field-hint">มีติวเตอร์ในระบบ {tutors.length} คน</span>
+      <>
+        <div className="cm-field">
+          <label>ติวเตอร์ * <span className="cm-lbl-hint">(เลือกจากระบบ)</span></label>
+          <select value={value} onChange={e => onChange(e.target.value)} disabled={tutorLoading}>
+            <option value="">
+              {tutorLoading ? 'กำลังโหลดรายชื่อ...' : tutors.length === 0 ? 'ไม่พบติวเตอร์ในระบบ' : '— เลือกติวเตอร์ —'}
+            </option>
+            {tutors.map(t => <TutorOption key={t.id} t={t} />)}
+          </select>
+          {err && <span className="cm-err">{err}</span>}
+          {tutors.length > 0 && !tutorLoading && (
+            <span className="cm-field-hint">มีติวเตอร์ในระบบ {tutors.length} คน</span>
+          )}
+        </div>
+        {value && (
+          <TutorAvailabilityPanel avail={tutorAvail} loading={availLoading} />
         )}
-      </div>
+      </>
     );
   }
 
@@ -524,6 +676,9 @@ export default function AdminCourseManagementPage() {
                 err={formErr.tutorId}
               />
 
+              {/* ตารางสอน — อยู่ใต้ตารางว่างของติวเตอร์ทันที */}
+              <ScheduleSection form={form} fld={fld} avail={tutorAvail} err={formErr.scheduleTime} />
+
               {/* ราคา */}
               <div className="cm-field">
                 <label>ราคาคอร์ส (บาท) *</label>
@@ -569,9 +724,6 @@ export default function AdminCourseManagementPage() {
                 <input type="date" value={form.courseStartDate} onChange={e => fld('courseStartDate', e.target.value)} />
                 {formErr.courseStartDate && <span className="cm-err">{formErr.courseStartDate}</span>}
               </div>
-
-              {/* ตารางสอน */}
-              <ScheduleSection form={form} fld={fld} />
 
               {/* รายละเอียด — อยู่ล่างสุด */}
               <div className="cm-field">
@@ -629,6 +781,9 @@ export default function AdminCourseManagementPage() {
                 err={formErr.tutorId}
               />
 
+              {/* ตารางสอน — อยู่ใต้ตารางว่างของติวเตอร์ทันที */}
+              <ScheduleSection form={form} fld={fld} avail={tutorAvail} err={formErr.scheduleTime} />
+
               <div className="cm-field">
                 <label>ราคาคอร์ส (บาท)</label>
                 <input type="number" min="0" step="0.01" value={form.price} onChange={e => fld('price', e.target.value)} placeholder="0.00" />
@@ -665,9 +820,6 @@ export default function AdminCourseManagementPage() {
                 <input type="date" value={form.courseStartDate} onChange={e => fld('courseStartDate', e.target.value)} />
                 {formErr.courseStartDate && <span className="cm-err">{formErr.courseStartDate}</span>}
               </div>
-
-              {/* ตารางสอน */}
-              <ScheduleSection form={form} fld={fld} />
 
               <div className="cm-field">
                 <label>รายละเอียดคอร์ส</label>
@@ -763,22 +915,24 @@ export default function AdminCourseManagementPage() {
               </div>
 
               {/* ตารางสอน */}
-              {(selected.scheduleDays || selected.scheduleStartTime) && (
+              {selected.scheduleDays && (
                 <div className="cm-schedule-info-box">
                   <div className="cm-schedule-info-title">📅 ตารางสอน</div>
-                  <div className="cm-schedule-info-grid">
-                    {selected.scheduleDays && (
-                      <div>
-                        <label>วันที่สอน</label>
-                        <span>{parseDays(selected.scheduleDays).map(k => DAY_LABEL_TH[k]).join(', ')}</span>
-                      </div>
-                    )}
-                    {selected.scheduleStartTime && (
-                      <div>
-                        <label>เวลา</label>
-                        <span>{selected.scheduleStartTime}-{selected.scheduleEndTime || '?'} น.</span>
-                      </div>
-                    )}
+                  <div className="cm-per-day-slots cm-per-day-slots--readonly">
+                    {DAYS.map(d => d.key)
+                      .filter(k => k in parseDaySlots(selected.scheduleDays))
+                      .map(key => {
+                        const { start, end } = parseDaySlots(selected.scheduleDays)[key];
+                        return (
+                          <div key={key} className="cm-per-day-row">
+                            <span className="cm-per-day-label">{DAY_LABEL_TH[key]}</span>
+                            <span className="cm-per-day-time-display">
+                              {start && end ? `${start} – ${end} น.` : 'ยังไม่ระบุเวลา'}
+                            </span>
+                          </div>
+                        );
+                      })
+                    }
                   </div>
                 </div>
               )}

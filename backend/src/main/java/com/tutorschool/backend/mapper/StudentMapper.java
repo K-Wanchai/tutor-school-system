@@ -12,7 +12,7 @@ public class StudentMapper {
         return StudentResponse.builder()
                 .id(student.getId())
                 .userId(student.getUser().getId())
-                .username(student.getUser().getUsername())
+                .username(student.getUser().getLoginUsername())
                 .email(student.getUser().getEmail())
                 .enabled(enabled)
                 .status(enabled ? "ACTIVE" : "INACTIVE")

@@ -125,21 +125,25 @@ public class StudentServiceImpl implements StudentService {
         Student student = studentRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Student not found with id: " + id));
 
-        // Determine firstName / lastName / fullName
         boolean hasFn = request.getFirstName() != null && !request.getFirstName().isBlank();
         boolean hasLn = request.getLastName()  != null && !request.getLastName().isBlank();
+        boolean hasFull = request.getFullName() != null && !request.getFullName().isBlank();
 
         String firstName, lastName, fullName;
         if (hasFn && hasLn) {
             firstName = request.getFirstName().trim();
             lastName  = request.getLastName().trim();
             fullName  = (firstName + " " + lastName).trim();
-        } else {
-            // Fall back to splitting the provided fullName
+        } else if (hasFull) {
             fullName  = request.getFullName().trim();
             String[] parts = fullName.split(" ", 2);
             firstName = hasFn ? request.getFirstName().trim() : parts[0];
             lastName  = hasLn ? request.getLastName().trim()  : (parts.length > 1 ? parts[1] : parts[0]);
+        } else {
+            // ไม่ส่งมาเลย — ใช้ค่าเดิมจาก DB
+            firstName = hasFn ? request.getFirstName().trim() : student.getFirstName();
+            lastName  = hasLn ? request.getLastName().trim()  : student.getLastName();
+            fullName  = (firstName + " " + lastName).trim();
         }
 
         student.setFirstName(firstName);
@@ -157,6 +161,14 @@ public class StudentServiceImpl implements StudentService {
         student.setBankAccountNumber(request.getBankAccountNumber());
 
         return studentMapper.toResponse(studentRepository.save(student));
+    }
+
+    @Override
+    @Transactional
+    public StudentResponse updateMyProfile(Long userId, UpdateStudentRequest request) {
+        Student student = studentRepository.findByUserId(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("Student profile not found for user id: " + userId));
+        return updateStudent(student.getId(), request);
     }
 
     @Override

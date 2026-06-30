@@ -5,6 +5,7 @@ import com.tutorschool.backend.dto.request.UpdateTutorRequest;
 import com.tutorschool.backend.dto.response.ApiResponse;
 import com.tutorschool.backend.dto.response.PageResponse;
 import com.tutorschool.backend.dto.response.TutorResponse;
+import com.tutorschool.backend.entity.User;
 import com.tutorschool.backend.service.TutorService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -12,6 +13,7 @@ import java.util.Map;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -28,6 +30,23 @@ public class TutorController {
             @RequestParam(defaultValue = "10") int size) {
         PageResponse<TutorResponse> response = TutorService.getAllTeachers(page, size);
         return ResponseEntity.ok(ApiResponse.success("Teachers retrieved successfully", response));
+    }
+
+    @GetMapping("/me")
+    @PreAuthorize("hasRole('TUTOR')")
+    public ResponseEntity<ApiResponse<TutorResponse>> getMyProfile(
+            @AuthenticationPrincipal User currentUser) {
+        TutorResponse response = TutorService.getTutorByUserId(currentUser.getId());
+        return ResponseEntity.ok(ApiResponse.success("Tutor profile retrieved successfully", response));
+    }
+
+    @PutMapping("/me")
+    @PreAuthorize("hasRole('TUTOR')")
+    public ResponseEntity<ApiResponse<TutorResponse>> updateMyProfile(
+            @AuthenticationPrincipal User currentUser,
+            @Valid @RequestBody UpdateTutorRequest request) {
+        TutorResponse response = TutorService.updateMyProfile(currentUser.getId(), request);
+        return ResponseEntity.ok(ApiResponse.success("Profile updated successfully", response));
     }
 
     @GetMapping("/{id}")

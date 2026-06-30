@@ -77,7 +77,7 @@ export default function LoginPage() {
         <div className="auth-login-card">
           <div className="auth-login-card-header">
             <h2 className="auth-login-title">Welcome back</h2>
-            <p className="auth-login-subtitle">Sign in to your account to continue</p>
+            <p className="auth-login-subtitle">ลงชื่อเข้าใช้บัญชีของคุณเพื่อดำเนินการต่อ</p>
           </div>
 
           {error && (
@@ -132,7 +132,7 @@ export default function LoginPage() {
                   checked={rememberMe}
                   onChange={(e) => setRememberMe(e.target.checked)}
                 />
-                <span>Remember me</span>
+                <span>จดจำฉันไว้</span>
               </label>
             </div>
 
@@ -154,9 +154,9 @@ export default function LoginPage() {
 
           <div className="auth-login-footer">
             <p>
-              Don't have an account?{' '}
+              ยังไม่มีบัญชีใช่ไหม?{' '}
               <Link to="/register" className="auth-link">
-                Create account
+                สมัครสมาชิก
               </Link>
             </p>
           </div>
