@@ -1,40 +1,57 @@
-.tutor-layout { display: flex; min-height: 100vh; background: #f5f7fb; }
-.tutor-layout-main { flex: 1; display: flex; flex-direction: column; min-width: 0; overflow: hidden; }
-.tutor-layout-content { flex: 1; padding: 28px; overflow-y: auto; overflow-x: hidden; }
-
-@media (max-width: 1024px) { .tutor-layout-content { padding: 24px 20px; } }
-@media (max-width: 640px)  { .tutor-layout-content { padding: 20px 16px; } }
 .tutor-layout {
   min-height: 100vh;
+  display: flex;
   background: #f5f7fb;
 }
 
+/* Sidebar อยู่ใน flex แล้ว ไม่ต้องดัน main ด้วย margin-left */
 .tutor-layout-main {
-  margin-left: 260px;
+  flex: 1;
+  min-width: 0;
   min-height: 100vh;
   display: flex;
   flex-direction: column;
-  min-width: 0;
+  background: #f5f7fb;
+
+  margin-left: 0 !important;
+  width: auto !important;
 }
 
 .tutor-layout-content {
   flex: 1;
-  padding: 28px;
+  width: 100%;
+  padding: 28px 32px;
+  background: #f5f7fb;
   overflow-x: hidden;
+
+  margin-left: 0 !important;
+}
+
+/* กันกรณีหน้า Dashboard ถูกจัดกลางจอ */
+.tutor-layout-content > * {
+  width: 100%;
+  max-width: none !important;
+  margin-left: 0 !important;
+  margin-right: 0 !important;
 }
 
 @media (max-width: 1024px) {
+  .tutor-layout {
+    display: block;
+  }
+
   .tutor-layout-main {
-    margin-left: 0;
+    width: 100%;
+    margin-left: 0 !important;
   }
 
   .tutor-layout-content {
-    padding: 24px 20px;
+    padding: 22px 20px;
   }
 }
 
 @media (max-width: 640px) {
   .tutor-layout-content {
-    padding: 20px 16px;
+    padding: 18px 14px;
   }
 }
