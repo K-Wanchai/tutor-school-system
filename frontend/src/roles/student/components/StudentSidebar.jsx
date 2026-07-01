@@ -1,4 +1,5 @@
 import { NavLink } from 'react-router-dom';
+import useInstitutionProfile from '../../../shared/hooks/useInstitutionProfile';
 import './StudentSidebar.css';
 
 const NAV_ITEMS = [
@@ -113,6 +114,8 @@ const NAV_ITEMS = [
 ];
 
 export default function StudentSidebar({ isOpen, onClose }) {
+  const profile = useInstitutionProfile();
+
   return (
     <>
       {isOpen && <div className="student-sidebar-overlay" onClick={onClose} />}
@@ -120,16 +123,20 @@ export default function StudentSidebar({ isOpen, onClose }) {
       <aside className={`student-sidebar ${isOpen ? 'student-sidebar--open' : ''}`}>
         <div className="student-sidebar-brand">
           <div className="student-sidebar-logo">
-            <svg viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <rect width="32" height="32" rx="8" fill="#7c3aed" />
-              <path
-                d="M16 6L26 11V21L16 26L6 21V11L16 6Z"
-                stroke="white"
-                strokeWidth="1.5"
-                fill="none"
-              />
-              <circle cx="16" cy="16" r="3" fill="white" />
-            </svg>
+            {profile?.logoUrl ? (
+              <img src={profile.logoUrl} alt={profile.institutionName || 'Logo'} />
+            ) : (
+              <svg viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <rect width="32" height="32" rx="8" fill="#7c3aed" />
+                <path
+                  d="M16 6L26 11V21L16 26L6 21V11L16 6Z"
+                  stroke="white"
+                  strokeWidth="1.5"
+                  fill="none"
+                />
+                <circle cx="16" cy="16" r="3" fill="white" />
+              </svg>
+            )}
           </div>
 
           <div className="student-sidebar-brand-text">

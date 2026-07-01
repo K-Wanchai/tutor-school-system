@@ -15,6 +15,7 @@ public class TutorResponse {
 
     private Long id;
     private Long userId;
+    private String tutorCode;
     private String username;
     private String firstName;
     private String lastName;

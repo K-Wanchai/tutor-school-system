@@ -22,7 +22,10 @@ public class EnrollmentResponse {
     private Long studentId;
     private String studentName;
     private Long courseId;
+    private String courseCode;
     private String courseName;
+    private String tutorName;
+    private String tutorEmail;
     private LocalDateTime enrollmentDate;
     private EnrollmentStatus status;
     private PaymentStatus paymentStatus;

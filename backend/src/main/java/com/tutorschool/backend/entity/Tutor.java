@@ -22,6 +22,9 @@ public class Tutor {
     @JoinColumn(name = "user_id", nullable = false, unique = true)
     private User user;
 
+    @Column(name = "tutor_code", unique = true, length = 50)
+    private String tutorCode;
+
     @Column(name = "first_name", nullable = false, length = 100)
     private String firstName;
 

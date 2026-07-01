@@ -1,4 +1,5 @@
 import { NavLink } from 'react-router-dom';
+import useInstitutionProfile from '../../../shared/hooks/useInstitutionProfile';
 import './AdminSidebar.css';
 
 const NAV_ITEMS = [
@@ -49,7 +50,7 @@ const NAV_ITEMS = [
     ),
   },
   {
-    label: 'การชำระเงิน',
+    label: 'ประวัติการชำระเงิน',
     path: '/admin/payments',
     icon: (
       <svg viewBox="0 0 20 20" fill="currentColor" width="18" height="18">
@@ -106,17 +107,23 @@ const NAV_ITEMS = [
 ];
 
 export default function AdminSidebar({ isOpen, onClose }) {
+  const profile = useInstitutionProfile();
+
   return (
     <>
       {isOpen && <div className="admin-sidebar-overlay" onClick={onClose} />}
       <aside className={`admin-sidebar ${isOpen ? 'admin-sidebar--open' : ''}`}>
         <div className="admin-sidebar-brand">
           <div className="admin-sidebar-logo">
-            <svg viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <rect width="32" height="32" rx="8" fill="#2563eb" />
-              <path d="M16 6L26 11V21L16 26L6 21V11L16 6Z" stroke="white" strokeWidth="1.5" fill="none" />
-              <circle cx="16" cy="16" r="3" fill="white" />
-            </svg>
+            {profile?.logoUrl ? (
+              <img src={profile.logoUrl} alt={profile.institutionName || 'Logo'} />
+            ) : (
+              <svg viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <rect width="32" height="32" rx="8" fill="#2563eb" />
+                <path d="M16 6L26 11V21L16 26L6 21V11L16 6Z" stroke="white" strokeWidth="1.5" fill="none" />
+                <circle cx="16" cy="16" r="3" fill="white" />
+              </svg>
+            )}
           </div>
           <div className="admin-sidebar-brand-text">
             <span className="admin-sidebar-brand-name">TutorSchool</span>

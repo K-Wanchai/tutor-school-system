@@ -1,10 +1,12 @@
 import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { login } from '../services/authService';
+import useInstitutionProfile from '../../shared/hooks/useInstitutionProfile';
 import './LoginPage.css';
 
 export default function LoginPage() {
   const navigate = useNavigate();
+  const profile = useInstitutionProfile();
   const [form, setForm] = useState({ usernameOrEmail: '', password: '' });
   const [rememberMe, setRememberMe] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -39,12 +41,16 @@ export default function LoginPage() {
         <div className="auth-brand-content">
           <div className="auth-brand-logo">
             <div className="auth-logo-icon">
-              <svg viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <rect width="40" height="40" rx="10" fill="white" fillOpacity="0.15" />
-                <path d="M20 8L32 14V26L20 32L8 26V14L20 8Z" stroke="white" strokeWidth="2" fill="none" />
-                <path d="M20 14L26 17V23L20 26L14 23V17L20 14Z" fill="white" fillOpacity="0.3" />
-                <circle cx="20" cy="20" r="3" fill="white" />
-              </svg>
+              {profile?.logoUrl ? (
+                <img src={profile.logoUrl} alt={profile.institutionName || 'Logo'} />
+              ) : (
+                <svg viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <rect width="40" height="40" rx="10" fill="white" fillOpacity="0.15" />
+                  <path d="M20 8L32 14V26L20 32L8 26V14L20 8Z" stroke="white" strokeWidth="2" fill="none" />
+                  <path d="M20 14L26 17V23L20 26L14 23V17L20 14Z" fill="white" fillOpacity="0.3" />
+                  <circle cx="20" cy="20" r="3" fill="white" />
+                </svg>
+              )}
             </div>
             <span className="auth-brand-name">KruPuk Tutor</span>
           </div>

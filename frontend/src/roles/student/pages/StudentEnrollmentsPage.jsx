@@ -7,6 +7,20 @@ import {
 } from '../services/studentEnrollmentService';
 import './StudentEnrollmentsPage.css';
 
+// สถานะการสมัครของคอร์สนี้ (ถ้ามี) — ใช้ตัดสินว่าคอร์สนี้ยังต้องแสดงในหน้าสมัครเรียนไหม
+// 'needsPayment' = ยังไม่จ่ายเงิน/จ่ายไม่สำเร็จ ต้องแสดงปุ่มชำระเงินต่อ
+// ค่าอื่น ๆ (จ่ายแล้ว/รอตรวจสอบสลิป/อนุมัติ/ปฏิเสธ/เสร็จสิ้น) แปลว่าดำเนินการเสร็จแล้ว
+// ให้เอาออกจากหน้านี้ — ไปดูสถานะที่หน้าประวัติการลงทะเบียนแทน
+function getEnrollmentStatusType(enrollment) {
+  if (!enrollment) return null;
+  const stillPending = enrollment.status === 'PENDING';
+  const stillUnpaid = enrollment.paymentStatus === 'UNPAID' || enrollment.paymentStatus === 'FAILED';
+  if (stillPending && stillUnpaid) {
+    return 'needsPayment';
+  }
+  return 'resolved';
+}
+
 export default function StudentEnrollmentsPage() {
   const navigate = useNavigate();
   const [courses, setCourses] = useState([]);
@@ -29,6 +43,15 @@ const enrolledCourseIds = useMemo(() => {
       .map((item) => item.courseId)
   );
 }, [myEnrollments]);
+
+  // คอร์สที่ชำระเงิน/อัปสลิปแล้ว (หรือถูกอนุมัติ/ปฏิเสธ/เสร็จสิ้นไปแล้ว) ถือว่าดำเนินการเสร็จแล้ว
+  // ต้องหายไปจากหน้าสมัครเรียนบนทุกอุปกรณ์ — ดึงจาก server สดทุกครั้งที่เข้าหน้านี้จึงตรงกันเสมอ
+  const visibleCourses = useMemo(() => {
+    return courses.filter((course) => {
+      const statusType = getEnrollmentStatusType(myEnrollmentByCourseId.get(course.id));
+      return statusType === null || statusType === 'needsPayment';
+    });
+  }, [courses, myEnrollmentByCourseId]);
 
   useEffect(() => { loadPageData(); }, []);
 
@@ -144,7 +167,7 @@ const enrolledCourseIds = useMemo(() => {
         <div className="student-enroll-alert success">{successMessage}</div>
       )}
 
-      {courses.length === 0 ? (
+      {visibleCourses.length === 0 ? (
         <div className="student-enroll-empty">
           <h2>ยังไม่มีคอร์สในระบบ</h2>
           <p>เมื่อมีคอร์สจากฐานข้อมูล ระบบจะแสดงรายการที่หน้านี้</p>
@@ -233,7 +256,7 @@ const enrolledCourseIds = useMemo(() => {
                   </div>
                 </div>
 
-                {isAlreadyEnrolled ? (
+                {needsPayment ? (
                   <button
                     className="student-enroll-btn payment"
                     onClick={() => navigate('/student/payments')}

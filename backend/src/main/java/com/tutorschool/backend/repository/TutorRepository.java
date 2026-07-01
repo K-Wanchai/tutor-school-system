@@ -15,6 +15,8 @@ public interface TutorRepository extends JpaRepository<Tutor, Long> {
 
     boolean existsByUserEmail(String email);
 
+    boolean existsByTutorCode(String tutorCode);
+
     Page<Tutor> findByFirstNameContainingIgnoreCaseOrLastNameContainingIgnoreCase(
             String firstName, String lastName, Pageable pageable);
 }
