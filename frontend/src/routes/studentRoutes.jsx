@@ -8,6 +8,9 @@ import StudentEnrollmentsPage from '../roles/student/pages/StudentEnrollmentsPag
 import StudentPaymentsPage from '../roles/student/pages/StudentPaymentsPage';
 import StudentEnrollmentHistoryPage from '../roles/student/pages/StudentEnrollmentHistoryPage';
 import StudentProfilePage from '../roles/student/pages/StudentProfilePage';
+import StudentMyCoursesPage from "../roles/student/pages/StudentMyCoursesPage";
+import StudentSchedulePage from '../roles/student/pages/StudentSchedulePage';
+import StudentAttendancePage from '../roles/student/pages/StudentAttendancePage';
 
 const studentRoutes = (
   <Route
@@ -23,6 +26,9 @@ const studentRoutes = (
   <Route path="payments" element={<StudentPaymentsPage />} />
   <Route path="enrollment-history" element={<StudentEnrollmentHistoryPage />} />
   <Route path="profile" element={<StudentProfilePage />} />
+  <Route path="courses" element={<StudentMyCoursesPage />} />
+  <Route path="schedule" element={<StudentSchedulePage />} />
+  <Route path="attendance" element={<StudentAttendancePage />} />
 </Route>
 );
 

@@ -30,15 +30,19 @@ export default function StudentEnrollmentsPage() {
   const [errorMessage, setErrorMessage] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
 
-  // enrollments ที่ active (ไม่ใช่ CANCELLED) — เก็บ record ล่าสุดต่อคอร์ส
-  // เพื่อดูว่าสมัครไปแล้วอยู่ในสถานะไหน (ยังไม่จ่าย / จ่ายแล้ว / รอตรวจสอบ / ถูกปฏิเสธ ฯลฯ)
-  const myEnrollmentByCourseId = useMemo(() => {
-    const map = new Map();
+  // enrollments ที่ active (PENDING/APPROVED, ไม่ใช่ CANCELLED)
+// ซ่อนคอร์สที่สมัครแล้วและได้รับการอนุมัติแล้ว
+const enrolledCourseIds = useMemo(() => {
+  return new Set(
     myEnrollments
-      .filter((item) => item.status !== 'CANCELLED')
-      .forEach((item) => map.set(item.courseId, item));
-    return map;
-  }, [myEnrollments]);
+      .filter(
+        (item) =>
+          item.status === 'PENDING' ||
+          item.status === 'APPROVED'
+      )
+      .map((item) => item.courseId)
+  );
+}, [myEnrollments]);
 
   // คอร์สที่ชำระเงิน/อัปสลิปแล้ว (หรือถูกอนุมัติ/ปฏิเสธ/เสร็จสิ้นไปแล้ว) ถือว่าดำเนินการเสร็จแล้ว
   // ต้องหายไปจากหน้าสมัครเรียนบนทุกอุปกรณ์ — ดึงจาก server สดทุกครั้งที่เข้าหน้านี้จึงตรงกันเสมอ
@@ -170,8 +174,10 @@ export default function StudentEnrollmentsPage() {
         </div>
       ) : (
         <div className="student-course-grid">
-          {visibleCourses.map((course) => {
-            const needsPayment = getEnrollmentStatusType(myEnrollmentByCourseId.get(course.id)) === 'needsPayment';
+          {courses
+  .filter((course) => !enrolledCourseIds.has(course.id))
+  .map((course) => {
+            const isAlreadyEnrolled = enrolledCourseIds.has(course.id);
             const isOpen = course.status === 'OPEN_FOR_REGISTRATION';
             const isFull =
               course.seatLimit != null &&

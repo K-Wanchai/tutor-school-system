@@ -1,20 +1,20 @@
 .tutor-layout {
+  height: 100vh;
   min-height: 100vh;
   display: flex;
   background: #f5f7fb;
+  overflow: hidden;
 }
 
-/* Sidebar อยู่ใน flex แล้ว ไม่ต้องดัน main ด้วย margin-left */
 .tutor-layout-main {
   flex: 1;
   min-width: 0;
-  min-height: 100vh;
+  height: 100vh;
   display: flex;
   flex-direction: column;
   background: #f5f7fb;
-
+  overflow: hidden;
   margin-left: 0 !important;
-  width: auto !important;
 }
 
 .tutor-layout-content {
@@ -22,12 +22,10 @@
   width: 100%;
   padding: 28px 32px;
   background: #f5f7fb;
+  overflow-y: auto;
   overflow-x: hidden;
-
-  margin-left: 0 !important;
 }
 
-/* กันกรณีหน้า Dashboard ถูกจัดกลางจอ */
 .tutor-layout-content > * {
   width: 100%;
   max-width: none !important;
@@ -38,10 +36,12 @@
 @media (max-width: 1024px) {
   .tutor-layout {
     display: block;
+    overflow: hidden;
   }
 
   .tutor-layout-main {
     width: 100%;
+    height: 100vh;
     margin-left: 0 !important;
   }
 
