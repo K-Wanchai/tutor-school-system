@@ -17,9 +17,18 @@ export default function StudentEnrollmentsPage() {
   const [successMessage, setSuccessMessage] = useState('');
 
   // enrollments ที่ active (PENDING/APPROVED, ไม่ใช่ CANCELLED)
-  const enrolledCourseIds = useMemo(() => {
-    return new Set(myEnrollments.filter((item) => item.status !== 'CANCELLED').map((item) => item.courseId));
-  }, [myEnrollments]);
+// ซ่อนคอร์สที่สมัครแล้วและได้รับการอนุมัติแล้ว
+const enrolledCourseIds = useMemo(() => {
+  return new Set(
+    myEnrollments
+      .filter(
+        (item) =>
+          item.status === 'PENDING' ||
+          item.status === 'APPROVED'
+      )
+      .map((item) => item.courseId)
+  );
+}, [myEnrollments]);
 
   useEffect(() => { loadPageData(); }, []);
 
@@ -142,7 +151,9 @@ export default function StudentEnrollmentsPage() {
         </div>
       ) : (
         <div className="student-course-grid">
-          {courses.map((course) => {
+          {courses
+  .filter((course) => !enrolledCourseIds.has(course.id))
+  .map((course) => {
             const isAlreadyEnrolled = enrolledCourseIds.has(course.id);
             const isOpen = course.status === 'OPEN_FOR_REGISTRATION';
             const isFull =
