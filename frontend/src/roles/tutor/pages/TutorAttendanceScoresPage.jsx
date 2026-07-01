@@ -41,7 +41,7 @@ export default function TutorAttendanceScoresPage() {
           <p>เลือกคอร์สเพื่อดูตารางการขาด ลา มาสาย และคะแนนสอบของนักเรียน</p>
         </div>
 
-        <button onClick={loadCourses}>รีเฟรชข้อมูล</button>
+        
       </div>
 
       <div className="tas-toolbar">

@@ -6,6 +6,7 @@ import {
   getSessionAttendance,
   getTutorCourses,
 } from '../services/tutorAttendanceScoreService';
+import RefreshButton from '../components/RefreshButton';
 import './TutorAttendanceScoreDetailPage.css';
 
 export default function TutorAttendanceScoreDetailPage() {
@@ -54,7 +55,8 @@ export default function TutorAttendanceScoreDetailPage() {
               ...record,
               sessionId: session.id,
               sessionDate: session.scheduleDate,
-              courseName: session.courseName || currentCourse?.courseName,
+              courseName:
+                session.courseName || currentCourse?.courseName,
             });
           });
         } catch {
@@ -64,7 +66,10 @@ export default function TutorAttendanceScoreDetailPage() {
 
       setAttendanceRows(attendanceList);
     } catch (error) {
-      console.error('Load attendance score detail error:', error);
+      console.error(
+        'Load attendance score detail error:',
+        error
+      );
     } finally {
       setLoading(false);
     }
@@ -81,9 +86,11 @@ export default function TutorAttendanceScoreDetailPage() {
       }
 
       const row = map.get(key);
+
       row.total += 1;
 
-      const status = item.attendanceStatus || item.status;
+      const status =
+        item.attendanceStatus || item.status;
 
       if (status === 'PRESENT') row.present += 1;
       else if (status === 'ABSENT') row.absent += 1;
@@ -92,7 +99,8 @@ export default function TutorAttendanceScoreDetailPage() {
     });
 
     examResults.forEach((result) => {
-      const key = result.studentId || result.studentName;
+      const key =
+        result.studentId || result.studentName;
 
       if (!map.has(key)) {
         map.set(key, createStudentRow(result));
@@ -120,11 +128,31 @@ export default function TutorAttendanceScoreDetailPage() {
   }, [attendanceRows, examResults]);
 
   const summary = useMemo(() => {
-    const totalPresent = studentRows.reduce((sum, row) => sum + row.present, 0);
-    const totalAbsent = studentRows.reduce((sum, row) => sum + row.absent, 0);
-    const totalLeave = studentRows.reduce((sum, row) => sum + row.leave, 0);
-    const totalLate = studentRows.reduce((sum, row) => sum + row.late, 0);
-    const total = totalPresent + totalAbsent + totalLeave + totalLate;
+    const totalPresent = studentRows.reduce(
+      (sum, row) => sum + row.present,
+      0
+    );
+
+    const totalAbsent = studentRows.reduce(
+      (sum, row) => sum + row.absent,
+      0
+    );
+
+    const totalLeave = studentRows.reduce(
+      (sum, row) => sum + row.leave,
+      0
+    );
+
+    const totalLate = studentRows.reduce(
+      (sum, row) => sum + row.late,
+      0
+    );
+
+    const total =
+      totalPresent +
+      totalAbsent +
+      totalLeave +
+      totalLate;
 
     return {
       students: studentRows.length,
@@ -132,13 +160,21 @@ export default function TutorAttendanceScoreDetailPage() {
       absent: totalAbsent,
       leave: totalLeave,
       late: totalLate,
-      rate: total > 0 ? ((totalPresent / total) * 100).toFixed(2) : '0.00',
+      rate:
+        total > 0
+          ? ((totalPresent / total) * 100).toFixed(2)
+          : '0.00',
     };
   }, [studentRows]);
 
   return (
     <div className="tas-detail-page">
-      <button className="tas-back-btn" onClick={() => navigate('/tutor/attendance-scores')}>
+      <button
+        className="tas-back-btn"
+        onClick={() =>
+          navigate('/tutor/attendance-scores')
+        }
+      >
         ← กลับ
       </button>
 
@@ -149,13 +185,24 @@ export default function TutorAttendanceScoreDetailPage() {
 
         <div className="tas-course-main">
           <span>{course?.courseCode || '-'}</span>
-          <h1>{course?.courseName || 'รายละเอียดคอร์ส'}</h1>
+
+          <h1>
+            {course?.courseName ||
+              'รายละเอียดคอร์ส'}
+          </h1>
 
           <div className="tas-course-grade">
-            ชั้นเรียน: {course?.gradeLevel || course?.level || course?.classLevel || course?.grade || '-'}
+            ชั้นเรียน:{' '}
+            {course?.gradeLevel ||
+              course?.level ||
+              course?.classLevel ||
+              course?.grade ||
+              '-'}
           </div>
 
-          <p>ตารางสรุปการเข้าเรียนและคะแนนสอบของนักเรียนในคอร์สนี้</p>
+          <p>
+            ตารางสรุปการเข้าเรียนและคะแนนสอบของนักเรียนในคอร์สนี้
+          </p>
         </div>
 
         <div className="tas-rate-box">
@@ -165,38 +212,84 @@ export default function TutorAttendanceScoreDetailPage() {
       </section>
 
       {loading ? (
-        <div className="tas-detail-empty">กำลังโหลดข้อมูล...</div>
+        <div className="tas-detail-empty">
+          กำลังโหลดข้อมูล...
+        </div>
       ) : (
         <>
           <div className="tas-detail-summary">
-            <SummaryCard title="นักเรียนทั้งหมด" value={summary.students} unit="คน" />
-            <SummaryCard title="เข้าเรียน" value={summary.present} unit="ครั้ง" />
-            <SummaryCard title="ขาดเรียน" value={summary.absent} unit="ครั้ง" />
-            <SummaryCard title="ลาเรียน" value={summary.leave} unit="ครั้ง" />
-            <SummaryCard title="มาสาย" value={summary.late} unit="ครั้ง" />
+            <SummaryCard
+              title="นักเรียนทั้งหมด"
+              value={summary.students}
+              unit="คน"
+            />
+
+            <SummaryCard
+              title="เข้าเรียน"
+              value={summary.present}
+              unit="ครั้ง"
+            />
+
+            <SummaryCard
+              title="ขาดเรียน"
+              value={summary.absent}
+              unit="ครั้ง"
+            />
+
+            <SummaryCard
+              title="ลาเรียน"
+              value={summary.leave}
+              unit="ครั้ง"
+            />
+
+            <SummaryCard
+              title="มาสาย"
+              value={summary.late}
+              unit="ครั้ง"
+            />
           </div>
 
           <section className="tas-table-card">
             <div className="tas-table-head">
               <div>
-                <h2>การเข้าเรียน / คะแนนสอบ</h2>
-                <p>คะแนนสอบเชื่อมจากแบบทดสอบที่กำหนดตอนเปิดคอร์สเรียน</p>
+                <h2>
+                  การเข้าเรียน / คะแนนสอบ
+                </h2>
+
+                <p>
+                  คะแนนสอบเชื่อมจากแบบทดสอบที่กำหนดตอนเปิดคอร์สเรียน
+                </p>
               </div>
 
-              <button onClick={loadDetail}>รีเฟรช</button>
+              <RefreshButton
+                onClick={loadDetail}
+                loading={loading}
+              />
             </div>
 
             <div className="tas-mode-switch">
               <button
-                className={activeTab === 'attendance' ? 'active' : ''}
-                onClick={() => setActiveTab('attendance')}
+                className={
+                  activeTab === 'attendance'
+                    ? 'active'
+                    : ''
+                }
+                onClick={() =>
+                  setActiveTab('attendance')
+                }
               >
                 การเข้าเรียน
               </button>
 
               <button
-                className={activeTab === 'score' ? 'active' : ''}
-                onClick={() => setActiveTab('score')}
+                className={
+                  activeTab === 'score'
+                    ? 'active'
+                    : ''
+                }
+                onClick={() =>
+                  setActiveTab('score')
+                }
               >
                 คะแนนสอบ
               </button>
@@ -207,9 +300,14 @@ export default function TutorAttendanceScoreDetailPage() {
                 ยังไม่มีข้อมูลการเข้าเรียนหรือคะแนนสอบ
               </div>
             ) : activeTab === 'attendance' ? (
-              <AttendanceTable studentRows={studentRows} />
+              <AttendanceTable
+                studentRows={studentRows}
+              />
             ) : (
-              <ScoreTable studentRows={studentRows} courseTests={courseTests} />
+              <ScoreTable
+                studentRows={studentRows}
+                courseTests={courseTests}
+              />
             )}
           </section>
         </>
@@ -221,7 +319,10 @@ export default function TutorAttendanceScoreDetailPage() {
 function createStudentRow(item) {
   return {
     studentId: item.studentId,
-    studentName: item.studentName || item.fullName || '-',
+    studentName:
+      item.studentName ||
+      item.fullName ||
+      '-',
     present: 0,
     absent: 0,
     leave: 0,
@@ -251,24 +352,58 @@ function AttendanceTable({ studentRows }) {
         <tbody>
           {studentRows.map((row, index) => {
             const attendRate =
-              row.total > 0 ? ((row.present / row.total) * 100).toFixed(2) : '0.00';
+              row.total > 0
+                ? (
+                    (row.present / row.total) *
+                    100
+                  ).toFixed(2)
+                : '0.00';
 
             return (
-              <tr key={row.studentId || row.studentName}>
+              <tr
+                key={
+                  row.studentId ||
+                  row.studentName
+                }
+              >
                 <td>{index + 1}</td>
+
                 <td>
-                  <strong>{row.studentName}</strong>
-                  <span>{row.studentId ? `รหัส ${row.studentId}` : ''}</span>
+                  <strong>
+                    {row.studentName}
+                  </strong>
+
+                  <span>
+                    {row.studentId
+                      ? `รหัส ${row.studentId}`
+                      : ''}
+                  </span>
                 </td>
-                <td className="present">{row.present}</td>
-                <td className="absent">{row.absent}</td>
-                <td className="leave">{row.leave}</td>
-                <td className="late">{row.late}</td>
+
+                <td className="present">
+                  {row.present}
+                </td>
+
+                <td className="absent">
+                  {row.absent}
+                </td>
+
+                <td className="leave">
+                  {row.leave}
+                </td>
+
+                <td className="late">
+                  {row.late}
+                </td>
+
                 <td>
                   <b>{attendRate}%</b>
                 </td>
+
                 <td>
-                  <StatusPill rate={Number(attendRate)} />
+                  <StatusPill
+                    rate={Number(attendRate)}
+                  />
                 </td>
               </tr>
             );
@@ -279,7 +414,10 @@ function AttendanceTable({ studentRows }) {
   );
 }
 
-function ScoreTable({ studentRows, courseTests }) {
+function ScoreTable({
+  studentRows,
+  courseTests,
+}) {
   return (
     <div className="tas-table-wrap">
       <table className="tas-score-table">
@@ -287,12 +425,19 @@ function ScoreTable({ studentRows, courseTests }) {
           <tr>
             <th>#</th>
             <th>ชื่อนักเรียน</th>
+
             {courseTests.map((test, index) => (
               <th key={test.id || index}>
-                {test.testTitle || test.title || `สอบรอบที่ ${index + 1}`}
-                <small>{test.testDescription || ''}</small>
+                {test.testTitle ||
+                  test.title ||
+                  `สอบรอบที่ ${index + 1}`}
+
+                <small>
+                  {test.testDescription || ''}
+                </small>
               </th>
             ))}
+
             <th>รวมคะแนน</th>
             <th>เกรด</th>
           </tr>
@@ -300,31 +445,62 @@ function ScoreTable({ studentRows, courseTests }) {
 
         <tbody>
           {studentRows.map((row, index) => {
-            const totalScore = courseTests.reduce((sum, test) => {
-              const score = Number(row.exams[test.id] || 0);
-              return sum + score;
-            }, 0);
+            const totalScore =
+              courseTests.reduce(
+                (sum, test) => {
+                  const score = Number(
+                    row.exams[test.id] || 0
+                  );
+
+                  return sum + score;
+                },
+                0
+              );
 
             return (
-              <tr key={row.studentId || row.studentName}>
+              <tr
+                key={
+                  row.studentId ||
+                  row.studentName
+                }
+              >
                 <td>{index + 1}</td>
+
                 <td>
-                  <strong>{row.studentName}</strong>
-                  <span>{row.studentId ? `รหัส ${row.studentId}` : ''}</span>
+                  <strong>
+                    {row.studentName}
+                  </strong>
+
+                  <span>
+                    {row.studentId
+                      ? `รหัส ${row.studentId}`
+                      : ''}
+                  </span>
                 </td>
 
-                {courseTests.map((test, testIndex) => (
-                  <td key={test.id || testIndex}>
-                    {row.exams[test.id] ?? '-'}
-                  </td>
-                ))}
+                {courseTests.map(
+                  (test, testIndex) => (
+                    <td
+                      key={
+                        test.id || testIndex
+                      }
+                    >
+                      {row.exams[test.id] ??
+                        '-'}
+                    </td>
+                  )
+                )}
 
                 <td>
-                  <strong className="total-score">{totalScore}</strong>
+                  <strong className="total-score">
+                    {totalScore}
+                  </strong>
                 </td>
 
                 <td>
-                  <GradeBadge score={totalScore} />
+                  <GradeBadge
+                    score={totalScore}
+                  />
                 </td>
               </tr>
             );
@@ -336,9 +512,27 @@ function ScoreTable({ studentRows, courseTests }) {
 }
 
 function StatusPill({ rate }) {
-  if (rate >= 80) return <span className="tas-status-pill good">ปกติ</span>;
-  if (rate >= 60) return <span className="tas-status-pill warning">เฝ้าระวัง</span>;
-  return <span className="tas-status-pill danger">เสี่ยง</span>;
+  if (rate >= 80) {
+    return (
+      <span className="tas-status-pill good">
+        ปกติ
+      </span>
+    );
+  }
+
+  if (rate >= 60) {
+    return (
+      <span className="tas-status-pill warning">
+        เฝ้าระวัง
+      </span>
+    );
+  }
+
+  return (
+    <span className="tas-status-pill danger">
+      เสี่ยง
+    </span>
+  );
 }
 
 function GradeBadge({ score }) {
@@ -359,10 +553,18 @@ function GradeBadge({ score }) {
     cls = 'orange';
   }
 
-  return <span className={`tas-grade-badge ${cls}`}>{grade}</span>;
+  return (
+    <span className={`tas-grade-badge ${cls}`}>
+      {grade}
+    </span>
+  );
 }
 
-function SummaryCard({ title, value, unit }) {
+function SummaryCard({
+  title,
+  value,
+  unit,
+}) {
   return (
     <div className="tas-summary-card">
       <span>{title}</span>
