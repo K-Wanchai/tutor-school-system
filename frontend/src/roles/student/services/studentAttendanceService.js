@@ -18,9 +18,7 @@ export async function getMyClassroomSessions() {
 }
 
 export async function getMyAttendanceHistory() {
-  // ใช้ endpoint ที่เคยพบใน backend: /attendance/student/me
-  // TODO: ถ้า backend ใช้ /attendance/my ให้แก้ตรงนี้เป็น api.get('/attendance/my')
-  const res = await api.get('/attendance/student/me');
+  const res = await api.get('/attendance-records/student/me');
   return unwrapApiResponse(res);
 }
 

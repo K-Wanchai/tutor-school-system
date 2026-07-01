@@ -10,7 +10,7 @@ function unwrapApiResponse(res) {
   return body.data;
 }
 
-export async function getMySchedule() {
-  const res = await api.get('/course-schedules/student/me');
+export async function getMyExamSubmissions() {
+  const res = await api.get('/exam-submissions/me');
   return unwrapApiResponse(res);
 }
