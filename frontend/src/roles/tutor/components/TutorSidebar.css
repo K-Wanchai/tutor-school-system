@@ -56,6 +56,13 @@
   height: 100%;
 }
 
+.tutor-sidebar-logo img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 8px;
+}
+
 .tutor-sidebar-brand-text {
   display: flex;
   flex-direction: column;

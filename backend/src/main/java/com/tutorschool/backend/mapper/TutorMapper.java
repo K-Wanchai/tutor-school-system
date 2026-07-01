@@ -11,6 +11,7 @@ public class TutorMapper {
         return TutorResponse.builder()
                 .id(Tutor.getId())
                 .userId(Tutor.getUser().getId())
+                .tutorCode(Tutor.getTutorCode())
                 .username(Tutor.getUser().getLoginUsername())
                 .firstName(Tutor.getFirstName())
                 .lastName(Tutor.getLastName())

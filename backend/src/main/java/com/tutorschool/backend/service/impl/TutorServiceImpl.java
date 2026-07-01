@@ -24,6 +24,8 @@ import com.tutorschool.backend.service.TutorService;
 
 import lombok.RequiredArgsConstructor;
 
+import java.util.UUID;
+
 @Service
 @RequiredArgsConstructor
 public class TutorServiceImpl implements TutorService {
@@ -76,8 +78,11 @@ public class TutorServiceImpl implements TutorService {
     .build();
         user = userRepository.save(user);
 
+        String tutorCode = "TUT" + UUID.randomUUID().toString().replace("-", "").substring(0, 8).toUpperCase();
+
         Tutor tutor = Tutor.builder()
                 .user(user)
+                .tutorCode(tutorCode)
                 .firstName(request.getFirstName())
                 .lastName(request.getLastName())
                 .phoneNumber(request.getPhoneNumber())
