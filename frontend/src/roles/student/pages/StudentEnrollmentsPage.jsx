@@ -7,20 +7,6 @@ import {
 } from '../services/studentEnrollmentService';
 import './StudentEnrollmentsPage.css';
 
-// สถานะการสมัครของคอร์สนี้ (ถ้ามี) — ใช้ตัดสินว่าคอร์สนี้ยังต้องแสดงในหน้าสมัครเรียนไหม
-// 'needsPayment' = ยังไม่จ่ายเงิน/จ่ายไม่สำเร็จ ต้องแสดงปุ่มชำระเงินต่อ
-// ค่าอื่น ๆ (จ่ายแล้ว/รอตรวจสอบสลิป/อนุมัติ/ปฏิเสธ/เสร็จสิ้น) แปลว่าดำเนินการเสร็จแล้ว
-// ให้เอาออกจากหน้านี้ — ไปดูสถานะที่หน้าประวัติการลงทะเบียนแทน
-function getEnrollmentStatusType(enrollment) {
-  if (!enrollment) return null;
-  const stillPending = enrollment.status === 'PENDING';
-  const stillUnpaid = enrollment.paymentStatus === 'UNPAID' || enrollment.paymentStatus === 'FAILED';
-  if (stillPending && stillUnpaid) {
-    return 'needsPayment';
-  }
-  return 'resolved';
-}
-
 export default function StudentEnrollmentsPage() {
   const navigate = useNavigate();
   const [courses, setCourses] = useState([]);
@@ -31,27 +17,20 @@ export default function StudentEnrollmentsPage() {
   const [successMessage, setSuccessMessage] = useState('');
 
   // enrollments ที่ active (PENDING/APPROVED, ไม่ใช่ CANCELLED)
-// ซ่อนคอร์สที่สมัครแล้วและได้รับการอนุมัติแล้ว
-const enrolledCourseIds = useMemo(() => {
-  return new Set(
-    myEnrollments
-      .filter(
-        (item) =>
-          item.status === 'PENDING' ||
-          item.status === 'APPROVED'
-      )
-      .map((item) => item.courseId)
-  );
-}, [myEnrollments]);
+  // ซ่อนคอร์สที่สมัครแล้ว (ไม่ว่าจะรอชำระ/รอตรวจสอบ/อนุมัติแล้ว) ออกจากหน้าสมัครเรียน
+  // ดึงจาก server สดทุกครั้งที่เข้าหน้านี้ จึงตรงกันเสมอในทุกอุปกรณ์
+  const enrolledCourseIds = useMemo(() => {
+    return new Set(
+      myEnrollments
+        .filter((item) => item.status === 'PENDING' || item.status === 'APPROVED')
+        .map((item) => item.courseId)
+    );
+  }, [myEnrollments]);
 
-  // คอร์สที่ชำระเงิน/อัปสลิปแล้ว (หรือถูกอนุมัติ/ปฏิเสธ/เสร็จสิ้นไปแล้ว) ถือว่าดำเนินการเสร็จแล้ว
-  // ต้องหายไปจากหน้าสมัครเรียนบนทุกอุปกรณ์ — ดึงจาก server สดทุกครั้งที่เข้าหน้านี้จึงตรงกันเสมอ
-  const visibleCourses = useMemo(() => {
-    return courses.filter((course) => {
-      const statusType = getEnrollmentStatusType(myEnrollmentByCourseId.get(course.id));
-      return statusType === null || statusType === 'needsPayment';
-    });
-  }, [courses, myEnrollmentByCourseId]);
+  const visibleCourses = useMemo(
+    () => courses.filter((course) => !enrolledCourseIds.has(course.id)),
+    [courses, enrolledCourseIds]
+  );
 
   useEffect(() => { loadPageData(); }, []);
 
@@ -174,10 +153,7 @@ const enrolledCourseIds = useMemo(() => {
         </div>
       ) : (
         <div className="student-course-grid">
-          {courses
-  .filter((course) => !enrolledCourseIds.has(course.id))
-  .map((course) => {
-            const isAlreadyEnrolled = enrolledCourseIds.has(course.id);
+          {visibleCourses.map((course) => {
             const isOpen = course.status === 'OPEN_FOR_REGISTRATION';
             const isFull =
               course.seatLimit != null &&
@@ -256,28 +232,19 @@ const enrolledCourseIds = useMemo(() => {
                   </div>
                 </div>
 
-                {needsPayment ? (
-                  <button
-                    className="student-enroll-btn payment"
-                    onClick={() => navigate('/student/payments')}
-                  >
-                    ชำระเงิน
-                  </button>
-                ) : (
-                  <button
-                    className="student-enroll-btn"
-                    disabled={disabled}
-                    onClick={() => handleEnroll(course.id)}
-                  >
-                    {enrollingId === course.id
-                      ? 'กำลังสมัคร...'
-                      : isFull
-                        ? 'ที่นั่งเต็ม'
-                        : isOpen
-                          ? 'สมัครเรียน'
-                          : 'ยังไม่เปิดรับสมัคร'}
-                  </button>
-                )}
+                <button
+                  className="student-enroll-btn"
+                  disabled={disabled}
+                  onClick={() => handleEnroll(course.id)}
+                >
+                  {enrollingId === course.id
+                    ? 'กำลังสมัคร...'
+                    : isFull
+                      ? 'ที่นั่งเต็ม'
+                      : isOpen
+                        ? 'สมัครเรียน'
+                        : 'ยังไม่เปิดรับสมัคร'}
+                </button>
               </div>
             );
           })}
