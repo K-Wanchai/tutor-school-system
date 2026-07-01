@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { getMySchedules } from '../services/tutorScheduleService';
+import RefreshButton from '../components/RefreshButton';
 import './TutorSchedulesPage.css';
 
 export default function TutorSchedulesPage() {
@@ -32,13 +33,22 @@ export default function TutorSchedulesPage() {
       const text = `${item.courseName || ''} ${item.status || ''}`.toLowerCase();
       const matchKeyword = text.includes(keyword.toLowerCase());
       const matchStatus = status === 'ALL' || item.status === status;
+
       return matchKeyword && matchStatus;
     });
   }, [schedules, keyword, status]);
 
-  const todaySchedules = filteredSchedules.filter((item) => item.scheduleDate === today);
-  const upcomingSchedules = filteredSchedules.filter((item) => item.scheduleDate > today);
-  const pastSchedules = filteredSchedules.filter((item) => item.scheduleDate < today);
+  const todaySchedules = filteredSchedules.filter(
+    (item) => item.scheduleDate === today
+  );
+
+  const upcomingSchedules = filteredSchedules.filter(
+    (item) => item.scheduleDate > today
+  );
+
+  const pastSchedules = filteredSchedules.filter(
+    (item) => item.scheduleDate < today
+  );
 
   return (
     <div className="tutor-schedule-page">
@@ -48,9 +58,10 @@ export default function TutorSchedulesPage() {
           <p>ดูตารางสอนของติวเตอร์จากฐานข้อมูลจริง</p>
         </div>
 
-        <button className="tutor-schedule-refresh-btn" onClick={loadSchedules}>
-          รีเฟรชข้อมูล
-        </button>
+        <RefreshButton
+          onClick={loadSchedules}
+          loading={loading}
+        />
       </div>
 
       <div className="tutor-schedule-summary">
@@ -77,11 +88,16 @@ export default function TutorSchedulesPage() {
       </div>
 
       {loading ? (
-        <div className="tutor-schedule-loading">กำลังโหลดตารางสอน...</div>
+        <div className="tutor-schedule-loading">
+          กำลังโหลดตารางสอน...
+        </div>
       ) : filteredSchedules.length === 0 ? (
         <div className="tutor-schedule-empty">
           <h2>ยังไม่มีตารางสอน</h2>
-          <p>ถ้ามีข้อมูลในฐานข้อมูลแล้ว ให้ตรวจสอบ API /course-schedules/tutor/me</p>
+          <p>
+            ถ้ามีข้อมูลในฐานข้อมูลแล้ว ให้ตรวจสอบ API
+            /course-schedules/tutor/me
+          </p>
         </div>
       ) : (
         <div className="tutor-schedule-card">
@@ -107,8 +123,11 @@ export default function TutorSchedulesPage() {
                   <tr key={item.id}>
                     <td>
                       <strong>{formatDate(item.scheduleDate)}</strong>
+
                       {item.scheduleDate === today && (
-                        <span className="tutor-schedule-today">วันนี้</span>
+                        <span className="tutor-schedule-today">
+                          วันนี้
+                        </span>
                       )}
                     </td>
 
@@ -116,7 +135,9 @@ export default function TutorSchedulesPage() {
                       {item.startTime || '-'} - {item.endTime || '-'}
                     </td>
 
-                    <td>{item.courseName || 'ไม่ระบุชื่อคอร์ส'}</td>
+                    <td>
+                      {item.courseName || 'ไม่ระบุชื่อคอร์ส'}
+                    </td>
 
                     <td>
                       <StatusBadge status={item.status} />
@@ -149,7 +170,11 @@ function SummaryCard({ title, value }) {
 
 function StatusBadge({ status }) {
   return (
-    <span className={`tutor-schedule-status ${status?.toLowerCase() || 'unknown'}`}>
+    <span
+      className={`tutor-schedule-status ${
+        status?.toLowerCase() || 'unknown'
+      }`}
+    >
       {status || 'UNKNOWN'}
     </span>
   );

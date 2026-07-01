@@ -77,6 +77,7 @@
   white-space: nowrap;
 }
 
+/* Notification mobile button */
 .tutor-sidebar-notification-btn {
   display: none;
   position: relative;
@@ -124,6 +125,7 @@
   box-shadow: 0 6px 14px rgba(239, 68, 68, 0.4);
 }
 
+/* Navigation */
 .tutor-sidebar-nav {
   flex: 1;
   padding: 12px;
@@ -187,24 +189,7 @@
   flex: 1;
 }
 
-.tutor-sidebar-footer {
-  padding: 14px 20px;
-  border-top: 1px solid rgba(255, 255, 255, 0.07);
-  flex-shrink: 0;
-}
-
-.tutor-sidebar-version {
-  font-size: 11px;
-  color: rgba(255, 255, 255, 0.25);
-}
-
-.tutor-sidebar-overlay {
-  display: none;
-  position: fixed;
-  top: 0;
-  left: 0;
-  z-index: 100;
-}
+/* Help Card */
 .tutor-sidebar-help-card {
   position: relative;
   margin: 16px;
@@ -212,9 +197,9 @@
   border-radius: 20px;
   overflow: hidden;
   background:
-    radial-gradient(circle at 20% 10%, rgba(255,255,255,0.14), transparent 28%),
+    radial-gradient(circle at 20% 10%, rgba(255, 255, 255, 0.14), transparent 28%),
     linear-gradient(180deg, #059669 0%, #047857 100%);
-  border: 1px solid rgba(255,255,255,0.1);
+  border: 1px solid rgba(255, 255, 255, 0.1);
   flex-shrink: 0;
 }
 
@@ -226,14 +211,14 @@
 
 .tutor-sidebar-help-text h4 {
   margin: 0 0 8px;
-  color: white;
+  color: #ffffff;
   font-size: 18px;
   font-weight: 900;
 }
 
 .tutor-sidebar-help-text p {
   margin: 0;
-  color: rgba(255,255,255,0.78);
+  color: rgba(255, 255, 255, 0.78);
   font-size: 13px;
   line-height: 1.6;
 }
@@ -246,7 +231,7 @@
   width: 140px;
   height: 135px;
   border-radius: 28px;
-  background: rgba(255,255,255,0.06);
+  background: rgba(255, 255, 255, 0.06);
 }
 
 .tutor-sidebar-help-card::after {
@@ -257,7 +242,7 @@
   width: 50px;
   height: 26px;
   background:
-    radial-gradient(circle, rgba(255,255,255,0.95) 2px, transparent 3px);
+    radial-gradient(circle, rgba(255, 255, 255, 0.95) 2px, transparent 3px);
   background-size: 16px 12px;
   transform: rotate(-18deg);
   opacity: 0.85;
@@ -337,4 +322,60 @@
   border-radius: 8px;
   transform: rotate(-8deg);
   z-index: 5;
+}
+
+/* Footer */
+.tutor-sidebar-footer {
+  padding: 14px 20px;
+  border-top: 1px solid rgba(255, 255, 255, 0.07);
+  flex-shrink: 0;
+}
+
+.tutor-sidebar-version {
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.25);
+}
+
+/* Overlay */
+.tutor-sidebar-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 99;
+}
+
+/* Tablet / Mobile */
+@media (max-width: 1024px) {
+  .tutor-sidebar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    height: 100vh;
+    min-height: 100vh;
+    z-index: 100;
+    transform: translateX(-100%);
+  }
+
+  .tutor-sidebar--open {
+    transform: translateX(0);
+  }
+
+  .tutor-sidebar-overlay {
+    display: block;
+  }
+}
+
+@media (max-width: 768px) {
+  .tutor-sidebar-brand {
+    min-height: 78px;
+    padding-right: 74px;
+  }
+
+  .tutor-sidebar-notification-btn {
+    display: inline-flex;
+    position: absolute;
+    top: 20px;
+    right: 20px;
+  }
 }
