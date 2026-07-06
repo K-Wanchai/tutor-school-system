@@ -2,6 +2,7 @@ package com.tutorschool.backend.service;
 
 import com.tutorschool.backend.dto.request.CancelCourseScheduleRequest;
 import com.tutorschool.backend.dto.request.CreateCourseScheduleRequest;
+import com.tutorschool.backend.dto.request.GenerateCourseScheduleRequest;
 import com.tutorschool.backend.dto.request.UpdateCourseScheduleRequest;
 import com.tutorschool.backend.dto.response.CourseScheduleResponse;
 import com.tutorschool.backend.dto.response.TutorAvailabilityResponse;
@@ -12,6 +13,9 @@ import java.util.List;
 public interface CourseScheduleService {
 
     CourseScheduleResponse createSchedule(CreateCourseScheduleRequest request, Long currentUserId);
+
+    List<CourseScheduleResponse> generateSchedulesFromCoursePattern(
+            Long courseId, GenerateCourseScheduleRequest request, Long currentUserId);
 
     List<CourseScheduleResponse> getAllSchedules();
 

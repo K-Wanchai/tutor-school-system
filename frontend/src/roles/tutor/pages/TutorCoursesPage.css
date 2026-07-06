@@ -252,6 +252,252 @@
   color: #dc2626;
 }
 
+.tc-badge-accepted {
+  background: #eef2ff;
+  color: #4338ca;
+}
+
+/* Lesson manager modal */
+.tc-modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background: rgba(15, 23, 42, 0.55);
+}
+
+.tc-modal {
+  width: min(680px, 100%);
+  max-height: 88vh;
+  overflow-y: auto;
+  background: white;
+  border-radius: 20px;
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.tc-modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+}
+
+.tc-modal-header h2 {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 800;
+  color: #111827;
+}
+
+.tc-modal-close {
+  border: none;
+  background: #f3f4f6;
+  border-radius: 10px;
+  width: 32px;
+  height: 32px;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.tc-modal-error {
+  background: #fef2f2;
+  color: #dc2626;
+  border-radius: 10px;
+  padding: 10px 14px;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.tc-modal-section {
+  border-top: 1px solid #e5e7eb;
+  padding-top: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.tc-modal-section h3 {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 800;
+  color: #111827;
+}
+
+.tc-modal-hint {
+  margin: 0;
+  color: #9ca3af;
+  font-size: 13px;
+}
+
+.tc-lesson-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+  background: #f9fafb;
+  border-radius: 12px;
+  padding: 12px 14px;
+}
+
+.tc-lesson-row strong {
+  color: #111827;
+  font-size: 14px;
+}
+
+.tc-lesson-row p {
+  margin: 4px 0 0;
+  color: #6b7280;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.tc-lesson-row-actions {
+  display: flex;
+  gap: 8px;
+  flex: 0 0 auto;
+}
+
+.tc-lesson-row-actions button {
+  border: 1px solid #e5e7eb;
+  background: white;
+  border-radius: 8px;
+  padding: 6px 10px;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.tc-lesson-row--column {
+  flex-direction: column;
+  align-items: stretch;
+}
+
+.tc-lesson-row-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.tc-lesson-test-list {
+  list-style: none;
+  margin: 4px 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.tc-lesson-test-list li {
+  background: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  padding: 6px 10px;
+  font-size: 12px;
+  color: #374151;
+}
+
+.tc-lesson-test-list li strong {
+  font-size: 12px;
+  color: #4338ca;
+}
+
+.tc-inline-test-form {
+  display: flex;
+  gap: 8px;
+  margin-top: 6px;
+}
+
+.tc-inline-test-form input {
+  flex: 1;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  padding: 6px 10px;
+  font-size: 12px;
+  outline: none;
+}
+
+.tc-inline-test-form button {
+  border: none;
+  border-radius: 8px;
+  padding: 6px 12px;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  background: #4338ca;
+  color: white;
+  flex: 0 0 auto;
+}
+
+.tc-inline-form {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  border: 1px dashed #d1d5db;
+  border-radius: 12px;
+  padding: 12px;
+}
+
+.tc-inline-form input,
+.tc-inline-form textarea {
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  padding: 8px 10px;
+  font-size: 13px;
+  font-family: inherit;
+  outline: none;
+}
+
+.tc-inline-form textarea {
+  min-height: 60px;
+  resize: vertical;
+}
+
+.tc-inline-form-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.tc-inline-form-actions button {
+  border: none;
+  border-radius: 8px;
+  padding: 8px 14px;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  background: #059669;
+  color: white;
+}
+
+.tc-inline-form-actions button[type="button"] {
+  background: #f3f4f6;
+  color: #374151;
+}
+
+.tc-modal-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  border-top: 1px solid #e5e7eb;
+  padding-top: 16px;
+}
+
+.tc-modal-footer button {
+  border: none;
+  border-radius: 10px;
+  padding: 10px 16px;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  background: #f3f4f6;
+  color: #374151;
+}
+
 /* Empty */
 .tc-loading,
 .tc-empty {

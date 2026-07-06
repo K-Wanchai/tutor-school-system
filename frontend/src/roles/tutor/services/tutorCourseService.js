@@ -37,3 +37,60 @@ export async function respondToCourse({ courseId, accepted, remark, lessons, tes
     throw new Error(apiError(error, 'respondToCourse'));
   }
 }
+
+export async function addLesson(courseId, { lessonTitle, lessonContent, lessonOrder }) {
+  try {
+    const res = await api.post(`/courses/${courseId}/lessons`, {
+      lessonTitle,
+      lessonContent: lessonContent || null,
+      lessonOrder,
+    });
+    return unwrap(res);
+  } catch (error) {
+    throw new Error(apiError(error, 'addLesson'));
+  }
+}
+
+export async function updateLesson(courseId, lessonId, { lessonTitle, lessonContent, lessonOrder }) {
+  try {
+    const res = await api.put(`/courses/${courseId}/lessons/${lessonId}`, {
+      lessonTitle,
+      lessonContent: lessonContent || null,
+      lessonOrder,
+    });
+    return unwrap(res);
+  } catch (error) {
+    throw new Error(apiError(error, 'updateLesson'));
+  }
+}
+
+export async function deleteLesson(courseId, lessonId) {
+  try {
+    await api.delete(`/courses/${courseId}/lessons/${lessonId}`);
+  } catch (error) {
+    throw new Error(apiError(error, 'deleteLesson'));
+  }
+}
+
+export async function addTest(courseId, { testTitle, testDescription, testOrder, lessonOrder }) {
+  try {
+    const res = await api.post(`/courses/${courseId}/tests`, {
+      testTitle,
+      testDescription: testDescription || null,
+      testOrder,
+      lessonOrder: lessonOrder ?? null,
+    });
+    return unwrap(res);
+  } catch (error) {
+    throw new Error(apiError(error, 'addTest'));
+  }
+}
+
+export async function publishCourse(courseId) {
+  try {
+    const res = await api.patch(`/courses/${courseId}/publish`);
+    return unwrap(res);
+  } catch (error) {
+    throw new Error(apiError(error, 'publishCourse'));
+  }
+}

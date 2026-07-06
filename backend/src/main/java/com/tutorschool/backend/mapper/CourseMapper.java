@@ -15,7 +15,11 @@ import java.util.List;
 public class CourseMapper {
 
     public CourseResponse toSummaryResponse(Course course, long enrolledCount) {
-        return buildResponse(course, enrolledCount, Collections.emptyList(), Collections.emptyList());
+        List<CourseLessonResponse> lessons = course.getLessons().stream()
+                .map(this::toLessonResponse)
+                .toList();
+
+        return buildResponse(course, enrolledCount, lessons, Collections.emptyList());
     }
 
     public CourseResponse toDetailResponse(Course course, long enrolledCount) {

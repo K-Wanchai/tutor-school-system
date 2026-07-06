@@ -32,6 +32,8 @@ public interface EnrollmentRepository extends JpaRepository<Enrollment, Long> {
 
     List<Enrollment> findByStatus(EnrollmentStatus status);
 
+    List<Enrollment> findByStudentIdAndStatus(Long studentId, EnrollmentStatus status);
+
     List<Enrollment> findTop5ByOrderByCreatedAtDesc();
 
     @Query("SELECT e FROM Enrollment e WHERE e.paymentStatus = 'UNPAID' AND e.paymentDeadline IS NOT NULL AND e.paymentDeadline < :now AND e.status != 'CANCELLED'")

@@ -2,6 +2,7 @@ package com.tutorschool.backend.controller;
 
 import com.tutorschool.backend.dto.request.CancelCourseScheduleRequest;
 import com.tutorschool.backend.dto.request.CreateCourseScheduleRequest;
+import com.tutorschool.backend.dto.request.GenerateCourseScheduleRequest;
 import com.tutorschool.backend.dto.request.UpdateCourseScheduleRequest;
 import com.tutorschool.backend.dto.response.ApiResponse;
 import com.tutorschool.backend.dto.response.CourseScheduleResponse;
@@ -36,6 +37,18 @@ public class CourseScheduleController {
         CourseScheduleResponse response = courseScheduleService.createSchedule(request, currentUser.getId());
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(ApiResponse.success("Course schedule created successfully", response));
+    }
+
+    @PostMapping("/course/{courseId}/generate")
+    @PreAuthorize("hasAnyRole('ADMIN', 'TUTOR')")
+    public ResponseEntity<ApiResponse<List<CourseScheduleResponse>>> generateSchedules(
+            @PathVariable Long courseId,
+            @Valid @RequestBody GenerateCourseScheduleRequest request,
+            @AuthenticationPrincipal User currentUser) {
+        List<CourseScheduleResponse> response =
+                courseScheduleService.generateSchedulesFromCoursePattern(courseId, request, currentUser.getId());
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(ApiResponse.success("Generated " + response.size() + " course schedules", response));
     }
 
     @GetMapping

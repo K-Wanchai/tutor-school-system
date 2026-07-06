@@ -16,6 +16,7 @@ public class EnrollmentMapper {
                 .courseId(enrollment.getCourse().getId())
                 .courseCode(enrollment.getCourse().getCourseCode())
                 .courseName(enrollment.getCourse().getCourseName())
+                .courseStartDate(enrollment.getCourse().getCourseStartDate())
                 .tutorName(enrollment.getCourse().getTutor().getFirstName() + " " + enrollment.getCourse().getTutor().getLastName())
                 .tutorEmail(enrollment.getCourse().getTutor().getUser().getEmail())
                 .enrollmentDate(enrollment.getEnrollmentDate())

@@ -13,7 +13,8 @@ import './AdminCourseManagementPage.css';
 
 // ──────────────── helpers ────────────────
 const STATUS_LABEL = {
-  DRAFT:                 { label: 'รอยืนยัน',      cls: 'cm-badge-draft' },
+  DRAFT:                 { label: 'รอติวเตอร์ตอบรับ', cls: 'cm-badge-draft' },
+  ACCEPTED:              { label: 'กำลังจัดทำเนื้อหา', cls: 'cm-badge-draft' },
   OPEN_FOR_REGISTRATION: { label: 'เปิดรับสมัคร',  cls: 'cm-badge-open' },
   CLOSED:                { label: 'ปิดรับสมัคร',   cls: 'cm-badge-closed' },
   ONGOING:               { label: 'กำลังสอน',       cls: 'cm-badge-ongoing' },
@@ -380,7 +381,8 @@ export default function AdminCourseManagementPage() {
   }, [form.tutorId]); // eslint-disable-line
 
   // ── validate
-  function validate(f, priceRequired = true) {
+  // checkSchedule: false เมื่อสร้างคอร์ส (ระบบจัดวัน-เวลาสอนให้อัตโนมัติแล้ว ไม่มี UI ให้เลือกเอง)
+  function validate(f, priceRequired = true, checkSchedule = true) {
     const e = {};
     if (!f.courseCode?.trim()) e.courseCode = 'กรุณากรอกรหัสคอร์ส';
     if (!f.courseName?.trim()) e.courseName = 'กรุณากรอกชื่อวิชา';
@@ -391,24 +393,26 @@ export default function AdminCourseManagementPage() {
     if (!f.seatLimit  || isNaN(f.seatLimit)  || Number(f.seatLimit)  < 1) e.seatLimit  = 'ต้องมากกว่า 0';
     if (!f.courseStartDate) e.courseStartDate = 'กรุณาเลือกวันที่เริ่มสอน';
 
-    // บังคับตารางสอน
-    const slots = f.scheduleSlots || {};
-    const selectedDayKeys = Object.keys(slots);
-    if (selectedDayKeys.length === 0) {
-      e.scheduleTime = 'กรุณาเลือกวันสอนอย่างน้อย 1 วัน';
-    } else {
-      const missingTime = selectedDayKeys.filter(k => !slots[k].start || !slots[k].end);
-      if (missingTime.length > 0) {
-        e.scheduleTime = `กรุณาใส่เวลาให้ครบทุกวัน: ${missingTime.map(k => DAY_LABEL_TH[k]).join(', ')}`;
+    if (checkSchedule) {
+      // บังคับตารางสอน
+      const slots = f.scheduleSlots || {};
+      const selectedDayKeys = Object.keys(slots);
+      if (selectedDayKeys.length === 0) {
+        e.scheduleTime = 'กรุณาเลือกวันสอนอย่างน้อย 1 วัน';
+      } else {
+        const missingTime = selectedDayKeys.filter(k => !slots[k].start || !slots[k].end);
+        if (missingTime.length > 0) {
+          e.scheduleTime = `กรุณาใส่เวลาให้ครบทุกวัน: ${missingTime.map(k => DAY_LABEL_TH[k]).join(', ')}`;
+        }
       }
-    }
 
-    // ตรวจ time conflict กับตารางของติวเตอร์
-    const conflicts = findConflictDays(f.scheduleSlots, tutorAvail);
-    if (conflicts.length > 0) {
-      e.scheduleTime = conflicts.map(c =>
-        `วัน${DAY_LABEL_TH[c.day]} ${c.start}–${c.end}${c.course ? ` (${c.course})` : ''}`
-      ).join(', ');
+      // ตรวจ time conflict กับตารางของติวเตอร์
+      const conflicts = findConflictDays(f.scheduleSlots, tutorAvail);
+      if (conflicts.length > 0) {
+        e.scheduleTime = conflicts.map(c =>
+          `วัน${DAY_LABEL_TH[c.day]} ${c.start}–${c.end}${c.course ? ` (${c.course})` : ''}`
+        ).join(', ');
+      }
     }
 
     return e;
@@ -427,13 +431,13 @@ export default function AdminCourseManagementPage() {
   }
   async function handleCreate(e) {
     e.preventDefault();
-    const err = validate(form, true);
+    const err = validate(form, true, false);
     if (Object.keys(err).length) { setFormErr(err); return; }
     setSaving(true);
     try {
-      const scheduleDays = encodeDaySlots(form.scheduleSlots || {});
-      await createCourse({ ...form, price: Number(form.price), scheduleDays, scheduleStartTime: null, scheduleEndTime: null });
-      notify('สร้างคอร์สสำเร็จ และส่งการแจ้งเตือนไปยังติวเตอร์แล้ว');
+      // ไม่ส่ง scheduleDays — ระบบหลังบ้านจะจัดวัน-เวลาสอนให้ติวเตอร์อัตโนมัติ (เลี่ยงชนกับคอร์สอื่นของติวเตอร์คนเดียวกัน)
+      await createCourse({ ...form, price: Number(form.price) });
+      notify('สร้างคอร์สสำเร็จ ระบบจัดวัน-เวลาสอนให้อัตโนมัติแล้ว และส่งการแจ้งเตือนไปยังติวเตอร์แล้ว');
       setShowCreate(false);
       load(0); setPage(0);
     } catch (ex) { notify(ex.message, 'error'); }
@@ -558,7 +562,7 @@ export default function AdminCourseManagementPage() {
         </div>
         <div className="cm-stat-card cm-stat-draft">
           <div className="cm-stat-icon">⏳</div>
-          <div><div className="cm-stat-num">{stats.draft}</div><div className="cm-stat-lbl">รอยืนยัน</div></div>
+          <div><div className="cm-stat-num">{stats.draft}</div><div className="cm-stat-lbl">รอติวเตอร์ตอบรับ</div></div>
         </div>
         <div className="cm-stat-card cm-stat-open">
           <div className="cm-stat-icon">✅</div>
@@ -676,8 +680,17 @@ export default function AdminCourseManagementPage() {
                 err={formErr.tutorId}
               />
 
-              {/* ตารางสอน — อยู่ใต้ตารางว่างของติวเตอร์ทันที */}
-              <ScheduleSection form={form} fld={fld} avail={tutorAvail} err={formErr.scheduleTime} />
+              {/* ตารางสอน — ระบบจัดให้อัตโนมัติหลังบันทึก ไม่ต้องเลือกเอง */}
+              <div className="cm-field">
+                <div className="cm-avail-panel">
+                  <div className="cm-avail-title">📅 ตารางสอน</div>
+                  <p className="cm-field-hint">
+                    ระบบจะจัดวัน-เวลาสอนให้ติวเตอร์คนนี้อัตโนมัติหลังบันทึก
+                    (คาบละ 2 ชั่วโมง ช่วง 09:00–20:00 จำนวนวัน/สัปดาห์คำนวณจากจำนวนชั่วโมงรวม)
+                    โดยจะเลี่ยงวัน-เวลาที่ชนกับคอร์สอื่นของติวเตอร์คนเดียวกัน
+                  </p>
+                </div>
+              </div>
 
               {/* ราคา */}
               <div className="cm-field">
@@ -737,7 +750,8 @@ export default function AdminCourseManagementPage() {
               </div>
 
               <div className="cm-info-box">
-                💡 คอร์สจะถูกสร้างในสถานะ <strong>รอยืนยัน</strong> และส่งการแจ้งเตือนไปยังอีเมลติวเตอร์ทันที
+                💡 คอร์สจะถูกสร้างในสถานะ <strong>รอติวเตอร์ตอบรับ</strong> ระบบจัดวัน-เวลาสอนให้อัตโนมัติ และส่งการแจ้งเตือนไปยังอีเมลติวเตอร์ทันที
+                หลังติวเตอร์ตอบรับและเพิ่มบทเรียนแล้ว ติวเตอร์จะกดเผยแพร่คอร์สเองเพื่อเปิดให้นักเรียนสมัคร
               </div>
 
               <div className="cm-form-actions">

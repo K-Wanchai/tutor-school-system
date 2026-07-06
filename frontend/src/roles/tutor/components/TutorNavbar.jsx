@@ -6,6 +6,7 @@ import './TutorNavbar.css';
 
 const PAGE_TITLES = {
   '/tutor/dashboard':        'แดชบอร์ด',
+  '/tutor/new-courses':      'คอร์สมาใหม่',
   '/tutor/courses':          'คอร์สของฉัน',
   '/tutor/notifications':    'การแจ้งเตือน',
   '/tutor/schedule':         'ตารางสอน',
@@ -89,7 +90,7 @@ export default function TutorNavbar({ onMenuToggle }) {
 
     const loadUnreadNotifications = async () => {
       try {
-        const res = await api.get('/notifications');
+        const res = await api.get('/notifications/me');
 
         if (res.data?.success === false) {
           throw new Error(res.data?.message || 'โหลดการแจ้งเตือนไม่สำเร็จ');

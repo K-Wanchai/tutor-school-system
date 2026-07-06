@@ -17,6 +17,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.tutorschool.backend.dto.request.CourseLessonRequest;
+import com.tutorschool.backend.dto.request.CourseTestRequest;
 import com.tutorschool.backend.dto.request.CreateCourseRequest;
 import com.tutorschool.backend.dto.request.TutorCourseResponseRequest;
 import com.tutorschool.backend.dto.request.UpdateCourseRequest;
@@ -108,6 +110,58 @@ public class CourseController {
         CourseResponse response = courseService.tutorRespondToCourse(id, request, currentUser.getId());
         String msg = request.isAccepted() ? "ตอบรับคอร์สสำเร็จ" : "ปฏิเสธคอร์สสำเร็จ";
         return ResponseEntity.ok(ApiResponse.success(msg, response));
+    }
+
+    @PostMapping("/{courseId}/lessons")
+    @PreAuthorize("hasRole('TUTOR')")
+    public ResponseEntity<ApiResponse<CourseResponse>> addLesson(
+            @PathVariable Long courseId,
+            @Valid @RequestBody CourseLessonRequest request,
+            @AuthenticationPrincipal User currentUser) {
+        CourseResponse response = courseService.addLesson(courseId, request, currentUser.getId());
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(ApiResponse.success("เพิ่มบทเรียนสำเร็จ", response));
+    }
+
+    @PutMapping("/{courseId}/lessons/{lessonId}")
+    @PreAuthorize("hasRole('TUTOR')")
+    public ResponseEntity<ApiResponse<CourseResponse>> updateLesson(
+            @PathVariable Long courseId,
+            @PathVariable Long lessonId,
+            @Valid @RequestBody CourseLessonRequest request,
+            @AuthenticationPrincipal User currentUser) {
+        CourseResponse response = courseService.updateLesson(courseId, lessonId, request, currentUser.getId());
+        return ResponseEntity.ok(ApiResponse.success("แก้ไขบทเรียนสำเร็จ", response));
+    }
+
+    @DeleteMapping("/{courseId}/lessons/{lessonId}")
+    @PreAuthorize("hasRole('TUTOR')")
+    public ResponseEntity<ApiResponse<Void>> deleteLesson(
+            @PathVariable Long courseId,
+            @PathVariable Long lessonId,
+            @AuthenticationPrincipal User currentUser) {
+        courseService.deleteLesson(courseId, lessonId, currentUser.getId());
+        return ResponseEntity.ok(ApiResponse.success("ลบบทเรียนสำเร็จ"));
+    }
+
+    @PostMapping("/{courseId}/tests")
+    @PreAuthorize("hasRole('TUTOR')")
+    public ResponseEntity<ApiResponse<CourseResponse>> addTest(
+            @PathVariable Long courseId,
+            @Valid @RequestBody CourseTestRequest request,
+            @AuthenticationPrincipal User currentUser) {
+        CourseResponse response = courseService.addTest(courseId, request, currentUser.getId());
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(ApiResponse.success("เพิ่มหัวข้อสอบสำเร็จ", response));
+    }
+
+    @PatchMapping("/{courseId}/publish")
+    @PreAuthorize("hasRole('TUTOR')")
+    public ResponseEntity<ApiResponse<CourseResponse>> publishCourse(
+            @PathVariable Long courseId,
+            @AuthenticationPrincipal User currentUser) {
+        CourseResponse response = courseService.publishCourse(courseId, currentUser.getId());
+        return ResponseEntity.ok(ApiResponse.success("เผยแพร่คอร์สสำเร็จ นักเรียนสามารถสมัครได้แล้ว", response));
     }
 
     @DeleteMapping("/{id}")
