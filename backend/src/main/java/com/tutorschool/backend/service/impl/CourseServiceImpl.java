@@ -1,8 +1,15 @@
 package com.tutorschool.backend.service.impl;
 
 import java.math.BigDecimal;
+import java.time.Duration;
 import java.time.LocalDate;
+import java.time.LocalTime;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 import org.springframework.data.domain.Page;
@@ -29,6 +36,7 @@ import com.tutorschool.backend.entity.EnrollmentStatus;
 import com.tutorschool.backend.entity.NotificationType;
 import com.tutorschool.backend.entity.ReferenceType;
 import com.tutorschool.backend.entity.Tutor;
+import com.tutorschool.backend.exception.CourseScheduleConflictException;
 import com.tutorschool.backend.exception.DuplicateResourceException;
 import com.tutorschool.backend.exception.InvalidCourseDateException;
 import com.tutorschool.backend.exception.ResourceNotFoundException;
@@ -47,6 +55,7 @@ import com.tutorschool.backend.repository.PaymentRepository;
 import com.tutorschool.backend.repository.TutorRepository;
 import com.tutorschool.backend.service.CourseService;
 import com.tutorschool.backend.service.NotificationService;
+import com.tutorschool.backend.util.ScheduleDaysParser;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -149,6 +158,9 @@ public class CourseServiceImpl implements CourseService {
 
         BigDecimal price = (request.getPrice() != null) ? request.getPrice() : BigDecimal.ZERO;
 
+        // ระบบจัดวัน-เวลาสอนให้ติวเตอร์เองอัตโนมัติ ไม่ให้แอดมินเลือกเอง — ต้องไม่ชนกับคอร์สอื่นของติวเตอร์คนเดียวกัน
+        String scheduleDays = autoAssignScheduleDays(tutor.getId(), request.getTotalHours(), null);
+
         Course course = Course.builder()
                 .courseCode(request.getCourseCode())
                 .courseName(request.getCourseName())
@@ -161,9 +173,9 @@ public class CourseServiceImpl implements CourseService {
                 .courseStartDate(request.getCourseStartDate())
                 .status(CourseStatus.DRAFT)
                 .tutor(tutor)
-                .scheduleDays(request.getScheduleDays())
-                .scheduleStartTime(request.getScheduleStartTime())
-                .scheduleEndTime(request.getScheduleEndTime())
+                .scheduleDays(scheduleDays)
+                .scheduleStartTime(null)
+                .scheduleEndTime(null)
                 .build();
 
         addLessonsToCoure(course, request.getLessons());
@@ -174,6 +186,88 @@ public class CourseServiceImpl implements CourseService {
         sendCourseAssignedNotification(course, tutor);
 
         return courseMapper.toDetailResponse(course, 0L);
+    }
+
+    private static final LocalTime WORK_START = LocalTime.of(9, 0);
+    private static final LocalTime WORK_END = LocalTime.of(20, 0);
+    private static final Duration SESSION_LENGTH = Duration.ofHours(2);
+    private static final String[] WEEK_DAYS = {"MON", "TUE", "WED", "THU", "FRI", "SAT", "SUN"};
+
+    private int computeDaysPerWeek(int totalHours) {
+        if (totalHours <= 6) return 1;
+        if (totalHours <= 20) return 2;
+        if (totalHours <= 40) return 3;
+        return 4;
+    }
+
+    /**
+     * Auto-picks weekly teaching day/time slots for a tutor (2h sessions, 09:00-20:00),
+     * avoiding any overlap with that tutor's OTHER existing courses. Number of days/week is
+     * derived from totalHours (see computeDaysPerWeek). excludeCourseId lets a future
+     * update-course flow exclude the course being edited from its own conflict check.
+     */
+    private String autoAssignScheduleDays(Long tutorId, int totalHours, Long excludeCourseId) {
+        int daysNeeded = computeDaysPerWeek(totalHours);
+
+        Map<String, List<LocalTime[]>> busyByDay = new HashMap<>();
+        for (Course other : courseRepository.findByTutorId(tutorId)) {
+            if (excludeCourseId != null && excludeCourseId.equals(other.getId())) {
+                continue;
+            }
+            ScheduleDaysParser.parseSlots(other.getScheduleDays())
+                    .forEach((day, slot) -> busyByDay.computeIfAbsent(day, k -> new ArrayList<>()).add(slot));
+        }
+
+        Map<String, LocalTime[]> assigned = new LinkedHashMap<>();
+
+        for (String day : WEEK_DAYS) {
+            if (assigned.size() >= daysNeeded) {
+                break;
+            }
+
+            List<LocalTime[]> busy = busyByDay.getOrDefault(day, List.of()).stream()
+                    .sorted(Comparator.comparing(iv -> iv[0]))
+                    .toList();
+
+            LocalTime[] freeSlot = findFreeSlot(busy, WORK_START, WORK_END, SESSION_LENGTH);
+            if (freeSlot != null) {
+                assigned.put(day, freeSlot);
+            }
+        }
+
+        if (assigned.size() < daysNeeded) {
+            throw new CourseScheduleConflictException(
+                    "ไม่สามารถจัดตารางสอนให้ติวเตอร์คนนี้ได้ครบตามจำนวนที่ต้องการ (ต้องการ "
+                            + daysNeeded + " วัน/สัปดาห์ แต่หาวัน-เวลาว่างได้เพียง " + assigned.size()
+                            + " วัน) กรุณาลดจำนวนชั่วโมงรวมของคอร์ส หรือมอบหมายติวเตอร์คนอื่น");
+        }
+
+        return java.util.Arrays.stream(WEEK_DAYS)
+                .filter(assigned::containsKey)
+                .map(day -> day + ":" + assigned.get(day)[0] + "-" + assigned.get(day)[1])
+                .collect(Collectors.joining(","));
+    }
+
+    private LocalTime[] findFreeSlot(List<LocalTime[]> busyIntervals, LocalTime workStart, LocalTime workEnd,
+                                      Duration sessionLength) {
+        LocalTime cursor = workStart;
+
+        for (LocalTime[] busy : busyIntervals) {
+            LocalTime slotEnd = cursor.plus(sessionLength);
+            if (!slotEnd.isAfter(busy[0])) {
+                return new LocalTime[]{cursor, slotEnd};
+            }
+            if (busy[1].isAfter(cursor)) {
+                cursor = busy[1];
+            }
+        }
+
+        LocalTime slotEnd = cursor.plus(sessionLength);
+        if (!slotEnd.isAfter(workEnd)) {
+            return new LocalTime[]{cursor, slotEnd};
+        }
+
+        return null;
     }
 
     private void sendCourseAssignedNotification(Course course, Tutor tutor) {
@@ -273,7 +367,7 @@ public class CourseServiceImpl implements CourseService {
         }
 
         if (request.isAccepted()) {
-            course.setStatus(CourseStatus.OPEN_FOR_REGISTRATION);
+            course.setStatus(CourseStatus.ACCEPTED);
             if (request.getLessons() != null && !request.getLessons().isEmpty()) {
                 course.getLessons().clear();
                 addLessonsToCoure(course, request.getLessons());
@@ -291,6 +385,140 @@ public class CourseServiceImpl implements CourseService {
         long enrolledCount = enrollmentRepository.countByCourseIdAndStatusIn(courseId,
                 List.of(EnrollmentStatus.PENDING, EnrollmentStatus.APPROVED));
         return courseMapper.toDetailResponse(course, enrolledCount);
+    }
+
+    @Override
+    @Transactional
+    public CourseResponse addLesson(Long courseId, CourseLessonRequest request, Long tutorUserId) {
+        Course course = courseRepository.findById(courseId)
+                .orElseThrow(() -> new ResourceNotFoundException("Course", courseId));
+        verifyTutorOwnsCourse(course, tutorUserId);
+        ensureLessonsEditable(course);
+
+        CourseLesson lesson = CourseLesson.builder()
+                .course(course)
+                .lessonTitle(request.getLessonTitle())
+                .lessonContent(request.getLessonContent())
+                .lessonOrder(request.getLessonOrder())
+                .build();
+        course.getLessons().add(lesson);
+
+        course = courseRepository.save(course);
+        return courseMapper.toDetailResponse(course, countActiveEnrollments(courseId));
+    }
+
+    @Override
+    @Transactional
+    public CourseResponse updateLesson(Long courseId, Long lessonId, CourseLessonRequest request, Long tutorUserId) {
+        Course course = courseRepository.findById(courseId)
+                .orElseThrow(() -> new ResourceNotFoundException("Course", courseId));
+        verifyTutorOwnsCourse(course, tutorUserId);
+        ensureLessonsEditable(course);
+
+        CourseLesson lesson = course.getLessons().stream()
+                .filter(l -> l.getId().equals(lessonId))
+                .findFirst()
+                .orElseThrow(() -> new ResourceNotFoundException("Lesson", lessonId));
+
+        lesson.setLessonTitle(request.getLessonTitle());
+        lesson.setLessonContent(request.getLessonContent());
+        lesson.setLessonOrder(request.getLessonOrder());
+
+        course = courseRepository.save(course);
+        return courseMapper.toDetailResponse(course, countActiveEnrollments(courseId));
+    }
+
+    @Override
+    @Transactional
+    public void deleteLesson(Long courseId, Long lessonId, Long tutorUserId) {
+        Course course = courseRepository.findById(courseId)
+                .orElseThrow(() -> new ResourceNotFoundException("Course", courseId));
+        verifyTutorOwnsCourse(course, tutorUserId);
+        ensureLessonsEditable(course);
+
+        boolean removed = course.getLessons().removeIf(l -> l.getId().equals(lessonId));
+        if (!removed) {
+            throw new ResourceNotFoundException("Lesson", lessonId);
+        }
+
+        courseRepository.save(course);
+    }
+
+    @Override
+    @Transactional
+    public CourseResponse addTest(Long courseId, CourseTestRequest request, Long tutorUserId) {
+        Course course = courseRepository.findById(courseId)
+                .orElseThrow(() -> new ResourceNotFoundException("Course", courseId));
+        verifyTutorOwnsCourse(course, tutorUserId);
+        ensureTestsAddable(course);
+
+        if (request.getLessonOrder() != null
+                && course.getLessons().stream().noneMatch(l -> l.getLessonOrder().equals(request.getLessonOrder()))) {
+            throw new ResourceNotFoundException("Lesson with order " + request.getLessonOrder() + " not found in this course");
+        }
+
+        CourseTest test = CourseTest.builder()
+                .course(course)
+                .testTitle(request.getTestTitle())
+                .testDescription(request.getTestDescription())
+                .testOrder(request.getTestOrder())
+                .lessonOrder(request.getLessonOrder())
+                .build();
+        course.getTests().add(test);
+
+        course = courseRepository.save(course);
+        return courseMapper.toDetailResponse(course, countActiveEnrollments(courseId));
+    }
+
+    @Override
+    @Transactional
+    public CourseResponse publishCourse(Long courseId, Long tutorUserId) {
+        Course course = courseRepository.findById(courseId)
+                .orElseThrow(() -> new ResourceNotFoundException("Course", courseId));
+        verifyTutorOwnsCourse(course, tutorUserId);
+
+        if (course.getStatus() != CourseStatus.ACCEPTED) {
+            throw new IllegalStateException("Course must be accepted (and not already published) before it can be published");
+        }
+        if (course.getLessons().isEmpty()) {
+            throw new IllegalStateException("Course must have at least 1 lesson before it can be published");
+        }
+
+        course.setStatus(CourseStatus.OPEN_FOR_REGISTRATION);
+        course = courseRepository.save(course);
+        return courseMapper.toDetailResponse(course, countActiveEnrollments(courseId));
+    }
+
+    private Tutor verifyTutorOwnsCourse(Course course, Long tutorUserId) {
+        Tutor tutor = TutorRepository.findByUserId(tutorUserId)
+                .orElseThrow(() -> new ResourceNotFoundException("Tutor profile not found"));
+        if (!course.getTutor().getId().equals(tutor.getId())) {
+            throw new IllegalStateException("You are not assigned to this course");
+        }
+        return tutor;
+    }
+
+    // บทเรียนแก้ไข/เพิ่ม/ลบได้เฉพาะช่วง ACCEPTED/OPEN_FOR_REGISTRATION — ล็อกทันทีที่เริ่มสอน (ONGOING)
+    private void ensureLessonsEditable(Course course) {
+        if (course.getStatus() != CourseStatus.ACCEPTED && course.getStatus() != CourseStatus.OPEN_FOR_REGISTRATION) {
+            throw new IllegalStateException(
+                    "Lessons can only be added, edited, or deleted while the course is accepted or open for registration (not once teaching has started)");
+        }
+    }
+
+    // หัวข้อสอบเพิ่มได้ต่อเนื่องแม้เริ่มสอนแล้ว (ONGOING) เพื่อให้เปิดสอบทีละบทได้
+    private void ensureTestsAddable(Course course) {
+        if (course.getStatus() != CourseStatus.ACCEPTED
+                && course.getStatus() != CourseStatus.OPEN_FOR_REGISTRATION
+                && course.getStatus() != CourseStatus.ONGOING) {
+            throw new IllegalStateException(
+                    "Exam topics can only be added while the course is accepted, open for registration, or ongoing");
+        }
+    }
+
+    private long countActiveEnrollments(Long courseId) {
+        return enrollmentRepository.countByCourseIdAndStatusIn(courseId,
+                List.of(EnrollmentStatus.PENDING, EnrollmentStatus.APPROVED));
     }
 
     @Override

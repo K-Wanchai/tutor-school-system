@@ -27,8 +27,12 @@ export default function StudentEnrollmentsPage() {
     );
   }, [myEnrollments]);
 
+  // แสดงเฉพาะคอร์สที่ติวเตอร์เผยแพร่แล้ว (เปิดรับสมัคร) — คอร์สที่ยังรอตอบรับ/กำลังจัดทำเนื้อหาจะยังไม่โชว์ให้นักเรียนเห็น
   const visibleCourses = useMemo(
-    () => courses.filter((course) => !enrolledCourseIds.has(course.id)),
+    () =>
+      courses.filter(
+        (course) => course.status === 'OPEN_FOR_REGISTRATION' && !enrolledCourseIds.has(course.id)
+      ),
     [courses, enrolledCourseIds]
   );
 
@@ -231,6 +235,24 @@ export default function StudentEnrollmentsPage() {
                     <strong>{formatSchedule(course)}</strong>
                   </div>
                 </div>
+
+                {course.lessons && course.lessons.length > 0 && (
+                  <div className="student-course-lessons">
+                    <span className="student-course-lessons-title">
+                      บทเรียน ({course.lessons.length} บท)
+                    </span>
+                    <ul>
+                      {[...course.lessons]
+                        .sort((a, b) => (a.lessonOrder || 0) - (b.lessonOrder || 0))
+                        .map((lesson) => (
+                          <li key={lesson.id}>
+                            <strong>บทที่ {lesson.lessonOrder}: {lesson.lessonTitle}</strong>
+                            {lesson.lessonContent && <p>{lesson.lessonContent}</p>}
+                          </li>
+                        ))}
+                    </ul>
+                  </div>
+                )}
 
                 <button
                   className="student-enroll-btn"

@@ -1,7 +1,11 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
+  addLesson,
+  addTest,
+  deleteLesson,
   getMyCourses,
-  respondToCourse,
+  publishCourse,
+  updateLesson,
 } from '../services/tutorCourseService';
 
 import RefreshButton from '../components/RefreshButton';
@@ -12,6 +16,11 @@ const STATUS_LABEL = {
   DRAFT: {
     label: 'รอการตอบรับ',
     cls: 'tc-badge-draft',
+  },
+
+  ACCEPTED: {
+    label: 'กำลังจัดทำเนื้อหา',
+    cls: 'tc-badge-accepted',
   },
 
   OPEN_FOR_REGISTRATION: {
@@ -60,14 +69,17 @@ export default function TutorCoursesPage() {
   const [filter, setFilter] = useState('ALL');
 
   const [loading, setLoading] = useState(true);
+  const [manageCourse, setManageCourse] = useState(null);
 
   const load = useCallback(async () => {
     try {
       setLoading(true);
 
       const data = await getMyCourses();
+      const list = Array.isArray(data) ? data : [];
 
-      setCourses(Array.isArray(data) ? data : []);
+      // คอร์สที่ยังไม่ตอบรับ (DRAFT) อยู่หน้า "คอร์สมาใหม่" แยกต่างหาก ไม่ต้องปนกันที่นี่
+      setCourses(list.filter((c) => c.status !== 'DRAFT'));
     } catch (error) {
       console.error(error);
       setCourses([]);
@@ -92,34 +104,15 @@ export default function TutorCoursesPage() {
     });
   }, [courses, keyword, filter]);
 
-  const pendingCount = courses.filter(
-    (c) => c.status === 'DRAFT'
-  ).length;
-
-  async function handleAccept(courseId) {
-    try {
-      await respondToCourse({
-        courseId,
-        accepted: true,
-      });
-
-      load();
-    } catch (error) {
-      console.error(error);
-    }
+  function openManage(course) {
+    setManageCourse(course);
   }
 
-  async function handleReject(courseId) {
-    try {
-      await respondToCourse({
-        courseId,
-        accepted: false,
-      });
-
-      load();
-    } catch (error) {
-      console.error(error);
-    }
+  async function refreshManageCourse() {
+    const data = await getMyCourses();
+    const list = Array.isArray(data) ? data : [];
+    setCourses(list.filter((c) => c.status !== 'DRAFT'));
+    setManageCourse((prev) => (prev ? list.find((c) => c.id === prev.id) || null : null));
   }
 
   return (
@@ -130,18 +123,11 @@ export default function TutorCoursesPage() {
           <h1>คอร์สของฉัน</h1>
 
           <p>
-            จัดการคอร์สที่ได้รับมอบหมาย
-            ตอบรับ หรือปฏิเสธคอร์ส
+            คอร์สที่คุณตอบรับแล้ว จัดการบทเรียนและเผยแพร่ได้ที่นี่
           </p>
         </div>
 
         <div className="tc-header-right">
-          {pendingCount > 0 && (
-            <div className="tc-pending-badge">
-              ⏳ รอการตอบรับ {pendingCount} คอร์ส
-            </div>
-          )}
-
           <RefreshButton
             onClick={load}
             loading={loading}
@@ -170,8 +156,8 @@ export default function TutorCoursesPage() {
             ทุกสถานะ
           </option>
 
-          <option value="DRAFT">
-            รอการตอบรับ
+          <option value="ACCEPTED">
+            กำลังจัดทำเนื้อหา
           </option>
 
           <option value="OPEN_FOR_REGISTRATION">
@@ -206,20 +192,13 @@ export default function TutorCoursesPage() {
           <h3>ยังไม่มีคอร์ส</h3>
 
           <p>
-            ไม่มีข้อมูลคอร์สที่ได้รับมอบหมาย
+            เมื่อคุณตอบรับคอร์สจากหน้า "คอร์สมาใหม่" แล้ว รายการจะแสดงที่นี่
           </p>
         </div>
       ) : (
         <div className="tc-grid">
           {filtered.map((course) => (
-            <div
-              key={course.id}
-              className={`tc-card ${
-                course.status === 'DRAFT'
-                  ? 'tc-card-pending'
-                  : ''
-              }`}
-            >
+            <div key={course.id} className="tc-card">
               <div className="tc-card-top">
                 <span className="tc-code">
                   {course.courseCode}
@@ -283,33 +262,261 @@ export default function TutorCoursesPage() {
                   ดูรายละเอียด
                 </button>
 
-                {course.status ===
-                  'DRAFT' && (
-                  <>
-                    <button
-                      className="tc-btn-accept"
-                      onClick={() =>
-                        handleAccept(course.id)
-                      }
-                    >
-                      ตอบรับ
-                    </button>
-
-                    <button
-                      className="tc-btn-reject"
-                      onClick={() =>
-                        handleReject(course.id)
-                      }
-                    >
-                      ปฏิเสธ
-                    </button>
-                  </>
+                {['ACCEPTED', 'OPEN_FOR_REGISTRATION', 'ONGOING'].includes(course.status) && (
+                  <button className="tc-btn-accept" onClick={() => openManage(course)}>
+                    📚 จัดการบทเรียน
+                  </button>
                 )}
               </div>
             </div>
           ))}
         </div>
       )}
+
+      {manageCourse && (
+        <LessonManagerModal
+          course={manageCourse}
+          onClose={() => setManageCourse(null)}
+          onChanged={refreshManageCourse}
+        />
+      )}
+    </div>
+  );
+}
+
+function LessonManagerModal({ course, onClose, onChanged }) {
+  const lessonsEditable = course.status === 'ACCEPTED' || course.status === 'OPEN_FOR_REGISTRATION';
+  const testsAddable = ['ACCEPTED', 'OPEN_FOR_REGISTRATION', 'ONGOING'].includes(course.status);
+  const canPublish = course.status === 'ACCEPTED';
+
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState('');
+
+  const [editingLessonId, setEditingLessonId] = useState(null);
+  const [lessonForm, setLessonForm] = useState({ lessonTitle: '', lessonContent: '', lessonOrder: '' });
+
+  // แบบฟอร์มเพิ่มหัวข้อสอบ แยกตามบทเรียน (key = lessonOrder ของบทนั้น)
+  const [testFormByLesson, setTestFormByLesson] = useState({});
+
+  // ลำดับบทเรียนนับจากลำดับที่เพิ่มครั้งแรก ไม่ให้ติวเตอร์กรอกเอง
+  const lessons = [...(course.lessons || [])].sort((a, b) => (a.lessonOrder || 0) - (b.lessonOrder || 0));
+  const tests = [...(course.tests || [])].sort((a, b) => (a.testOrder || 0) - (b.testOrder || 0));
+
+  function nextLessonOrder() {
+    return lessons.length > 0 ? Math.max(...lessons.map((l) => l.lessonOrder || 0)) + 1 : 1;
+  }
+
+  function testsForLesson(lessonOrder) {
+    return tests.filter((t) => t.lessonOrder === lessonOrder);
+  }
+
+  function startAddLesson() {
+    setEditingLessonId(null);
+    setLessonForm({ lessonTitle: '', lessonContent: '', lessonOrder: String(nextLessonOrder()) });
+  }
+
+  function startEditLesson(lesson) {
+    setEditingLessonId(lesson.id);
+    setLessonForm({
+      lessonTitle: lesson.lessonTitle || '',
+      lessonContent: lesson.lessonContent || '',
+      lessonOrder: String(lesson.lessonOrder ?? ''),
+    });
+  }
+
+  async function submitLesson(e) {
+    e.preventDefault();
+    if (!lessonForm.lessonTitle.trim()) {
+      setError('กรุณากรอกชื่อบทเรียน');
+      return;
+    }
+    setBusy(true);
+    setError('');
+    try {
+      const payload = {
+        lessonTitle: lessonForm.lessonTitle.trim(),
+        lessonContent: lessonForm.lessonContent.trim(),
+        lessonOrder: Number(lessonForm.lessonOrder) || nextLessonOrder(),
+      };
+      if (editingLessonId) {
+        await updateLesson(course.id, editingLessonId, payload);
+      } else {
+        await addLesson(course.id, payload);
+      }
+      setEditingLessonId(null);
+      setLessonForm({ lessonTitle: '', lessonContent: '', lessonOrder: '' });
+      await onChanged();
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function handleDeleteLesson(lessonId) {
+    setBusy(true);
+    setError('');
+    try {
+      await deleteLesson(course.id, lessonId);
+      await onChanged();
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  function setTestField(lessonOrder, field, value) {
+    setTestFormByLesson((prev) => ({
+      ...prev,
+      [lessonOrder]: { ...prev[lessonOrder], [field]: value },
+    }));
+  }
+
+  async function submitTestForLesson(e, lesson) {
+    e.preventDefault();
+    const formState = testFormByLesson[lesson.lessonOrder] || {};
+    if (!formState.testTitle?.trim()) {
+      setError('กรุณากรอกหัวข้อสอบ');
+      return;
+    }
+    setBusy(true);
+    setError('');
+    try {
+      await addTest(course.id, {
+        testTitle: formState.testTitle.trim(),
+        testDescription: (formState.testDescription || '').trim(),
+        testOrder: testsForLesson(lesson.lessonOrder).length + 1,
+        lessonOrder: lesson.lessonOrder,
+      });
+      setTestFormByLesson((prev) => ({ ...prev, [lesson.lessonOrder]: { testTitle: '', testDescription: '' } }));
+      await onChanged();
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function handlePublish() {
+    if (lessons.length === 0) {
+      setError('ต้องมีอย่างน้อย 1 บทเรียนก่อนเผยแพร่คอร์ส');
+      return;
+    }
+    if (!window.confirm('ยืนยันเผยแพร่คอร์สนี้? นักเรียนจะเห็นคอร์สและสามารถสมัครได้ทันที')) {
+      return;
+    }
+    setBusy(true);
+    setError('');
+    try {
+      await publishCourse(course.id);
+      await onChanged();
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <div className="tc-modal-overlay" onClick={onClose}>
+      <div className="tc-modal" onClick={(e) => e.stopPropagation()}>
+        <div className="tc-modal-header">
+          <h2>จัดการบทเรียน — {course.courseName}</h2>
+          <button className="tc-modal-close" onClick={onClose}>✕</button>
+        </div>
+
+        {error && <div className="tc-modal-error">{error}</div>}
+
+        <div className="tc-modal-section">
+          <h3>บทเรียน ({lessons.length})</h3>
+
+          {!lessonsEditable && (
+            <p className="tc-modal-hint">คอร์สเริ่มสอนแล้ว ไม่สามารถเพิ่ม/แก้ไข/ลบบทเรียนได้อีก แต่ยังเพิ่มหัวข้อสอบได้</p>
+          )}
+
+          {lessons.map((lesson) => {
+            const lessonTests = testsForLesson(lesson.lessonOrder);
+            const testForm = testFormByLesson[lesson.lessonOrder] || {};
+
+            return (
+              <div key={lesson.id} className="tc-lesson-row tc-lesson-row--column">
+                <div className="tc-lesson-row-top">
+                  <div>
+                    <strong>บทที่ {lesson.lessonOrder}: {lesson.lessonTitle}</strong>
+                    {lesson.lessonContent && <p>{lesson.lessonContent}</p>}
+                  </div>
+                  {lessonsEditable && (
+                    <div className="tc-lesson-row-actions">
+                      <button type="button" onClick={() => startEditLesson(lesson)} disabled={busy}>แก้ไข</button>
+                      <button type="button" onClick={() => handleDeleteLesson(lesson.id)} disabled={busy}>ลบ</button>
+                    </div>
+                  )}
+                </div>
+
+                {lessonTests.length > 0 && (
+                  <ul className="tc-lesson-test-list">
+                    {lessonTests.map((test) => (
+                      <li key={test.id}>
+                        <strong>สอบ: {test.testTitle}</strong>
+                        {test.testDescription && <span> — {test.testDescription}</span>}
+                      </li>
+                    ))}
+                  </ul>
+                )}
+
+                {testsAddable && (
+                  <form className="tc-inline-test-form" onSubmit={(e) => submitTestForLesson(e, lesson)}>
+                    <input
+                      placeholder="เพิ่มหัวข้อสอบสำหรับบทนี้"
+                      value={testForm.testTitle || ''}
+                      onChange={(e) => setTestField(lesson.lessonOrder, 'testTitle', e.target.value)}
+                    />
+                    <input
+                      placeholder="รายละเอียด (ถ้ามี)"
+                      value={testForm.testDescription || ''}
+                      onChange={(e) => setTestField(lesson.lessonOrder, 'testDescription', e.target.value)}
+                    />
+                    <button type="submit" disabled={busy}>+ เพิ่ม</button>
+                  </form>
+                )}
+              </div>
+            );
+          })}
+
+          {lessonsEditable && (
+            <form className="tc-inline-form" onSubmit={submitLesson}>
+              <input
+                placeholder="ชื่อบทเรียน"
+                value={lessonForm.lessonTitle}
+                onChange={(e) => setLessonForm((f) => ({ ...f, lessonTitle: e.target.value }))}
+              />
+              <textarea
+                placeholder="เนื้อหาบทเรียน"
+                value={lessonForm.lessonContent}
+                onChange={(e) => setLessonForm((f) => ({ ...f, lessonContent: e.target.value }))}
+              />
+              <div className="tc-inline-form-actions">
+                <button type="submit" disabled={busy}>
+                  {editingLessonId ? 'บันทึกการแก้ไข' : '+ เพิ่มบทเรียน'}
+                </button>
+                {editingLessonId && (
+                  <button type="button" onClick={startAddLesson} disabled={busy}>ยกเลิกแก้ไข</button>
+                )}
+              </div>
+            </form>
+          )}
+        </div>
+
+        <div className="tc-modal-footer">
+          {canPublish && (
+            <button className="tc-btn-accept" onClick={handlePublish} disabled={busy}>
+              ✓ ยืนยันเผยแพร่คอร์ส
+            </button>
+          )}
+          <button onClick={onClose}>ปิด</button>
+        </div>
+      </div>
     </div>
   );
 }

@@ -44,6 +44,12 @@ public class GlobalExceptionHandler {
                 .body(ApiResponse.error(ex.getMessage()));
     }
 
+    @ExceptionHandler(CourseScheduleConflictException.class)
+    public ResponseEntity<ApiResponse<Void>> handleCourseScheduleConflictException(CourseScheduleConflictException ex) {
+        return ResponseEntity.status(HttpStatus.CONFLICT)
+                .body(ApiResponse.error(ex.getMessage()));
+    }
+
     @ExceptionHandler(DuplicateFieldsException.class)
     public ResponseEntity<ApiResponse<Void>> handleDuplicateFieldsException(DuplicateFieldsException ex) {
         return ResponseEntity.status(HttpStatus.CONFLICT)

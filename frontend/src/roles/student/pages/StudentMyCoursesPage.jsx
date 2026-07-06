@@ -322,6 +322,11 @@ function StudentMyCoursesPage() {
                   </div>
 
                   <div>
+                    <span>วันที่เริ่มเรียน</span>
+                    <strong>{formatDate(course.courseStartDate)}</strong>
+                  </div>
+
+                  <div>
                     <span>สถานะชำระเงิน</span>
                     <strong>{getPaymentStatusLabel(course.paymentStatus)}</strong>
                   </div>
@@ -434,6 +439,11 @@ function StudentMyCoursesPage() {
               <div className="smc-detail-row">
                 <span>วันที่สมัคร</span>
                 <strong>{formatDateTime(selectedCourse.enrollmentDate)}</strong>
+              </div>
+
+              <div className="smc-detail-row">
+                <span>วันที่เริ่มเรียน</span>
+                <strong>{formatDate(selectedCourse.courseStartDate)}</strong>
               </div>
 
               <div className="smc-detail-row">

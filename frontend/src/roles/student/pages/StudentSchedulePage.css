@@ -109,83 +109,236 @@
   font-size: 14px;
 }
 
-.ssp-filter-tabs {
+.ssp-timetable-toolbar {
   display: flex;
+  justify-content: space-between;
+  align-items: center;
   flex-wrap: wrap;
-  gap: 10px;
-  margin-bottom: 22px;
+  gap: 14px;
+  margin-bottom: 18px;
 }
 
-.ssp-filter-tabs button {
+.ssp-timetable-nav {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.ssp-timetable-nav button {
   border: 1px solid #ddd6fe;
-  border-radius: 999px;
-  padding: 10px 15px;
+  border-radius: 12px;
+  padding: 8px 14px;
   background: #ffffff;
   color: #5b21b6;
   font-family: inherit;
-  font-size: 14px;
+  font-size: 16px;
   font-weight: 700;
   cursor: pointer;
   transition: 0.2s ease;
 }
 
-.ssp-filter-tabs button:hover {
+.ssp-timetable-nav button:hover {
   background: #f5f3ff;
   transform: translateY(-1px);
 }
 
-.ssp-filter-tabs .ssp-filter-active {
-  border-color: #7c3aed;
-  background: #7c3aed;
-  color: #ffffff;
-  box-shadow: 0 12px 24px rgba(124, 58, 237, 0.24);
+.ssp-timetable-today-btn {
+  font-size: 14px !important;
 }
 
-.ssp-schedule-grid {
+.ssp-timetable-range {
+  color: #4c1d95;
+  font-size: 15px;
+  font-weight: 800;
+}
+
+.ssp-timetable-scroll {
+  overflow-x: auto;
+  overflow-y: auto;
+  max-height: 640px;
+  border: 1px solid #ede9fe;
+  border-radius: 18px;
+}
+
+.ssp-timetable-grid {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 18px;
+  grid-template-columns: 64px repeat(7, minmax(130px, 1fr));
+  min-width: 760px;
 }
 
-.ssp-schedule-card {
+.ssp-tt-corner {
+  position: sticky;
+  top: 0;
+  z-index: 3;
+  background: #ffffff;
+  border-bottom: 1px solid #ede9fe;
+}
+
+.ssp-tt-daycol-header {
+  position: sticky;
+  top: 0;
+  z-index: 2;
   display: flex;
   flex-direction: column;
-  gap: 18px;
-  padding: 20px;
-  border: 1px solid #ede9fe;
-  border-radius: 22px;
-  background:
-    linear-gradient(180deg, #ffffff 0%, #faf9ff 100%);
-  box-shadow: 0 14px 30px rgba(15, 23, 42, 0.06);
+  align-items: center;
+  gap: 4px;
+  padding: 10px 6px;
+  background: #faf9ff;
+  border-bottom: 1px solid #ede9fe;
+  border-left: 1px solid #f1f5f9;
 }
 
-.ssp-card-top {
-  display: flex;
-  justify-content: space-between;
-  gap: 14px;
-  align-items: flex-start;
-}
-
-.ssp-card-date {
-  margin: 0 0 8px;
-  color: #7c3aed;
+.ssp-tt-day-name {
+  color: #4c1d95;
   font-size: 13px;
   font-weight: 800;
 }
 
-.ssp-schedule-card h3 {
-  margin: 0;
-  color: #111827;
-  font-size: 19px;
-  font-weight: 800;
-  line-height: 1.35;
+.ssp-tt-day-date {
+  color: #94a3b8;
+  font-size: 12px;
+  font-weight: 700;
 }
 
-.ssp-lesson-title {
-  margin: 6px 0 0;
-  color: #64748b;
-  font-size: 14px;
-  line-height: 1.5;
+.ssp-tt-daycol-header.ssp-tt-today {
+  background: #ede9fe;
+}
+
+.ssp-tt-daycol-header.ssp-tt-today .ssp-tt-day-name,
+.ssp-tt-daycol-header.ssp-tt-today .ssp-tt-day-date {
+  color: #6d28d9;
+}
+
+.ssp-tt-timeaxis {
+  position: relative;
+  background: #ffffff;
+}
+
+.ssp-tt-hour-label {
+  position: absolute;
+  left: 0;
+  right: 6px;
+  transform: translateY(-8px);
+  text-align: right;
+  color: #94a3b8;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.ssp-tt-daycolumn {
+  position: relative;
+  border-left: 1px solid #f1f5f9;
+  background: #ffffff;
+}
+
+.ssp-tt-daycolumn.ssp-tt-today-col {
+  background: #fbfaff;
+}
+
+.ssp-tt-hourline {
+  position: absolute;
+  left: 0;
+  right: 0;
+  border-top: 1px solid #f1f5f9;
+}
+
+.ssp-tt-now-line {
+  position: absolute;
+  left: 0;
+  right: 0;
+  z-index: 2;
+  border-top: 2px solid #dc2626;
+}
+
+.ssp-tt-now-line::before {
+  content: '';
+  position: absolute;
+  left: -4px;
+  top: -4px;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #dc2626;
+}
+
+.ssp-tt-event {
+  position: absolute;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  overflow: hidden;
+  padding: 5px 7px;
+  border: none;
+  border-radius: 10px;
+  text-align: left;
+  font-family: inherit;
+  cursor: pointer;
+  transition: 0.15s ease;
+}
+
+.ssp-tt-event:hover {
+  z-index: 4;
+  box-shadow: 0 10px 20px rgba(15, 23, 42, 0.16);
+  transform: translateY(-1px);
+}
+
+.ssp-tt-event-time {
+  font-size: 10px;
+  font-weight: 800;
+  opacity: 0.85;
+}
+
+.ssp-tt-event-title {
+  font-size: 12px;
+  font-weight: 800;
+  line-height: 1.25;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.ssp-tt-event-sub {
+  font-size: 11px;
+  font-weight: 600;
+  opacity: 0.8;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.ssp-tt-event-scheduled,
+.ssp-tt-event-upcoming {
+  border-left: 4px solid #7c3aed;
+  background: #f5f3ff;
+  color: #4c1d95;
+}
+
+.ssp-tt-event-ongoing {
+  border-left: 4px solid #16a34a;
+  background: #ecfdf5;
+  color: #166534;
+}
+
+.ssp-tt-event-completed,
+.ssp-tt-event-closed {
+  border-left: 4px solid #0284c7;
+  background: #eff6ff;
+  color: #075985;
+}
+
+.ssp-tt-event-cancelled {
+  border-left: 4px solid #dc2626;
+  background: #fef2f2;
+  color: #991b1b;
+  text-decoration: line-through;
+  opacity: 0.8;
+}
+
+.ssp-tt-event-unknown {
+  border-left: 4px solid #64748b;
+  background: #f8fafc;
+  color: #475569;
 }
 
 .ssp-status {
@@ -224,56 +377,6 @@
 .ssp-status-unknown {
   background: #f1f5f9;
   color: #475569;
-}
-
-.ssp-info-list {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 12px;
-}
-
-.ssp-info-list div {
-  padding: 12px;
-  border-radius: 16px;
-  background: #ffffff;
-  border: 1px solid #f1f5f9;
-}
-
-.ssp-info-list span {
-  display: block;
-  margin-bottom: 5px;
-  color: #94a3b8;
-  font-size: 12px;
-  font-weight: 700;
-}
-
-.ssp-info-list strong {
-  display: block;
-  color: #1f2937;
-  font-size: 14px;
-  font-weight: 800;
-  word-break: break-word;
-}
-
-.ssp-note {
-  padding: 12px 14px;
-  border-left: 4px solid #7c3aed;
-  border-radius: 14px;
-  background: #f5f3ff;
-  color: #4c1d95;
-  font-size: 14px;
-  line-height: 1.6;
-}
-
-.ssp-note span {
-  font-weight: 800;
-}
-
-.ssp-card-actions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
-  margin-top: auto;
 }
 
 .ssp-btn {
@@ -416,7 +519,7 @@
 }
 
 .ssp-modal-header h2 {
-  margin: 0;
+  margin: 0 0 10px;
   color: #111827;
   font-size: 22px;
   font-weight: 800;
@@ -517,8 +620,7 @@
 }
 
 @media (max-width: 1024px) {
-  .ssp-summary-grid,
-  .ssp-schedule-grid {
+  .ssp-summary-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
@@ -544,8 +646,6 @@
   }
 
   .ssp-summary-grid,
-  .ssp-schedule-grid,
-  .ssp-info-list,
   .ssp-modal-body {
     grid-template-columns: 1fr;
   }
@@ -554,15 +654,15 @@
     padding: 18px;
   }
 
-  .ssp-card-top {
-    flex-direction: column;
+  .ssp-timetable-toolbar {
+    justify-content: center;
   }
 
-  .ssp-card-actions {
-    flex-direction: column;
+  .ssp-modal-footer {
+    flex-wrap: wrap;
   }
 
-  .ssp-btn {
+  .ssp-modal-footer .ssp-btn {
     width: 100%;
   }
 

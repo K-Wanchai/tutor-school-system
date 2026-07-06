@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { NavLink } from 'react-router-dom';
 import api from '../../../shared/services/api';
 import useInstitutionProfile from '../../../shared/hooks/useInstitutionProfile';
+import { getMyCourses } from '../services/tutorCourseService';
 import './TutorSidebar.css';
 
 const NAV_ITEMS = [
@@ -11,6 +12,15 @@ const NAV_ITEMS = [
     icon: (
       <svg viewBox="0 0 20 20" fill="currentColor" width="18" height="18">
         <path d="M3 4a1 1 0 011-1h12a1 1 0 011 1v2a1 1 0 01-1 1H4a1 1 0 01-1-1V4zM3 10a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H4a1 1 0 01-1-1v-6zM14 9a1 1 0 00-1 1v6a1 1 0 001 1h2a1 1 0 001-1v-6a1 1 0 00-1-1h-2z" />
+      </svg>
+    ),
+  },
+  {
+    label: 'คอร์สมาใหม่',
+    path: '/tutor/new-courses',
+    icon: (
+      <svg viewBox="0 0 20 20" fill="currentColor" width="18" height="18">
+        <path d="M10 2a1 1 0 011 1v6h6a1 1 0 110 2h-6v6a1 1 0 11-2 0v-6H3a1 1 0 110-2h6V3a1 1 0 011-1z" />
       </svg>
     ),
   },
@@ -146,6 +156,7 @@ function countUnreadNotifications(data) {
 
 export default function TutorSidebar({ isOpen, onClose }) {
   const [unreadCount, setUnreadCount] = useState(0);
+  const [newCoursesCount, setNewCoursesCount] = useState(0);
   const profile = useInstitutionProfile();
 
   useEffect(() => {
@@ -153,7 +164,7 @@ export default function TutorSidebar({ isOpen, onClose }) {
 
     const loadUnreadNotifications = async () => {
       try {
-        const res = await api.get('/notifications');
+        const res = await api.get('/notifications/me');
 
         if (res.data?.success === false) {
           throw new Error(res.data?.message || 'โหลดการแจ้งเตือนไม่สำเร็จ');
@@ -175,6 +186,37 @@ export default function TutorSidebar({ isOpen, onClose }) {
     loadUnreadNotifications();
 
     const timer = setInterval(loadUnreadNotifications, 60000);
+
+    return () => {
+      active = false;
+      clearInterval(timer);
+    };
+  }, []);
+
+  // นับคอร์สใหม่ที่รอติวเตอร์ตอบรับ (DRAFT) ไว้โชว์เป็น badge บนเมนู "คอร์สของฉัน"
+  useEffect(() => {
+    let active = true;
+
+    const loadNewCourses = async () => {
+      try {
+        const courses = await getMyCourses();
+        const count = Array.isArray(courses)
+          ? courses.filter((c) => c.status === 'DRAFT').length
+          : 0;
+
+        if (active) {
+          setNewCoursesCount(count);
+        }
+      } catch {
+        if (active) {
+          setNewCoursesCount(0);
+        }
+      }
+    };
+
+    loadNewCourses();
+
+    const timer = setInterval(loadNewCourses, 60000);
 
     return () => {
       active = false;
@@ -268,6 +310,11 @@ export default function TutorSidebar({ isOpen, onClose }) {
                 >
                   <span className="tutor-sidebar-nav-icon">{item.icon}</span>
                   <span className="tutor-sidebar-nav-label">{item.label}</span>
+                  {item.path === '/tutor/new-courses' && newCoursesCount > 0 && (
+                    <span className="tutor-sidebar-nav-badge">
+                      {newCoursesCount > 99 ? '99+' : newCoursesCount}
+                    </span>
+                  )}
                 </NavLink>
               </li>
             ))}

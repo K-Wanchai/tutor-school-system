@@ -3,6 +3,7 @@ package com.tutorschool.backend.service.impl;
 import com.tutorschool.backend.dto.request.CancelCourseScheduleRequest;
 import com.tutorschool.backend.dto.request.CreateCourseScheduleRequest;
 import com.tutorschool.backend.dto.request.CreateNotificationRequest;
+import com.tutorschool.backend.dto.request.GenerateCourseScheduleRequest;
 import com.tutorschool.backend.dto.request.UpdateCourseScheduleRequest;
 import com.tutorschool.backend.dto.response.CourseScheduleResponse;
 import com.tutorschool.backend.entity.*;
@@ -11,17 +12,24 @@ import com.tutorschool.backend.mapper.CourseScheduleMapper;
 import com.tutorschool.backend.repository.*;
 import com.tutorschool.backend.service.CourseScheduleService;
 import com.tutorschool.backend.service.NotificationService;
+import com.tutorschool.backend.util.ScheduleDaysParser;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.tutorschool.backend.dto.response.TutorAvailabilityResponse;
+import java.time.Duration;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 @Slf4j
 @Service
@@ -98,7 +106,92 @@ public class CourseScheduleServiceImpl implements CourseScheduleService {
         return courseScheduleMapper.toResponse(schedule);
     }
 
+    /**
+     * Generates one CourseSchedule per CourseLesson (in lessonOrder), walking forward day-by-day
+     * from course.courseStartDate and matching against the recurring weekly pattern in
+     * course.scheduleDays (e.g. "MON:10:00-15:00,WED:15:00-19:00"). Stops once every lesson has
+     * a session. Refuses to run if the course already has schedules, since there's no
+     * partial-regeneration semantics — cancel/delete existing ones first.
+     */
     @Override
+    @Transactional
+    public List<CourseScheduleResponse> generateSchedulesFromCoursePattern(
+            Long courseId, GenerateCourseScheduleRequest request, Long currentUserId) {
+        User currentUser = userRepository.findById(currentUserId)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+
+        Course course = courseRepository.findById(courseId)
+                .orElseThrow(() -> new ResourceNotFoundException("Course not found with id: " + courseId));
+
+        Tutor Tutor = TutorRepository.findByUserId(currentUserId)
+                .orElseThrow(() -> new ResourceNotFoundException("Tutor profile not found"));
+
+        if (currentUser.getRole() == Role.TUTOR && !course.getTutor().getId().equals(Tutor.getId())) {
+            throw new UnauthorizedScheduleAccessException("You can only generate schedules for your own courses");
+        }
+
+        validateLocationAndLink(request.getScheduleType(), request.getLocation(), request.getMeetingLink());
+
+        Map<String, LocalTime[]> daySlots = ScheduleDaysParser.parseSlots(course.getScheduleDays());
+        if (daySlots.isEmpty()) {
+            throw new InvalidScheduleTimeException(
+                    "Course has no weekly schedule pattern (scheduleDays) to generate from");
+        }
+
+        List<CourseLesson> lessons = courseLessonRepository.findByCourseIdOrderByLessonOrderAsc(courseId);
+        if (lessons.isEmpty()) {
+            throw new InvalidScheduleTimeException("Course has no lessons to generate schedules for");
+        }
+
+        if (!courseScheduleRepository.findByCourseIdOrderByScheduleDateAscStartTimeAsc(courseId).isEmpty()) {
+            throw new InvalidScheduleTimeException(
+                    "Course schedules already exist for this course — cancel or delete them before regenerating");
+        }
+
+        List<CourseSchedule> created = new ArrayList<>();
+        LocalDate cursor = course.getCourseStartDate();
+        int lessonIndex = 0;
+        int scanned = 0;
+        int safetyLimitDays = 3650; // 10 years — guards against an unmatched pattern looping forever
+
+        while (lessonIndex < lessons.size() && scanned < safetyLimitDays) {
+            LocalTime[] slot = daySlots.get(ScheduleDaysParser.toDayCode(cursor.getDayOfWeek()));
+
+            if (slot != null) {
+                CourseLesson lesson = lessons.get(lessonIndex);
+
+                CourseSchedule schedule = CourseSchedule.builder()
+                        .course(course)
+                        .lesson(lesson)
+                        .tutor(course.getTutor())
+                        .title(lesson.getLessonTitle())
+                        .description(lesson.getLessonContent())
+                        .scheduleDate(cursor)
+                        .startTime(slot[0])
+                        .endTime(slot[1])
+                        .location(request.getLocation())
+                        .meetingLink(request.getMeetingLink())
+                        .scheduleType(request.getScheduleType())
+                        .status(ScheduleStatus.SCHEDULED)
+                        .build();
+
+                schedule = courseScheduleRepository.save(schedule);
+                schedule.setScheduleCode("SCH-" + String.format("%08d", schedule.getId()));
+                schedule = courseScheduleRepository.save(schedule);
+
+                created.add(schedule);
+                lessonIndex++;
+            }
+
+            cursor = cursor.plusDays(1);
+            scanned++;
+        }
+
+        return created.stream().map(courseScheduleMapper::toResponse).toList();
+    }
+
+    @Override
+    @Transactional(readOnly = true)
     public List<CourseScheduleResponse> getAllSchedules() {
         return courseScheduleRepository.findAll()
                 .stream()
@@ -107,6 +200,7 @@ public class CourseScheduleServiceImpl implements CourseScheduleService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public CourseScheduleResponse getScheduleById(Long id) {
         CourseSchedule schedule = courseScheduleRepository.findById(id)
                 .orElseThrow(() -> new CourseScheduleNotFoundException("Course schedule not found with id: " + id));
@@ -114,6 +208,7 @@ public class CourseScheduleServiceImpl implements CourseScheduleService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public List<CourseScheduleResponse> getSchedulesByCourseId(Long courseId) {
         if (!courseRepository.existsById(courseId)) {
             throw new ResourceNotFoundException("Course not found with id: " + courseId);
@@ -125,23 +220,120 @@ public class CourseScheduleServiceImpl implements CourseScheduleService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public List<CourseScheduleResponse> getMySchedulesAsStudent(Long studentUserId) {
         Student student = studentRepository.findByUserId(studentUserId)
                 .orElseThrow(() -> new ResourceNotFoundException("Student profile not found"));
-        return courseScheduleRepository.findByStudentEnrollment(student.getId())
-                .stream()
-                .map(courseScheduleMapper::toResponse)
+
+        List<CourseSchedule> realSchedules = courseScheduleRepository.findByStudentEnrollment(student.getId());
+
+        Map<Long, Set<LocalDate>> coveredDatesByCourse = new HashMap<>();
+        for (CourseSchedule cs : realSchedules) {
+            coveredDatesByCourse
+                    .computeIfAbsent(cs.getCourse().getId(), k -> new HashSet<>())
+                    .add(cs.getScheduleDate());
+        }
+
+        List<CourseScheduleResponse> responses = new ArrayList<>(
+                realSchedules.stream().map(courseScheduleMapper::toResponse).toList());
+
+        List<Enrollment> enrolledCourses = enrollmentRepository.findByStudentId(student.getId()).stream()
+                .filter(e -> e.getStatus() == EnrollmentStatus.APPROVED || e.getStatus() == EnrollmentStatus.COMPLETED)
                 .toList();
+
+        for (Enrollment enrollment : enrolledCourses) {
+            Course course = enrollment.getCourse();
+            Set<LocalDate> covered = coveredDatesByCourse.getOrDefault(course.getId(), Set.of());
+            responses.addAll(buildVirtualSchedulesFromCoursePattern(course, covered));
+        }
+
+        responses.sort(Comparator.comparing(CourseScheduleResponse::getScheduleDate)
+                .thenComparing(CourseScheduleResponse::getStartTime));
+
+        return responses;
+    }
+
+    /**
+     * Derives calendar-real class occurrences directly from Course.scheduleDays +
+     * courseStartDate for a student's timetable, without requiring an admin to have manually
+     * created CourseSchedule rows first. Recurs weekly until the sum of session durations
+     * reaches course.totalHours. Dates that already have a real CourseSchedule row are skipped
+     * here so an admin-created/cancelled entry always takes precedence.
+     */
+    private List<CourseScheduleResponse> buildVirtualSchedulesFromCoursePattern(
+            Course course, Set<LocalDate> excludeDates) {
+        Map<String, LocalTime[]> daySlots = ScheduleDaysParser.parseSlots(course.getScheduleDays());
+        if (daySlots.isEmpty() || course.getCourseStartDate() == null || course.getTotalHours() == null) {
+            return List.of();
+        }
+
+        List<CourseScheduleResponse> virtualSchedules = new ArrayList<>();
+        LocalDate cursor = course.getCourseStartDate();
+        long targetMinutes = course.getTotalHours() * 60L;
+        long cumulativeMinutes = 0;
+        int scanned = 0;
+        int safetyLimitDays = 3650; // 10 years — guards against an unmatched pattern looping forever
+
+        while (cumulativeMinutes < targetMinutes && scanned < safetyLimitDays) {
+            LocalTime[] slot = daySlots.get(ScheduleDaysParser.toDayCode(cursor.getDayOfWeek()));
+
+            if (slot != null) {
+                if (!excludeDates.contains(cursor)) {
+                    virtualSchedules.add(CourseScheduleResponse.builder()
+                            .courseId(course.getId())
+                            .courseName(course.getCourseName())
+                            .scheduleCode("VIRTUAL-" + course.getId() + "-" + cursor)
+                            .tutorId(course.getTutor().getId())
+                            .teacherName(course.getTutor().getFirstName() + " " + course.getTutor().getLastName())
+                            .title(course.getCourseName())
+                            .scheduleDate(cursor)
+                            .startTime(slot[0])
+                            .endTime(slot[1])
+                            .status(ScheduleStatus.SCHEDULED)
+                            .build());
+                }
+                cumulativeMinutes += Duration.between(slot[0], slot[1]).toMinutes();
+            }
+
+            cursor = cursor.plusDays(1);
+            scanned++;
+        }
+
+        return virtualSchedules;
     }
 
     @Override
+    @Transactional(readOnly = true)
     public List<CourseScheduleResponse> getMySchedulesAsTeacher(Long teacherUserId) {
         Tutor Tutor = TutorRepository.findByUserId(teacherUserId)
                 .orElseThrow(() -> new ResourceNotFoundException("Tutor profile not found"));
-        return courseScheduleRepository.findByTutorIdOrderByScheduleDateAscStartTimeAsc(Tutor.getId())
-                .stream()
-                .map(courseScheduleMapper::toResponse)
+
+        List<CourseSchedule> realSchedules =
+                courseScheduleRepository.findByTutorIdOrderByScheduleDateAscStartTimeAsc(Tutor.getId());
+
+        Map<Long, Set<LocalDate>> coveredDatesByCourse = new HashMap<>();
+        for (CourseSchedule cs : realSchedules) {
+            coveredDatesByCourse
+                    .computeIfAbsent(cs.getCourse().getId(), k -> new HashSet<>())
+                    .add(cs.getScheduleDate());
+        }
+
+        List<CourseScheduleResponse> responses = new ArrayList<>(
+                realSchedules.stream().map(courseScheduleMapper::toResponse).toList());
+
+        List<Course> ownCourses = courseRepository.findByTutorId(Tutor.getId()).stream()
+                .filter(c -> c.getStatus() != CourseStatus.CANCELLED && c.getStatus() != CourseStatus.DRAFT)
                 .toList();
+
+        for (Course course : ownCourses) {
+            Set<LocalDate> covered = coveredDatesByCourse.getOrDefault(course.getId(), Set.of());
+            responses.addAll(buildVirtualSchedulesFromCoursePattern(course, covered));
+        }
+
+        responses.sort(Comparator.comparing(CourseScheduleResponse::getScheduleDate)
+                .thenComparing(CourseScheduleResponse::getStartTime));
+
+        return responses;
     }
 
     @Override
@@ -336,6 +528,7 @@ public class CourseScheduleServiceImpl implements CourseScheduleService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public TutorAvailabilityResponse getTutorAvailability(Long tutorId, LocalDate date) {
         Tutor tutor = TutorRepository.findById(tutorId)
                 .orElseThrow(() -> new ResourceNotFoundException("Tutor not found with id: " + tutorId));

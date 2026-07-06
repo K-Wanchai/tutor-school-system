@@ -4,6 +4,7 @@ import com.tutorschool.backend.dto.request.*;
 import com.tutorschool.backend.dto.request.ConfirmEnrollmentRequest;
 import com.tutorschool.backend.dto.response.EnrollmentResponse;
 import com.tutorschool.backend.entity.*;
+import com.tutorschool.backend.exception.CourseScheduleConflictException;
 import com.tutorschool.backend.exception.DuplicateResourceException;
 import com.tutorschool.backend.exception.ResourceNotFoundException;
 import com.tutorschool.backend.mapper.EnrollmentMapper;
@@ -11,6 +12,7 @@ import com.tutorschool.backend.repository.CourseRepository;
 import com.tutorschool.backend.repository.EnrollmentRepository;
 import com.tutorschool.backend.repository.StudentRepository;
 import com.tutorschool.backend.service.EnrollmentService;
+import com.tutorschool.backend.util.ScheduleDaysParser;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -18,7 +20,9 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.util.List;
+import java.util.Map;
 
 @Service
 @RequiredArgsConstructor
@@ -120,6 +124,8 @@ public class EnrollmentServiceImpl implements EnrollmentService {
         if (enrollmentRepository.existsByStudentIdAndCourseIdAndStatusNot(studentId, request.getCourseId(), EnrollmentStatus.CANCELLED)) {
             throw new DuplicateResourceException("Student is already enrolled in this course");
         }
+
+        validateNoScheduleConflict(studentId, course);
 
         // Remove previous cancelled record (unique constraint)
         enrollmentRepository.findByStudentIdAndCourseId(studentId, request.getCourseId())
@@ -259,6 +265,51 @@ public class EnrollmentServiceImpl implements EnrollmentService {
         if (enrollmentRepository.existsByStudentIdAndCourseIdAndStatusNot(studentId, courseId, EnrollmentStatus.CANCELLED)) {
             throw new DuplicateResourceException("Student is already enrolled in this course");
         }
+
+        validateNoScheduleConflict(studentId, course);
         // Seat count is NOT checked here — seats are reserved at payment confirmation time
+    }
+
+    /**
+     * Course.scheduleDays packs per-day time ranges as "MON:10:00-15:00,WED:15:00-19:00"
+     * (scheduleStartTime/scheduleEndTime on Course are always null in practice — the admin UI
+     * only ever writes times into scheduleDays). Entries without a time range (legacy "MON" only)
+     * are skipped since there's nothing to compare.
+     */
+    private void validateNoScheduleConflict(Long studentId, Course newCourse) {
+        Map<String, LocalTime[]> newSlots = ScheduleDaysParser.parseSlots(newCourse.getScheduleDays());
+
+        if (newSlots.isEmpty()) {
+            return;
+        }
+
+        List<Enrollment> approvedEnrollments =
+                enrollmentRepository.findByStudentIdAndStatus(studentId, EnrollmentStatus.APPROVED);
+
+        for (Enrollment existing : approvedEnrollments) {
+            Course existingCourse = existing.getCourse();
+            if (existingCourse.getId().equals(newCourse.getId())) {
+                continue;
+            }
+
+            Map<String, LocalTime[]> existingSlots = ScheduleDaysParser.parseSlots(existingCourse.getScheduleDays());
+
+            for (Map.Entry<String, LocalTime[]> entry : newSlots.entrySet()) {
+                LocalTime[] existingRange = existingSlots.get(entry.getKey());
+                if (existingRange == null) {
+                    continue;
+                }
+
+                LocalTime newStart = entry.getValue()[0];
+                LocalTime newEnd = entry.getValue()[1];
+                LocalTime existingStart = existingRange[0];
+                LocalTime existingEnd = existingRange[1];
+
+                if (newStart.isBefore(existingEnd) && existingStart.isBefore(newEnd)) {
+                    throw new CourseScheduleConflictException(
+                            "ตารางเรียนของคอร์สนี้ชนกับคอร์สที่คุณลงทะเบียนไว้แล้ว: " + existingCourse.getCourseName());
+                }
+            }
+        }
     }
 }

@@ -22,4 +22,7 @@ public class CourseTestRequest {
     @NotNull(message = "Test order is required")
     @Min(value = 1, message = "Test order must be at least 1")
     private Integer testOrder;
+
+    // ผูกหัวข้อสอบกับบทเรียน (Course.lessons[].lessonOrder) — ไม่บังคับ เผื่อกรณีสอบไม่ผูกกับบทใดบทหนึ่ง
+    private Integer lessonOrder;
 }
