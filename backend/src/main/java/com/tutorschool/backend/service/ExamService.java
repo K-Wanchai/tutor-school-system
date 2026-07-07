@@ -21,6 +21,13 @@ public interface ExamService {
     // Student view — ไม่มีเฉลย
     List<ExamResponse> getOpenExamsByCourse(Long courseId);
 
+    // ตารางสอบ
+    List<ExamResponse> getMyExamsAsStudent(Long studentUserId);
+    List<ExamResponse> getMyExamsAsTutor(String teacherEmail);
+
+    // เรียกโดย ExamScheduler — เปิด/ปิดข้อสอบอัตโนมัติตาม startTime/endTime ที่ตั้งไว้
+    void autoTransitionExams();
+
     // Question management
     ExamQuestionResponse addQuestion(Long examId, CreateExamQuestionRequest request, String teacherEmail);
     ExamQuestionResponse updateQuestion(Long questionId, UpdateExamQuestionRequest request, String teacherEmail);

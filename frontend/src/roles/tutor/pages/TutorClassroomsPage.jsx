@@ -14,6 +14,10 @@ export default function TutorClassroomsPage() {
   const [status, setStatus] = useState('ALL');
   const [editingTest, setEditingTest] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [openingSession, setOpeningSession] = useState(null);
+  const [meetingLinkInput, setMeetingLinkInput] = useState('');
+  const [openError, setOpenError] = useState('');
+  const [opening, setOpening] = useState(false);
 
   useEffect(() => {
     loadClassroomPage();
@@ -53,13 +57,29 @@ export default function TutorClassroomsPage() {
     }
   }
 
-  async function handleOpen(sessionId) {
+  function startOpenSession(session) {
+    setOpeningSession(session);
+    setMeetingLinkInput('');
+    setOpenError('');
+  }
+
+  async function confirmOpenSession(e) {
+    e.preventDefault();
+    if (!meetingLinkInput.trim()) {
+      setOpenError('กรุณาใส่ลิงก์ห้องเรียน (Zoom / Google Meet ฯลฯ) ก่อนเปิดห้อง');
+      return;
+    }
+    setOpening(true);
+    setOpenError('');
     try {
-      await openClassroomSession(sessionId);
+      await openClassroomSession(openingSession.id, meetingLinkInput.trim());
+      setOpeningSession(null);
       await loadClassroomPage();
     } catch (error) {
-      alert('เปิดห้องเรียนไม่สำเร็จ');
+      setOpenError(error.response?.data?.message || 'เปิดห้องเรียนไม่สำเร็จ');
       console.error(error);
+    } finally {
+      setOpening(false);
     }
   }
 
@@ -216,7 +236,7 @@ export default function TutorClassroomsPage() {
                             <button
                               className="open"
                               disabled={['OPEN', 'ACTIVE', 'IN_PROGRESS'].includes(session.status)}
-                              onClick={() => handleOpen(session.id)}
+                              onClick={() => startOpenSession(session)}
                             >
                               เปิด
                             </button>
@@ -308,6 +328,42 @@ export default function TutorClassroomsPage() {
           test={editingTest}
           onClose={handleCloseTestEditor}
         />
+      )}
+
+      {openingSession && (
+        <div className="tutor-classroom-modal-backdrop" onClick={() => setOpeningSession(null)}>
+          <div className="tutor-classroom-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="tutor-classroom-modal-header">
+              <h2>เปิดห้องเรียน — {openingSession.sessionCode || `SESSION-${openingSession.id}`}</h2>
+              <button type="button" onClick={() => setOpeningSession(null)}>✕</button>
+            </div>
+
+            <form className="tutor-classroom-modal-form" onSubmit={confirmOpenSession}>
+              <label>
+                ลิงก์ห้องเรียน (Zoom / Google Meet ฯลฯ) *
+                <input
+                  type="url"
+                  placeholder="https://zoom.us/j/..."
+                  value={meetingLinkInput}
+                  onChange={(e) => setMeetingLinkInput(e.target.value)}
+                  autoFocus
+                />
+              </label>
+              <p className="tutor-classroom-modal-hint">
+                นักเรียนจะเห็นปุ่ม "กดเพื่อเข้าเรียน" ทันทีที่ยืนยันเปิดห้อง กดแล้วจะบันทึกเช็คชื่อและพาไปยังลิงก์นี้โดยตรง
+              </p>
+
+              {openError && <div className="tutor-classroom-modal-error">{openError}</div>}
+
+              <div className="tutor-classroom-modal-actions">
+                <button type="button" onClick={() => setOpeningSession(null)}>ยกเลิก</button>
+                <button type="submit" className="primary" disabled={opening}>
+                  {opening ? 'กำลังเปิด...' : 'ยืนยันเปิดห้องเรียน'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
       )}
     </div>
   );

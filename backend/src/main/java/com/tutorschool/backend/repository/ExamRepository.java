@@ -5,6 +5,7 @@ import com.tutorschool.backend.entity.ExamStatus;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -22,4 +23,11 @@ public interface ExamRepository extends JpaRepository<Exam, Long> {
     Optional<Exam> findByExamCode(String examCode);
 
     boolean existsByExamCode(String examCode);
+
+    List<Exam> findByCourseIdIn(List<Long> courseIds);
+
+    // ใช้โดย ExamScheduler — หา DRAFT ที่ถึงเวลาเปิดแล้ว / OPEN ที่ถึงเวลาปิดแล้ว
+    List<Exam> findByStatusAndStartTimeLessThanEqual(ExamStatus status, LocalDateTime time);
+
+    List<Exam> findByStatusAndEndTimeLessThanEqual(ExamStatus status, LocalDateTime time);
 }

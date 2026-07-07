@@ -13,6 +13,7 @@ import org.springframework.transaction.annotation.Transactional;
 import com.tutorschool.backend.dto.request.CreateClassroomSessionRequest;
 import com.tutorschool.backend.dto.request.JoinClassroomSessionRequest;
 import com.tutorschool.backend.dto.request.LeaveClassroomSessionRequest;
+import com.tutorschool.backend.dto.request.OpenClassroomSessionRequest;
 import com.tutorschool.backend.dto.response.AttendanceRecordResponse;
 import com.tutorschool.backend.dto.response.ClassroomSessionResponse;
 import com.tutorschool.backend.dto.response.JoinClassroomSessionResponse;
@@ -128,6 +129,15 @@ public class ClassroomSessionServiceImpl implements ClassroomSessionService {
 
     @Override
     @Transactional(readOnly = true)
+    public List<ClassroomSessionResponse> getMySessionsAsStudent(Authentication auth) {
+        Student student = getStudentFromAuth(auth);
+        return classroomSessionRepository.findByStudentEnrollment(student.getId()).stream()
+                .map(classroomSessionMapper::toResponse)
+                .toList();
+    }
+
+    @Override
+    @Transactional(readOnly = true)
     public ClassroomSessionResponse getSessionById(Long id) {
         ClassroomSession session = classroomSessionRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("ClassroomSession", id));
@@ -147,12 +157,13 @@ public class ClassroomSessionServiceImpl implements ClassroomSessionService {
 
     @Override
     @Transactional
-    public ClassroomSessionResponse openSession(Long id, Authentication auth) {
+    public ClassroomSessionResponse openSession(Long id, OpenClassroomSessionRequest request, Authentication auth) {
         ClassroomSession session = classroomSessionRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("ClassroomSession", id));
 
         checkTeacherOwnership(session, auth);
 
+        session.setMeetingLink(request.getMeetingLink());
         session.setStatus(ClassroomSessionStatus.OPEN);
         return classroomSessionMapper.toResponse(classroomSessionRepository.save(session));
     }
@@ -289,6 +300,7 @@ public class ClassroomSessionServiceImpl implements ClassroomSessionService {
                 .firstJoinAt(record.getFirstJoinAt())
                 .lateMinutes(record.getLateMinutes())
                 .status(record.getStatus())
+                .meetingLink(session.getMeetingLink())
                 .message(message)
                 .isNewRecord(isNew)
                 .build();

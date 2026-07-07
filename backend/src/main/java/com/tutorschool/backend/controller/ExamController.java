@@ -6,12 +6,14 @@ import com.tutorschool.backend.dto.request.UpdateExamRequest;
 import com.tutorschool.backend.dto.response.ApiResponse;
 import com.tutorschool.backend.dto.response.ExamQuestionResponse;
 import com.tutorschool.backend.dto.response.ExamResponse;
+import com.tutorschool.backend.entity.User;
 import com.tutorschool.backend.service.ExamService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.security.Principal;
@@ -65,6 +67,23 @@ public class ExamController {
     @PreAuthorize("hasRole('STUDENT')")
     public ResponseEntity<ApiResponse<List<ExamResponse>>> getOpenExamsByCourse(@PathVariable Long courseId) {
         return ResponseEntity.ok(ApiResponse.success("Open exams retrieved", examService.getOpenExamsByCourse(courseId)));
+    }
+
+    // ตารางสอบของนักเรียน — รวมทุกคอร์สที่ลงทะเบียนอนุมัติ/เรียนจบแล้ว ไม่ส่งเนื้อหาข้อสอบมาด้วย
+    @GetMapping("/student/me")
+    @PreAuthorize("hasRole('STUDENT')")
+    public ResponseEntity<ApiResponse<List<ExamResponse>>> getMyExamsAsStudent(
+            @AuthenticationPrincipal User currentUser) {
+        return ResponseEntity.ok(
+                ApiResponse.success("My exam schedule retrieved", examService.getMyExamsAsStudent(currentUser.getId())));
+    }
+
+    // ตารางสอบของติวเตอร์ — ข้อสอบทั้งหมดของคอร์สตัวเอง
+    @GetMapping("/tutor/me")
+    @PreAuthorize("hasRole('TUTOR')")
+    public ResponseEntity<ApiResponse<List<ExamResponse>>> getMyExamsAsTutor(Principal principal) {
+        return ResponseEntity.ok(
+                ApiResponse.success("My exam schedule retrieved", examService.getMyExamsAsTutor(principal.getName())));
     }
 
     @PutMapping("/{id}")

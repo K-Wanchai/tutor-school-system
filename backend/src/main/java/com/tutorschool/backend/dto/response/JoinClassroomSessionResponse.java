@@ -23,6 +23,9 @@ public class JoinClassroomSessionResponse {
     private Integer lateMinutes;
     private AttendanceStatus status;
 
+    // ลิงก์ห้องเรียนของ session นี้ — ฝั่ง frontend ใช้ redirect ทันทีหลังกดเข้าเรียนสำเร็จ
+    private String meetingLink;
+
     private String message;
     private Boolean isNewRecord;
 }
