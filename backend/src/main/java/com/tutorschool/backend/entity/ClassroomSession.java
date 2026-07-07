@@ -62,6 +62,10 @@ public class ClassroomSession {
     @Column(name = "join_code", nullable = false, length = 100)
     private String joinCode;
 
+    // ลิงก์ห้องเรียนของแพลตฟอร์มภายนอก (Zoom/Google Meet ฯลฯ) — ติวเตอร์กรอกตอนเปิดห้องแต่ละครั้ง
+    @Column(name = "meeting_link", length = 500)
+    private String meetingLink;
+
     @Column(name = "is_camera_required", nullable = false)
     @Builder.Default
     private Boolean isCameraRequired = false;

@@ -256,6 +256,115 @@
   color: #dc2626;
 }
 
+/* Open-session modal (meeting link) */
+.tutor-classroom-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  background: rgba(15, 23, 42, 0.5);
+}
+
+.tutor-classroom-modal {
+  width: min(480px, 100%);
+  background: white;
+  border-radius: 18px;
+  padding: 22px;
+}
+
+.tutor-classroom-modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.tutor-classroom-modal-header h2 {
+  margin: 0;
+  font-size: 16px;
+  color: #111827;
+}
+
+.tutor-classroom-modal-header button {
+  border: none;
+  background: #f3f4f6;
+  border-radius: 8px;
+  width: 30px;
+  height: 30px;
+  cursor: pointer;
+}
+
+.tutor-classroom-modal-form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.tutor-classroom-modal-form label {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 700;
+  color: #374151;
+}
+
+.tutor-classroom-modal-form input {
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  padding: 10px 12px;
+  font-size: 13px;
+  font-family: inherit;
+  font-weight: 400;
+}
+
+.tutor-classroom-modal-hint {
+  margin: 0;
+  color: #9ca3af;
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.tutor-classroom-modal-error {
+  background: #fef2f2;
+  color: #991b1b;
+  border-radius: 8px;
+  padding: 10px 12px;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.tutor-classroom-modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+.tutor-classroom-modal-actions button {
+  border: none;
+  border-radius: 10px;
+  padding: 9px 16px;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 800;
+  cursor: pointer;
+  background: #f3f4f6;
+  color: #374151;
+}
+
+.tutor-classroom-modal-actions .primary {
+  background: #059669;
+  color: white;
+}
+
+.tutor-classroom-modal-actions .primary:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
 .tutor-classroom-exam-timeline {
   display: flex;
   flex-direction: column;

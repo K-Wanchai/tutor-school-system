@@ -47,6 +47,19 @@ const NAV_ITEMS = [
     ),
   },
   {
+    label: 'ตารางสอบ',
+    path: '/tutor/exam-schedule',
+    icon: (
+      <svg viewBox="0 0 20 20" fill="currentColor" width="18" height="18">
+        <path
+          fillRule="evenodd"
+          d="M4 4a2 2 0 012-2h5.586a1 1 0 01.707.293l3.414 3.414a1 1 0 01.293.707V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm7 8a1 1 0 10-2 0v.01a1 1 0 102 0V12zm-1-4a1 1 0 011 1v1a1 1 0 11-2 0V9a1 1 0 011-1z"
+          clipRule="evenodd"
+        />
+      </svg>
+    ),
+  },
+  {
     label: 'การเข้าเรียน/คะแนนสอบ',
     path: '/tutor/attendance-scores',
     icon: (
@@ -67,6 +80,15 @@ const NAV_ITEMS = [
           d="M4 4a2 2 0 012-2h8a2 2 0 012 2v12a1 1 0 110 2h-3a1 1 0 01-1-1v-2a1 1 0 00-1-1H9a1 1 0 00-1 1v2a1 1 0 01-1 1H4a1 1 0 110-2V4zm3 1h2v2H7V5zm2 4H7v2h2V9zm2-4h2v2h-2V5zm2 4h-2v2h2V9z"
           clipRule="evenodd"
         />
+      </svg>
+    ),
+  },
+  {
+    label: 'คะแนนรวมรายคอร์ส',
+    path: '/tutor/course-scores',
+    icon: (
+      <svg viewBox="0 0 20 20" fill="currentColor" width="18" height="18">
+        <path d="M3 3a1 1 0 000 2v8a2 2 0 002 2h2.586l-1.293 1.293a1 1 0 101.414 1.414L10 15.414l2.293 2.293a1 1 0 001.414-1.414L12.414 15H15a2 2 0 002-2V5a1 1 0 100-2H3zm11 4a1 1 0 10-2 0v4a1 1 0 102 0V7zm-3 1a1 1 0 10-2 0v3a1 1 0 102 0V8zM8 9a1 1 0 00-2 0v2a1 1 0 102 0V9z" />
       </svg>
     ),
   },

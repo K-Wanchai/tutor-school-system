@@ -116,7 +116,8 @@ function mapSession(raw) {
     attendanceStatus: raw?.attendanceStatus ?? raw?.studentAttendanceStatus ?? 'NOT_JOINED',
     joinedAt: raw?.joinedAt ?? raw?.joinTime ?? null,
     leftAt: raw?.leftAt ?? raw?.exitTime ?? null,
-    meetingUrl: raw?.meetingUrl ?? raw?.onlineUrl ?? null,
+    meetingUrl: raw?.meetingUrl ?? raw?.onlineUrl ?? raw?.meetingLink ?? null,
+    joinCode: raw?.joinCode ?? null,
     location: raw?.location ?? raw?.roomName ?? '-',
     note: raw?.note ?? null,
     createdAt: raw?.createdAt ?? null,
@@ -328,10 +329,11 @@ function StudentAttendancePage() {
 
     try {
       setJoining(true);
-      await joinClassroomByCode(code);
-      showToast('success', 'บันทึกการเข้าเรียนสำเร็จ');
+      const result = await joinClassroomByCode(code, sessions);
+      showToast('success', 'บันทึกการเข้าเรียนสำเร็จ กำลังพาไปยังห้องเรียน...');
       setSessionCode('');
       await loadData();
+      redirectToMeeting(result);
     } catch (err) {
       showToast('error', getErrorMessage(err));
     } finally {
@@ -339,24 +341,30 @@ function StudentAttendancePage() {
     }
   };
 
+  // กดครั้งเดียว: บันทึกเช็คชื่อ + พาไปยังลิงก์ห้องเรียนทันที (ไม่ต้องกดลิงก์แยกอีกปุ่ม)
   const handleJoinSession = async (session) => {
+    if (!session.id) {
+      showToast('error', 'ไม่พบข้อมูลสำหรับเข้าเรียน');
+      return;
+    }
+
     try {
       setJoining(true);
-
-      if (session.id) {
-        await joinClassroomSession(session.id);
-      } else if (session.sessionCode && session.sessionCode !== '-') {
-        await joinClassroomByCode(session.sessionCode);
-      } else {
-        throw new Error('ไม่พบข้อมูลสำหรับเข้าเรียน');
-      }
-
-      showToast('success', 'บันทึกการเข้าเรียนสำเร็จ');
+      const result = await joinClassroomSession(session.id, session.joinCode);
+      showToast('success', 'บันทึกการเข้าเรียนสำเร็จ กำลังพาไปยังห้องเรียน...');
       await loadData();
+      redirectToMeeting(result, session.meetingUrl);
     } catch (err) {
       showToast('error', getErrorMessage(err));
     } finally {
       setJoining(false);
+    }
+  };
+
+  const redirectToMeeting = (joinResult, fallbackUrl) => {
+    const url = joinResult?.meetingLink || fallbackUrl;
+    if (url) {
+      window.open(url, '_blank', 'noopener,noreferrer');
     }
   };
 
@@ -657,25 +665,25 @@ function CourseAttendanceModal({
                     </div>
 
                     <div className="sap-session-actions">
-                      {session.meetingUrl && (
-                        <button
-                          type="button"
-                          className="sap-btn sap-btn-outline"
-                          onClick={() => onOpenMeeting(session.meetingUrl)}
-                        >
-                          เปิดลิงก์เรียนออนไลน์
-                        </button>
-                      )}
-
-                      {canJoinSession(session) && (
+                      {canJoinSession(session) ? (
                         <button
                           type="button"
                           className="sap-btn sap-btn-primary"
                           disabled={joining}
                           onClick={() => onJoin(session)}
                         >
-                          {joining ? 'กำลังบันทึก...' : 'เข้าเรียน'}
+                          {joining ? 'กำลังบันทึก...' : 'กดเพื่อเข้าเรียน'}
                         </button>
+                      ) : (
+                        session.meetingUrl && (
+                          <button
+                            type="button"
+                            className="sap-btn sap-btn-outline"
+                            onClick={() => onOpenMeeting(session.meetingUrl)}
+                          >
+                            เปิดลิงก์เรียนออนไลน์อีกครั้ง
+                          </button>
+                        )
                       )}
                     </div>
                   </article>

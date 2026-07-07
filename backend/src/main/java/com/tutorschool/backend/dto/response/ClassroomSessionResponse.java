@@ -30,6 +30,7 @@ public class ClassroomSessionResponse {
     private LocalDateTime endTime;
     private Integer lateThresholdMinutes;
     private String joinCode;
+    private String meetingLink;
     private Boolean isCameraRequired;
 
     private ClassroomSessionStatus status;

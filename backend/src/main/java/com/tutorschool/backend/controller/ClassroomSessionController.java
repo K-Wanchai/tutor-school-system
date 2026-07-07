@@ -3,6 +3,7 @@ package com.tutorschool.backend.controller;
 import com.tutorschool.backend.dto.request.CreateClassroomSessionRequest;
 import com.tutorschool.backend.dto.request.JoinClassroomSessionRequest;
 import com.tutorschool.backend.dto.request.LeaveClassroomSessionRequest;
+import com.tutorschool.backend.dto.request.OpenClassroomSessionRequest;
 import com.tutorschool.backend.dto.response.ApiResponse;
 import com.tutorschool.backend.dto.response.AttendanceRecordResponse;
 import com.tutorschool.backend.dto.response.ClassroomSessionResponse;
@@ -42,6 +43,13 @@ public class ClassroomSessionController {
         return ResponseEntity.ok(ApiResponse.success("Classroom sessions retrieved successfully", response));
     }
 
+    @GetMapping("/student/me")
+    @PreAuthorize("hasRole('STUDENT')")
+    public ResponseEntity<ApiResponse<List<ClassroomSessionResponse>>> getMySessionsAsStudent(Authentication auth) {
+        List<ClassroomSessionResponse> response = classroomSessionService.getMySessionsAsStudent(auth);
+        return ResponseEntity.ok(ApiResponse.success("Classroom sessions retrieved successfully", response));
+    }
+
     @GetMapping
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ApiResponse<List<ClassroomSessionResponse>>> getAllSessions() {
@@ -68,8 +76,9 @@ public class ClassroomSessionController {
     @PreAuthorize("hasAnyRole('ADMIN', 'TUTOR')")
     public ResponseEntity<ApiResponse<ClassroomSessionResponse>> openSession(
             @PathVariable Long id,
+            @Valid @RequestBody OpenClassroomSessionRequest request,
             Authentication auth) {
-        ClassroomSessionResponse response = classroomSessionService.openSession(id, auth);
+        ClassroomSessionResponse response = classroomSessionService.openSession(id, request, auth);
         return ResponseEntity.ok(ApiResponse.success("Classroom session opened successfully", response));
     }
 

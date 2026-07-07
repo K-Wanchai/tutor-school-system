@@ -26,6 +26,7 @@ public class ClassroomSessionMapper {
                 .endTime(session.getEndTime())
                 .lateThresholdMinutes(session.getLateThresholdMinutes())
                 .joinCode(session.getJoinCode())
+                .meetingLink(session.getMeetingLink())
                 .isCameraRequired(session.getIsCameraRequired())
                 .status(session.getStatus())
                 .createdAt(session.getCreatedAt())

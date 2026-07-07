@@ -38,6 +38,31 @@ public class ExamMapper {
                 .build();
     }
 
+    // สำหรับหน้า "ตารางสอบ" (ทั้งฝั่งนักเรียนและติวเตอร์) — แสดงแค่ วัน/เวลา/สถานะ ไม่ส่งเนื้อหาข้อสอบ/เฉลยมาด้วย
+    public ExamResponse toScheduleResponse(Exam exam) {
+        return ExamResponse.builder()
+                .id(exam.getId())
+                .examCode(exam.getExamCode())
+                .courseId(exam.getCourse().getId())
+                .courseName(exam.getCourse().getCourseName())
+                .lessonId(exam.getLesson() != null ? exam.getLesson().getId() : null)
+                .lessonTitle(exam.getLesson() != null ? exam.getLesson().getLessonTitle() : null)
+                .tutorId(exam.getTutor().getId())
+                .teacherName(exam.getTutor().getFirstName() + " " + exam.getTutor().getLastName())
+                .title(exam.getTitle())
+                .description(exam.getDescription())
+                .totalScore(exam.getTotalScore())
+                .passingScore(exam.getPassingScore())
+                .startTime(exam.getStartTime())
+                .endTime(exam.getEndTime())
+                .durationMinutes(exam.getDurationMinutes())
+                .status(exam.getStatus())
+                .questions(List.of())
+                .createdAt(exam.getCreatedAt())
+                .updatedAt(exam.getUpdatedAt())
+                .build();
+    }
+
     // สำหรับ Student ขณะสอบ — ซ่อนเฉลยทั้งหมด
     public StudentExamResponse toStudentResponse(Exam exam, Long submissionId) {
         return StudentExamResponse.builder()

@@ -11,9 +11,7 @@ function unwrapApiResponse(res) {
 }
 
 export async function getMyClassroomSessions() {
-  // TODO: ถ้า backend ไม่มี endpoint นี้ ให้ปรับให้ตรงกับ endpoint จริง
-  // ตัวเลือกที่เป็นไปได้: /classroom-sessions/my หรือ /course-schedules/my
-  const res = await api.get('/classroom-sessions/my');
+  const res = await api.get('/classroom-sessions/student/me');
   return unwrapApiResponse(res);
 }
 
@@ -22,25 +20,29 @@ export async function getMyAttendanceHistory() {
   return unwrapApiResponse(res);
 }
 
-export async function joinClassroomSession(sessionId) {
+export async function joinClassroomSession(sessionId, joinCode) {
   if (!sessionId) {
     throw new Error('ไม่พบรหัสห้องเรียน');
   }
 
-  // TODO: ตรวจสอบ backend ว่าใช้ POST /classroom-sessions/{id}/join จริงหรือไม่
-  const res = await api.post(`/classroom-sessions/${sessionId}/join`);
+  const res = await api.post(`/classroom-sessions/${sessionId}/join`, { joinCode });
   return unwrapApiResponse(res);
 }
 
-export async function joinClassroomByCode(sessionCode) {
+export async function joinClassroomByCode(sessionCode, allSessions) {
   if (!sessionCode) {
     throw new Error('กรุณากรอกรหัสห้องเรียน');
   }
 
-  // TODO: ถ้า backend ใช้ field ชื่ออื่น เช่น code ให้แก้ payload ตรงนี้
-  const res = await api.post('/classroom-sessions/join', {
-    sessionCode,
-  });
+  // ระบบไม่มี endpoint "join by code" แยกต่างหาก — ต้องหา session ที่ sessionCode/joinCode ตรงกันก่อน
+  // แล้วเรียก POST /classroom-sessions/{id}/join ด้วย joinCode ของ session นั้น
+  const match = (allSessions || []).find(
+    (s) => s.sessionCode === sessionCode || s.joinCode === sessionCode
+  );
 
-  return unwrapApiResponse(res);
+  if (!match) {
+    throw new Error('ไม่พบห้องเรียนที่ตรงกับรหัสนี้ หรือห้องยังไม่เปิด');
+  }
+
+  return joinClassroomSession(match.id, match.joinCode);
 }

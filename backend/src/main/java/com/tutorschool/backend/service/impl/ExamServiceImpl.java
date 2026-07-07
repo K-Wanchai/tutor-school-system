@@ -8,12 +8,16 @@ import com.tutorschool.backend.mapper.ExamMapper;
 import com.tutorschool.backend.mapper.ExamQuestionMapper;
 import com.tutorschool.backend.repository.*;
 import com.tutorschool.backend.service.ExamService;
+import com.tutorschool.backend.service.NotificationService;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class ExamServiceImpl implements ExamService {
@@ -24,6 +28,9 @@ public class ExamServiceImpl implements ExamService {
     private final CourseRepository courseRepository;
     private final CourseLessonRepository lessonRepository;
     private final TutorRepository TutorRepository;
+    private final StudentRepository studentRepository;
+    private final EnrollmentRepository enrollmentRepository;
+    private final NotificationService notificationService;
     private final ExamMapper examMapper;
     private final ExamQuestionMapper questionMapper;
 
@@ -119,6 +126,63 @@ public class ExamServiceImpl implements ExamService {
     }
 
     @Override
+    @Transactional(readOnly = true)
+    public List<ExamResponse> getMyExamsAsStudent(Long studentUserId) {
+        Student student = studentRepository.findByUserId(studentUserId)
+                .orElseThrow(() -> new ResourceNotFoundException("Student profile not found"));
+
+        List<Long> courseIds = enrollmentRepository.findByStudentId(student.getId()).stream()
+                .filter(e -> e.getStatus() == EnrollmentStatus.APPROVED || e.getStatus() == EnrollmentStatus.COMPLETED)
+                .map(e -> e.getCourse().getId())
+                .toList();
+
+        if (courseIds.isEmpty()) return List.of();
+
+        return examRepository.findByCourseIdIn(courseIds).stream()
+                .filter(e -> e.getStatus() != ExamStatus.CANCELLED)
+                .map(examMapper::toScheduleResponse)
+                .toList();
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<ExamResponse> getMyExamsAsTutor(String teacherEmail) {
+        Tutor tutor = getTeacherByEmail(teacherEmail);
+        return examRepository.findByTutorId(tutor.getId()).stream()
+                .map(examMapper::toScheduleResponse)
+                .toList();
+    }
+
+    @Override
+    @Transactional
+    public void autoTransitionExams() {
+        LocalDateTime now = LocalDateTime.now();
+
+        // DRAFT ที่ถึงเวลา startTime แล้ว และยังไม่พ้น endTime และมีคำถามอย่างน้อย 1 ข้อ → เปิดสอบให้อัตโนมัติ
+        List<Exam> draftDue = examRepository.findByStatusAndStartTimeLessThanEqual(ExamStatus.DRAFT, now);
+        for (Exam exam : draftDue) {
+            if (exam.getEndTime() != null && !exam.getEndTime().isAfter(now)) {
+                continue; // พ้นช่วงเวลาไปแล้วโดยยังไม่เคยเปิด — ปล่อยให้ติวเตอร์จัดการเอง ไม่เปิดย้อนหลัง
+            }
+            if (exam.getQuestions() == null || exam.getQuestions().isEmpty()) {
+                continue; // ยังไม่มีคำถาม ยังไม่พร้อมเปิดสอบ
+            }
+            exam.setStatus(ExamStatus.OPEN);
+            Exam saved = examRepository.save(exam);
+            notifyExamOpened(saved);
+            log.info("Auto-opened exam {} ({})", saved.getId(), saved.getTitle());
+        }
+
+        // OPEN ที่พ้น endTime แล้ว → ปิดสอบให้อัตโนมัติ
+        List<Exam> openDue = examRepository.findByStatusAndEndTimeLessThanEqual(ExamStatus.OPEN, now);
+        if (!openDue.isEmpty()) {
+            openDue.forEach(exam -> exam.setStatus(ExamStatus.CLOSED));
+            examRepository.saveAll(openDue);
+            log.info("Auto-closed {} exam(s) past their end time", openDue.size());
+        }
+    }
+
+    @Override
     @Transactional
     public ExamResponse updateExam(Long id, UpdateExamRequest request, String teacherEmail) {
         Tutor Tutor = getTeacherByEmail(teacherEmail);
@@ -169,7 +233,9 @@ public class ExamServiceImpl implements ExamService {
         }
 
         exam.setStatus(ExamStatus.OPEN);
-        return examMapper.toResponse(examRepository.save(exam));
+        Exam saved = examRepository.save(exam);
+        notifyExamOpened(saved);
+        return examMapper.toResponse(saved);
     }
 
     @Override
@@ -364,6 +430,36 @@ public class ExamServiceImpl implements ExamService {
     private void validateExamDates(java.time.LocalDateTime start, java.time.LocalDateTime end) {
         if (start != null && end != null && !start.isBefore(end)) {
             throw new IllegalStateException("Start time must be before end time");
+        }
+    }
+
+    // แจ้งเตือนนักเรียนที่ลงทะเบียน (APPROVED/COMPLETED) เมื่อข้อสอบเปิดสอบ — เรียกทั้งตอนเปิดเองและตอนระบบเปิดอัตโนมัติ
+    private void notifyExamOpened(Exam exam) {
+        List<Enrollment> enrollments = enrollmentRepository.findByCourseId(exam.getCourse().getId()).stream()
+                .filter(e -> e.getStatus() == EnrollmentStatus.APPROVED || e.getStatus() == EnrollmentStatus.COMPLETED)
+                .toList();
+
+        String subject = "เปิดสอบแล้ว: " + exam.getTitle();
+        String deadline = exam.getEndTime() != null ? "ปิดรับภายใน " + exam.getEndTime() : "";
+
+        for (Enrollment enrollment : enrollments) {
+            try {
+                CreateNotificationRequest req = new CreateNotificationRequest();
+                req.setUserId(enrollment.getStudent().getUser().getId());
+                req.setRecipientEmail(enrollment.getStudent().getUser().getEmail());
+                req.setSubject(subject);
+                req.setMessage(
+                        "คอร์ส " + exam.getCourse().getCourseName() + " เปิดสอบ \"" + exam.getTitle() + "\" แล้ว\n" +
+                        deadline + "\n\nกรุณาเข้าสู่ระบบเพื่อทำข้อสอบ"
+                );
+                req.setNotificationType(NotificationType.EXAM_OPENED);
+                req.setReferenceType(ReferenceType.EXAM);
+                req.setReferenceId(exam.getId());
+                notificationService.sendNotification(req);
+            } catch (Exception e) {
+                log.warn("Failed to notify student {} for exam {} opened: {}",
+                        enrollment.getStudent().getId(), exam.getId(), e.getMessage());
+            }
         }
     }
 

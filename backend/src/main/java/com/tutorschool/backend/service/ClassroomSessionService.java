@@ -3,6 +3,7 @@ package com.tutorschool.backend.service;
 import com.tutorschool.backend.dto.request.CreateClassroomSessionRequest;
 import com.tutorschool.backend.dto.request.JoinClassroomSessionRequest;
 import com.tutorschool.backend.dto.request.LeaveClassroomSessionRequest;
+import com.tutorschool.backend.dto.request.OpenClassroomSessionRequest;
 import com.tutorschool.backend.dto.response.AttendanceRecordResponse;
 import com.tutorschool.backend.dto.response.ClassroomSessionResponse;
 import com.tutorschool.backend.dto.response.JoinClassroomSessionResponse;
@@ -18,11 +19,13 @@ public interface ClassroomSessionService {
 
     List<ClassroomSessionResponse> getMySessionsAsTutor(Authentication auth);
 
+    List<ClassroomSessionResponse> getMySessionsAsStudent(Authentication auth);
+
     ClassroomSessionResponse getSessionById(Long id);
 
     List<ClassroomSessionResponse> getSessionsByCourseId(Long courseId);
 
-    ClassroomSessionResponse openSession(Long id, Authentication auth);
+    ClassroomSessionResponse openSession(Long id, OpenClassroomSessionRequest request, Authentication auth);
 
     ClassroomSessionResponse closeSession(Long id, Authentication auth);
 

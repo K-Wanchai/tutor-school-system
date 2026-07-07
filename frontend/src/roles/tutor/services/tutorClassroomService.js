@@ -12,8 +12,8 @@ export async function getClassroomSessions() {
   return unwrap(response);
 }
 
-export async function openClassroomSession(id) {
-  const response = await api.patch(`/classroom-sessions/${id}/open`);
+export async function openClassroomSession(id, meetingLink) {
+  const response = await api.patch(`/classroom-sessions/${id}/open`, { meetingLink });
   return unwrap(response);
 }
 
