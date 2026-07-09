@@ -1,7 +1,7 @@
 /* ===== Admin Layout ===== */
 .admin-layout {
   display: flex;
-  min-height: 100vh;
+  height: 100vh;
   background: #f5f7fb;
 }
 
@@ -10,6 +10,7 @@
   display: flex;
   flex-direction: column;
   min-width: 0;
+  min-height: 0;
   overflow: hidden;
 }
 

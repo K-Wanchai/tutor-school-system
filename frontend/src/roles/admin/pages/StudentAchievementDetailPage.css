@@ -1,0 +1,310 @@
+/* ===== Admin Student Achievement Detail Page ===== */
+
+.sad-page {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+/* ── Header ──────────────────────────────────────────────────────────── */
+
+.sad-header {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.sad-header-main { display: flex; flex-direction: column; gap: 8px; }
+
+.sad-title {
+  font-size: 24px;
+  font-weight: 800;
+  color: #111827;
+  margin: 0;
+  letter-spacing: -0.4px;
+}
+
+.sad-meta-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+
+.sad-meta-item {
+  font-size: 12.5px;
+  color: #6b7280;
+  font-weight: 500;
+  background: #f3f4f6;
+  padding: 3px 10px;
+  border-radius: 20px;
+}
+
+.sad-meta-item--primary {
+  color: #1d4ed8;
+  background: #eff6ff;
+  border: 1px solid #dbeafe;
+  font-weight: 700;
+}
+
+/* ── Card ────────────────────────────────────────────────────────────── */
+
+.sad-card {
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 16px;
+  padding: 20px 24px;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.04), 0 4px 16px rgba(0, 0, 0, 0.03);
+}
+
+.sad-card-title {
+  font-size: 15px;
+  font-weight: 700;
+  color: #111827;
+  margin: 0 0 14px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid #f3f4f6;
+}
+
+.sad-detail-rows { display: flex; flex-direction: column; gap: 10px; }
+
+.sad-detail-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+  font-size: 13.5px;
+  padding-bottom: 9px;
+  border-bottom: 1px solid #f9fafb;
+}
+
+.sad-detail-row:last-child { border-bottom: none; padding-bottom: 0; }
+
+.sad-detail-row-label { color: #6b7280; font-weight: 500; flex-shrink: 0; min-width: 120px; }
+.sad-detail-row-value { color: #111827; font-weight: 500; text-align: right; word-break: break-word; }
+
+/* ── Section ─────────────────────────────────────────────────────────── */
+
+.sad-section { display: flex; flex-direction: column; gap: 12px; }
+
+.sad-section-title {
+  font-size: 16px;
+  font-weight: 700;
+  color: #111827;
+  margin: 0;
+}
+
+/* ── Empty State ─────────────────────────────────────────────────────── */
+
+.sad-empty {
+  background: #ffffff;
+  border: 1px dashed #e5e7eb;
+  border-radius: 14px;
+  padding: 32px 24px;
+  text-align: center;
+}
+
+.sad-empty p { margin: 0; font-size: 13.5px; color: #9ca3af; }
+
+/* ── Course Cards ────────────────────────────────────────────────────── */
+
+.sad-course-list { display: flex; flex-direction: column; gap: 14px; }
+
+.sad-course-card {
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 16px;
+  padding: 18px 22px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.04), 0 4px 16px rgba(0, 0, 0, 0.03);
+}
+
+.sad-course-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.sad-code-badge {
+  display: inline-block;
+  padding: 2px 8px;
+  background: #eff6ff;
+  color: #1d4ed8;
+  border-radius: 6px;
+  font-size: 11.5px;
+  font-weight: 700;
+  font-family: 'SFMono-Regular', 'Consolas', monospace;
+  border: 1px solid #dbeafe;
+  margin-bottom: 6px;
+}
+
+.sad-course-name { font-size: 16px; font-weight: 700; color: #111827; margin: 0; }
+
+.sad-course-meta {
+  display: flex;
+  gap: 18px;
+  flex-wrap: wrap;
+  font-size: 13px;
+  color: #6b7280;
+}
+
+/* ── Lessons ─────────────────────────────────────────────────────────── */
+
+.sad-lessons {
+  border-top: 1px solid #f3f4f6;
+  padding-top: 12px;
+}
+
+.sad-lessons-title {
+  font-size: 12px;
+  font-weight: 700;
+  color: #374151;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin-bottom: 8px;
+}
+
+.sad-lessons-table-wrap {
+  overflow-x: auto;
+  border: 1px solid #f3f4f6;
+  border-radius: 10px;
+}
+
+.sad-lessons-table { width: 100%; border-collapse: collapse; min-width: 480px; }
+
+.sad-lessons-table th {
+  padding: 8px 14px;
+  text-align: left;
+  font-size: 10.5px;
+  font-weight: 700;
+  color: #6b7280;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  background: #f9fafb;
+  border-bottom: 1px solid #f3f4f6;
+}
+
+.sad-lessons-table td {
+  padding: 10px 14px;
+  font-size: 13px;
+  color: #374151;
+  border-bottom: 1px solid #f9fafb;
+  vertical-align: top;
+}
+
+.sad-lessons-table tr:last-child td { border-bottom: none; }
+
+.sad-lesson-title { font-weight: 600; color: #111827; white-space: nowrap; }
+
+.sad-no-lessons {
+  font-size: 12.5px;
+  color: #9ca3af;
+  margin: 0;
+  padding-top: 10px;
+  border-top: 1px solid #f3f4f6;
+}
+
+/* ── Badge ───────────────────────────────────────────────────────────── */
+
+.sad-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-size: 11.5px;
+  font-weight: 600;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.sad-badge-dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
+
+.sad-badge--success { background: #f0fdf4; color: #16a34a; border: 1px solid #bbf7d0; }
+.sad-badge--success .sad-badge-dot { background: #16a34a; }
+
+.sad-badge--warning { background: #fffbeb; color: #d97706; border: 1px solid #fde68a; }
+.sad-badge--warning .sad-badge-dot { background: #d97706; }
+
+.sad-badge--error { background: #fef2f2; color: #dc2626; border: 1px solid #fecaca; }
+.sad-badge--error .sad-badge-dot { background: #dc2626; }
+
+.sad-badge--info { background: #eff6ff; color: #1d4ed8; border: 1px solid #dbeafe; }
+.sad-badge--info .sad-badge-dot { background: #1d4ed8; }
+
+.sad-badge--default { background: #f3f4f6; color: #6b7280; border: 1px solid #e5e7eb; }
+.sad-badge--default .sad-badge-dot { background: #9ca3af; }
+
+/* ── Buttons ─────────────────────────────────────────────────────────── */
+
+.sad-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0 16px;
+  height: 36px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  border: none;
+  transition: background 0.15s, opacity 0.15s;
+  white-space: nowrap;
+  font-family: inherit;
+}
+
+.sad-btn--primary { background: #2563eb; color: #ffffff; }
+.sad-btn--primary:hover { background: #1d4ed8; }
+
+.sad-btn--ghost { background: #ffffff; color: #374151; border: 1px solid #e5e7eb; }
+.sad-btn--ghost:hover { background: #f3f4f6; }
+
+/* ── Loading / Error ─────────────────────────────────────────────────── */
+
+.sad-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 96px 24px;
+  color: #6b7280;
+  font-size: 14px;
+}
+
+.sad-spinner {
+  width: 24px;
+  height: 24px;
+  border: 3px solid #e5e7eb;
+  border-top-color: #2563eb;
+  border-radius: 50%;
+  animation: sad-spin 0.8s linear infinite;
+}
+
+@keyframes sad-spin { to { transform: rotate(360deg); } }
+
+.sad-error-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  margin: 24px auto;
+  padding: 32px;
+  max-width: 480px;
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  border-radius: 14px;
+  color: #dc2626;
+  text-align: center;
+}
+
+.sad-error-title { font-weight: 700; font-size: 15px; margin: 0; }
+.sad-error-msg { font-size: 13px; margin: 0; color: #ef4444; }
+.sad-error-actions { display: flex; gap: 10px; margin-top: 6px; }
+
+/* ── Responsive ──────────────────────────────────────────────────────── */
+
+@media (max-width: 640px) {
+  .sad-course-header { flex-direction: column; }
+  .sad-detail-row { flex-direction: column; gap: 2px; }
+  .sad-detail-row-value { text-align: left; }
+}

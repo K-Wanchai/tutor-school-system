@@ -35,6 +35,16 @@ export async function getEnrollmentById(id) {
   }
 }
 
+// คอร์สทั้งหมดที่นักเรียนคนนี้ลงทะเบียนแล้ว — ใช้เป็นตัวเลือกคอร์สตอนบันทึกผลสอบติด
+export async function getEnrollmentsByStudent(studentId) {
+  try {
+    const res = await api.get(`/enrollments/student/${studentId}`);
+    return unwrap(res);
+  } catch (error) {
+    throw new Error(apiError(error, 'getEnrollmentsByStudent'));
+  }
+}
+
 // status: PENDING | APPROVED | REJECTED | CANCELLED | COMPLETED
 export async function updateEnrollmentStatus(id, status, note) {
   try {

@@ -1,0 +1,479 @@
+/* ===== Admin Exam Institution Management Page ===== */
+
+.eim-page {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+/* ── Header ──────────────────────────────────────────────────────────── */
+
+.eim-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.eim-title {
+  font-size: 26px;
+  font-weight: 800;
+  color: #111827;
+  margin: 0 0 4px;
+  letter-spacing: -0.4px;
+}
+
+.eim-subtitle {
+  font-size: 13px;
+  color: #9ca3af;
+  margin: 0;
+}
+
+/* ── Toast ───────────────────────────────────────────────────────────── */
+
+.eim-toast {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  z-index: 300;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 18px;
+  border-radius: 10px;
+  font-size: 13.5px;
+  font-weight: 500;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+}
+
+.eim-toast--success { background: #f0fdf4; border: 1px solid #bbf7d0; color: #16a34a; }
+.eim-toast--error { background: #fef2f2; border: 1px solid #fecaca; color: #dc2626; }
+
+.eim-toast button {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: inherit;
+  font-size: 14px;
+  line-height: 1;
+  opacity: 0.7;
+}
+
+.eim-toast button:hover { opacity: 1; }
+
+/* ── Stats ───────────────────────────────────────────────────────────── */
+
+.eim-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 14px;
+}
+
+.eim-stat-card {
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 14px;
+  padding: 16px 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.eim-stat-value { font-size: 22px; font-weight: 800; color: #111827; }
+.eim-stat-label { font-size: 12.5px; color: #6b7280; font-weight: 500; }
+
+.eim-stat-card--success .eim-stat-value { color: #16a34a; }
+
+/* ── Filter Bar ──────────────────────────────────────────────────────── */
+
+.eim-filter-bar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 14px;
+  padding: 14px 16px;
+}
+
+.eim-filter-input {
+  flex: 1 1 220px;
+  height: 38px;
+  padding: 0 14px;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  font-size: 13.5px;
+  color: #111827;
+  background: #f8fafc;
+  outline: none;
+  font-family: inherit;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.eim-filter-select {
+  height: 38px;
+  padding: 0 12px;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  font-size: 13.5px;
+  color: #111827;
+  background: #f8fafc;
+  outline: none;
+  font-family: inherit;
+  min-width: 160px;
+}
+
+.eim-filter-input:focus,
+.eim-filter-select:focus {
+  border-color: #2563eb;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+  background: #ffffff;
+}
+
+/* ── Table Card ──────────────────────────────────────────────────────── */
+
+.eim-table-card {
+  background: #ffffff;
+  border-radius: 16px;
+  border: 1px solid #e5e7eb;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.04), 0 4px 16px rgba(0, 0, 0, 0.03);
+  overflow: hidden;
+}
+
+.eim-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 64px 24px;
+  color: #6b7280;
+  font-size: 14px;
+}
+
+.eim-spinner {
+  width: 24px;
+  height: 24px;
+  border: 3px solid #e5e7eb;
+  border-top-color: #2563eb;
+  border-radius: 50%;
+  animation: eim-spin 0.8s linear infinite;
+}
+
+@keyframes eim-spin { to { transform: rotate(360deg); } }
+
+.eim-error-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  margin: 24px;
+  padding: 24px;
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  border-radius: 12px;
+  color: #dc2626;
+  text-align: center;
+}
+
+.eim-error-title { font-weight: 700; font-size: 14px; margin: 0; }
+.eim-error-msg { font-size: 13px; margin: 0; color: #ef4444; }
+
+.eim-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 64px 24px;
+  gap: 6px;
+}
+
+.eim-empty-title { font-size: 16px; font-weight: 700; color: #374151; margin: 0; }
+.eim-empty-subtitle { font-size: 13px; color: #9ca3af; margin: 0; text-align: center; }
+
+/* ── Table ───────────────────────────────────────────────────────────── */
+
+.eim-table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+
+.eim-table {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 820px;
+}
+
+.eim-table th {
+  padding: 11px 16px;
+  text-align: left;
+  font-size: 11px;
+  font-weight: 700;
+  color: #6b7280;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  background: #f9fafb;
+  border-bottom: 1px solid #f3f4f6;
+  white-space: nowrap;
+}
+
+.eim-table td {
+  padding: 13px 16px;
+  font-size: 13.5px;
+  color: #374151;
+  border-bottom: 1px solid #f3f4f6;
+  vertical-align: middle;
+}
+
+.eim-table-row:hover td { background: #fafafa; }
+.eim-table-row:last-child td { border-bottom: none; }
+
+.eim-code-badge {
+  display: inline-block;
+  padding: 2px 8px;
+  background: #eff6ff;
+  color: #1d4ed8;
+  border-radius: 6px;
+  font-size: 11.5px;
+  font-weight: 700;
+  font-family: 'SFMono-Regular', 'Consolas', monospace;
+  white-space: nowrap;
+  border: 1px solid #dbeafe;
+}
+
+.eim-text-name { font-weight: 600; color: #111827; }
+
+.eim-actions { display: flex; gap: 4px; }
+
+.eim-btn-icon {
+  width: 30px;
+  height: 30px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 7px;
+  border: 1px solid #e5e7eb;
+  background: #ffffff;
+  cursor: pointer;
+  font-size: 13.5px;
+  transition: background 0.15s;
+}
+
+.eim-btn-icon:hover:not(:disabled) { background: #f3f4f6; }
+.eim-btn-icon:disabled { opacity: 0.35; cursor: not-allowed; }
+
+/* ── Badge ───────────────────────────────────────────────────────────── */
+
+.eim-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-size: 11.5px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.eim-badge-dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
+
+.eim-badge--success { background: #f0fdf4; color: #16a34a; border: 1px solid #bbf7d0; }
+.eim-badge--success .eim-badge-dot { background: #16a34a; }
+
+.eim-badge--default { background: #f3f4f6; color: #6b7280; border: 1px solid #e5e7eb; }
+.eim-badge--default .eim-badge-dot { background: #9ca3af; }
+
+/* ── Buttons ─────────────────────────────────────────────────────────── */
+
+.eim-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0 16px;
+  height: 38px;
+  border-radius: 8px;
+  font-size: 13.5px;
+  font-weight: 600;
+  cursor: pointer;
+  border: none;
+  transition: background 0.15s, opacity 0.15s;
+  white-space: nowrap;
+  font-family: inherit;
+}
+
+.eim-btn:disabled { opacity: 0.55; cursor: not-allowed; }
+
+.eim-btn--primary { background: #2563eb; color: #ffffff; }
+.eim-btn--primary:hover:not(:disabled) { background: #1d4ed8; }
+
+.eim-btn--ghost { background: #ffffff; color: #374151; border: 1px solid #e5e7eb; }
+.eim-btn--ghost:hover:not(:disabled) { background: #f3f4f6; }
+
+.eim-btn--danger { background: #dc2626; color: #ffffff; }
+.eim-btn--danger:hover:not(:disabled) { background: #b91c1c; }
+
+/* ── Modal ───────────────────────────────────────────────────────────── */
+
+.eim-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+  backdrop-filter: blur(4px);
+  z-index: 200;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+
+.eim-modal {
+  background: #ffffff;
+  border-radius: 20px;
+  box-shadow: 0 24px 64px rgba(0, 0, 0, 0.18);
+  width: 100%;
+  max-width: 560px;
+  max-height: 90vh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.eim-modal--sm { max-width: 440px; }
+
+.eim-modal-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  padding: 22px 28px 18px;
+  border-bottom: 1px solid #f3f4f6;
+  flex-shrink: 0;
+}
+
+.eim-modal-header h2 { font-size: 18px; font-weight: 800; color: #111827; margin: 0 0 4px; }
+.eim-modal-code { font-size: 12px; color: #9ca3af; font-family: 'SFMono-Regular', monospace; }
+
+.eim-modal-close {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  border: 1px solid #e5e7eb;
+  background: #ffffff;
+  color: #6b7280;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.eim-modal-close:hover { background: #f3f4f6; }
+
+.eim-modal-body {
+  padding: 24px 28px;
+  overflow-y: auto;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.eim-status-row { display: flex; gap: 8px; flex-wrap: wrap; }
+
+.eim-detail-rows { display: flex; flex-direction: column; gap: 10px; }
+
+.eim-detail-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+  font-size: 13px;
+  padding-bottom: 9px;
+  border-bottom: 1px solid #f3f4f6;
+}
+
+.eim-detail-row:last-child { border-bottom: none; padding-bottom: 0; }
+
+.eim-detail-row-label { color: #6b7280; font-weight: 500; flex-shrink: 0; min-width: 110px; }
+.eim-detail-row-value { color: #111827; font-weight: 500; text-align: right; word-break: break-word; }
+.eim-detail-row-value a { color: #2563eb; }
+
+/* ── Form ────────────────────────────────────────────────────────────── */
+
+.eim-form {
+  padding: 24px 28px;
+  overflow-y: auto;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.eim-form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+}
+
+.eim-field { display: flex; flex-direction: column; gap: 6px; }
+
+.eim-field label {
+  font-size: 13px;
+  font-weight: 600;
+  color: #374151;
+}
+
+.eim-field input,
+.eim-field select,
+.eim-field textarea {
+  padding: 9px 12px;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  font-size: 13.5px;
+  color: #111827;
+  background: #ffffff;
+  outline: none;
+  font-family: inherit;
+  resize: vertical;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.eim-field input:focus,
+.eim-field select:focus,
+.eim-field textarea:focus {
+  border-color: #2563eb;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+}
+
+.eim-field--checkbox { flex-direction: row; align-items: center; }
+
+.eim-checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13.5px;
+  font-weight: 500;
+  color: #374151;
+  cursor: pointer;
+}
+
+.eim-checkbox-label input { width: 16px; height: 16px; cursor: pointer; }
+
+.eim-err { font-size: 12px; color: #dc2626; font-weight: 500; }
+
+.eim-form-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  padding-top: 4px;
+}
+
+/* ── Responsive ──────────────────────────────────────────────────────── */
+
+@media (max-width: 1180px) {
+  .eim-stats-grid { grid-template-columns: repeat(3, 1fr); }
+}
+
+@media (max-width: 768px) {
+  .eim-header { flex-direction: column; align-items: stretch; }
+  .eim-stats-grid { grid-template-columns: repeat(2, 1fr); }
+  .eim-filter-bar { flex-direction: column; align-items: stretch; }
+  .eim-filter-select { width: 100%; }
+  .eim-form-row { grid-template-columns: 1fr; }
+}
