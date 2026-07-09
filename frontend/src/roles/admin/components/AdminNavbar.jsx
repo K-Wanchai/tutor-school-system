@@ -1,25 +1,47 @@
-import { useLocation } from 'react-router-dom';
+import { useEffect, useState } from 'react';
+import { useLocation, matchPath } from 'react-router-dom';
 import { logout } from '../../../auth/services/authService';
+import { getExamInstitutionById } from '../services/examInstitutionService';
 import './AdminNavbar.css';
 
 const BREADCRUMB_MAP = {
-  '/admin/dashboard':     'แดชบอร์ด',
-  '/admin/students':      'นักเรียน',
-  '/admin/tutors':        'ติวเตอร์',
-  '/admin/courses':       'คอร์สเรียน',
-  '/admin/enrollments':   'การสมัครเรียน',
-  '/admin/payments':      'การชำระเงิน',
-  '/admin/exams':         'ข้อสอบ',
-  '/admin/attendance':    'การเข้าเรียน',
-  '/admin/notifications': 'การแจ้งเตือน',
-  '/admin/reports':       'รายงาน',
-  '/admin/settings':      'ตั้งค่าสถาบัน',
+  '/admin/dashboard':         'แดชบอร์ด',
+  '/admin/students':          'นักเรียน',
+  '/admin/tutors':            'ติวเตอร์',
+  '/admin/courses':           'คอร์สเรียน',
+  '/admin/enrollments':       'การสมัครเรียน',
+  '/admin/payments':          'การชำระเงิน',
+  '/admin/exams':             'ข้อสอบ',
+  '/admin/attendance':        'การเข้าเรียน',
+  '/admin/notifications':     'การแจ้งเตือน',
+  '/admin/reports':           'รายงาน',
+  '/admin/exam-institutions': 'สถาบันที่จัดสอบ',
+  '/admin/settings':          'ตั้งค่าสถาบัน',
 };
 
 export default function AdminNavbar({ onMenuToggle }) {
   const location = useLocation();
   const username  = localStorage.getItem('username') || 'Administrator';
-  const breadcrumb = BREADCRUMB_MAP[location.pathname] || 'แดชบอร์ด';
+  const [institutionName, setInstitutionName] = useState('');
+
+  const institutionMatch = matchPath('/admin/exam-institutions/:institutionId', location.pathname);
+  const institutionId = institutionMatch?.params?.institutionId;
+
+  useEffect(() => {
+    if (!institutionId) {
+      setInstitutionName('');
+      return;
+    }
+    let cancelled = false;
+    getExamInstitutionById(institutionId)
+      .then((data) => { if (!cancelled) setInstitutionName(data?.institutionName || ''); })
+      .catch(() => { if (!cancelled) setInstitutionName(''); });
+    return () => { cancelled = true; };
+  }, [institutionId]);
+
+  const breadcrumbSegments = institutionId
+    ? ['สถาบันที่จัดสอบ', institutionName || '...']
+    : [BREADCRUMB_MAP[location.pathname] || 'แดชบอร์ด'];
 
   return (
     <header className="admin-navbar">
@@ -35,8 +57,12 @@ export default function AdminNavbar({ onMenuToggle }) {
         </button>
         <div className="admin-navbar-title">
           <span>TutorSchool</span>
-          <span className="admin-navbar-title-sep">/</span>
-          <span className="admin-navbar-breadcrumb">{breadcrumb}</span>
+          {breadcrumbSegments.map((seg, i) => (
+            <span key={i}>
+              <span className="admin-navbar-title-sep">/</span>
+              <span className="admin-navbar-breadcrumb">{seg}</span>
+            </span>
+          ))}
         </div>
       </div>
 

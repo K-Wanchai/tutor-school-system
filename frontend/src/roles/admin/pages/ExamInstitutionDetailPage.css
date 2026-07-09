@@ -1,0 +1,703 @@
+/* ===== Admin Exam Institution Detail Page ===== */
+
+.eid-page {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+/* ── Header ──────────────────────────────────────────────────────────── */
+
+.eid-header {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 16px;
+  padding: 20px 24px;
+}
+
+.eid-header-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.eid-header-top-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.eid-title {
+  font-size: 24px;
+  font-weight: 800;
+  color: #111827;
+  margin: 0;
+  letter-spacing: -0.4px;
+}
+
+.eid-meta-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.eid-meta-item {
+  font-size: 12.5px;
+  color: #6b7280;
+  font-weight: 500;
+  background: #f3f4f6;
+  padding: 3px 10px;
+  border-radius: 20px;
+}
+
+.eid-code-badge {
+  display: inline-block;
+  padding: 3px 10px;
+  background: #eff6ff;
+  color: #1d4ed8;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 700;
+  font-family: 'SFMono-Regular', 'Consolas', monospace;
+  border: 1px solid #dbeafe;
+}
+
+/* ── Stats ───────────────────────────────────────────────────────────── */
+
+.eid-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 14px;
+}
+
+.eid-stat-card {
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 14px;
+  padding: 16px 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.eid-stat-value { font-size: 22px; font-weight: 800; color: #111827; }
+.eid-stat-label { font-size: 12.5px; color: #6b7280; font-weight: 500; }
+
+.eid-stat-card--success .eid-stat-value { color: #16a34a; }
+
+/* ── Section ─────────────────────────────────────────────────────────── */
+
+.eid-section {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.eid-section-title {
+  font-size: 16px;
+  font-weight: 700;
+  color: #111827;
+  margin: 0;
+}
+
+/* ── Tabs (ระดับ / คณะ) ──────────────────────────────────────────────── */
+
+.eid-tabs {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  background: #f3f4f6;
+  padding: 4px;
+  border-radius: 10px;
+  width: fit-content;
+  max-width: 100%;
+}
+
+.eid-tab {
+  padding: 8px 16px;
+  border-radius: 8px;
+  border: none;
+  background: transparent;
+  font-size: 13px;
+  font-weight: 600;
+  color: #6b7280;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+  white-space: nowrap;
+  font-family: inherit;
+}
+
+.eid-tab:hover { color: #374151; }
+
+.eid-tab--active {
+  background: #ffffff;
+  color: #2563eb;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+/* ── Sub-tabs (สาขา ภายในคณะที่เลือก) ────────────────────────────────── */
+
+.eid-subtabs {
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
+  align-items: center;
+  padding-left: 4px;
+  border-left: 2px solid #dbeafe;
+  margin-left: 8px;
+}
+
+.eid-subtab {
+  padding: 6px 12px;
+  border-radius: 16px;
+  border: 1px solid #e5e7eb;
+  background: #ffffff;
+  font-size: 12px;
+  font-weight: 600;
+  color: #6b7280;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
+  white-space: nowrap;
+  font-family: inherit;
+}
+
+.eid-subtab:hover { color: #374151; border-color: #d1d5db; }
+
+.eid-subtab--active {
+  background: #eff6ff;
+  color: #1d4ed8;
+  border-color: #93c5fd;
+}
+
+/* ── Empty State ─────────────────────────────────────────────────────── */
+
+.eid-empty {
+  background: #ffffff;
+  border: 1px dashed #e5e7eb;
+  border-radius: 14px;
+  padding: 32px 24px;
+  text-align: center;
+}
+
+.eid-empty p {
+  margin: 0;
+  font-size: 13.5px;
+  color: #9ca3af;
+}
+
+/* ── Table Card ──────────────────────────────────────────────────────── */
+
+.eid-table-card {
+  background: #ffffff;
+  border-radius: 16px;
+  border: 1px solid #e5e7eb;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.04), 0 4px 16px rgba(0, 0, 0, 0.03);
+  overflow: hidden;
+}
+
+.eid-table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+
+.eid-table {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 640px;
+}
+
+.eid-table th {
+  padding: 11px 16px;
+  text-align: left;
+  font-size: 11px;
+  font-weight: 700;
+  color: #6b7280;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  background: #f9fafb;
+  border-bottom: 1px solid #f3f4f6;
+  white-space: nowrap;
+}
+
+.eid-table td {
+  padding: 13px 16px;
+  font-size: 13.5px;
+  color: #374151;
+  border-bottom: 1px solid #f3f4f6;
+  vertical-align: middle;
+}
+
+.eid-table-row:hover td { background: #fafafa; }
+.eid-table-row:last-child td { border-bottom: none; }
+
+.eid-text-name { font-weight: 600; color: #111827; white-space: nowrap; }
+
+.eid-course-cell {
+  max-width: 260px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.eid-row-btn {
+  padding: 6px 12px;
+  border-radius: 8px;
+  border: 1px solid #2563eb;
+  background: #eff6ff;
+  color: #1d4ed8;
+  font-size: 12.5px;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  font-family: inherit;
+  transition: background 0.15s;
+}
+
+.eid-row-btn:hover { background: #dbeafe; }
+
+.eid-actions { display: flex; align-items: center; gap: 4px; }
+
+.eid-btn-icon {
+  width: 30px;
+  height: 30px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 7px;
+  border: 1px solid #e5e7eb;
+  background: #ffffff;
+  cursor: pointer;
+  font-size: 13.5px;
+  transition: background 0.15s;
+  flex-shrink: 0;
+}
+
+.eid-btn-icon:hover:not(:disabled) { background: #f3f4f6; }
+.eid-btn-icon:disabled { opacity: 0.35; cursor: not-allowed; }
+
+/* ── Buttons ─────────────────────────────────────────────────────────── */
+
+.eid-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0 16px;
+  height: 36px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  border: none;
+  transition: background 0.15s, opacity 0.15s;
+  white-space: nowrap;
+  font-family: inherit;
+}
+
+.eid-btn:disabled { opacity: 0.55; cursor: not-allowed; }
+
+.eid-btn--primary { background: #2563eb; color: #ffffff; }
+.eid-btn--primary:hover:not(:disabled) { background: #1d4ed8; }
+
+.eid-btn--ghost { background: #ffffff; color: #374151; border: 1px solid #e5e7eb; }
+.eid-btn--ghost:hover:not(:disabled) { background: #f3f4f6; }
+
+.eid-btn--danger { background: #dc2626; color: #ffffff; }
+.eid-btn--danger:hover:not(:disabled) { background: #b91c1c; }
+
+/* ── Loading / Error ─────────────────────────────────────────────────── */
+
+.eid-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 96px 24px;
+  color: #6b7280;
+  font-size: 14px;
+}
+
+.eid-spinner {
+  width: 24px;
+  height: 24px;
+  border: 3px solid #e5e7eb;
+  border-top-color: #2563eb;
+  border-radius: 50%;
+  animation: eid-spin 0.8s linear infinite;
+}
+
+@keyframes eid-spin { to { transform: rotate(360deg); } }
+
+.eid-error-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  margin: 24px auto;
+  padding: 32px;
+  max-width: 480px;
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  border-radius: 14px;
+  color: #dc2626;
+  text-align: center;
+}
+
+.eid-error-title { font-weight: 700; font-size: 15px; margin: 0; }
+.eid-error-msg { font-size: 13px; margin: 0; color: #ef4444; }
+.eid-error-actions { display: flex; gap: 10px; margin-top: 6px; }
+
+/* ── Toast ───────────────────────────────────────────────────────────── */
+
+.eid-toast {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  z-index: 300;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 18px;
+  border-radius: 10px;
+  font-size: 13.5px;
+  font-weight: 500;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+}
+
+.eid-toast--success { background: #f0fdf4; border: 1px solid #bbf7d0; color: #16a34a; }
+.eid-toast--error { background: #fef2f2; border: 1px solid #fecaca; color: #dc2626; }
+
+.eid-toast button {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: inherit;
+  font-size: 14px;
+  line-height: 1;
+  opacity: 0.7;
+}
+
+.eid-toast button:hover { opacity: 1; }
+
+/* ── Modal ───────────────────────────────────────────────────────────── */
+
+.eid-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+  backdrop-filter: blur(4px);
+  z-index: 200;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+
+.eid-modal {
+  background: #ffffff;
+  border-radius: 20px;
+  box-shadow: 0 24px 64px rgba(0, 0, 0, 0.18);
+  width: 100%;
+  max-width: 560px;
+  max-height: 90vh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.eid-modal--sm { max-width: 440px; }
+
+.eid-modal-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  padding: 22px 28px 18px;
+  border-bottom: 1px solid #f3f4f6;
+  flex-shrink: 0;
+}
+
+.eid-modal-header h2 { font-size: 18px; font-weight: 800; color: #111827; margin: 0; }
+
+.eid-modal-close {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  border: 1px solid #e5e7eb;
+  background: #ffffff;
+  color: #6b7280;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.eid-modal-close:hover { background: #f3f4f6; }
+
+.eid-modal-body {
+  padding: 24px 28px;
+  overflow-y: auto;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+/* ── Form ────────────────────────────────────────────────────────────── */
+
+.eid-form {
+  padding: 24px 28px;
+  overflow-y: auto;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.eid-form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+}
+
+.eid-field { display: flex; flex-direction: column; gap: 6px; }
+
+.eid-field label {
+  font-size: 13px;
+  font-weight: 600;
+  color: #374151;
+}
+
+.eid-field input,
+.eid-field select,
+.eid-field textarea {
+  padding: 9px 12px;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  font-size: 13.5px;
+  color: #111827;
+  background: #ffffff;
+  outline: none;
+  font-family: inherit;
+  resize: vertical;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.eid-field input:focus,
+.eid-field select:focus,
+.eid-field textarea:focus {
+  border-color: #2563eb;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+}
+
+.eid-locked-field {
+  padding: 9px 12px;
+  border: 1px solid #f3f4f6;
+  border-radius: 8px;
+  font-size: 13.5px;
+  color: #6b7280;
+  background: #f9fafb;
+}
+
+.eid-field--checkbox { flex-direction: row; align-items: center; }
+
+.eid-checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13.5px;
+  font-weight: 500;
+  color: #374151;
+  cursor: pointer;
+}
+
+.eid-checkbox-label input { width: 16px; height: 16px; cursor: pointer; }
+
+.eid-err { font-size: 12px; color: #dc2626; font-weight: 500; }
+.eid-hint { font-size: 12px; color: #9ca3af; }
+
+/* ── Suggest Input (คณะ / สาขา) ──────────────────────────────────────── */
+
+.eid-suggest-wrap { position: relative; }
+
+.eid-suggest-input {
+  width: 100%;
+  padding: 9px 12px;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  font-size: 13.5px;
+  color: #111827;
+  background: #ffffff;
+  outline: none;
+  font-family: inherit;
+  box-sizing: border-box;
+}
+
+.eid-suggest-input:focus {
+  border-color: #2563eb;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+}
+
+.eid-suggest-dropdown {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  right: 0;
+  max-height: 180px;
+  overflow-y: auto;
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+  z-index: 10;
+  padding: 6px;
+}
+
+.eid-suggest-option {
+  display: block;
+  width: 100%;
+  padding: 8px 10px;
+  border: none;
+  background: transparent;
+  border-radius: 7px;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 13px;
+  color: #111827;
+  text-align: left;
+}
+
+.eid-suggest-option:hover { background: #f3f4f6; }
+
+.eid-form-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  padding-top: 4px;
+}
+
+/* ── Course Picker ───────────────────────────────────────────────────── */
+
+.eid-course-picker { display: flex; flex-direction: column; gap: 8px; }
+
+.eid-course-picker-hint {
+  margin: 0;
+  font-size: 12.5px;
+  color: #9ca3af;
+  padding: 9px 12px;
+  background: #f9fafb;
+  border: 1px dashed #e5e7eb;
+  border-radius: 8px;
+}
+
+.eid-course-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+
+.eid-course-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 6px 4px 10px;
+  background: #eff6ff;
+  color: #1d4ed8;
+  border: 1px solid #dbeafe;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.eid-course-chip button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  border: none;
+  background: rgba(29, 78, 216, 0.12);
+  color: #1d4ed8;
+  font-size: 10px;
+  cursor: pointer;
+  padding: 0;
+}
+
+.eid-course-chip button:hover { background: rgba(29, 78, 216, 0.22); }
+
+.eid-course-picker-input-wrap { position: relative; }
+
+.eid-course-picker-input {
+  width: 100%;
+  padding: 9px 12px;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  font-size: 13.5px;
+  color: #111827;
+  background: #ffffff;
+  outline: none;
+  font-family: inherit;
+  box-sizing: border-box;
+}
+
+.eid-course-picker-input:focus {
+  border-color: #2563eb;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+}
+
+.eid-course-picker-dropdown {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  right: 0;
+  max-height: 220px;
+  overflow-y: auto;
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+  z-index: 10;
+  padding: 6px;
+}
+
+.eid-course-picker-empty {
+  padding: 10px 12px;
+  font-size: 12.5px;
+  color: #9ca3af;
+  text-align: center;
+}
+
+.eid-course-picker-option {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  width: 100%;
+  padding: 8px 10px;
+  border: none;
+  background: transparent;
+  border-radius: 7px;
+  cursor: pointer;
+  font-family: inherit;
+  text-align: left;
+}
+
+.eid-course-picker-option:hover { background: #f3f4f6; }
+
+.eid-course-picker-option-name { font-size: 13px; color: #111827; font-weight: 500; }
+.eid-course-picker-option-code {
+  font-size: 11px;
+  color: #6b7280;
+  font-family: 'SFMono-Regular', 'Consolas', monospace;
+  flex-shrink: 0;
+}
+
+/* ── Responsive ──────────────────────────────────────────────────────── */
+
+@media (max-width: 900px) {
+  .eid-stats-grid { grid-template-columns: repeat(2, 1fr); }
+}
+
+@media (max-width: 640px) {
+  .eid-header-top { flex-wrap: wrap; }
+  .eid-form-row { grid-template-columns: 1fr; }
+}
