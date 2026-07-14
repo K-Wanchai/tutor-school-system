@@ -3,7 +3,6 @@ import DashboardCard from '../components/DashboardCard';
 import {
   getStudents,
   getStudentById,
-  updateStudent,
   getStudentStats,
 } from '../services/adminStudentService';
 import './AdminStudentManagementPage.css';
@@ -198,122 +197,6 @@ function DetailModal({ student, onClose }) {
   );
 }
 
-// ── Form Field ────────────────────────────────────────────────────────────────
-
-function FormField({ label, name, value, onChange, type = 'text', error }) {
-  return (
-    <div className="sm-form-field">
-      <label className="sm-form-label">{label}</label>
-      <input
-        type={type}
-        name={name}
-        value={value}
-        onChange={onChange}
-        className={`sm-form-input${error ? ' sm-form-input--error' : ''}`}
-        placeholder={`กรอก${label.replace(' *', '')}...`}
-      />
-      {error && <span className="sm-form-error">{error}</span>}
-    </div>
-  );
-}
-
-// ── Edit Modal ────────────────────────────────────────────────────────────────
-
-function EditModal({ student, onClose, onSave, saving, saveError }) {
-  const [form, setForm] = useState({
-    firstName:          student?.firstName          || '',
-    lastName:           student?.lastName           || '',
-    phoneNumber:        student?.phoneNumber        || '',
-    guardianPhoneNumber:student?.guardianPhoneNumber|| '',
-    address:            student?.address            || '',
-    birthDate:          student?.birthDate ? String(student.birthDate).split('T')[0] : '',
-    bankName:           student?.bankName           || '',
-    bankAccountName:    student?.bankAccountName    || '',
-    bankAccountNumber:  student?.bankAccountNumber  || '',
-  });
-  const [errors, setErrors] = useState({});
-
-  function handleChange(e) {
-    const { name, value } = e.target;
-    setForm(prev => ({ ...prev, [name]: value }));
-    if (errors[name]) setErrors(prev => ({ ...prev, [name]: '' }));
-  }
-
-  function handleSubmit(e) {
-    e.preventDefault();
-    const errs = {};
-    if (!form.firstName.trim()) errs.firstName = 'กรุณากรอกชื่อ';
-    if (!form.lastName.trim())  errs.lastName  = 'กรุณากรอกนามสกุล';
-    if (!form.phoneNumber.trim()) errs.phoneNumber = 'กรุณากรอกเบอร์โทร';
-    if (Object.keys(errs).length > 0) { setErrors(errs); return; }
-    onSave(form);
-  }
-
-  if (!student) return null;
-  return (
-    <div className="sm-modal-overlay" onClick={onClose}>
-      <div className="sm-modal sm-modal--edit" onClick={e => e.stopPropagation()}>
-        <div className="sm-modal-header">
-          <h2 className="sm-modal-title">แก้ไขข้อมูลนักเรียน</h2>
-          <button className="sm-modal-close" onClick={onClose} disabled={saving} aria-label="ปิด">
-            <svg viewBox="0 0 20 20" fill="currentColor" width="18" height="18">
-              <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
-            </svg>
-          </button>
-        </div>
-
-        <form className="sm-modal-body" onSubmit={handleSubmit} noValidate>
-          <div className="sm-edit-student-label">
-            <StudentAvatar firstName={student.firstName} lastName={student.lastName} size={32} />
-            <span>{student.firstName} {student.lastName}</span>
-            <span className="sm-edit-code">{student.studentCode}</span>
-          </div>
-
-          {saveError && (
-            <div className="sm-modal-error">
-              <svg viewBox="0 0 20 20" fill="currentColor" width="14" height="14">
-                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
-              </svg>
-              {saveError}
-            </div>
-          )}
-
-          <div className="sm-form-grid">
-            <FormField label="ชื่อ *"     name="firstName"   value={form.firstName}   onChange={handleChange} error={errors.firstName} />
-            <FormField label="นามสกุล *"  name="lastName"    value={form.lastName}    onChange={handleChange} error={errors.lastName} />
-            <FormField label="เบอร์โทร *" name="phoneNumber" value={form.phoneNumber} onChange={handleChange} error={errors.phoneNumber} />
-            <FormField label="เบอร์โทรผู้ปกครอง" name="guardianPhoneNumber" value={form.guardianPhoneNumber} onChange={handleChange} />
-            <FormField label="วันเกิด"   name="birthDate"   type="date" value={form.birthDate} onChange={handleChange} />
-            <FormField label="ธนาคาร"    name="bankName"    value={form.bankName}    onChange={handleChange} />
-            <FormField label="ชื่อบัญชี" name="bankAccountName"   value={form.bankAccountName}   onChange={handleChange} />
-            <FormField label="เลขบัญชี"  name="bankAccountNumber" value={form.bankAccountNumber} onChange={handleChange} />
-            <div className="sm-form-field sm-form-field--full">
-              <label className="sm-form-label">ที่อยู่</label>
-              <textarea
-                name="address"
-                value={form.address}
-                onChange={handleChange}
-                className="sm-form-textarea"
-                rows={3}
-                placeholder="กรอกที่อยู่..."
-              />
-            </div>
-          </div>
-
-          <div className="sm-modal-footer">
-            <button type="button" className="sm-btn sm-btn--ghost" onClick={onClose} disabled={saving}>
-              ยกเลิก
-            </button>
-            <button type="submit" className="sm-btn sm-btn--primary" disabled={saving}>
-              {saving ? (<><span className="sm-btn-spinner" />กำลังบันทึก...</>) : 'บันทึก'}
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
-  );
-}
-
 // ── Main Page ─────────────────────────────────────────────────────────────────
 
 const PAGE_SIZE = 10;
@@ -329,16 +212,7 @@ export default function AdminStudentManagementPage() {
   const [totalPages, setTotalPages]       = useState(0);
   const [totalElements, setTotalElements] = useState(0);
   const [detailStudent, setDetailStudent] = useState(null);
-  const [editStudent, setEditStudent]     = useState(null);
-  const [saving, setSaving]               = useState(false);
-  const [saveError, setSaveError]         = useState('');
-  const [toast, setToast]                 = useState({ type: '', msg: '' });
   const debounceTimer                     = useRef(null);
-
-  function showToast(type, msg) {
-    setToast({ type, msg });
-    setTimeout(() => setToast({ type: '', msg: '' }), 3500);
-  }
 
   const loadStudents = useCallback(async (page, keyword) => {
     setLoading(true);
@@ -396,27 +270,6 @@ export default function AdminStudentManagementPage() {
     }
   }
 
-  function handleEdit(student) {
-    setSaveError('');
-    setEditStudent(student);
-  }
-
-  async function handleSave(formData) {
-    setSaving(true);
-    setSaveError('');
-    try {
-      await updateStudent(editStudent.id, formData);
-      setEditStudent(null);
-      showToast('success', 'บันทึกข้อมูลสำเร็จ');
-      loadStudents(currentPage, searchTerm);
-      getStudentStats().then(setStats);
-    } catch (err) {
-      setSaveError(err.message || 'ไม่สามารถบันทึกข้อมูลได้');
-    } finally {
-      setSaving(false);
-    }
-  }
-
   function pageNumbers() {
     const pages = [];
     const MAX = 5;
@@ -451,23 +304,6 @@ export default function AdminStudentManagementPage() {
           </div>
         </div>
       </div>
-
-      {/* ── Toast ── */}
-      {toast.msg && (
-        <div className={`sm-toast sm-toast--${toast.type}`}>
-          {toast.type === 'success' ? (
-            <svg viewBox="0 0 20 20" fill="currentColor" width="16" height="16">
-              <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-            </svg>
-          ) : (
-            <svg viewBox="0 0 20 20" fill="currentColor" width="16" height="16">
-              <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
-            </svg>
-          )}
-          <span>{toast.msg}</span>
-          <button className="sm-toast-close" onClick={() => setToast({ type: '', msg: '' })}>×</button>
-        </div>
-      )}
 
       {/* ── Stats Cards ── */}
       <div className="sm-stats-grid">
@@ -594,16 +430,6 @@ export default function AdminStudentManagementPage() {
                               <path fillRule="evenodd" d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.064 7-9.542 7S1.732 14.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z" clipRule="evenodd" />
                             </svg>
                           </button>
-                          <button
-                            className="sm-row-btn sm-row-btn--icon"
-                            onClick={() => handleEdit(student)}
-                            data-tooltip="แก้ไข"
-                            aria-label="แก้ไข"
-                          >
-                            <svg viewBox="0 0 20 20" fill="currentColor" width="15" height="15">
-                              <path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z" />
-                            </svg>
-                          </button>
                         </div>
                       </td>
                     </tr>
@@ -656,15 +482,6 @@ export default function AdminStudentManagementPage() {
 
       {detailStudent && (
         <DetailModal student={detailStudent} onClose={() => setDetailStudent(null)} />
-      )}
-      {editStudent && (
-        <EditModal
-          student={editStudent}
-          onClose={() => { setEditStudent(null); setSaveError(''); }}
-          onSave={handleSave}
-          saving={saving}
-          saveError={saveError}
-        />
       )}
     </div>
   );

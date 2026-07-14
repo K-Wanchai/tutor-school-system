@@ -16,6 +16,8 @@ public interface StudentExamAchievementRepository extends JpaRepository<StudentE
 
     List<StudentExamAchievement> findByExamInstitutionId(Long examInstitutionId);
 
+    boolean existsByExamInstitutionId(Long examInstitutionId);
+
     List<StudentExamAchievement> findByExamInstitutionIdAndActiveTrue(Long examInstitutionId);
 
     List<StudentExamAchievement> findByExamInstitutionIdAndEducationLevelAndActiveTrue(

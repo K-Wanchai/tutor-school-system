@@ -518,59 +518,6 @@
 .eid-err { font-size: 12px; color: #dc2626; font-weight: 500; }
 .eid-hint { font-size: 12px; color: #9ca3af; }
 
-/* ── Suggest Input (คณะ / สาขา) ──────────────────────────────────────── */
-
-.eid-suggest-wrap { position: relative; }
-
-.eid-suggest-input {
-  width: 100%;
-  padding: 9px 12px;
-  border: 1px solid #e5e7eb;
-  border-radius: 8px;
-  font-size: 13.5px;
-  color: #111827;
-  background: #ffffff;
-  outline: none;
-  font-family: inherit;
-  box-sizing: border-box;
-}
-
-.eid-suggest-input:focus {
-  border-color: #2563eb;
-  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
-}
-
-.eid-suggest-dropdown {
-  position: absolute;
-  top: calc(100% + 4px);
-  left: 0;
-  right: 0;
-  max-height: 180px;
-  overflow-y: auto;
-  background: #ffffff;
-  border: 1px solid #e5e7eb;
-  border-radius: 10px;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
-  z-index: 10;
-  padding: 6px;
-}
-
-.eid-suggest-option {
-  display: block;
-  width: 100%;
-  padding: 8px 10px;
-  border: none;
-  background: transparent;
-  border-radius: 7px;
-  cursor: pointer;
-  font-family: inherit;
-  font-size: 13px;
-  color: #111827;
-  text-align: left;
-}
-
-.eid-suggest-option:hover { background: #f3f4f6; }
-
 .eid-form-actions {
   display: flex;
   justify-content: flex-end;
@@ -689,6 +636,138 @@
   color: #6b7280;
   font-family: 'SFMono-Regular', 'Consolas', monospace;
   flex-shrink: 0;
+}
+
+/* ── Main Tabs (นักเรียนที่สอบติด / จัดการข้อมูลพื้นฐาน) ─────────────── */
+
+.eid-maintabs {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  padding: 4px;
+  border-radius: 12px;
+  width: fit-content;
+  max-width: 100%;
+}
+
+.eid-maintab {
+  padding: 9px 18px;
+  border-radius: 8px;
+  border: none;
+  background: transparent;
+  font-size: 13.5px;
+  font-weight: 700;
+  color: #6b7280;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+  white-space: nowrap;
+  font-family: inherit;
+}
+
+.eid-maintab:hover { color: #374151; }
+
+.eid-maintab--active {
+  background: #2563eb;
+  color: #ffffff;
+}
+
+/* ── Basic Data Config (คณะ/สาขา/สายการเรียน) ─────────────────────────── */
+
+.eid-btn--sm { height: 30px; padding: 0 12px; font-size: 12.5px; }
+
+.eid-config-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.eid-config-cards {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.eid-config-card {
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.eid-config-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 12px 16px;
+}
+
+.eid-config-expand-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 700;
+  color: #111827;
+  padding: 0;
+  font-family: inherit;
+}
+
+.eid-config-nested {
+  border-top: 1px solid #f3f4f6;
+  padding: 14px 16px 16px 40px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.eid-config-nested-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.eid-config-nested-title {
+  font-size: 12.5px;
+  font-weight: 700;
+  color: #6b7280;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.eid-config-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.eid-config-list-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 10px 14px;
+  background: #f9fafb;
+  border: 1px solid #f3f4f6;
+  border-radius: 8px;
+  font-size: 13.5px;
+  color: #111827;
+}
+
+.eid-config-inactive {
+  color: #9ca3af;
+  text-decoration: line-through;
 }
 
 /* ── Responsive ──────────────────────────────────────────────────────── */

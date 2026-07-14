@@ -17,11 +17,10 @@ public class AchievementStudentCardResponse {
     private Long studentId;
     private String studentName;
     private Integer academicYear;
-    private String lowerSecondaryRoomType;
-    private String upperSecondaryProgram;
-    private String faculty;
-    private String major;
-    private String admissionRound;
+    private String schoolTrackName;
+    private String facultyName;
+    private String majorName;
+    private String admissionRoundName;
     private String courseSummary;
     private List<String> courseNames;
 }

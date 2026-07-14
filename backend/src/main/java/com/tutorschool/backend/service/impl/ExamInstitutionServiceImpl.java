@@ -10,6 +10,7 @@ import com.tutorschool.backend.entity.InstitutionType;
 import com.tutorschool.backend.entity.StudentExamAchievement;
 import com.tutorschool.backend.exception.DuplicateResourceException;
 import com.tutorschool.backend.exception.ExamInstitutionNotFoundException;
+import com.tutorschool.backend.exception.ResourceInUseException;
 import com.tutorschool.backend.mapper.ExamInstitutionMapper;
 import com.tutorschool.backend.repository.ExamInstitutionRepository;
 import com.tutorschool.backend.repository.StudentExamAchievementRepository;
@@ -99,6 +100,9 @@ public class ExamInstitutionServiceImpl implements ExamInstitutionService {
     @Transactional
     public void deleteExamInstitution(Long id) {
         ExamInstitution institution = findEntityById(id);
+        if (studentExamAchievementRepository.existsByExamInstitutionId(id)) {
+            throw new ResourceInUseException("ไม่สามารถลบข้อมูลได้เนื่องจากมีข้อมูลนักเรียนเชื่อมโยงอยู่");
+        }
         institution.setActive(false);
         examInstitutionRepository.save(institution);
     }
@@ -159,11 +163,10 @@ public class ExamInstitutionServiceImpl implements ExamInstitutionService {
                 .studentId(a.getStudent().getId())
                 .studentName(a.getStudent().getFullName())
                 .academicYear(a.getAcademicYear())
-                .lowerSecondaryRoomType(a.getLowerSecondaryRoomType())
-                .upperSecondaryProgram(a.getUpperSecondaryProgram())
-                .faculty(a.getFaculty())
-                .major(a.getMajor())
-                .admissionRound(a.getAdmissionRound())
+                .schoolTrackName(a.getSchoolTrack() != null ? a.getSchoolTrack().getName() : null)
+                .facultyName(a.getAcademicMajor() != null ? a.getAcademicMajor().getFaculty().getName() : null)
+                .majorName(a.getAcademicMajor() != null ? a.getAcademicMajor().getName() : null)
+                .admissionRoundName(a.getAdmissionRound() != null ? a.getAdmissionRound().getName() : null)
                 .courseSummary("เรียน " + courseNames.size() + " คอร์ส")
                 .courseNames(courseNames)
                 .build();

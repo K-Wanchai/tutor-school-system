@@ -20,6 +20,8 @@ public interface CourseScheduleRepository extends JpaRepository<CourseSchedule, 
 
     List<CourseSchedule> findByCourseIdOrderByScheduleDateAscStartTimeAsc(Long courseId);
 
+    boolean existsByCourseId(Long courseId);
+
     List<CourseSchedule> findByTutorIdOrderByScheduleDateAscStartTimeAsc(Long tutorId);
 
     List<CourseSchedule> findByCourseIdAndStatus(Long courseId, ScheduleStatus status);

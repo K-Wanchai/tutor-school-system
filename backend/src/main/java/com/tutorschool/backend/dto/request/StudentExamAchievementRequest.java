@@ -2,7 +2,6 @@ package com.tutorschool.backend.dto.request;
 
 import com.tutorschool.backend.entity.EducationLevel;
 import jakarta.validation.constraints.NotNull;
-import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -27,20 +26,14 @@ public class StudentExamAchievementRequest {
     @NotNull(message = "กรุณาเลือกระดับที่สอบติด")
     private EducationLevel educationLevel;
 
-    @Size(max = 100, message = "ห้องเรียนต้องไม่เกิน 100 ตัวอักษร")
-    private String lowerSecondaryRoomType;
+    /** รหัสสายการเรียน/ห้องเรียน — บังคับเมื่อ educationLevel เป็นมัธยมต้นหรือมัธยมปลาย */
+    private Long schoolTrackId;
 
-    @Size(max = 100, message = "สายการเรียนต้องไม่เกิน 100 ตัวอักษร")
-    private String upperSecondaryProgram;
+    /** รหัสสาขา — บังคับเมื่อ educationLevel เป็นปริญญาตรี */
+    private Long academicMajorId;
 
-    @Size(max = 200, message = "คณะต้องไม่เกิน 200 ตัวอักษร")
-    private String faculty;
-
-    @Size(max = 200, message = "สาขาต้องไม่เกิน 200 ตัวอักษร")
-    private String major;
-
-    @Size(max = 100, message = "รอบที่สอบติดต้องไม่เกิน 100 ตัวอักษร")
-    private String admissionRound;
+    /** รหัสรอบที่สอบติด — ไม่บังคับ */
+    private Long admissionRoundId;
 
     @NotNull(message = "กรุณากรอกปีการศึกษา")
     private Integer academicYear;

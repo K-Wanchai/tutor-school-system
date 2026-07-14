@@ -59,15 +59,15 @@ function StatusBadge({ status }) {
 
 function levelDetailRows(achievement) {
   if (achievement.educationLevel === 'LOWER_SECONDARY') {
-    return [{ label: 'ห้องเรียน', value: achievement.lowerSecondaryRoomType }];
+    return [{ label: 'ห้องเรียน', value: achievement.schoolTrackName }];
   }
   if (achievement.educationLevel === 'UPPER_SECONDARY') {
-    return [{ label: 'สายการเรียน', value: achievement.upperSecondaryProgram }];
+    return [{ label: 'สายการเรียน', value: achievement.schoolTrackName }];
   }
   if (achievement.educationLevel === 'BACHELOR') {
     return [
-      { label: 'คณะ', value: achievement.faculty },
-      { label: 'สาขา', value: achievement.major },
+      { label: 'คณะ', value: achievement.facultyName },
+      { label: 'สาขา', value: achievement.majorName },
     ];
   }
   return [];
@@ -152,7 +152,7 @@ export default function StudentAchievementDetailPage() {
           {levelDetailRows(achievement).map((row) => (
             <DetailRow key={row.label} label={row.label} value={row.value} />
           ))}
-          <DetailRow label="รอบที่สอบติด" value={achievement.admissionRound} />
+          <DetailRow label="รอบที่สอบติด" value={achievement.admissionRoundName} />
           <DetailRow label="ปีการศึกษา" value={achievement.academicYear} />
           <DetailRow label="วันที่ประกาศผล" value={formatDate(achievement.resultDate)} />
           <DetailRow label="หมายเหตุ" value={achievement.note} />

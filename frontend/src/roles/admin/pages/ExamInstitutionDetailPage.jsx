@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { getInstitutionAchievements } from '../services/examInstitutionService';
 import {
   createStudentExamAchievement,
@@ -9,6 +9,12 @@ import {
 } from '../services/studentExamAchievementService';
 import { getEnrollmentsByStudent } from '../services/adminEnrollmentService';
 import { getStudents } from '../services/adminStudentService';
+import { getFaculties, getMajors } from '../services/academicFacultyService';
+import { getSchoolTracks } from '../services/schoolTrackService';
+import { getAdmissionRounds } from '../services/admissionRoundService';
+import FacultyMajorManager from '../components/FacultyMajorManager';
+import SchoolTrackManager from '../components/SchoolTrackManager';
+import AdmissionRoundManager from '../components/AdmissionRoundManager';
 import './ExamInstitutionDetailPage.css';
 
 const TYPE_LABEL = {
@@ -21,11 +27,10 @@ const TYPE_LABEL = {
 const EMPTY_FORM = {
   studentId: '',
   educationLevel: '',
-  lowerSecondaryRoomType: '',
-  upperSecondaryProgram: '',
-  faculty: '',
-  major: '',
-  admissionRound: '',
+  schoolTrackId: '',
+  facultyId: '',
+  academicMajorId: '',
+  admissionRoundId: '',
   academicYear: '',
   resultDate: '',
   note: '',
@@ -41,15 +46,12 @@ function validateForm(f) {
   const e = {};
   if (!f.studentId) e.studentId = 'กรุณาเลือกนักเรียน';
   if (!f.educationLevel) e.educationLevel = 'กรุณาเลือกระดับที่สอบติด';
-  if (f.educationLevel === 'LOWER_SECONDARY' && !f.lowerSecondaryRoomType?.trim()) {
-    e.lowerSecondaryRoomType = 'กรุณากรอกห้องเรียนสำหรับระดับมัธยมต้น';
-  }
-  if (f.educationLevel === 'UPPER_SECONDARY' && !f.upperSecondaryProgram?.trim()) {
-    e.upperSecondaryProgram = 'กรุณากรอกสายการเรียนสำหรับระดับมัธยมปลาย';
+  if ((f.educationLevel === 'LOWER_SECONDARY' || f.educationLevel === 'UPPER_SECONDARY') && !f.schoolTrackId) {
+    e.schoolTrackId = 'กรุณาเลือกสายการเรียน/ห้องเรียน';
   }
   if (f.educationLevel === 'BACHELOR') {
-    if (!f.faculty?.trim()) e.faculty = 'กรุณากรอกคณะ';
-    if (!f.major?.trim()) e.major = 'กรุณากรอกสาขา';
+    if (!f.facultyId) e.facultyId = 'กรุณาเลือกคณะ';
+    if (!f.academicMajorId) e.academicMajorId = 'กรุณาเลือกสาขา';
   }
   if (!f.academicYear) e.academicYear = 'กรุณากรอกปีการศึกษา';
   return e;
@@ -149,44 +151,6 @@ function CoursePicker({ enrollments, loading, disabled, selectedIds, onChange })
   );
 }
 
-// ── Suggest Input: พิมพ์ค่าใหม่ได้ หรือเลือกจากค่าที่เคยบันทึกไว้แล้ว ──────
-
-function SuggestInput({ value, onChange, suggestions, placeholder }) {
-  const [open, setOpen] = useState(false);
-  const term = value.trim().toLowerCase();
-  const filtered = term
-    ? suggestions.filter((s) => s.toLowerCase().includes(term) && s !== value)
-    : suggestions;
-
-  return (
-    <div className="eid-suggest-wrap">
-      <input
-        type="text"
-        className="eid-suggest-input"
-        value={value}
-        placeholder={placeholder}
-        onChange={(e) => { onChange(e.target.value); setOpen(true); }}
-        onFocus={() => setOpen(true)}
-        onBlur={() => setTimeout(() => setOpen(false), 150)}
-      />
-      {open && filtered.length > 0 && (
-        <div className="eid-suggest-dropdown">
-          {filtered.map((s) => (
-            <button
-              type="button"
-              key={s}
-              className="eid-suggest-option"
-              onMouseDown={() => { onChange(s); setOpen(false); }}
-            >
-              {s}
-            </button>
-          ))}
-        </div>
-      )}
-    </div>
-  );
-}
-
 // ── Achievement Table (ใช้ร่วมกันทั้งมุมมองโรงเรียนและมหาวิทยาลัย) ─────────
 
 function AchievementTable({ columns, rows, emptyText, onViewDetail, onEdit, onDelete }) {
@@ -257,16 +221,16 @@ function SchoolAchievementView({ lowerSecondary, upperSecondary, onViewDetail, o
 
   if (tab === 'LOWER_SECONDARY') {
     rows = lowerSecondary;
-    columns = [{ key: 'lowerSecondaryRoomType', label: 'ห้องเรียน' }];
+    columns = [{ key: 'schoolTrackName', label: 'ห้องเรียน' }];
     emptyText = 'ยังไม่มีนักเรียนที่สอบติดระดับมัธยมต้น';
   } else if (tab === 'UPPER_SECONDARY') {
     rows = upperSecondary;
-    columns = [{ key: 'upperSecondaryProgram', label: 'สายการเรียน' }];
+    columns = [{ key: 'schoolTrackName', label: 'สายการเรียน' }];
     emptyText = 'ยังไม่มีนักเรียนที่สอบติดระดับมัธยมปลาย';
   } else {
     rows = [
-      ...lowerSecondary.map((r) => ({ ...r, levelLabel: 'มัธยมต้น', detail: r.lowerSecondaryRoomType })),
-      ...upperSecondary.map((r) => ({ ...r, levelLabel: 'มัธยมปลาย', detail: r.upperSecondaryProgram })),
+      ...lowerSecondary.map((r) => ({ ...r, levelLabel: 'มัธยมต้น', detail: r.schoolTrackName })),
+      ...upperSecondary.map((r) => ({ ...r, levelLabel: 'มัธยมปลาย', detail: r.schoolTrackName })),
     ];
     columns = [
       { key: 'levelLabel', label: 'ระดับ' },
@@ -307,7 +271,7 @@ function UniversityAchievementView({ bachelor, onViewDetail, onEdit, onDelete })
   const [activeMajor, setActiveMajor] = useState('ALL');
 
   const faculties = useMemo(
-    () => Array.from(new Set(bachelor.map((b) => b.faculty).filter(Boolean))).sort(),
+    () => Array.from(new Set(bachelor.map((b) => b.facultyName).filter(Boolean))).sort(),
     [bachelor]
   );
 
@@ -318,21 +282,21 @@ function UniversityAchievementView({ bachelor, onViewDetail, onEdit, onDelete })
 
   const facultyFiltered = activeFaculty === 'ALL'
     ? bachelor
-    : bachelor.filter((b) => b.faculty === activeFaculty);
+    : bachelor.filter((b) => b.facultyName === activeFaculty);
 
   const majors = useMemo(
-    () => Array.from(new Set(facultyFiltered.map((b) => b.major).filter(Boolean))).sort(),
+    () => Array.from(new Set(facultyFiltered.map((b) => b.majorName).filter(Boolean))).sort(),
     [facultyFiltered]
   );
 
   const rows = activeMajor === 'ALL'
     ? facultyFiltered
-    : facultyFiltered.filter((b) => b.major === activeMajor);
+    : facultyFiltered.filter((b) => b.majorName === activeMajor);
 
   const columns = [];
-  if (activeFaculty === 'ALL') columns.push({ key: 'faculty', label: 'คณะ' });
-  if (activeMajor === 'ALL') columns.push({ key: 'major', label: 'สาขา' });
-  columns.push({ key: 'admissionRound', label: 'รอบที่สอบติด' });
+  if (activeFaculty === 'ALL') columns.push({ key: 'facultyName', label: 'คณะ' });
+  if (activeMajor === 'ALL') columns.push({ key: 'majorName', label: 'สาขา' });
+  columns.push({ key: 'admissionRoundName', label: 'รอบที่สอบติด' });
 
   if (bachelor.length === 0) {
     return (
@@ -401,13 +365,32 @@ function UniversityAchievementView({ bachelor, onViewDetail, onEdit, onDelete })
 export default function ExamInstitutionDetailPage() {
   const { institutionId } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
 
   const [overview, setOverview] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [toast, setToast] = useState(null);
 
+  // สถาบันที่เพิ่งสร้างใหม่ (มาจาก "เพิ่มสถาบัน") — พาไปตั้งค่าคณะ/สาขา/สายการเรียนก่อนเริ่มบันทึกนักเรียนที่สอบติด
+  const [mainTab, setMainTab] = useState(location.state?.openConfig ? 'config' : 'achievements');
+
+  useEffect(() => {
+    if (location.state?.openConfig) {
+      setToast({ msg: 'สร้างสถาบันสำเร็จ — ตั้งค่าคณะ/สาขา หรือสายการเรียน/ห้องเรียน และรอบที่สอบติดของสถาบันนี้ก่อนเริ่มบันทึกนักเรียนที่สอบติด', type: 'success' });
+      navigate(location.pathname, { replace: true, state: {} });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   const [students, setStudents] = useState([]);
+
+  const [facultyList, setFacultyList] = useState([]);
+  const [majorList, setMajorList] = useState([]);
+  const [trackList, setTrackList] = useState([]);
+  const [roundList, setRoundList] = useState([]);
+  const [loadingMajors, setLoadingMajors] = useState(false);
+  const [loadingTracks, setLoadingTracks] = useState(false);
 
   // form modal state
   const [showForm, setShowForm] = useState(false);
@@ -463,20 +446,48 @@ export default function ExamInstitutionDetailPage() {
     return () => { cancelled = true; };
   }, [form.studentId]);
 
-  // คณะ/สาขาที่เคยบันทึกไว้แล้วในสถาบันนี้ — ใช้เป็นตัวเลือกให้พิมพ์/เลือกตอนกรอกฟอร์ม
-  const facultyOptions = useMemo(
-    () => Array.from(new Set((overview?.bachelor || []).map((b) => b.faculty).filter(Boolean))).sort(),
-    [overview]
-  );
-  const majorOptionsForFaculty = useMemo(
-    () => Array.from(new Set(
-      (overview?.bachelor || [])
-        .filter((b) => b.faculty === form.faculty)
-        .map((b) => b.major)
-        .filter(Boolean)
-    )).sort(),
-    [overview, form.faculty]
-  );
+  // โหลดรายชื่อคณะของสถาบันนี้ (สำหรับสถาบันประเภทมหาวิทยาลัย) เมื่อเปิดฟอร์ม
+  useEffect(() => {
+    if (!showForm || overview?.institution?.institutionType !== 'UNIVERSITY') { return; }
+    getFaculties(institutionId)
+      .then((data) => setFacultyList((data || []).filter((f) => f.active)))
+      .catch(() => setFacultyList([]));
+  }, [showForm, institutionId, overview]);
+
+  // โหลดรอบที่สอบติดของสถาบันนี้ เมื่อเปิดฟอร์ม
+  useEffect(() => {
+    if (!showForm) { return; }
+    getAdmissionRounds(institutionId)
+      .then((data) => setRoundList((data || []).filter((r) => r.active)))
+      .catch(() => setRoundList([]));
+  }, [showForm, institutionId]);
+
+  // โหลดสาขาตามคณะที่เลือก
+  useEffect(() => {
+    if (!form.facultyId) { setMajorList([]); return; }
+    let cancelled = false;
+    setLoadingMajors(true);
+    getMajors(institutionId, form.facultyId)
+      .then((data) => { if (!cancelled) setMajorList((data || []).filter((m) => m.active)); })
+      .catch(() => { if (!cancelled) setMajorList([]); })
+      .finally(() => { if (!cancelled) setLoadingMajors(false); });
+    return () => { cancelled = true; };
+  }, [institutionId, form.facultyId]);
+
+  // โหลดสายการเรียน/ห้องเรียนตามระดับที่เลือก (มัธยมต้น/มัธยมปลาย)
+  useEffect(() => {
+    if (form.educationLevel !== 'LOWER_SECONDARY' && form.educationLevel !== 'UPPER_SECONDARY') {
+      setTrackList([]);
+      return;
+    }
+    let cancelled = false;
+    setLoadingTracks(true);
+    getSchoolTracks(institutionId, form.educationLevel)
+      .then((data) => { if (!cancelled) setTrackList((data || []).filter((t) => t.active)); })
+      .catch(() => { if (!cancelled) setTrackList([]); })
+      .finally(() => { if (!cancelled) setLoadingTracks(false); });
+    return () => { cancelled = true; };
+  }, [institutionId, form.educationLevel]);
 
   function goToAchievementDetail(achievementId) {
     navigate(`/admin/student-exam-achievements/${achievementId}/detail`);
@@ -494,8 +505,8 @@ export default function ExamInstitutionDetailPage() {
   }
 
   function fldFaculty(val) {
-    setForm((f) => ({ ...f, faculty: val, major: '' }));
-    setFormErr((e) => ({ ...e, faculty: '', major: '' }));
+    setForm((f) => ({ ...f, facultyId: val, academicMajorId: '' }));
+    setFormErr((e) => ({ ...e, facultyId: '', academicMajorId: '' }));
   }
 
   function openCreate() {
@@ -516,11 +527,10 @@ export default function ExamInstitutionDetailPage() {
       setForm({
         studentId: a.studentId ?? '',
         educationLevel: a.educationLevel ?? '',
-        lowerSecondaryRoomType: a.lowerSecondaryRoomType ?? '',
-        upperSecondaryProgram: a.upperSecondaryProgram ?? '',
-        faculty: a.faculty ?? '',
-        major: a.major ?? '',
-        admissionRound: a.admissionRound ?? '',
+        schoolTrackId: a.schoolTrackId ?? '',
+        facultyId: a.academicFacultyId ?? '',
+        academicMajorId: a.academicMajorId ?? '',
+        admissionRoundId: a.admissionRoundId ?? '',
         academicYear: a.academicYear ?? '',
         resultDate: a.resultDate ?? '',
         note: a.note ?? '',
@@ -546,11 +556,10 @@ export default function ExamInstitutionDetailPage() {
         examInstitutionId: Number(institutionId),
         enrollmentIds: selectedCourseIds,
         educationLevel: form.educationLevel,
-        lowerSecondaryRoomType: form.educationLevel === 'LOWER_SECONDARY' ? form.lowerSecondaryRoomType?.trim() || null : null,
-        upperSecondaryProgram: form.educationLevel === 'UPPER_SECONDARY' ? form.upperSecondaryProgram?.trim() || null : null,
-        faculty: form.educationLevel === 'BACHELOR' ? form.faculty?.trim() || null : null,
-        major: form.educationLevel === 'BACHELOR' ? form.major?.trim() || null : null,
-        admissionRound: form.admissionRound?.trim() || null,
+        schoolTrackId: (form.educationLevel === 'LOWER_SECONDARY' || form.educationLevel === 'UPPER_SECONDARY') && form.schoolTrackId
+          ? Number(form.schoolTrackId) : null,
+        academicMajorId: form.educationLevel === 'BACHELOR' && form.academicMajorId ? Number(form.academicMajorId) : null,
+        admissionRoundId: form.admissionRoundId ? Number(form.admissionRoundId) : null,
         academicYear: Number(form.academicYear),
         resultDate: form.resultDate || null,
         note: form.note?.trim() || null,
@@ -619,8 +628,8 @@ export default function ExamInstitutionDetailPage() {
 
   const { institution, lowerSecondary, upperSecondary, bachelor } = overview;
   const isUniversity = institution.institutionType === 'UNIVERSITY';
-  const facultyCount = new Set(bachelor.map((b) => b.faculty).filter(Boolean)).size;
-  const majorCount = new Set(bachelor.map((b) => b.major).filter(Boolean)).size;
+  const facultyCount = new Set(bachelor.map((b) => b.facultyName).filter(Boolean)).size;
+  const majorCount = new Set(bachelor.map((b) => b.majorName).filter(Boolean)).size;
 
   return (
     <div className="eid-page">
@@ -687,8 +696,30 @@ export default function ExamInstitutionDetailPage() {
         )}
       </div>
 
-      {/* ── ระดับ: แท็บตามประเภทสถาบัน ── */}
-      {isUniversity ? (
+      {/* ── สลับมุมมอง: นักเรียนที่สอบติด / จัดการข้อมูลพื้นฐาน ── */}
+      <div className="eid-maintabs">
+        <button
+          className={`eid-maintab${mainTab === 'achievements' ? ' eid-maintab--active' : ''}`}
+          onClick={() => setMainTab('achievements')}
+        >
+          นักเรียนที่สอบติด
+        </button>
+        <button
+          className={`eid-maintab${mainTab === 'config' ? ' eid-maintab--active' : ''}`}
+          onClick={() => setMainTab('config')}
+        >
+          จัดการข้อมูลพื้นฐาน
+        </button>
+      </div>
+
+      {mainTab === 'config' ? (
+        <>
+          {isUniversity
+            ? <FacultyMajorManager institutionId={institutionId} />
+            : <SchoolTrackManager institutionId={institutionId} />}
+          <AdmissionRoundManager institutionId={institutionId} />
+        </>
+      ) : isUniversity ? (
         <UniversityAchievementView
           bachelor={bachelor}
           onViewDetail={goToAchievementDetail}
@@ -750,27 +781,25 @@ export default function ExamInstitutionDetailPage() {
                 {formErr.educationLevel && <span className="eid-err">{formErr.educationLevel}</span>}
               </div>
 
-              {form.educationLevel === 'LOWER_SECONDARY' && (
+              {(form.educationLevel === 'LOWER_SECONDARY' || form.educationLevel === 'UPPER_SECONDARY') && (
                 <div className="eid-field">
-                  <label>ห้องเรียนระดับมัธยมต้น *</label>
-                  <input
-                    value={form.lowerSecondaryRoomType}
-                    onChange={(e) => fld('lowerSecondaryRoomType', e.target.value)}
-                    placeholder="เช่น ห้อง Gifted, ห้อง English Program"
-                  />
-                  {formErr.lowerSecondaryRoomType && <span className="eid-err">{formErr.lowerSecondaryRoomType}</span>}
-                </div>
-              )}
-
-              {form.educationLevel === 'UPPER_SECONDARY' && (
-                <div className="eid-field">
-                  <label>สายการเรียนระดับมัธยมปลาย *</label>
-                  <input
-                    value={form.upperSecondaryProgram}
-                    onChange={(e) => fld('upperSecondaryProgram', e.target.value)}
-                    placeholder="เช่น วิทย์-คณิต, ศิลป์-คำนวณ"
-                  />
-                  {formErr.upperSecondaryProgram && <span className="eid-err">{formErr.upperSecondaryProgram}</span>}
+                  <label>{form.educationLevel === 'LOWER_SECONDARY' ? 'ห้องเรียนระดับมัธยมต้น' : 'สายการเรียนระดับมัธยมปลาย'} *</label>
+                  <select
+                    value={form.schoolTrackId}
+                    onChange={(e) => fld('schoolTrackId', e.target.value)}
+                    disabled={loadingTracks}
+                  >
+                    <option value="">— เลือกสายการเรียน/ห้องเรียน —</option>
+                    {trackList.map((t) => (
+                      <option key={t.id} value={t.id}>{t.name}</option>
+                    ))}
+                  </select>
+                  {formErr.schoolTrackId && <span className="eid-err">{formErr.schoolTrackId}</span>}
+                  {!loadingTracks && trackList.length === 0 && (
+                    <span className="eid-hint">
+                      ยังไม่มีสายการเรียน/ห้องเรียนของสถาบันนี้ — ไปตั้งค่าที่แท็บ "จัดการข้อมูลพื้นฐาน" ก่อน
+                    </span>
+                  )}
                 </div>
               )}
 
@@ -778,25 +807,34 @@ export default function ExamInstitutionDetailPage() {
                 <div className="eid-form-row">
                   <div className="eid-field">
                     <label>คณะ *</label>
-                    <SuggestInput
-                      value={form.faculty}
-                      onChange={fldFaculty}
-                      suggestions={facultyOptions}
-                      placeholder="เช่น คณะวิศวกรรมศาสตร์"
-                    />
-                    {formErr.faculty && <span className="eid-err">{formErr.faculty}</span>}
+                    <select value={form.facultyId} onChange={(e) => fldFaculty(e.target.value)}>
+                      <option value="">— เลือกคณะ —</option>
+                      {facultyList.map((f) => (
+                        <option key={f.id} value={f.id}>{f.name}</option>
+                      ))}
+                    </select>
+                    {formErr.facultyId && <span className="eid-err">{formErr.facultyId}</span>}
+                    {facultyList.length === 0 && (
+                      <span className="eid-hint">
+                        ยังไม่มีคณะของสถาบันนี้ — ไปตั้งค่าที่แท็บ "จัดการข้อมูลพื้นฐาน" ก่อน
+                      </span>
+                    )}
                   </div>
                   <div className="eid-field">
                     <label>สาขา *</label>
-                    <SuggestInput
-                      value={form.major}
-                      onChange={(v) => fld('major', v)}
-                      suggestions={majorOptionsForFaculty}
-                      placeholder="เช่น วิศวกรรมคอมพิวเตอร์"
-                    />
-                    {formErr.major && <span className="eid-err">{formErr.major}</span>}
-                    {form.faculty && majorOptionsForFaculty.length === 0 && (
-                      <span className="eid-hint">ยังไม่เคยบันทึกสาขาในคณะนี้ — พิมพ์สาขาใหม่ได้เลย</span>
+                    <select
+                      value={form.academicMajorId}
+                      onChange={(e) => fld('academicMajorId', e.target.value)}
+                      disabled={!form.facultyId || loadingMajors}
+                    >
+                      <option value="">— เลือกสาขา —</option>
+                      {majorList.map((m) => (
+                        <option key={m.id} value={m.id}>{m.name}</option>
+                      ))}
+                    </select>
+                    {formErr.academicMajorId && <span className="eid-err">{formErr.academicMajorId}</span>}
+                    {form.facultyId && !loadingMajors && majorList.length === 0 && (
+                      <span className="eid-hint">ยังไม่มีสาขาในคณะนี้ — ไปเพิ่มที่แท็บ "จัดการข้อมูลพื้นฐาน" ก่อน</span>
                     )}
                   </div>
                 </div>
@@ -805,11 +843,15 @@ export default function ExamInstitutionDetailPage() {
               <div className="eid-form-row">
                 <div className="eid-field">
                   <label>รอบที่สอบติด</label>
-                  <input
-                    value={form.admissionRound}
-                    onChange={(e) => fld('admissionRound', e.target.value)}
-                    placeholder="เช่น Portfolio, Quota, Admission"
-                  />
+                  <select value={form.admissionRoundId} onChange={(e) => fld('admissionRoundId', e.target.value)}>
+                    <option value="">— เลือกรอบที่สอบติด —</option>
+                    {roundList.map((r) => (
+                      <option key={r.id} value={r.id}>{r.name}</option>
+                    ))}
+                  </select>
+                  {roundList.length === 0 && (
+                    <span className="eid-hint">ยังไม่มีรอบที่สอบติดของสถาบันนี้ — ไปตั้งค่าที่แท็บ "จัดการข้อมูลพื้นฐาน" ก่อน</span>
+                  )}
                 </div>
                 <div className="eid-field">
                   <label>ปีการศึกษา *</label>

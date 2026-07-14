@@ -8,8 +8,10 @@ import com.tutorschool.backend.entity.Role;
 import com.tutorschool.backend.entity.Student;
 import com.tutorschool.backend.entity.User;
 import com.tutorschool.backend.exception.DuplicateResourceException;
+import com.tutorschool.backend.exception.ResourceInUseException;
 import com.tutorschool.backend.exception.ResourceNotFoundException;
 import com.tutorschool.backend.mapper.StudentMapper;
+import com.tutorschool.backend.repository.EnrollmentRepository;
 import com.tutorschool.backend.repository.StudentRepository;
 import com.tutorschool.backend.repository.UserRepository;
 import com.tutorschool.backend.service.StudentService;
@@ -30,6 +32,7 @@ public class StudentServiceImpl implements StudentService {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final StudentMapper studentMapper;
+    private final EnrollmentRepository enrollmentRepository;
 
     @Override
     @Transactional(readOnly = true)
@@ -175,6 +178,9 @@ public class StudentServiceImpl implements StudentService {
     public void deleteStudent(Long id) {
         Student student = studentRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Student not found with id: " + id));
+        if (enrollmentRepository.existsByStudentId(id)) {
+            throw new ResourceInUseException("ไม่สามารถลบข้อมูลนักเรียนได้เนื่องจากมีข้อมูลการสมัครเรียนเชื่อมโยงอยู่");
+        }
         // ลบ Student ก่อน แล้วค่อยลบ User (เพราะ FK constraint)
         studentRepository.delete(student);
         userRepository.delete(student.getUser());

@@ -72,15 +72,6 @@ public class StudentController {
         return ResponseEntity.ok(ApiResponse.success("Profile updated successfully", response));
     }
 
-    @PutMapping("/{id}")
-    @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<ApiResponse<StudentResponse>> updateStudent(
-            @PathVariable Long id,
-            @Valid @RequestBody UpdateStudentRequest request) {
-        StudentResponse response = studentService.updateStudent(id, request);
-        return ResponseEntity.ok(ApiResponse.success("Student updated successfully", response));
-    }
-
     @DeleteMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ApiResponse<Void>> deleteStudent(@PathVariable Long id) {

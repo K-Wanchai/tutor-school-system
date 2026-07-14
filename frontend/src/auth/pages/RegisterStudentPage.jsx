@@ -1,22 +1,7 @@
-import { useState, useRef, useMemo } from 'react';
+import { useState, useMemo } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { register, checkAvailability } from '../services/authService';
 import './RegisterStudentPage.css';
-
-const THAI_BANKS = [
-  'กสิกรไทย',
-  'กรุงเทพ',
-  'กรุงไทย',
-  'กรุงศรีอยุธยา',
-  'ไทยพาณิชย์',
-  'ทหารไทยธนชาต',
-  'ออมสิน',
-  'ธนาคารเพื่อการเกษตรและสหกรณ์การเกษตร',
-  'ซีไอเอ็มบีไทย',
-  'ยูโอบี',
-  'ธนาคารอาคารสงเคราะห์',
-  'อื่นๆ',
-];
 
 const GRADE_LEVELS = [
   { value: 'PRATHOM_3', label: 'ประถมศึกษาปีที่ 3' },
@@ -64,7 +49,6 @@ function getDaysInMonth(monthNum, yearBE) {
 
 export default function RegisterStudentPage() {
   const navigate = useNavigate();
-  const qrInputRef = useRef(null);
 
   // field names ต้องตรงกับ backend RegisterRequest DTO ทุกตัว
   const [form, setForm] = useState({
@@ -81,16 +65,9 @@ export default function RegisterStudentPage() {
     phone: '',          // → RegisterRequest.phone → Student.phoneNumber
     address: '',
     parentPhone: '',    // → RegisterRequest.parentPhone → Student.guardianPhoneNumber
-    bankName: 'กสิกรไทย',
-    accountName: '',    // → RegisterRequest.accountName → Student.bankAccountName
-    accountNumber: '',  // → RegisterRequest.accountNumber → Student.bankAccountNumber
-    promptPayQrCode: '', // → RegisterRequest.promptPayQrCode → Student.bankQrCode
   });
 
   const [birthParts, setBirthParts] = useState({ day: '', month: '', yearBE: '' });
-  const [customBankName, setCustomBankName] = useState('');
-  const [qrFile, setQrFile] = useState(null);
-  const [qrFileName, setQrFileName] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [fieldErrors, setFieldErrors] = useState({});
@@ -175,36 +152,6 @@ export default function RegisterStudentPage() {
     }
   };
 
-  const handleQrCodeChange = (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
-    if (!file.type.startsWith('image/')) {
-      setError('กรุณาอัปโหลดไฟล์รูปภาพเท่านั้น (PNG, JPG)');
-      return;
-    }
-    if (file.size > 3 * 1024 * 1024) {
-      setError('ขนาดไฟล์ต้องไม่เกิน 3MB');
-      return;
-    }
-    setQrFile(file);
-    setQrFileName(file.name);
-    setError('');
-    // ใช้ FileReader เฉพาะ preview เท่านั้น — ไม่ส่ง base64 ไป backend
-    const reader = new FileReader();
-    reader.onload = (ev) => {
-      setForm((prev) => ({ ...prev, promptPayQrCode: ev.target.result }));
-    };
-    reader.readAsDataURL(file);
-  };
-
-  const handleRemoveQr = (e) => {
-    e.stopPropagation();
-    setQrFile(null);
-    setQrFileName('');
-    setForm((prev) => ({ ...prev, promptPayQrCode: '' }));
-    if (qrInputRef.current) qrInputRef.current.value = '';
-  };
-
   const validate = () => {
     if (!form.firstName.trim()) return 'กรุณากรอกชื่อ';
     if (!form.lastName.trim()) return 'กรุณากรอกนามสกุล';
@@ -233,11 +180,6 @@ export default function RegisterStudentPage() {
     if (!/^\d{10}$/.test(form.phone.trim())) return 'เบอร์โทรศัพท์ต้องเป็นตัวเลข 10 หลักเท่านั้น';
     if (!form.address.trim()) return 'กรุณากรอกที่อยู่';
     if (!form.parentPhone.trim()) return 'กรุณากรอกเบอร์โทรผู้ปกครอง';
-    if (!form.bankName.trim()) return 'กรุณาเลือกธนาคาร';
-    if (form.bankName === 'อื่นๆ' && !customBankName.trim()) return 'กรุณาระบุชื่อธนาคาร';
-    if (!form.accountName.trim()) return 'กรุณากรอกชื่อบัญชีธนาคาร';
-    if (!form.accountNumber.trim()) return 'กรุณากรอกเลขบัญชีธนาคาร';
-    if (!qrFile) return 'กรุณาอัปโหลดรูป QR Code พร้อมเพย์';
     return null;
   };
 
@@ -252,24 +194,14 @@ export default function RegisterStudentPage() {
     setError('');
     setFieldErrors({});
     try {
-      // ตัด confirmPassword และ promptPayQrCode ออก — ไม่ส่งไป backend
-      const { confirmPassword, promptPayQrCode, ...rest } = form;
+      // ตัด confirmPassword ออก — ไม่ส่งไป backend
+      const { confirmPassword, ...rest } = form;
       const payload = {
         ...rest,
         birthDate: form.birthDate || null,
-        bankName: form.bankName === 'อื่นๆ' ? customBankName.trim() : form.bankName,
       };
 
-      const formData = new FormData();
-      formData.append(
-        'data',
-        new Blob([JSON.stringify(payload)], { type: 'application/json' }),
-      );
-      if (qrFile) {
-        formData.append('qrCodeFile', qrFile);
-      }
-
-      await register(formData);
+      await register(payload);
       window.alert('สมัครสมาชิกสำเร็จ! กรุณาเข้าสู่ระบบด้วยบัญชีที่สมัครไว้');
       navigate('/login');
     } catch (err) {
@@ -611,115 +543,6 @@ export default function RegisterStudentPage() {
                   value={form.address}
                   onChange={handleChange}
                 />
-              </div>
-            </div>
-
-            {/* ── Section 4: ข้อมูลบัญชีธนาคาร ── */}
-            <div className="auth-register-section-label" style={{ marginTop: '12px' }}>ข้อมูลบัญชีธนาคาร</div>
-            <div className="auth-form-grid">
-              <div className="auth-form-group">
-                <label className="auth-form-label" htmlFor="bankName">
-                  ธนาคาร <span className="auth-required">*</span>
-                </label>
-                <select
-                  id="bankName"
-                  name="bankName"
-                  className="auth-form-input"
-                  value={form.bankName}
-                  onChange={(e) => {
-                    handleChange(e);
-                    if (e.target.value !== 'อื่นๆ') setCustomBankName('');
-                  }}
-                >
-                  {THAI_BANKS.map((b) => (
-                    <option key={b} value={b}>{b}</option>
-                  ))}
-                </select>
-                {form.bankName === 'อื่นๆ' && (
-                  <input
-                    type="text"
-                    className="auth-form-input"
-                    style={{ marginTop: '8px' }}
-                    placeholder="ระบุชื่อธนาคาร"
-                    value={customBankName}
-                    onChange={(e) => {
-                      setCustomBankName(e.target.value);
-                      setError('');
-                    }}
-                  />
-                )}
-              </div>
-
-              <div className="auth-form-group">
-                <label className="auth-form-label" htmlFor="accountName">
-                  ชื่อบัญชี <span className="auth-required">*</span>
-                </label>
-                <input
-                  id="accountName"
-                  type="text"
-                  name="accountName"
-                  className="auth-form-input"
-                  placeholder="ชื่อบัญชีธนาคาร"
-                  value={form.accountName}
-                  onChange={handleChange}
-                />
-              </div>
-
-              <div className="auth-form-group">
-                <label className="auth-form-label" htmlFor="accountNumber">
-                  เลขบัญชี <span className="auth-required">*</span>
-                </label>
-                <input
-                  id="accountNumber"
-                  type="text"
-                  name="accountNumber"
-                  className="auth-form-input"
-                  placeholder="เลขบัญชีธนาคาร"
-                  value={form.accountNumber}
-                  onChange={handleChange}
-                />
-              </div>
-
-              <div className="auth-form-group auth-form-group--full">
-                <label className="auth-form-label">
-                  QR Code พร้อมเพย์ <span className="auth-required">*</span>
-                </label>
-                <input
-                  ref={qrInputRef}
-                  id="promptPayQrCode"
-                  type="file"
-                  accept="image/*"
-                  onChange={handleQrCodeChange}
-                  style={{ display: 'none' }}
-                />
-                <div
-                  className={`auth-qr-upload-area${form.promptPayQrCode ? ' has-image' : ''}`}
-                  onClick={() => qrInputRef.current && qrInputRef.current.click()}
-                >
-                  {form.promptPayQrCode ? (
-                    <div className="auth-qr-preview">
-                      <img src={form.promptPayQrCode} alt="QR Code Preview" />
-                      <div className="auth-qr-preview-info">
-                        <span className="auth-qr-preview-name">{qrFileName}</span>
-                        <span className="auth-qr-preview-sub">คลิกเพื่อเปลี่ยนรูป</span>
-                        <button type="button" className="auth-qr-remove-btn" onClick={handleRemoveQr}>
-                          ลบรูปภาพ
-                        </button>
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="auth-qr-placeholder">
-                      <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-                        <rect x="3" y="3" width="7" height="7" rx="1" />
-                        <rect x="14" y="3" width="7" height="7" rx="1" />
-                        <rect x="3" y="14" width="7" height="7" rx="1" />
-                        <path d="M14 14h2v2h-2zM18 14h3v2h-3zM14 18h3v3h-3zM19 18h2v3h-2z" />
-                      </svg>
-                      <span className="auth-qr-placeholder-text">คลิกเพื่ออัปโหลด QR Code พร้อมเพย์</span>
-                      <span className="auth-qr-placeholder-sub">PNG, JPG ขนาดไม่เกิน 3MB</span>
-                    </div>
-                  )}
-                </div>
               </div>
             </div>
 

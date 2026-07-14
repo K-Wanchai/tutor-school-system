@@ -44,6 +44,12 @@ public class GlobalExceptionHandler {
                 .body(ApiResponse.error(ex.getMessage()));
     }
 
+    @ExceptionHandler(ResourceInUseException.class)
+    public ResponseEntity<ApiResponse<Void>> handleResourceInUseException(ResourceInUseException ex) {
+        return ResponseEntity.status(HttpStatus.CONFLICT)
+                .body(ApiResponse.error(ex.getMessage()));
+    }
+
     @ExceptionHandler(CourseScheduleConflictException.class)
     public ResponseEntity<ApiResponse<Void>> handleCourseScheduleConflictException(CourseScheduleConflictException ex) {
         return ResponseEntity.status(HttpStatus.CONFLICT)

@@ -170,7 +170,6 @@ export default function AdminSettingsPage() {
         </div>
         {profile && (
           <div className="is-header-meta">
-            <span className="is-code-badge">{profile.institutionCode || '—'}</span>
             <span className="is-meta-text">แก้ไขล่าสุด {formatDateTime(profile.updatedAt)}</span>
           </div>
         )}
@@ -280,10 +279,6 @@ export default function AdminSettingsPage() {
                   <FormField
                     label="เบอร์โทรศัพท์" name="phoneNumber" required
                     value={form.phoneNumber} onChange={handleChange} error={errors.phoneNumber}
-                  />
-                  <FormField
-                    label="รหัสสถาบัน" name="institutionCode" disabled
-                    value={profile?.institutionCode || ''} onChange={() => {}}
                   />
                   <div className="is-form-field is-form-field--full">
                     <label className="is-form-label">ที่อยู่</label>
