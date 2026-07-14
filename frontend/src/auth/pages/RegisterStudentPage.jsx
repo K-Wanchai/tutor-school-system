@@ -1,6 +1,6 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useMemo } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { register } from '../services/authService';
+import { register, checkAvailability } from '../services/authService';
 import './RegisterStudentPage.css';
 
 const THAI_BANKS = [
@@ -18,6 +18,29 @@ const THAI_BANKS = [
   'อื่นๆ',
 ];
 
+const GRADE_LEVELS = [
+  { value: 'PRATHOM_3', label: 'ประถมศึกษาปีที่ 3' },
+  { value: 'PRATHOM_4', label: 'ประถมศึกษาปีที่ 4' },
+  { value: 'PRATHOM_5', label: 'ประถมศึกษาปีที่ 5' },
+  { value: 'PRATHOM_6', label: 'ประถมศึกษาปีที่ 6' },
+  { value: 'MATTAYOM_1', label: 'มัธยมศึกษาปีที่ 1' },
+  { value: 'MATTAYOM_2', label: 'มัธยมศึกษาปีที่ 2' },
+  { value: 'MATTAYOM_3', label: 'มัธยมศึกษาปีที่ 3' },
+  { value: 'MATTAYOM_4', label: 'มัธยมศึกษาปีที่ 4' },
+  { value: 'MATTAYOM_5', label: 'มัธยมศึกษาปีที่ 5' },
+  { value: 'MATTAYOM_6', label: 'มัธยมศึกษาปีที่ 6' },
+  { value: 'VOCATIONAL_CERT_1', label: 'ปวช.1' },
+  { value: 'VOCATIONAL_CERT_2', label: 'ปวช.2' },
+  { value: 'VOCATIONAL_CERT_3', label: 'ปวช.3' },
+  { value: 'VOCATIONAL_DIPLOMA_1', label: 'ปวส.1' },
+  { value: 'VOCATIONAL_DIPLOMA_2', label: 'ปวส.2' },
+  { value: 'UNIVERSITY', label: 'ระดับมหาวิทยาลัย / ปริญญาตรี' },
+  { value: 'GENERAL_PUBLIC', label: 'บุคคลทั่วไป / วัยทำงาน' },
+];
+
+const MIN_AGE = 9;
+const MAX_AGE = 40;
+
 const THAI_MONTHS = [
   { num: '1',  name: 'มกราคม' },
   { num: '2',  name: 'กุมภาพันธ์' },
@@ -32,9 +55,6 @@ const THAI_MONTHS = [
   { num: '11', name: 'พฤศจิกายน' },
   { num: '12', name: 'ธันวาคม' },
 ];
-
-const BE_YEAR_START = 2490;
-const BE_YEAR_END   = 2550;
 
 function getDaysInMonth(monthNum, yearBE) {
   if (!monthNum) return 31;
@@ -56,6 +76,8 @@ export default function RegisterStudentPage() {
     confirmPassword: '',
     nationalId: '',
     birthDate: '',
+    currentSchool: '',
+    gradeLevel: '',
     phone: '',          // → RegisterRequest.phone → Student.phoneNumber
     address: '',
     parentPhone: '',    // → RegisterRequest.parentPhone → Student.guardianPhoneNumber
@@ -74,10 +96,62 @@ export default function RegisterStudentPage() {
   const [fieldErrors, setFieldErrors] = useState({});
   const [success, setSuccess] = useState('');
 
+  // สถานะเช็ค username/email/nationalId ซ้ำแบบ real-time (null = ยังไม่ได้เช็ค, true = ว่าง, false = ซ้ำ)
+  const [availability, setAvailability] = useState({ username: null, email: null, nationalId: null });
+  const [passwordMismatch, setPasswordMismatch] = useState(false);
+
+  const beYearRange = useMemo(() => {
+    const nowBE = new Date().getFullYear() + 543;
+    return { start: nowBE - MAX_AGE, end: nowBE - MIN_AGE };
+  }, []);
+
   const handleChange = (e) => {
-    setForm({ ...form, [e.target.name]: e.target.value });
+    const { name, value } = e.target;
+    setForm({ ...form, [name]: value });
     setError('');
     setFieldErrors({});
+    if (name in availability) {
+      setAvailability((prev) => ({ ...prev, [name]: null }));
+    }
+    if (name === 'password' || name === 'confirmPassword') {
+      setPasswordMismatch(false);
+    }
+  };
+
+  const handleAvailabilityBlur = async (field) => {
+    const value = form[field];
+    if (!value || !value.trim()) return;
+    try {
+      const result = await checkAvailability(field, value.trim());
+      setAvailability((prev) => ({ ...prev, [field]: !!result.available }));
+    } catch {
+      // ไม่บล็อกการกรอกฟอร์มถ้าเช็คไม่สำเร็จ ปล่อยให้ backend ตรวจตอน submit อีกครั้ง
+      setAvailability((prev) => ({ ...prev, [field]: null }));
+    }
+  };
+
+  const handlePasswordBlur = () => {
+    if (form.confirmPassword) {
+      setPasswordMismatch(form.password !== form.confirmPassword);
+    }
+  };
+
+  const availabilityInputClass = (field) => {
+    if (availability[field] === false) return 'auth-form-input is-duplicate';
+    if (availability[field] === true) return 'auth-form-input is-available';
+    return 'auth-form-input';
+  };
+
+  const availabilityHint = (field, defaultHint) => {
+    if (availability[field] === false) return 'ข้อมูลนี้ถูกใช้งานแล้ว กรุณาแก้ไข';
+    if (availability[field] === true) return 'ใช้งานได้';
+    return defaultHint;
+  };
+
+  const availabilityHintClass = (field) => {
+    if (availability[field] === false) return 'auth-form-hint auth-form-hint--duplicate';
+    if (availability[field] === true) return 'auth-form-hint auth-form-hint--available';
+    return 'auth-form-hint';
   };
 
   const handleBirthPartChange = (field, value) => {
@@ -143,6 +217,18 @@ export default function RegisterStudentPage() {
     if (!form.nationalId) return 'กรุณากรอกเลขบัตรประชาชน';
     if (!/^\d{13}$/.test(form.nationalId)) return 'เลขบัตรประชาชนต้องเป็นตัวเลข 13 หลักเท่านั้น';
     if (!form.birthDate) return 'กรุณาเลือกวันเกิด (วัน / เดือน / ปี) ให้ครบ';
+    if (form.birthDate) {
+      const birth = new Date(form.birthDate);
+      const today = new Date();
+      let age = today.getFullYear() - birth.getFullYear();
+      const hasHadBirthdayThisYear =
+        today.getMonth() > birth.getMonth() ||
+        (today.getMonth() === birth.getMonth() && today.getDate() >= birth.getDate());
+      if (!hasHadBirthdayThisYear) age -= 1;
+      if (age < MIN_AGE || age > MAX_AGE) return `อายุต้องอยู่ระหว่าง ${MIN_AGE}-${MAX_AGE} ปี`;
+    }
+    if (!form.currentSchool.trim()) return 'กรุณากรอกชื่อโรงเรียนปัจจุบัน';
+    if (!form.gradeLevel) return 'กรุณาเลือกระดับชั้น';
     if (!form.phone.trim()) return 'กรุณากรอกเบอร์โทรศัพท์';
     if (!/^\d{10}$/.test(form.phone.trim())) return 'เบอร์โทรศัพท์ต้องเป็นตัวเลข 10 หลักเท่านั้น';
     if (!form.address.trim()) return 'กรุณากรอกที่อยู่';
@@ -273,13 +359,16 @@ export default function RegisterStudentPage() {
                   id="username"
                   type="text"
                   name="username"
-                  className="auth-form-input"
+                  className={availabilityInputClass('username')}
                   placeholder="ชื่อผู้ใช้งาน"
                   value={form.username}
                   onChange={handleChange}
+                  onBlur={() => handleAvailabilityBlur('username')}
                   autoComplete="username"
                 />
-                <span className="auth-form-hint">ต้องไม่ซ้ำกับผู้ใช้งานคนอื่น</span>
+                <span className={availabilityHintClass('username')}>
+                  {availabilityHint('username', 'ต้องไม่ซ้ำกับผู้ใช้งานคนอื่น')}
+                </span>
               </div>
 
               <div className="auth-form-group">
@@ -290,13 +379,16 @@ export default function RegisterStudentPage() {
                   id="email"
                   type="email"
                   name="email"
-                  className="auth-form-input"
+                  className={availabilityInputClass('email')}
                   placeholder="อีเมล"
                   value={form.email}
                   onChange={handleChange}
+                  onBlur={() => handleAvailabilityBlur('email')}
                   autoComplete="email"
                 />
-                <span className="auth-form-hint">ต้องไม่ซ้ำกับผู้ใช้งานคนอื่น</span>
+                <span className={availabilityHintClass('email')}>
+                  {availabilityHint('email', 'ต้องไม่ซ้ำกับผู้ใช้งานคนอื่น')}
+                </span>
               </div>
 
               <div className="auth-form-group">
@@ -311,6 +403,7 @@ export default function RegisterStudentPage() {
                   placeholder="อย่างน้อย 8 ตัวอักษร"
                   value={form.password}
                   onChange={handleChange}
+                  onBlur={handlePasswordBlur}
                   autoComplete="new-password"
                 />
               </div>
@@ -323,12 +416,16 @@ export default function RegisterStudentPage() {
                   id="confirmPassword"
                   type="password"
                   name="confirmPassword"
-                  className="auth-form-input"
+                  className={`auth-form-input${passwordMismatch ? ' is-mismatch' : ''}`}
                   placeholder="กรอกรหัสผ่านอีกครั้ง"
                   value={form.confirmPassword}
                   onChange={handleChange}
+                  onBlur={handlePasswordBlur}
                   autoComplete="new-password"
                 />
+                {passwordMismatch && (
+                  <span className="auth-form-hint auth-form-hint--mismatch">รหัสผ่านและยืนยันรหัสผ่านไม่ตรงกัน</span>
+                )}
               </div>
             </div>
 
@@ -373,13 +470,16 @@ export default function RegisterStudentPage() {
                   id="nationalId"
                   type="text"
                   name="nationalId"
-                  className="auth-form-input"
+                  className={availabilityInputClass('nationalId')}
                   placeholder="ตัวเลข 13 หลัก"
                   value={form.nationalId}
                   onChange={handleChange}
+                  onBlur={() => handleAvailabilityBlur('nationalId')}
                   maxLength={13}
                 />
-                <span className="auth-form-hint">ต้องไม่ซ้ำกับผู้ใช้งานคนอื่น</span>
+                <span className={availabilityHintClass('nationalId')}>
+                  {availabilityHint('nationalId', 'ต้องไม่ซ้ำกับผู้ใช้งานคนอื่น')}
+                </span>
               </div>
 
               <div className="auth-form-group">
@@ -420,13 +520,47 @@ export default function RegisterStudentPage() {
                   >
                     <option value="">ปี (พ.ศ.)</option>
                     {Array.from(
-                      { length: BE_YEAR_END - BE_YEAR_START + 1 },
-                      (_, i) => BE_YEAR_END - i,
+                      { length: beYearRange.end - beYearRange.start + 1 },
+                      (_, i) => beYearRange.end - i,
                     ).map((y) => (
                       <option key={y} value={String(y)}>{y}</option>
                     ))}
                   </select>
                 </div>
+                <span className="auth-form-hint">อายุต้องอยู่ระหว่าง {MIN_AGE}-{MAX_AGE} ปี</span>
+              </div>
+
+              <div className="auth-form-group">
+                <label className="auth-form-label" htmlFor="currentSchool">
+                  โรงเรียน/สถานศึกษาปัจจุบัน <span className="auth-required">*</span>
+                </label>
+                <input
+                  id="currentSchool"
+                  type="text"
+                  name="currentSchool"
+                  className="auth-form-input"
+                  placeholder="ชื่อโรงเรียน/สถานศึกษาปัจจุบัน"
+                  value={form.currentSchool}
+                  onChange={handleChange}
+                />
+              </div>
+
+              <div className="auth-form-group">
+                <label className="auth-form-label" htmlFor="gradeLevel">
+                  ระดับชั้น <span className="auth-required">*</span>
+                </label>
+                <select
+                  id="gradeLevel"
+                  name="gradeLevel"
+                  className="auth-form-input"
+                  value={form.gradeLevel}
+                  onChange={handleChange}
+                >
+                  <option value="">เลือกระดับชั้น</option>
+                  {GRADE_LEVELS.map((g) => (
+                    <option key={g.value} value={g.value}>{g.label}</option>
+                  ))}
+                </select>
               </div>
             </div>
 

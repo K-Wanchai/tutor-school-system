@@ -2,7 +2,6 @@ package com.tutorschool.backend.service.impl;
 
 import com.tutorschool.backend.dto.request.CreateStudentRequest;
 import com.tutorschool.backend.dto.request.UpdateStudentRequest;
-import com.tutorschool.backend.dto.request.UpdateStudentStatusRequest;
 import com.tutorschool.backend.dto.response.PageResponse;
 import com.tutorschool.backend.dto.response.StudentResponse;
 import com.tutorschool.backend.entity.Role;
@@ -169,19 +168,6 @@ public class StudentServiceImpl implements StudentService {
         Student student = studentRepository.findByUserId(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("Student profile not found for user id: " + userId));
         return updateStudent(student.getId(), request);
-    }
-
-    @Override
-    @Transactional
-    public StudentResponse updateStudentStatus(Long id, UpdateStudentStatusRequest request) {
-        Student student = studentRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Student not found with id: " + id));
-
-        User user = student.getUser();
-        user.setEnabled(request.getEnabled());
-        userRepository.save(user);
-
-        return studentMapper.toResponse(student);
     }
 
     @Override

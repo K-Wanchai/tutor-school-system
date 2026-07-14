@@ -188,6 +188,40 @@
   color: #9ca3af;
 }
 
+/* Real-time duplicate-check states (username / email / nationalId) */
+.auth-form-input.is-duplicate {
+  border-color: #2563eb;
+  background: #eff6ff;
+}
+
+.auth-form-input.is-duplicate:focus {
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
+}
+
+.auth-form-input.is-available {
+  border-color: #9ca3af;
+  background: #f9fafb;
+}
+
+.auth-form-input.is-mismatch {
+  border-color: #d97706;
+  background: #fffbeb;
+}
+
+.auth-form-hint--duplicate {
+  color: #2563eb;
+  font-weight: 600;
+}
+
+.auth-form-hint--available {
+  color: #6b7280;
+}
+
+.auth-form-hint--mismatch {
+  color: #d97706;
+  font-weight: 600;
+}
+
 /* Submit Button */
 .auth-submit-btn {
   height: 46px;

@@ -4,6 +4,7 @@ import com.tutorschool.backend.dto.request.LoginRequest;
 import com.tutorschool.backend.dto.request.RegisterRequest;
 import com.tutorschool.backend.dto.response.ApiResponse;
 import com.tutorschool.backend.dto.response.AuthResponse;
+import com.tutorschool.backend.dto.response.AvailabilityResponse;
 import com.tutorschool.backend.security.JwtService;
 import com.tutorschool.backend.service.AuthService;
 import com.tutorschool.backend.repository.UserRepository;
@@ -71,5 +72,14 @@ public class AuthController {
         AuthResponse response = authService.register(request, qrCodeFile);
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(ApiResponse.success("Registration successful", response));
+    }
+
+    @GetMapping("/check-availability")
+    public ResponseEntity<ApiResponse<AvailabilityResponse>> checkAvailability(
+            @RequestParam String field,
+            @RequestParam String value
+    ) {
+        AvailabilityResponse response = authService.checkAvailability(field, value);
+        return ResponseEntity.ok(ApiResponse.success("Availability checked", response));
     }
 }

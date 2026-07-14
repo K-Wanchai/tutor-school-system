@@ -1,0 +1,21 @@
+package com.tutorschool.backend.entity;
+
+public enum GradeLevel {
+    PRATHOM_3,
+    PRATHOM_4,
+    PRATHOM_5,
+    PRATHOM_6,
+    MATTAYOM_1,
+    MATTAYOM_2,
+    MATTAYOM_3,
+    MATTAYOM_4,
+    MATTAYOM_5,
+    MATTAYOM_6,
+    VOCATIONAL_CERT_1,
+    VOCATIONAL_CERT_2,
+    VOCATIONAL_CERT_3,
+    VOCATIONAL_DIPLOMA_1,
+    VOCATIONAL_DIPLOMA_2,
+    UNIVERSITY,
+    GENERAL_PUBLIC
+}

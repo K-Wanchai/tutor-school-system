@@ -1,5 +1,7 @@
 package com.tutorschool.backend.dto.request;
 
+import com.tutorschool.backend.entity.GradeLevel;
+import com.tutorschool.backend.validation.Age;
 import jakarta.validation.constraints.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -36,7 +38,15 @@ public class RegisterRequest {
     @Pattern(regexp = "\\d{13}", message = "เลขบัตรประชาชนต้องเป็นตัวเลข 13 หลัก")
     private String nationalId;
 
+    @NotNull(message = "กรุณาเลือกวันเกิด")
+    @Age(min = 9, max = 40, message = "อายุต้องอยู่ระหว่าง 9-40 ปี")
     private LocalDate birthDate;
+
+    @NotBlank(message = "กรุณากรอกชื่อโรงเรียนปัจจุบัน")
+    private String currentSchool;
+
+    @NotNull(message = "กรุณาเลือกระดับชั้น")
+    private GradeLevel gradeLevel;
 
     @NotBlank(message = "กรุณากรอกเบอร์โทรศัพท์")
     @Pattern(regexp = "^[0-9]{10}$", message = "เบอร์โทรศัพท์ต้องเป็นตัวเลข 10 หลัก")

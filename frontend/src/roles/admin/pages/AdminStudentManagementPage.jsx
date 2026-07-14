@@ -4,7 +4,6 @@ import {
   getStudents,
   getStudentById,
   updateStudent,
-  deactivateStudent,
   getStudentStats,
 } from '../services/adminStudentService';
 import './AdminStudentManagementPage.css';
@@ -38,26 +37,6 @@ function avatarColor(name = '') {
 
 function initials(firstName = '', lastName = '') {
   return `${firstName.charAt(0)}${lastName.charAt(0)}`.toUpperCase() || '?';
-}
-
-// Accepts both `status` string ("ACTIVE"/"INACTIVE") and `enabled` boolean
-function isActive(student) {
-  if (student.status !== undefined && student.status !== null) {
-    return student.status === 'ACTIVE';
-  }
-  return student.enabled === true;
-}
-
-// ── StatusBadge ───────────────────────────────────────────────────────────────
-
-function StatusBadge({ student }) {
-  const active = isActive(student);
-  return (
-    <span className={`sm-status-badge sm-status-badge--${active ? 'success' : 'error'}`}>
-      <span className="sm-status-dot" />
-      {active ? 'ใช้งาน' : 'ปิดใช้งาน'}
-    </span>
-  );
 }
 
 // ── StudentAvatar ─────────────────────────────────────────────────────────────
@@ -108,7 +87,6 @@ function DetailModal({ student, onClose }) {
             <div className="sm-detail-profile-info">
               <div className="sm-detail-name">{student.firstName} {student.lastName}</div>
               <div className="sm-detail-code">{student.studentCode || '—'}</div>
-              <StatusBadge student={student} />
             </div>
             <div className="sm-detail-qr">
               <div className="sm-qr-box">
@@ -211,7 +189,6 @@ function DetailModal({ student, onClose }) {
               <div className="sm-detail-rows">
                 <DetailRow label="วันที่สมัคร" value={formatDateTime(student.createdAt)} />
                 <DetailRow label="แก้ไขล่าสุด" value={formatDateTime(student.updatedAt)} />
-                <DetailRow label="สถานะ" value={<StatusBadge student={student} />} />
               </div>
             </div>
           </div>
@@ -343,7 +320,7 @@ const PAGE_SIZE = 10;
 
 export default function AdminStudentManagementPage() {
   const [students, setStudents]           = useState([]);
-  const [stats, setStats]                 = useState({ total: 0, active: 0, inactive: 0, newThisMonth: 0 });
+  const [stats, setStats]                 = useState({ total: 0, newThisMonth: 0 });
   const [loading, setLoading]             = useState(true);
   const [statsLoading, setStatsLoading]   = useState(true);
   const [error, setError]                 = useState('');
@@ -440,18 +417,6 @@ export default function AdminStudentManagementPage() {
     }
   }
 
-  async function handleDeactivate(student) {
-    if (!window.confirm(`ยืนยันการปิดใช้งานบัญชี "${student.firstName} ${student.lastName}" ?`)) return;
-    try {
-      await deactivateStudent(student.id);
-      showToast('success', 'ปิดใช้งานบัญชีสำเร็จ');
-      loadStudents(currentPage, searchTerm);
-      getStudentStats().then(setStats);
-    } catch (err) {
-      showToast('error', err.message || 'ไม่สามารถปิดใช้งานบัญชีได้');
-    }
-  }
-
   function pageNumbers() {
     const pages = [];
     const MAX = 5;
@@ -518,17 +483,6 @@ export default function AdminStudentManagementPage() {
           }
         />
         <DashboardCard
-          title="นักเรียนที่ใช้งานอยู่"
-          value={statsLoading ? '...' : stats.active}
-          subtitle="บัญชีที่ Active อยู่"
-          color="green"
-          icon={
-            <svg viewBox="0 0 20 20" fill="currentColor" width="22" height="22">
-              <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-            </svg>
-          }
-        />
-        <DashboardCard
           title="สมัครใหม่เดือนนี้"
           value={statsLoading ? '...' : stats.newThisMonth}
           subtitle="นักเรียนที่สมัครเดือนนี้"
@@ -536,17 +490,6 @@ export default function AdminStudentManagementPage() {
           icon={
             <svg viewBox="0 0 20 20" fill="currentColor" width="22" height="22">
               <path d="M8 9a3 3 0 100-6 3 3 0 000 6zM8 11a6 6 0 016 6H2a6 6 0 016-6zM16 7a1 1 0 10-2 0v1h-1a1 1 0 100 2h1v1a1 1 0 102 0v-1h1a1 1 0 100-2h-1V7z" />
-            </svg>
-          }
-        />
-        <DashboardCard
-          title="นักเรียนที่ปิดใช้งาน"
-          value={statsLoading ? '...' : stats.inactive}
-          subtitle="บัญชีที่ถูกปิดใช้งาน"
-          color="orange"
-          icon={
-            <svg viewBox="0 0 20 20" fill="currentColor" width="22" height="22">
-              <path fillRule="evenodd" d="M13.477 14.89A6 6 0 015.11 6.524L13.477 14.89zm1.414-1.414L6.524 5.11a6 6 0 018.367 8.367zM18 10a8 8 0 11-16 0 8 8 0 0116 0z" clipRule="evenodd" />
             </svg>
           }
         />
@@ -617,7 +560,6 @@ export default function AdminStudentManagementPage() {
                     <th>Email</th>
                     <th>เบอร์โทร</th>
                     <th>วันที่สมัคร</th>
-                    <th>สถานะ</th>
                     <th>การจัดการ</th>
                   </tr>
                 </thead>
@@ -639,7 +581,6 @@ export default function AdminStudentManagementPage() {
                       <td className="sm-text-email">{student.email || '—'}</td>
                       <td className="sm-text-secondary">{student.phoneNumber || '—'}</td>
                       <td className="sm-text-date">{formatDate(student.createdAt)}</td>
-                      <td><StatusBadge student={student} /></td>
                       <td>
                         <div className="sm-row-actions">
                           <button
@@ -663,19 +604,6 @@ export default function AdminStudentManagementPage() {
                               <path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z" />
                             </svg>
                           </button>
-                          {isActive(student) && (
-                            <button
-                              className="sm-row-btn sm-row-btn--danger"
-                              onClick={() => handleDeactivate(student)}
-                              data-tooltip="ปิดการใช้งานนักเรียน"
-                              aria-label="ปิดการใช้งาน"
-                            >
-                              <svg viewBox="0 0 20 20" fill="currentColor" width="14" height="14">
-                                <path fillRule="evenodd" d="M13.477 14.89A6 6 0 015.11 6.524L13.477 14.89zm1.414-1.414L6.524 5.11a6 6 0 018.367 8.367zM18 10a8 8 0 11-16 0 8 8 0 0116 0z" clipRule="evenodd" />
-                              </svg>
-                              <span>ปิดการใช้งาน</span>
-                            </button>
-                          )}
                         </div>
                       </td>
                     </tr>

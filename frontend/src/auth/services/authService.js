@@ -29,6 +29,11 @@ export const register = async (payload) => {
   return response.data;
 };
 
+export const checkAvailability = async (field, value) => {
+  const response = await api.get('/auth/check-availability', { params: { field, value } });
+  return response.data.data;
+};
+
 export const logout = () => {
   clearAuth();
   localStorage.removeItem('username');
