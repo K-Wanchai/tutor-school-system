@@ -17,6 +17,8 @@ public interface ClassroomSessionRepository extends JpaRepository<ClassroomSessi
 
     List<ClassroomSession> findByCourseId(Long courseId);
 
+    boolean existsByCourseId(Long courseId);
+
     List<ClassroomSession> findByTutorId(Long tutorId);
 
     List<ClassroomSession> findByStatus(ClassroomSessionStatus status);

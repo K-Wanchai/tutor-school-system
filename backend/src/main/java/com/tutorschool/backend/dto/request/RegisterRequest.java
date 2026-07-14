@@ -57,13 +57,4 @@ public class RegisterRequest {
 
     @NotBlank(message = "กรุณากรอกเบอร์โทรผู้ปกครอง")
     private String parentPhone;
-
-    @NotBlank(message = "กรุณากรอกชื่อธนาคาร")
-    private String bankName;
-
-    @NotBlank(message = "กรุณากรอกชื่อบัญชี")
-    private String accountName;
-
-    @NotBlank(message = "กรุณากรอกเลขบัญชี")
-    private String accountNumber;
 }

@@ -39,6 +39,7 @@ import com.tutorschool.backend.entity.Tutor;
 import com.tutorschool.backend.exception.CourseScheduleConflictException;
 import com.tutorschool.backend.exception.DuplicateResourceException;
 import com.tutorschool.backend.exception.InvalidCourseDateException;
+import com.tutorschool.backend.exception.ResourceInUseException;
 import com.tutorschool.backend.exception.ResourceNotFoundException;
 import com.tutorschool.backend.mapper.CourseMapper;
 import com.tutorschool.backend.repository.AttendanceRecordRepository;
@@ -47,11 +48,7 @@ import com.tutorschool.backend.repository.CourseEvaluationRepository;
 import com.tutorschool.backend.repository.CourseRepository;
 import com.tutorschool.backend.repository.CourseScheduleRepository;
 import com.tutorschool.backend.repository.EnrollmentRepository;
-import com.tutorschool.backend.repository.ExamAnswerRepository;
 import com.tutorschool.backend.repository.ExamRepository;
-import com.tutorschool.backend.repository.ExamScoreAuditLogRepository;
-import com.tutorschool.backend.repository.ExamSubmissionRepository;
-import com.tutorschool.backend.repository.PaymentRepository;
 import com.tutorschool.backend.repository.TutorRepository;
 import com.tutorschool.backend.service.CourseService;
 import com.tutorschool.backend.service.NotificationService;
@@ -68,11 +65,7 @@ public class CourseServiceImpl implements CourseService {
     private final CourseRepository courseRepository;
     private final TutorRepository TutorRepository;
     private final EnrollmentRepository enrollmentRepository;
-    private final PaymentRepository paymentRepository;
     private final ExamRepository examRepository;
-    private final ExamSubmissionRepository examSubmissionRepository;
-    private final ExamAnswerRepository examAnswerRepository;
-    private final ExamScoreAuditLogRepository examScoreAuditLogRepository;
     private final AttendanceRecordRepository attendanceRecordRepository;
     private final ClassroomSessionRepository classroomSessionRepository;
     private final CourseEvaluationRepository courseEvaluationRepository;
@@ -528,41 +521,18 @@ public class CourseServiceImpl implements CourseService {
             throw new ResourceNotFoundException("Course", id);
         }
 
-        // 1. ลบ exam submissions (audit logs + answers ก่อน)
-        List<Long> submissionIds = examSubmissionRepository.findByExamCourseId(id)
-                .stream().map(s -> s.getId()).toList();
-        if (!submissionIds.isEmpty()) {
-            examScoreAuditLogRepository.deleteBySubmissionIdIn(submissionIds);
-            examAnswerRepository.deleteBySubmissionIdIn(submissionIds);
-            examSubmissionRepository.deleteAllByIdInBatch(submissionIds);
+        boolean hasRelatedData = enrollmentRepository.existsByCourseId(id)
+                || examRepository.existsByCourseId(id)
+                || courseScheduleRepository.existsByCourseId(id)
+                || classroomSessionRepository.existsByCourseId(id)
+                || attendanceRecordRepository.existsByCourseId(id)
+                || courseEvaluationRepository.existsByCourseId(id);
+        if (hasRelatedData) {
+            throw new ResourceInUseException(
+                    "ไม่สามารถลบคอร์สเรียนได้เนื่องจากมีข้อมูลเชื่อมโยงอยู่ (การสมัครเรียน/ตารางเรียน/ข้อสอบ/การเข้าเรียน)");
         }
 
-        // 2. ลบ exams (cascade → questions → options)
-        List<Long> examIds = examRepository.findByCourseId(id)
-                .stream().map(e -> e.getId()).toList();
-        if (!examIds.isEmpty()) {
-            examRepository.deleteAllByIdInBatch(examIds);
-        }
-
-        // 3. ลบ attendance records และ classroom sessions
-        attendanceRecordRepository.deleteByCourseId(id);
-        classroomSessionRepository.deleteByCourseId(id);
-
-        // 4. ลบ course evaluations
-        courseEvaluationRepository.deleteByCourseId(id);
-
-        // 5. ลบ payments และ enrollments
-        List<Long> enrollmentIds = enrollmentRepository.findByCourseId(id)
-                .stream().map(e -> e.getId()).toList();
-        if (!enrollmentIds.isEmpty()) {
-            paymentRepository.deleteByEnrollmentIdIn(enrollmentIds);
-            enrollmentRepository.deleteByCourseId(id);
-        }
-
-        // 6. ลบ course schedules
-        courseScheduleRepository.deleteByCourseId(id);
-
-        // 7. ลบ course (cascade → lessons, tests)
+        // ลบ course (cascade → lessons, tests ผ่าน orphanRemoval)
         courseRepository.deleteById(id);
     }
 

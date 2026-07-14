@@ -18,13 +18,6 @@ export const login = async (payload) => {
 };
 
 export const register = async (payload) => {
-  if (payload instanceof FormData) {
-    // Let the browser set Content-Type with the proper multipart boundary
-    const response = await api.post('/auth/register', payload, {
-      headers: { 'Content-Type': undefined },
-    });
-    return response.data;
-  }
   const response = await api.post('/auth/register', payload);
   return response.data;
 };

@@ -1,0 +1,19 @@
+package com.tutorschool.backend.dto.request;
+
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Size;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
+public class SaveAcademicFacultyRequest {
+
+    @NotBlank(message = "กรุณากรอกชื่อคณะ")
+    @Size(max = 200, message = "ชื่อคณะต้องไม่เกิน 200 ตัวอักษร")
+    private String name;
+
+    private Boolean active;
+}

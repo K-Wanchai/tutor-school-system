@@ -223,13 +223,15 @@ export default function ExamInstitutionManagePage() {
       };
 
       if (formMode === 'create') {
-        await createExamInstitution(payload);
-        notify('เพิ่มสถาบันที่จัดสอบสำเร็จ');
-      } else {
-        await updateExamInstitution(selected.id, payload);
-        notify('แก้ไขข้อมูลสถาบันที่จัดสอบสำเร็จ');
+        const created = await createExamInstitution(payload);
+        setShowForm(false);
+        // พาไปตั้งค่าคณะ/สาขา (มหาวิทยาลัย) หรือสายการเรียน/ห้องเรียน (โรงเรียน) ทันที ก่อนเริ่มบันทึกนักเรียนที่สอบติด
+        navigate(`/admin/exam-institutions/${created.id}`, { state: { openConfig: true } });
+        return;
       }
 
+      await updateExamInstitution(selected.id, payload);
+      notify('แก้ไขข้อมูลสถาบันที่จัดสอบสำเร็จ');
       setShowForm(false);
       await load(filters);
       await loadStats();

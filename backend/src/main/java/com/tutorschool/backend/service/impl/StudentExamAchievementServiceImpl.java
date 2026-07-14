@@ -6,10 +6,13 @@ import com.tutorschool.backend.dto.response.StudentAchievementDetailResponse;
 import com.tutorschool.backend.dto.response.StudentCourseDetailResponse;
 import com.tutorschool.backend.dto.response.StudentExamAchievementResponse;
 import com.tutorschool.backend.dto.response.TutorSummaryResponse;
+import com.tutorschool.backend.entity.AcademicMajor;
+import com.tutorschool.backend.entity.AdmissionRound;
 import com.tutorschool.backend.entity.Course;
 import com.tutorschool.backend.entity.EducationLevel;
 import com.tutorschool.backend.entity.Enrollment;
 import com.tutorschool.backend.entity.ExamInstitution;
+import com.tutorschool.backend.entity.SchoolTrack;
 import com.tutorschool.backend.entity.Student;
 import com.tutorschool.backend.entity.StudentExamAchievement;
 import com.tutorschool.backend.entity.Tutor;
@@ -18,8 +21,11 @@ import com.tutorschool.backend.exception.ExamInstitutionNotFoundException;
 import com.tutorschool.backend.exception.ResourceNotFoundException;
 import com.tutorschool.backend.exception.StudentAchievementNotFoundException;
 import com.tutorschool.backend.mapper.StudentExamAchievementMapper;
+import com.tutorschool.backend.repository.AcademicMajorRepository;
+import com.tutorschool.backend.repository.AdmissionRoundRepository;
 import com.tutorschool.backend.repository.EnrollmentRepository;
 import com.tutorschool.backend.repository.ExamInstitutionRepository;
+import com.tutorschool.backend.repository.SchoolTrackRepository;
 import com.tutorschool.backend.repository.StudentExamAchievementRepository;
 import com.tutorschool.backend.repository.StudentRepository;
 import com.tutorschool.backend.service.StudentExamAchievementService;
@@ -37,6 +43,9 @@ public class StudentExamAchievementServiceImpl implements StudentExamAchievement
     private final StudentRepository studentRepository;
     private final ExamInstitutionRepository examInstitutionRepository;
     private final EnrollmentRepository enrollmentRepository;
+    private final SchoolTrackRepository schoolTrackRepository;
+    private final AcademicMajorRepository academicMajorRepository;
+    private final AdmissionRoundRepository admissionRoundRepository;
     private final StudentExamAchievementMapper achievementMapper;
 
     @Override
@@ -57,11 +66,9 @@ public class StudentExamAchievementServiceImpl implements StudentExamAchievement
                 .examInstitution(institution)
                 .enrollments(resolveStudentEnrollments(request.getEnrollmentIds(), student))
                 .educationLevel(request.getEducationLevel())
-                .lowerSecondaryRoomType(request.getLowerSecondaryRoomType())
-                .upperSecondaryProgram(request.getUpperSecondaryProgram())
-                .faculty(request.getFaculty())
-                .major(request.getMajor())
-                .admissionRound(request.getAdmissionRound())
+                .schoolTrack(resolveSchoolTrack(request.getSchoolTrackId(), institution.getId()))
+                .academicMajor(resolveAcademicMajor(request.getAcademicMajorId(), institution.getId()))
+                .admissionRound(resolveAdmissionRound(request.getAdmissionRoundId(), institution.getId()))
                 .academicYear(request.getAcademicYear())
                 .resultDate(request.getResultDate())
                 .note(request.getNote())
@@ -109,11 +116,9 @@ public class StudentExamAchievementServiceImpl implements StudentExamAchievement
         achievement.setExamInstitution(institution);
         achievement.setEnrollments(resolveStudentEnrollments(request.getEnrollmentIds(), student));
         achievement.setEducationLevel(request.getEducationLevel());
-        achievement.setLowerSecondaryRoomType(request.getLowerSecondaryRoomType());
-        achievement.setUpperSecondaryProgram(request.getUpperSecondaryProgram());
-        achievement.setFaculty(request.getFaculty());
-        achievement.setMajor(request.getMajor());
-        achievement.setAdmissionRound(request.getAdmissionRound());
+        achievement.setSchoolTrack(resolveSchoolTrack(request.getSchoolTrackId(), institution.getId()));
+        achievement.setAcademicMajor(resolveAcademicMajor(request.getAcademicMajorId(), institution.getId()));
+        achievement.setAdmissionRound(resolveAdmissionRound(request.getAdmissionRoundId(), institution.getId()));
         achievement.setAcademicYear(request.getAcademicYear());
         achievement.setResultDate(request.getResultDate());
         achievement.setNote(request.getNote());
@@ -220,19 +225,49 @@ public class StudentExamAchievementServiceImpl implements StudentExamAchievement
 
     private void validateLevelDetails(StudentExamAchievementRequest request) {
         EducationLevel level = request.getEducationLevel();
-        if (level == EducationLevel.LOWER_SECONDARY && isBlank(request.getLowerSecondaryRoomType())) {
-            throw new IllegalArgumentException("กรุณากรอกห้องเรียนสำหรับระดับมัธยมต้น");
+        if ((level == EducationLevel.LOWER_SECONDARY || level == EducationLevel.UPPER_SECONDARY)
+                && request.getSchoolTrackId() == null) {
+            throw new IllegalArgumentException("กรุณาเลือกสายการเรียน/ห้องเรียนสำหรับระดับมัธยมต้น/มัธยมปลาย");
         }
-        if (level == EducationLevel.UPPER_SECONDARY && isBlank(request.getUpperSecondaryProgram())) {
-            throw new IllegalArgumentException("กรุณากรอกสายการเรียนสำหรับระดับมัธยมปลาย");
-        }
-        if (level == EducationLevel.BACHELOR && (isBlank(request.getFaculty()) || isBlank(request.getMajor()))) {
-            throw new IllegalArgumentException("กรุณากรอกคณะและสาขาสำหรับระดับมหาวิทยาลัย");
+        if (level == EducationLevel.BACHELOR && request.getAcademicMajorId() == null) {
+            throw new IllegalArgumentException("กรุณาเลือกสาขาสำหรับระดับมหาวิทยาลัย");
         }
     }
 
-    private boolean isBlank(String value) {
-        return value == null || value.isBlank();
+    private SchoolTrack resolveSchoolTrack(Long schoolTrackId, Long institutionId) {
+        if (schoolTrackId == null) {
+            return null;
+        }
+        SchoolTrack track = schoolTrackRepository.findById(schoolTrackId)
+                .orElseThrow(() -> new ResourceNotFoundException("ไม่พบข้อมูลสายการเรียน/ห้องเรียน รหัส: " + schoolTrackId));
+        if (!track.getExamInstitution().getId().equals(institutionId)) {
+            throw new IllegalArgumentException("สายการเรียน/ห้องเรียนที่เลือกไม่ได้อยู่ในสถาบันนี้");
+        }
+        return track;
+    }
+
+    private AcademicMajor resolveAcademicMajor(Long academicMajorId, Long institutionId) {
+        if (academicMajorId == null) {
+            return null;
+        }
+        AcademicMajor major = academicMajorRepository.findById(academicMajorId)
+                .orElseThrow(() -> new ResourceNotFoundException("ไม่พบข้อมูลสาขา รหัส: " + academicMajorId));
+        if (!major.getFaculty().getExamInstitution().getId().equals(institutionId)) {
+            throw new IllegalArgumentException("สาขาที่เลือกไม่ได้อยู่ในสถาบันนี้");
+        }
+        return major;
+    }
+
+    private AdmissionRound resolveAdmissionRound(Long admissionRoundId, Long institutionId) {
+        if (admissionRoundId == null) {
+            return null;
+        }
+        AdmissionRound round = admissionRoundRepository.findById(admissionRoundId)
+                .orElseThrow(() -> new ResourceNotFoundException("ไม่พบข้อมูลรอบที่สอบติด รหัส: " + admissionRoundId));
+        if (!round.getExamInstitution().getId().equals(institutionId)) {
+            throw new IllegalArgumentException("รอบที่สอบติดที่เลือกไม่ได้อยู่ในสถาบันนี้");
+        }
+        return round;
     }
 
     private StudentExamAchievement findEntityById(Long id) {

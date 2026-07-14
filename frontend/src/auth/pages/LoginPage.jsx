@@ -76,6 +76,13 @@ export default function LoginPage() {
               <span>ระบบชำระเงิน & การแจ้งเตือน</span>
             </div>
           </div>
+
+          {profile?.address && (
+            <div className="auth-brand-footer">
+              <span>{profile.institutionName}</span>
+              <span>{profile.address}</span>
+            </div>
+          )}
         </div>
       </div>
 

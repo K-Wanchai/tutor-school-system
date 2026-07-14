@@ -16,8 +16,10 @@ import com.tutorschool.backend.entity.Role;
 import com.tutorschool.backend.entity.Tutor;
 import com.tutorschool.backend.entity.User;
 import com.tutorschool.backend.exception.DuplicateResourceException;
+import com.tutorschool.backend.exception.ResourceInUseException;
 import com.tutorschool.backend.exception.ResourceNotFoundException;
 import com.tutorschool.backend.mapper.TutorMapper;
+import com.tutorschool.backend.repository.CourseRepository;
 import com.tutorschool.backend.repository.TutorRepository;
 import com.tutorschool.backend.repository.UserRepository;
 import com.tutorschool.backend.service.TutorService;
@@ -34,6 +36,7 @@ public class TutorServiceImpl implements TutorService {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final TutorMapper tutorMapper;
+    private final CourseRepository courseRepository;
 
     @Override
     @Transactional(readOnly = true)
@@ -121,6 +124,9 @@ public class TutorServiceImpl implements TutorService {
     public void deleteTeacher(Long id) {
         Tutor tutor = tutorRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Tutor", id));
+        if (courseRepository.existsByTutorId(id)) {
+            throw new ResourceInUseException("ไม่สามารถลบข้อมูลติวเตอร์ได้เนื่องจากมีคอร์สเรียนเชื่อมโยงอยู่");
+        }
         tutorRepository.delete(tutor);
     }
 

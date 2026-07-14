@@ -37,32 +37,6 @@ export async function getStudentById(id) {
   }
 }
 
-export async function updateStudent(id, form) {
-  // Build payload that matches UpdateStudentRequest
-  const fullName = `${form.firstName || ''} ${form.lastName || ''}`.trim()
-    || form.fullName || '';
-
-  const payload = {
-    fullName,
-    firstName: form.firstName || '',
-    lastName:  form.lastName  || '',
-    phoneNumber: form.phoneNumber || '',
-    address: form.address || null,
-    birthDate: form.birthDate || null,
-    guardianPhoneNumber: form.guardianPhoneNumber || null,
-    bankName: form.bankName || null,
-    bankQrCode: form.bankQrCode || null,
-    bankAccountName: form.bankAccountName || null,
-    bankAccountNumber: form.bankAccountNumber || null,
-  };
-  try {
-    const res = await api.put(`/students/${id}`, payload);
-    return unwrap(res);
-  } catch (error) {
-    throw new Error(apiError(error, 'updateStudent'));
-  }
-}
-
 export async function getStudentStats() {
   try {
     const res = await api.get('/students', { params: { page: 0, size: 5000 } });

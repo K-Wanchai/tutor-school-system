@@ -37,8 +37,8 @@ export async function getStudentExamAchievementById(id) {
   }
 }
 
-// payload: { studentId, examInstitutionId, educationLevel, lowerSecondaryRoomType, upperSecondaryProgram,
-//            faculty, major, admissionRound, academicYear, resultDate, note, active }
+// payload: { studentId, examInstitutionId, educationLevel, schoolTrackId, academicMajorId,
+//            admissionRoundId, academicYear, resultDate, note, active }
 export async function createStudentExamAchievement(payload) {
   try {
     const res = await api.post('/admin/student-exam-achievements', payload);

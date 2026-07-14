@@ -43,20 +43,20 @@ public class StudentExamAchievement {
     @Column(name = "education_level", nullable = false, length = 30)
     private EducationLevel educationLevel;
 
-    @Column(name = "lower_secondary_room_type", length = 100)
-    private String lowerSecondaryRoomType;
+    /** ใช้เมื่อ educationLevel เป็นมัธยมต้นหรือมัธยมปลาย — เลือกจากข้อมูลพื้นฐานที่ตั้งค่าไว้ล่วงหน้าของสถาบันนั้น */
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "school_track_id")
+    private SchoolTrack schoolTrack;
 
-    @Column(name = "upper_secondary_program", length = 100)
-    private String upperSecondaryProgram;
+    /** ใช้เมื่อ educationLevel เป็นปริญญาตรี — เลือกจากข้อมูลพื้นฐานที่ตั้งค่าไว้ล่วงหน้าของสถาบันนั้น */
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "academic_major_id")
+    private AcademicMajor academicMajor;
 
-    @Column(name = "faculty", length = 200)
-    private String faculty;
-
-    @Column(name = "major", length = 200)
-    private String major;
-
-    @Column(name = "admission_round", length = 100)
-    private String admissionRound;
+    /** เลือกจากรอบที่สอบติดที่ตั้งค่าไว้ล่วงหน้าของสถาบันนั้น (ไม่บังคับ) */
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "admission_round_id")
+    private AdmissionRound admissionRound;
 
     @Column(name = "academic_year")
     private Integer academicYear;

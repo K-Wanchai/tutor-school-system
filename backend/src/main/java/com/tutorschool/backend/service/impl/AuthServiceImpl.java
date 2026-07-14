@@ -13,7 +13,6 @@ import com.tutorschool.backend.repository.StudentRepository;
 import com.tutorschool.backend.repository.UserRepository;
 import com.tutorschool.backend.security.JwtService;
 import com.tutorschool.backend.service.AuthService;
-import com.tutorschool.backend.service.FileStorageService;
 import com.tutorschool.backend.service.StudentCodeGeneratorService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -22,7 +21,6 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.multipart.MultipartFile;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -37,7 +35,6 @@ public class AuthServiceImpl implements AuthService {
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
     private final AuthenticationManager authenticationManager;
-    private final FileStorageService fileStorageService;
     private final StudentCodeGeneratorService studentCodeGeneratorService;
 
     @Override
@@ -65,7 +62,7 @@ public class AuthServiceImpl implements AuthService {
 
     @Override
     @Transactional
-    public AuthResponse register(RegisterRequest request, MultipartFile qrCodeFile) {
+    public AuthResponse register(RegisterRequest request) {
         log.info("register attempt: username={}, email={}", request.getUsername(), request.getEmail());
 
         // ตรวจ duplicate ทั้ง 3 field ก่อน (ก่อน I/O ใดๆ)
@@ -84,65 +81,48 @@ public class AuthServiceImpl implements AuthService {
             throw new DuplicateFieldsException(duplicateErrors);
         }
 
-        // บันทึกไฟล์ก่อน แล้วค่อย save ลง DB
-        String qrPath = null;
-        if (qrCodeFile != null && !qrCodeFile.isEmpty()) {
-            qrPath = fileStorageService.saveQrCode(qrCodeFile);
-        }
+        // สร้าง User (role = STUDENT เสมอ สำหรับการสมัครเอง)
+        User user = User.builder()
+                .username(request.getUsername())
+                .email(request.getEmail())
+                .password(passwordEncoder.encode(request.getPassword()))
+                .role(Role.STUDENT)
+                .build();
+        user = userRepository.save(user);
+        log.info("user created: id={}, username={}", user.getId(), user.getUsername());
 
-        try {
-            // สร้าง User (role = STUDENT เสมอ สำหรับการสมัครเอง)
-            User user = User.builder()
-                    .username(request.getUsername())
-                    .email(request.getEmail())
-                    .password(passwordEncoder.encode(request.getPassword()))
-                    .role(Role.STUDENT)
-                    .build();
-            user = userRepository.save(user);
-            log.info("user created: id={}, username={}", user.getId(), user.getUsername());
+        // สร้าง Student record พร้อม auto-generated studentCode (รูปแบบ {ปี พ.ศ. 2 หลัก}{เลขรัน 5 หลัก})
+        String studentCode = studentCodeGeneratorService.generateNextCode();
 
-            // สร้าง Student record พร้อม auto-generated studentCode (รูปแบบ {ปี พ.ศ. 2 หลัก}{เลขรัน 5 หลัก})
-            String studentCode = studentCodeGeneratorService.generateNextCode();
+        Student student = Student.builder()
+                .user(user)
+                .studentCode(studentCode)
+                .firstName(request.getFirstName().trim())
+                .lastName(request.getLastName().trim())
+                .fullName(request.getFirstName().trim() + " " + request.getLastName().trim())
+                .nationalId(request.getNationalId())
+                .address(request.getAddress())
+                .phoneNumber(request.getPhone())
+                .birthDate(request.getBirthDate())
+                .currentSchool(request.getCurrentSchool().trim())
+                .gradeLevel(request.getGradeLevel())
+                .guardianPhoneNumber(request.getParentPhone())
+                .build();
+        studentRepository.save(student);
+        log.info("student created: id={}, code={}", student.getId(), studentCode);
 
-            Student student = Student.builder()
-                    .user(user)
-                    .studentCode(studentCode)
-                    .firstName(request.getFirstName().trim())
-                    .lastName(request.getLastName().trim())
-                    .fullName(request.getFirstName().trim() + " " + request.getLastName().trim())
-                    .nationalId(request.getNationalId())
-                    .address(request.getAddress())
-                    .phoneNumber(request.getPhone())
-                    .birthDate(request.getBirthDate())
-                    .currentSchool(request.getCurrentSchool().trim())
-                    .gradeLevel(request.getGradeLevel())
-                    .guardianPhoneNumber(request.getParentPhone())
-                    .bankName(request.getBankName())
-                    .bankAccountName(request.getAccountName())
-                    .bankAccountNumber(request.getAccountNumber())
-                    .bankQrCode(qrPath)
-                    .build();
-            studentRepository.save(student);
-            log.info("student created: id={}, code={}", student.getId(), studentCode);
+        String accessToken  = jwtService.generateAccessToken(user);
+        String refreshToken = jwtService.generateRefreshToken(user);
 
-            String accessToken  = jwtService.generateAccessToken(user);
-            String refreshToken = jwtService.generateRefreshToken(user);
-
-            return AuthResponse.builder()
-                    .accessToken(accessToken)
-                    .refreshToken(refreshToken)
-                    .tokenType("Bearer")
-                    .userId(user.getId())
-                    .username(user.getUsername())
-                    .email(user.getEmail())
-                    .role(user.getRole().name())
-                    .build();
-
-        } catch (Exception e) {
-            // ถ้า DB fail ให้ลบไฟล์ที่ upload ไว้ (ป้องกัน orphan files)
-            fileStorageService.deleteFile(qrPath);
-            throw e;
-        }
+        return AuthResponse.builder()
+                .accessToken(accessToken)
+                .refreshToken(refreshToken)
+                .tokenType("Bearer")
+                .userId(user.getId())
+                .username(user.getUsername())
+                .email(user.getEmail())
+                .role(user.getRole().name())
+                .build();
     }
 
     @Override
