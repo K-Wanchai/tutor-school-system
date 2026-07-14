@@ -66,9 +66,7 @@
   margin-top: 12px;
 }
 
-.sp-hero-meta span,
-.sp-badge-active,
-.sp-badge-inactive {
+.sp-hero-meta span {
   display: inline-flex;
   align-items: center;
   min-height: 30px;
@@ -78,14 +76,6 @@
   color: #ffffff;
   font-size: 13px;
   font-weight: 800;
-}
-
-.sp-badge-active {
-  background: rgba(34, 197, 94, 0.24) !important;
-}
-
-.sp-badge-inactive {
-  background: rgba(239, 68, 68, 0.24) !important;
 }
 
 .sp-grid {

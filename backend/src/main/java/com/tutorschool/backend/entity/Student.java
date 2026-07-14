@@ -47,6 +47,13 @@ public class Student {
     @Column(name = "birth_date")
     private LocalDate birthDate;
 
+    @Column(name = "current_school", length = 255)
+    private String currentSchool;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "grade_level", length = 30)
+    private GradeLevel gradeLevel;
+
     @Column(name = "guardian_phone_number", length = 20)
     private String guardianPhoneNumber;
 

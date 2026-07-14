@@ -185,10 +185,6 @@ function StudentProfilePage() {
 
             <div className="sp-hero-meta">
               <span>{profile.studentCode || '-'}</span>
-              <span className={profile.enabled ? 'sp-badge-active' : 'sp-badge-inactive'}>
-                {profile.enabled ? 'ใช้งาน' : 'ปิดใช้งาน'}
-              </span>
-              <span>{profile.status || '-'}</span>
             </div>
           </div>
         </div>

@@ -3,6 +3,7 @@ package com.tutorschool.backend.service.impl;
 import com.tutorschool.backend.dto.request.LoginRequest;
 import com.tutorschool.backend.dto.request.RegisterRequest;
 import com.tutorschool.backend.dto.response.AuthResponse;
+import com.tutorschool.backend.dto.response.AvailabilityResponse;
 import com.tutorschool.backend.entity.Role;
 import com.tutorschool.backend.entity.Student;
 import com.tutorschool.backend.entity.User;
@@ -13,6 +14,7 @@ import com.tutorschool.backend.repository.UserRepository;
 import com.tutorschool.backend.security.JwtService;
 import com.tutorschool.backend.service.AuthService;
 import com.tutorschool.backend.service.FileStorageService;
+import com.tutorschool.backend.service.StudentCodeGeneratorService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -24,7 +26,6 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
-import java.util.UUID;
 
 @Slf4j
 @Service
@@ -37,6 +38,7 @@ public class AuthServiceImpl implements AuthService {
     private final JwtService jwtService;
     private final AuthenticationManager authenticationManager;
     private final FileStorageService fileStorageService;
+    private final StudentCodeGeneratorService studentCodeGeneratorService;
 
     @Override
     public AuthResponse login(LoginRequest request) {
@@ -99,8 +101,8 @@ public class AuthServiceImpl implements AuthService {
             user = userRepository.save(user);
             log.info("user created: id={}, username={}", user.getId(), user.getUsername());
 
-            // สร้าง Student record พร้อม auto-generated studentCode
-            String studentCode = "STU" + UUID.randomUUID().toString().replace("-", "").substring(0, 8).toUpperCase();
+            // สร้าง Student record พร้อม auto-generated studentCode (รูปแบบ {ปี พ.ศ. 2 หลัก}{เลขรัน 5 หลัก})
+            String studentCode = studentCodeGeneratorService.generateNextCode();
 
             Student student = Student.builder()
                     .user(user)
@@ -112,6 +114,8 @@ public class AuthServiceImpl implements AuthService {
                     .address(request.getAddress())
                     .phoneNumber(request.getPhone())
                     .birthDate(request.getBirthDate())
+                    .currentSchool(request.getCurrentSchool().trim())
+                    .gradeLevel(request.getGradeLevel())
                     .guardianPhoneNumber(request.getParentPhone())
                     .bankName(request.getBankName())
                     .bankAccountName(request.getAccountName())
@@ -139,5 +143,19 @@ public class AuthServiceImpl implements AuthService {
             fileStorageService.deleteFile(qrPath);
             throw e;
         }
+    }
+
+    @Override
+    public AvailabilityResponse checkAvailability(String field, String value) {
+        boolean taken = switch (field) {
+            case "username" -> userRepository.existsByUsername(value);
+            case "email" -> userRepository.existsByEmail(value);
+            case "nationalId" -> studentRepository.existsByNationalId(value);
+            default -> throw new IllegalArgumentException("Unsupported field: " + field);
+        };
+        return AvailabilityResponse.builder()
+                .field(field)
+                .available(!taken)
+                .build();
     }
 }

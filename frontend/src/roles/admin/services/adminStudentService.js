@@ -63,16 +63,6 @@ export async function updateStudent(id, form) {
   }
 }
 
-// Disable account — PATCH /students/{id}/status  (not DELETE)
-export async function deactivateStudent(id) {
-  try {
-    const res = await api.patch(`/students/${id}/status`, { enabled: false });
-    return unwrap(res);
-  } catch (error) {
-    throw new Error(apiError(error, 'deactivateStudent'));
-  }
-}
-
 export async function getStudentStats() {
   try {
     const res = await api.get('/students', { params: { page: 0, size: 5000 } });
@@ -81,8 +71,6 @@ export async function getStudentStats() {
     const now  = new Date();
     return {
       total: data?.totalElements ?? list.length,
-      active: list.filter(s => s.enabled === true  || s.status === 'ACTIVE').length,
-      inactive: list.filter(s => s.enabled === false || s.status === 'INACTIVE').length,
       newThisMonth: list.filter(s => {
         if (!s.createdAt) return false;
         const d = new Date(s.createdAt);
@@ -91,6 +79,6 @@ export async function getStudentStats() {
     };
   } catch (error) {
     console.error('[getStudentStats]', error.response?.data || error.message);
-    return { total: 0, active: 0, inactive: 0, newThisMonth: 0 };
+    return { total: 0, newThisMonth: 0 };
   }
 }
