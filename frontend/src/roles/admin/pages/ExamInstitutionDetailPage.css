@@ -408,6 +408,7 @@
 }
 
 .eid-modal--sm { max-width: 440px; }
+.eid-modal--detail { max-width: 720px; }
 
 .eid-modal-header {
   display: flex;

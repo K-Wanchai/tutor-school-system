@@ -52,7 +52,6 @@ export async function createTutor(form) {
     firstName:      form.firstName.trim(),
     lastName:       form.lastName.trim(),
     email:          form.email.trim(),
-    password:       form.password,
     phoneNumber:    form.phoneNumber.trim(),
     specialization: form.specialization?.trim() || null,
     bio:            null,

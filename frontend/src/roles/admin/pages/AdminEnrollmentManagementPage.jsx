@@ -12,7 +12,7 @@ import './AdminEnrollmentManagementPage.css';
 
 const PAYMENT_STATUS_LABEL = {
   UNPAID: 'ยังไม่ชำระ',
-  PENDING_VERIFICATION: 'รอตรวจสอบสลิป',
+  PENDING_VERIFICATION: 'รอการยืนยันชำระเงิน',
   PAID: 'ชำระแล้ว',
   FAILED: 'ไม่สำเร็จ',
   REFUNDED: 'คืนเงินแล้ว',
@@ -322,7 +322,7 @@ export default function AdminEnrollmentManagementPage() {
         </div>
         <div className="em-stat-card em-stat-card--warning">
           <span className="em-stat-value">{loading ? '...' : stats.awaitingSlipReview}</span>
-          <span className="em-stat-label">รอตรวจสอบสลิป</span>
+          <span className="em-stat-label">รอการยืนยันชำระเงิน</span>
         </div>
         <div className="em-stat-card">
           <span className="em-stat-value">{loading ? '...' : stats.awaitingPayment}</span>

@@ -48,6 +48,9 @@ public class InstitutionProfile {
     @Column(name = "bank_qr_code", columnDefinition = "TEXT")
     private String bankQrCode;
 
+    @Column(name = "enrollment_payment_deadline_minutes")
+    private Integer enrollmentPaymentDeadlineMinutes;
+
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;
 

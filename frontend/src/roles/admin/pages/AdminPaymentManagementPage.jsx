@@ -6,7 +6,7 @@ import './AdminPaymentManagementPage.css';
 
 const PAYMENT_STATUS_LABEL = {
   UNPAID: 'ยังไม่ชำระ',
-  PENDING_VERIFICATION: 'รอตรวจสอบ',
+  PENDING_VERIFICATION: 'รอการยืนยันชำระเงิน',
   PAID: 'ชำระแล้ว',
   FAILED: 'ไม่สำเร็จ',
   REFUNDED: 'คืนเงินแล้ว',
@@ -22,7 +22,7 @@ const PAYMENT_STATUS_TONE = {
 
 const ENROLLMENT_STATUS_LABEL = {
   PENDING: 'รอดำเนินการ',
-  APPROVED: 'อนุมัติแล้ว',
+  APPROVED: 'ชำระเงินเรียบร้อยแล้ว',
   REJECTED: 'ปฏิเสธ',
   CANCELLED: 'ยกเลิก',
   COMPLETED: 'เสร็จสิ้น',

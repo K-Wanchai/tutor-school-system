@@ -8,6 +8,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.tutorschool.backend.dto.request.ChangePasswordRequest;
 import com.tutorschool.backend.dto.request.CreateTutorRequest;
 import com.tutorschool.backend.dto.request.UpdateTutorRequest;
 import com.tutorschool.backend.dto.response.PageResponse;
@@ -31,6 +32,8 @@ import java.util.UUID;
 @Service
 @RequiredArgsConstructor
 public class TutorServiceImpl implements TutorService {
+
+    private static final String DEFAULT_TUTOR_PASSWORD = "12345678";
 
     private final TutorRepository tutorRepository;
     private final UserRepository userRepository;
@@ -76,7 +79,7 @@ public class TutorServiceImpl implements TutorService {
         User user = User.builder()
     .username(request.getUsername())
     .email(request.getEmail())
-    .password(passwordEncoder.encode(request.getPassword()))
+    .password(passwordEncoder.encode(DEFAULT_TUTOR_PASSWORD))
     .role(Role.TUTOR)
     .build();
         user = userRepository.save(user);
@@ -138,5 +141,29 @@ public class TutorServiceImpl implements TutorService {
         tutor.getUser().setEnabled(enabled);
         userRepository.save(tutor.getUser());
         return tutorMapper.toResponse(tutor);
+    }
+
+    @Override
+    @Transactional
+    public void changePassword(Long userId, ChangePasswordRequest request) {
+        Tutor tutor = tutorRepository.findByUserId(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("Tutor profile not found for user id: " + userId));
+
+        User user = tutor.getUser();
+
+        if (!passwordEncoder.matches(request.getCurrentPassword(), user.getPassword())) {
+            throw new IllegalArgumentException("รหัสผ่านปัจจุบันไม่ถูกต้อง");
+        }
+
+        if (!request.getNewPassword().equals(request.getConfirmPassword())) {
+            throw new IllegalArgumentException("รหัสผ่านใหม่และยืนยันรหัสผ่านไม่ตรงกัน");
+        }
+
+        if (request.getCurrentPassword().equals(request.getNewPassword())) {
+            throw new IllegalArgumentException("รหัสผ่านใหม่ต้องไม่ซ้ำกับรหัสผ่านปัจจุบัน");
+        }
+
+        user.setPassword(passwordEncoder.encode(request.getNewPassword()));
+        userRepository.save(user);
     }
 }

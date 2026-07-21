@@ -6,6 +6,7 @@ import {
   updateStudentExamAchievement,
   deleteStudentExamAchievement,
   getStudentExamAchievementById,
+  getStudentAchievementDetail,
 } from '../services/studentExamAchievementService';
 import { getEnrollmentsByStudent } from '../services/adminEnrollmentService';
 import { getStudents } from '../services/adminStudentService';
@@ -15,6 +16,8 @@ import { getAdmissionRounds } from '../services/admissionRoundService';
 import FacultyMajorManager from '../components/FacultyMajorManager';
 import SchoolTrackManager from '../components/SchoolTrackManager';
 import AdmissionRoundManager from '../components/AdmissionRoundManager';
+import { AchievementDetailBody, LEVEL_LABEL } from './StudentAchievementDetailPage';
+import './StudentAchievementDetailPage.css';
 import './ExamInstitutionDetailPage.css';
 
 const TYPE_LABEL = {
@@ -360,6 +363,68 @@ function UniversityAchievementView({ bachelor, onViewDetail, onEdit, onDelete })
   );
 }
 
+// ── การ์ดรายละเอียดผลสอบติด (แสดงแทนการไปหน้าใหม่) ──────────────────────────
+
+function AchievementDetailModal({ achievementId, onClose }) {
+  const [data, setData] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+
+  const load = useCallback(async () => {
+    setLoading(true);
+    setError('');
+    try {
+      const result = await getStudentAchievementDetail(achievementId);
+      setData(result);
+    } catch (err) {
+      setError(err.message || 'ไม่สามารถโหลดข้อมูลรายละเอียดผลการสอบติดได้');
+    } finally {
+      setLoading(false);
+    }
+  }, [achievementId]);
+
+  useEffect(() => { load(); }, [load]);
+
+  const achievement = data?.achievement;
+
+  return (
+    <div className="eid-overlay" onClick={onClose}>
+      <div className="eid-modal eid-modal--detail" onClick={(e) => e.stopPropagation()}>
+        <div className="eid-modal-header">
+          <h2>{achievement ? achievement.studentName : 'รายละเอียดผลสอบติด'}</h2>
+          <button className="eid-modal-close" onClick={onClose} aria-label="ปิด">✕</button>
+        </div>
+        <div className="eid-modal-body sad-page">
+          {loading ? (
+            <div className="sad-loading">
+              <div className="sad-spinner" />
+              <span>กำลังโหลดข้อมูล...</span>
+            </div>
+          ) : error || !data ? (
+            <div className="sad-error-card">
+              <p className="sad-error-title">โหลดข้อมูลไม่สำเร็จ</p>
+              <p className="sad-error-msg">{error || 'ไม่พบข้อมูล'}</p>
+              <div className="sad-error-actions">
+                <button className="sad-btn sad-btn--primary" onClick={load}>ลองใหม่</button>
+              </div>
+            </div>
+          ) : (
+            <>
+              <div className="sad-meta-row">
+                <span className="sad-meta-item sad-meta-item--primary">
+                  {achievement.educationLevelLabel || LEVEL_LABEL[achievement.educationLevel]}
+                </span>
+                <span className="sad-meta-item">{achievement.institutionName}</span>
+              </div>
+              <AchievementDetailBody achievement={achievement} enrollments={data.enrollments} />
+            </>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ── Main Page ─────────────────────────────────────────────────────────────
 
 export default function ExamInstitutionDetailPage() {
@@ -406,6 +471,8 @@ export default function ExamInstitutionDetailPage() {
 
   const [confirmDelete, setConfirmDelete] = useState(null);
   const [deleting, setDeleting] = useState(false);
+
+  const [viewAchievementId, setViewAchievementId] = useState(null);
 
   function notify(msg, type = 'success') {
     setToast({ msg, type });
@@ -490,7 +557,7 @@ export default function ExamInstitutionDetailPage() {
   }, [institutionId, form.educationLevel]);
 
   function goToAchievementDetail(achievementId) {
-    navigate(`/admin/student-exam-achievements/${achievementId}/detail`);
+    setViewAchievementId(achievementId);
   }
 
   function fld(key, val) {
@@ -907,6 +974,14 @@ export default function ExamInstitutionDetailPage() {
             </form>
           </div>
         </div>
+      )}
+
+      {/* ═══ ACHIEVEMENT DETAIL CARD ═══ */}
+      {viewAchievementId && (
+        <AchievementDetailModal
+          achievementId={viewAchievementId}
+          onClose={() => setViewAchievementId(null)}
+        />
       )}
 
       {/* ═══ CONFIRM DELETE MODAL ═══ */}

@@ -204,7 +204,7 @@ function FormField({ label, name, value, onChange, type = 'text', error, placeho
 
 const CREATE_INIT = {
   firstName: '', lastName: '', username: '', email: '',
-  password: '', phoneNumber: '',
+  phoneNumber: '',
 };
 
 function CreateModal({ onClose, onSave, saving, saveError }) {
@@ -225,8 +225,6 @@ function CreateModal({ onClose, onSave, saving, saveError }) {
     else if (form.username.trim().length < 3) errs.username = 'Username อย่างน้อย 3 ตัวอักษร';
     if (!form.email.trim())      errs.email      = 'กรุณากรอก Email';
     else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) errs.email = 'รูปแบบ Email ไม่ถูกต้อง';
-    if (!form.password)          errs.password   = 'กรุณากรอกรหัสผ่าน';
-    else if (form.password.length < 8) errs.password = 'รหัสผ่านอย่างน้อย 8 ตัวอักษร';
     if (!form.phoneNumber.trim())          errs.phoneNumber = 'กรุณากรอกเบอร์โทร';
     else if (!/^[0-9]{10}$/.test(form.phoneNumber.trim())) errs.phoneNumber = 'เบอร์โทรต้องเป็นตัวเลข 10 หลัก';
     return errs;
@@ -278,10 +276,10 @@ function CreateModal({ onClose, onSave, saving, saveError }) {
             <div className="tm-form-grid">
               <FormField label="Username" name="username" value={form.username} onChange={handleChange} error={errors.username} required />
               <FormField label="Email" name="email" value={form.email} onChange={handleChange} type="email" error={errors.email} required />
-              <div className="tm-form-field tm-form-field--full">
-                <FormField label="รหัสผ่าน" name="password" value={form.password} onChange={handleChange} type="password" error={errors.password} required placeholder="อย่างน้อย 8 ตัวอักษร" />
-              </div>
             </div>
+            <p className="tm-form-hint">
+              ระบบจะตั้งรหัสผ่านเริ่มต้นให้อัตโนมัติเป็น <strong>12345678</strong> ติวเตอร์สามารถเปลี่ยนรหัสผ่านได้เองภายหลังจากเข้าสู่ระบบ
+            </p>
           </div>
 
           <div className="tm-form-section">

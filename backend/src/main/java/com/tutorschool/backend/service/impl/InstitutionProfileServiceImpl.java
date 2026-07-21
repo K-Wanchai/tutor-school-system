@@ -41,6 +41,7 @@ public class InstitutionProfileServiceImpl implements InstitutionProfileService 
         profile.setBankAccountName(request.getBankAccountName());
         profile.setBankAccountNumber(request.getBankAccountNumber());
         profile.setBankQrCode(request.getBankQrCode());
+        profile.setEnrollmentPaymentDeadlineMinutes(request.getEnrollmentPaymentDeadlineMinutes());
 
         return institutionProfileMapper.toResponse(institutionProfileRepository.save(profile));
     }
