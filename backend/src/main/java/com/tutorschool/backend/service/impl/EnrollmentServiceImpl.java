@@ -10,6 +10,7 @@ import com.tutorschool.backend.exception.ResourceNotFoundException;
 import com.tutorschool.backend.mapper.EnrollmentMapper;
 import com.tutorschool.backend.repository.CourseRepository;
 import com.tutorschool.backend.repository.EnrollmentRepository;
+import com.tutorschool.backend.repository.InstitutionProfileRepository;
 import com.tutorschool.backend.repository.StudentRepository;
 import com.tutorschool.backend.service.EnrollmentService;
 import com.tutorschool.backend.util.ScheduleDaysParser;
@@ -28,10 +29,13 @@ import java.util.Map;
 @RequiredArgsConstructor
 public class EnrollmentServiceImpl implements EnrollmentService {
 
+    private static final int DEFAULT_PAYMENT_DEADLINE_MINUTES = 15;
+
     private final EnrollmentRepository enrollmentRepository;
     private final StudentRepository studentRepository;
     private final CourseRepository courseRepository;
     private final EnrollmentMapper enrollmentMapper;
+    private final InstitutionProfileRepository institutionProfileRepository;
 
     @Override
     @Transactional(readOnly = true)
@@ -99,7 +103,7 @@ public class EnrollmentServiceImpl implements EnrollmentService {
                 .discountAmount(discountAmount)
                 .finalAmount(finalAmount)
                 .note(request.getNote())
-                .paymentDeadline(LocalDateTime.now().plusMinutes(5))
+                .paymentDeadline(LocalDateTime.now().plusMinutes(getPaymentDeadlineMinutes()))
                 .build();
 
         Enrollment saved = enrollmentRepository.save(enrollment);
@@ -249,6 +253,12 @@ public class EnrollmentServiceImpl implements EnrollmentService {
         enrollmentRepository.save(enrollment);
     }
 
+    private int getPaymentDeadlineMinutes() {
+        return institutionProfileRepository.findFirstBy()
+                .map(InstitutionProfile::getEnrollmentPaymentDeadlineMinutes)
+                .orElse(DEFAULT_PAYMENT_DEADLINE_MINUTES);
+    }
+
     private void validateEnrollmentEligibility(Long studentId, Long courseId, Course course) {
         if (course.getStatus() != CourseStatus.OPEN_FOR_REGISTRATION) {
             LocalDate today = LocalDate.now();
@@ -267,7 +277,14 @@ public class EnrollmentServiceImpl implements EnrollmentService {
         }
 
         validateNoScheduleConflict(studentId, course);
-        // Seat count is NOT checked here — seats are reserved at payment confirmation time
+
+        // Seat is locked immediately when the student registers (PENDING/APPROVED both hold a seat) —
+        // matches the count shown to students as "enrolledCount" so the button disables in sync.
+        long active = enrollmentRepository.countByCourseIdAndStatusIn(
+                courseId, List.of(EnrollmentStatus.PENDING, EnrollmentStatus.APPROVED));
+        if (active >= course.getSeatLimit()) {
+            throw new IllegalStateException("SEAT_FULL");
+        }
     }
 
     /**

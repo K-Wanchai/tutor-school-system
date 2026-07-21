@@ -23,6 +23,7 @@ function toForm(profile) {
     bankAccountName: profile?.bankAccountName || '',
     bankAccountNumber: profile?.bankAccountNumber || '',
     bankQrCode: profile?.bankQrCode || '',
+    enrollmentPaymentDeadlineMinutes: profile?.enrollmentPaymentDeadlineMinutes ?? 15,
   };
 }
 
@@ -143,6 +144,12 @@ export default function AdminSettingsPage() {
     if (!form.phoneNumber.trim()) errs.phoneNumber = 'กรุณากรอกเบอร์โทรศัพท์';
     if (!form.email.trim()) errs.email = 'กรุณากรอกอีเมล';
     else if (!EMAIL_RE.test(form.email.trim())) errs.email = 'รูปแบบอีเมลไม่ถูกต้อง';
+    const deadline = Number(form.enrollmentPaymentDeadlineMinutes);
+    if (!form.enrollmentPaymentDeadlineMinutes && form.enrollmentPaymentDeadlineMinutes !== 0) {
+      errs.enrollmentPaymentDeadlineMinutes = 'กรุณากรอกระยะเวลา';
+    } else if (!Number.isInteger(deadline) || deadline < 1 || deadline > 1440) {
+      errs.enrollmentPaymentDeadlineMinutes = 'กรุณากรอกจำนวนเต็มระหว่าง 1-1440 นาที';
+    }
     if (Object.keys(errs).length > 0) { setErrors(errs); return; }
 
     setSaving(true);
@@ -352,6 +359,28 @@ export default function AdminSettingsPage() {
                     <p className="is-hint">รูป QR พร้อมเพย์สำหรับให้นักเรียนสแกนชำระเงิน</p>
                   </div>
                 </div>
+              </div>
+            </div>
+
+            {/* ── Enrollment Settings Card ── */}
+            <div className="is-card">
+              <div className="is-card-header">
+                <h2 className="is-card-title">การสมัครเรียนและการชำระเงิน</h2>
+                <p className="is-card-subtitle">กำหนดระยะเวลาที่นักเรียนมีสิทธิ์ชำระเงินก่อนที่ที่นั่งจะถูกปล่อยคืน</p>
+              </div>
+              <div className="is-card-body">
+                <div className="is-form-grid">
+                  <FormField
+                    label="ระยะเวลาชำระเงิน (นาที)" name="enrollmentPaymentDeadlineMinutes"
+                    type="number" required
+                    value={form.enrollmentPaymentDeadlineMinutes}
+                    onChange={handleChange}
+                    error={errors.enrollmentPaymentDeadlineMinutes}
+                  />
+                </div>
+                <p className="is-hint">
+                  นับตั้งแต่นักเรียนกดสมัครเรียน หากไม่ชำระเงินภายในเวลานี้ ที่นั่งจะถูกยกเลิกอัตโนมัติ
+                </p>
               </div>
             </div>
           </div>

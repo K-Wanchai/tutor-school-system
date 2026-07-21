@@ -1,12 +1,15 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { getMyCourses, respondToCourse } from '../services/tutorCourseService';
 import RefreshButton from '../components/RefreshButton';
 import './TutorCoursesPage.css';
 
 export default function TutorNewCoursesPage() {
+  const navigate = useNavigate();
   const [courses, setCourses] = useState([]);
   const [keyword, setKeyword] = useState('');
   const [loading, setLoading] = useState(true);
+  const [selectingId, setSelectingId] = useState(null);
 
   const load = useCallback(async () => {
     try {
@@ -15,8 +18,7 @@ export default function TutorNewCoursesPage() {
       const data = await getMyCourses();
       const list = Array.isArray(data) ? data : [];
 
-      // แสดงเฉพาะคอร์สที่ยังไม่ได้ตอบรับ/ปฏิเสธ — พอกดตอบรับหรือปฏิเสธแล้วจะหายจากหน้านี้ทันที
-      // ไปโชว์ที่หน้า "คอร์สของฉัน" แทน เพื่อไม่ให้ปนกัน
+      // แอดมินเพิ่มคอร์สมาแล้วถือว่ารับสอนทันที — หน้านี้แค่โชว์คอร์สใหม่ที่ยังไม่เคยเปิดดู
       setCourses(list.filter((c) => c.status === 'DRAFT'));
     } catch (error) {
       console.error(error);
@@ -37,21 +39,16 @@ export default function TutorNewCoursesPage() {
     });
   }, [courses, keyword]);
 
-  async function handleAccept(courseId) {
-    try {
-      await respondToCourse({ courseId, accepted: true });
-      load();
-    } catch (error) {
-      console.error(error);
-    }
-  }
+  async function handleSelectCourse(courseId) {
+    if (selectingId) return;
 
-  async function handleReject(courseId) {
     try {
-      await respondToCourse({ courseId, accepted: false });
-      load();
+      setSelectingId(courseId);
+      await respondToCourse({ courseId, accepted: true });
+      navigate('/tutor/courses');
     } catch (error) {
       console.error(error);
+      setSelectingId(null);
     }
   }
 
@@ -60,13 +57,13 @@ export default function TutorNewCoursesPage() {
       <div className="tc-header">
         <div>
           <h1>คอร์สมาใหม่</h1>
-          <p>คอร์สที่แอดมินมอบหมายให้คุณ รอการตอบรับหรือปฏิเสธ</p>
+          <p>คอร์สที่แอดมินมอบหมายให้คุณ กดที่การ์ดเพื่อเริ่มสอนคอร์สนี้</p>
         </div>
 
         <div className="tc-header-right">
           {filtered.length > 0 && (
             <div className="tc-pending-badge">
-              ⏳ รอการตอบรับ {filtered.length} คอร์ส
+              🆕 คอร์สใหม่ {filtered.length} คอร์ส
             </div>
           )}
 
@@ -94,10 +91,19 @@ export default function TutorNewCoursesPage() {
       ) : (
         <div className="tc-grid">
           {filtered.map((course) => (
-            <div key={course.id} className="tc-card tc-card-pending">
+            <div
+              key={course.id}
+              className={`tc-card tc-card-pending tc-card-clickable${selectingId === course.id ? ' tc-card-selecting' : ''}`}
+              role="button"
+              tabIndex={0}
+              onClick={() => handleSelectCourse(course.id)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') handleSelectCourse(course.id);
+              }}
+            >
               <div className="tc-card-top">
                 <span className="tc-code">{course.courseCode}</span>
-                <span className="tc-badge tc-badge-draft">รอการตอบรับ</span>
+                <span className="tc-badge tc-badge-draft">ใหม่</span>
               </div>
 
               <h2 className="tc-card-title">{course.courseName}</h2>
@@ -131,15 +137,9 @@ export default function TutorNewCoursesPage() {
                 </div>
               </div>
 
-              <div className="tc-card-actions">
-                <button className="tc-btn-accept" onClick={() => handleAccept(course.id)}>
-                  ตอบรับ
-                </button>
-
-                <button className="tc-btn-reject" onClick={() => handleReject(course.id)}>
-                  ปฏิเสธ
-                </button>
-              </div>
+              {selectingId === course.id && (
+                <div className="tc-card-selecting-note">กำลังเพิ่มคอร์ส...</div>
+              )}
             </div>
           ))}
         </div>

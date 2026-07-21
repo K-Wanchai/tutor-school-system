@@ -6,7 +6,7 @@ import './StudentDashboardPage.css';
 
 const ENROLLMENT_STATUS_LABELS = {
   PENDING: 'รออนุมัติ',
-  APPROVED: 'อนุมัติแล้ว',
+  APPROVED: 'ชำระเงินเรียบร้อยแล้ว',
   REJECTED: 'ถูกปฏิเสธ',
   CANCELLED: 'ยกเลิก',
   COMPLETED: 'เรียนจบแล้ว',
@@ -14,7 +14,7 @@ const ENROLLMENT_STATUS_LABELS = {
 
 const PAYMENT_STATUS_LABELS = {
   UNPAID: 'ยังไม่ชำระเงิน',
-  PENDING_VERIFICATION: 'รอตรวจสอบการชำระเงิน',
+  PENDING_VERIFICATION: 'รอการยืนยันชำระเงิน',
   PAID: 'ชำระเงินแล้ว',
   FAILED: 'ชำระเงินไม่สำเร็จ',
   REFUNDED: 'คืนเงินแล้ว',
@@ -154,7 +154,7 @@ export default function StudentDashboardPage() {
             <p>คอร์สเรียนของฉัน</p>
             <h2>{courseSummary.total}</h2>
             <span>
-              อนุมัติแล้ว {courseSummary.approved} คอร์ส · รออนุมัติ {courseSummary.pending} คอร์ส
+              ชำระเงินเรียบร้อยแล้ว {courseSummary.approved} คอร์ส · รออนุมัติ {courseSummary.pending} คอร์ส
             </span>
 
             <div className="student-course-mini-list">

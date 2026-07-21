@@ -1,5 +1,6 @@
 package com.tutorschool.backend.service;
 
+import com.tutorschool.backend.dto.request.ChangePasswordRequest;
 import com.tutorschool.backend.dto.request.CreateTutorRequest;
 import com.tutorschool.backend.dto.request.UpdateTutorRequest;
 import com.tutorschool.backend.dto.response.PageResponse;
@@ -22,4 +23,6 @@ public interface TutorService {
     void deleteTeacher(Long id);
 
     TutorResponse toggleStatus(Long id, boolean enabled);
+
+    void changePassword(Long userId, ChangePasswordRequest request);
 }

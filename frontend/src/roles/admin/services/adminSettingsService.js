@@ -38,6 +38,7 @@ export async function updateInstitutionProfile(form) {
     bankAccountName: form.bankAccountName || null,
     bankAccountNumber: form.bankAccountNumber || null,
     bankQrCode: form.bankQrCode || null,
+    enrollmentPaymentDeadlineMinutes: Number(form.enrollmentPaymentDeadlineMinutes) || 15,
   };
   try {
     const res = await api.put('/institution-profile', payload);

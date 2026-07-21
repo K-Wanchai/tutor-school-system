@@ -16,7 +16,7 @@ function StatusBadge({ status }) {
     OVERDUE:   'error',
   };
   const LABEL_TH = {
-    APPROVED:  'อนุมัติแล้ว',
+    APPROVED:  'ชำระเงินเรียบร้อยแล้ว',
     PENDING:   'รอดำเนินการ',
     REJECTED:  'ปฏิเสธ',
     VERIFIED:  'ยืนยันแล้ว',

@@ -5,6 +5,7 @@ import {
   getAvailableCourses,
   getMyEnrollments,
 } from '../services/studentEnrollmentService';
+import api from '../../../shared/services/api';
 import './StudentEnrollmentsPage.css';
 
 export default function StudentEnrollmentsPage() {
@@ -15,6 +16,7 @@ export default function StudentEnrollmentsPage() {
   const [enrollingId, setEnrollingId] = useState(null);
   const [errorMessage, setErrorMessage] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
+  const [paymentDeadlineMinutes, setPaymentDeadlineMinutes] = useState(15);
 
   // enrollments ที่ active (PENDING/APPROVED, ไม่ใช่ CANCELLED)
   // ซ่อนคอร์สที่สมัครแล้ว (ไม่ว่าจะรอชำระ/รอตรวจสอบ/อนุมัติแล้ว) ออกจากหน้าสมัครเรียน
@@ -44,13 +46,17 @@ export default function StudentEnrollmentsPage() {
       setErrorMessage('');
       setSuccessMessage('');
 
-      const [courseData, enrollmentData] = await Promise.all([
+      const [courseData, enrollmentData, institutionData] = await Promise.all([
         getAvailableCourses(),
         getMyEnrollments().catch(() => []),
+        api.get('/institution-profile').then((r) => r.data?.data).catch(() => null),
       ]);
 
       setCourses(courseData?.content || []);
       setMyEnrollments(Array.isArray(enrollmentData) ? enrollmentData : []);
+      if (institutionData?.enrollmentPaymentDeadlineMinutes) {
+        setPaymentDeadlineMinutes(institutionData.enrollmentPaymentDeadlineMinutes);
+      }
     } catch (error) {
       setErrorMessage(
         error?.response?.data?.message || 'ไม่สามารถโหลดข้อมูลการสมัครเรียนได้'
@@ -66,7 +72,7 @@ export default function StudentEnrollmentsPage() {
 
     const price = course.price != null ? `${Number(course.price).toLocaleString('th-TH')} บาท` : '-';
     const ok = window.confirm(
-      `ยืนยันการสมัครเรียน?\n\nคอร์ส: ${course.courseName}\nราคา: ${price}\n\nคุณจะต้องชำระเงินภายใน 5 นาที มิฉะนั้นการสมัครจะถูกยกเลิกอัตโนมัติ`
+      `ยืนยันการสมัครเรียน?\n\nคอร์ส: ${course.courseName}\nราคา: ${price}\n\nคุณจะต้องชำระเงินภายใน ${paymentDeadlineMinutes} นาที มิฉะนั้นการสมัครจะถูกยกเลิกอัตโนมัติ`
     );
     if (!ok) return;
 
@@ -76,7 +82,13 @@ export default function StudentEnrollmentsPage() {
       await enrollCourse(courseId);
       navigate('/student/payments');
     } catch (error) {
-      setErrorMessage(error?.response?.data?.message || 'ไม่สามารถสมัครเรียนคอร์สนี้ได้');
+      const msg = error?.response?.data?.message || '';
+      if (msg.includes('SEAT_FULL')) {
+        setErrorMessage('ขออภัย ที่นั่งเต็มแล้ว มีผู้สมัครลงทะเบียนก่อนหน้าคุณ');
+        await loadPageData();
+      } else {
+        setErrorMessage(msg || 'ไม่สามารถสมัครเรียนคอร์สนี้ได้');
+      }
     } finally {
       setEnrollingId(null);
     }

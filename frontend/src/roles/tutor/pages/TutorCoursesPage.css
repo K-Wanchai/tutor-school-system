@@ -99,6 +99,34 @@
   box-shadow: 0 8px 22px rgba(5,150,105,.08);
 }
 
+.tc-card-clickable {
+  cursor: pointer;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.tc-card-clickable:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 28px rgba(5,150,105,.16);
+}
+
+.tc-card-clickable:focus-visible {
+  outline: 2px solid #059669;
+  outline-offset: 2px;
+}
+
+.tc-card-selecting {
+  opacity: 0.7;
+  pointer-events: none;
+}
+
+.tc-card-selecting-note {
+  margin-top: auto;
+  text-align: center;
+  font-size: 13px;
+  font-weight: 700;
+  color: #059669;
+}
+
 .tc-card-top {
   display: flex;
   justify-content: space-between;

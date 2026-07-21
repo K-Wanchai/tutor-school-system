@@ -4,15 +4,15 @@ import api from '../../../shared/services/api';
 import './StudentEnrollmentHistoryPage.css';
 
 const STATUS_MAP = {
-  APPROVED:             { label: 'อนุมัติแล้ว',    cls: 'hist-badge--approved' },
+  APPROVED:             { label: 'ชำระเงินเรียบร้อยแล้ว', cls: 'hist-badge--approved' },
   REJECTED:             { label: 'ปฏิเสธ',          cls: 'hist-badge--rejected' },
-  PENDING_VERIFICATION: { label: 'รอตรวจสอบ',       cls: 'hist-badge--pending' },
+  PENDING_VERIFICATION: { label: 'รอการยืนยันชำระเงิน', cls: 'hist-badge--pending' },
 };
 
 const FILTERS = [
   { key: 'ALL',                  label: 'ทั้งหมด' },
-  { key: 'PENDING_VERIFICATION', label: 'รอตรวจสอบ' },
-  { key: 'APPROVED',             label: 'อนุมัติแล้ว' },
+  { key: 'PENDING_VERIFICATION', label: 'รอการยืนยันชำระเงิน' },
+  { key: 'APPROVED',             label: 'ชำระเงินเรียบร้อยแล้ว' },
   { key: 'REJECTED',             label: 'ปฏิเสธ' },
 ];
 

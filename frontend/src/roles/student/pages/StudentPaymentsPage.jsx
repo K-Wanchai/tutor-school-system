@@ -181,7 +181,7 @@ export default function StudentPaymentsPage() {
         <div className="pay-header-row">
           <div>
             <h1>การชำระเงิน</h1>
-            <p>ชำระเงินภายใน 5 นาที เพื่อยืนยันสิทธิ์ในคอร์ส</p>
+            <p>ชำระเงินภายใน {institution?.enrollmentPaymentDeadlineMinutes ?? 15} นาที เพื่อยืนยันสิทธิ์ในคอร์ส</p>
           </div>
           {unpaidEnrollments.length > 1 && (
             <button className="pay-bulk-btn" onClick={() => setBulkModal(true)}>
@@ -198,7 +198,7 @@ export default function StudentPaymentsPage() {
       {message.text && <div className={`pay-alert ${message.type}`}>{message.text}</div>}
 
       {enrollments.length === 0 ? (
-        <div className="pay-empty"><h2>ไม่มีรายการรอชำระเงิน</h2><p>กดสมัครเรียนจากหน้าคอร์ส แล้วมาชำระเงินที่นี่ภายใน 5 นาที</p></div>
+        <div className="pay-empty"><h2>ไม่มีรายการรอชำระเงิน</h2><p>กดสมัครเรียนจากหน้าคอร์ส แล้วมาชำระเงินที่นี่ภายใน {institution?.enrollmentPaymentDeadlineMinutes ?? 15} นาที</p></div>
       ) : (
         <div className="pay-list">
           {enrollments.map((en) => (
@@ -211,7 +211,7 @@ export default function StudentPaymentsPage() {
                   <CountdownBadge deadline={en.paymentDeadline} onExpired={handleExpired} />
                 ) : en.paymentStatus === 'PENDING_VERIFICATION' ? (
                   <span className="pay-countdown" style={{ background: '#f0fdf4', borderColor: '#bbf7d0', color: '#166534' }}>
-                    รอตรวจสอบสลิป
+                    รอการยืนยันชำระเงิน
                   </span>
                 ) : null}
               </div>
