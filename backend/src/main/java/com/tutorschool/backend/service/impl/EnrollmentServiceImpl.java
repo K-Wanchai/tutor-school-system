@@ -86,10 +86,16 @@ public class EnrollmentServiceImpl implements EnrollmentService {
 
         validateEnrollmentEligibility(request.getStudentId(), request.getCourseId(), course);
 
-        // Remove any cancelled record so the student can re-enroll (unique constraint)
+        // Remove any cancelled record so the student can re-enroll (unique constraint).
+        // flush() is required: Hibernate flushes inserts before deletes within the same
+        // transaction, so without it the insert below would race the delete and violate
+        // the unique (student_id, course_id) constraint.
         enrollmentRepository.findByStudentIdAndCourseId(request.getStudentId(), request.getCourseId())
                 .filter(e -> e.getStatus() == EnrollmentStatus.CANCELLED)
-                .ifPresent(enrollmentRepository::delete);
+                .ifPresent(e -> {
+                    enrollmentRepository.delete(e);
+                    enrollmentRepository.flush();
+                });
 
         BigDecimal amount = course.getPrice();
         BigDecimal discountAmount = BigDecimal.ZERO;
@@ -131,10 +137,15 @@ public class EnrollmentServiceImpl implements EnrollmentService {
 
         validateNoScheduleConflict(studentId, course);
 
-        // Remove previous cancelled record (unique constraint)
+        // Remove previous cancelled record (unique constraint) — flush immediately,
+        // otherwise Hibernate flushes the insert below before this delete and the
+        // unique (student_id, course_id) constraint rejects it.
         enrollmentRepository.findByStudentIdAndCourseId(studentId, request.getCourseId())
                 .filter(e -> e.getStatus() == EnrollmentStatus.CANCELLED)
-                .ifPresent(enrollmentRepository::delete);
+                .ifPresent(e -> {
+                    enrollmentRepository.delete(e);
+                    enrollmentRepository.flush();
+                });
 
         // Seat check — only count those who have confirmed payment
         long confirmed = enrollmentRepository.countConfirmedPaymentsByCourseId(course.getId());

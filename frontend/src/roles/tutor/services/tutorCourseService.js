@@ -24,17 +24,12 @@ export async function getMyCourses() {
   }
 }
 
-export async function respondToCourse({ courseId, accepted, remark, lessons, tests }) {
+export async function markCourseViewed(courseId) {
   try {
-    const res = await api.patch(`/courses/${courseId}/tutor-response`, {
-      accepted,
-      remark: remark || null,
-      lessons: lessons || [],
-      tests: tests || [],
-    });
+    const res = await api.patch(`/courses/${courseId}/mark-viewed`);
     return unwrap(res);
   } catch (error) {
-    throw new Error(apiError(error, 'respondToCourse'));
+    throw new Error(apiError(error, 'markCourseViewed'));
   }
 }
 

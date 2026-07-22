@@ -6,7 +6,6 @@ import './TutorNavbar.css';
 
 const PAGE_TITLES = {
   '/tutor/dashboard':        'แดชบอร์ด',
-  '/tutor/new-courses':      'คอร์สมาใหม่',
   '/tutor/courses':          'คอร์สของฉัน',
   '/tutor/notifications':    'การแจ้งเตือน',
   '/tutor/schedule':         'ตารางสอน',

@@ -4,6 +4,7 @@ import {
   addTest,
   deleteLesson,
   getMyCourses,
+  markCourseViewed,
   publishCourse,
   updateLesson,
 } from '../services/tutorCourseService';
@@ -70,6 +71,7 @@ export default function TutorCoursesPage() {
 
   const [loading, setLoading] = useState(true);
   const [manageCourse, setManageCourse] = useState(null);
+  const [detailCourse, setDetailCourse] = useState(null);
 
   const load = useCallback(async () => {
     try {
@@ -78,8 +80,13 @@ export default function TutorCoursesPage() {
       const data = await getMyCourses();
       const list = Array.isArray(data) ? data : [];
 
-      // คอร์สที่ยังไม่ตอบรับ (DRAFT) อยู่หน้า "คอร์สมาใหม่" แยกต่างหาก ไม่ต้องปนกันที่นี่
-      setCourses(list.filter((c) => c.status !== 'DRAFT'));
+      setCourses(list);
+
+      // แอดมินมอบหมายคอร์สมาแล้วถือว่าติวเตอร์ได้รับทันที — เข้าหน้านี้ครั้งแรกถือว่าเปิดดูแล้ว ล้าง badge แจ้งเตือนที่เมนู
+      const unviewed = list.filter((c) => !c.tutorViewed);
+      if (unviewed.length > 0) {
+        await Promise.all(unviewed.map((c) => markCourseViewed(c.id).catch(() => {})));
+      }
     } catch (error) {
       console.error(error);
       setCourses([]);
@@ -108,10 +115,14 @@ export default function TutorCoursesPage() {
     setManageCourse(course);
   }
 
+  function openDetail(course) {
+    setDetailCourse(course);
+  }
+
   async function refreshManageCourse() {
     const data = await getMyCourses();
     const list = Array.isArray(data) ? data : [];
-    setCourses(list.filter((c) => c.status !== 'DRAFT'));
+    setCourses(list);
     setManageCourse((prev) => (prev ? list.find((c) => c.id === prev.id) || null : null));
   }
 
@@ -123,7 +134,7 @@ export default function TutorCoursesPage() {
           <h1>คอร์สของฉัน</h1>
 
           <p>
-            คอร์สที่คุณตอบรับแล้ว จัดการบทเรียนและเผยแพร่ได้ที่นี่
+            คอร์สทั้งหมดของคุณ จัดการบทเรียนและเผยแพร่ได้ที่นี่
           </p>
         </div>
 
@@ -192,7 +203,7 @@ export default function TutorCoursesPage() {
           <h3>ยังไม่มีคอร์ส</h3>
 
           <p>
-            เมื่อคุณตอบรับคอร์สจากหน้า "คอร์สมาใหม่" แล้ว รายการจะแสดงที่นี่
+            เมื่อแอดมินมอบหมายคอร์สให้คุณ รายการจะแสดงที่นี่ทันที
           </p>
         </div>
       ) : (
@@ -220,17 +231,6 @@ export default function TutorCoursesPage() {
 
               <div className="tc-card-info">
                 <div>
-                  <span>ราคา</span>
-
-                  <strong>
-                    {Number(
-                      course.price || 0
-                    ).toLocaleString()}{' '}
-                    บาท
-                  </strong>
-                </div>
-
-                <div>
                   <span>ชั่วโมงเรียน</span>
 
                   <strong>
@@ -252,13 +252,13 @@ export default function TutorCoursesPage() {
                   <span>เริ่มเรียน</span>
 
                   <strong>
-                    {course.startDate || '-'}
+                    {course.courseStartDate || '-'}
                   </strong>
                 </div>
               </div>
 
               <div className="tc-card-actions">
-                <button className="tc-btn-detail">
+                <button className="tc-btn-detail" onClick={() => openDetail(course)}>
                   ดูรายละเอียด
                 </button>
 
@@ -280,6 +280,113 @@ export default function TutorCoursesPage() {
           onChanged={refreshManageCourse}
         />
       )}
+
+      {detailCourse && (
+        <CourseDetailModal
+          course={detailCourse}
+          onClose={() => setDetailCourse(null)}
+        />
+      )}
+    </div>
+  );
+}
+
+function CourseDetailModal({ course, onClose }) {
+  const lessons = [...(course.lessons || [])].sort((a, b) => (a.lessonOrder || 0) - (b.lessonOrder || 0));
+  const tests = [...(course.tests || [])].sort((a, b) => (a.testOrder || 0) - (b.testOrder || 0));
+
+  function formatDate(value) {
+    if (!value) return '-';
+    return new Date(value).toLocaleDateString('th-TH', { year: 'numeric', month: 'short', day: 'numeric' });
+  }
+
+  return (
+    <div className="tc-modal-overlay" onClick={onClose}>
+      <div className="tc-modal" onClick={(e) => e.stopPropagation()}>
+        <div className="tc-modal-header">
+          <h2>รายละเอียดคอร์ส — {course.courseName}</h2>
+          <button className="tc-modal-close" onClick={onClose}>✕</button>
+        </div>
+
+        <div className="tc-modal-section">
+          <h3>ข้อมูลทั่วไป</h3>
+
+          <p className="tc-modal-hint">{course.description || 'ไม่มีรายละเอียดคอร์ส'}</p>
+
+          <div className="tc-card-info">
+            <div>
+              <span>รหัสคอร์ส</span>
+              <strong>{course.courseCode}</strong>
+            </div>
+
+            <div>
+              <span>สถานะ</span>
+              <strong><StatusBadge status={course.status} /></strong>
+            </div>
+
+            <div>
+              <span>ชั่วโมงเรียน</span>
+              <strong>{course.totalHours || 0} ชั่วโมง</strong>
+            </div>
+
+            <div>
+              <span>จำนวนนักเรียน</span>
+              <strong>{course.enrolledCount || 0}/{course.seatLimit || 0} คน</strong>
+            </div>
+
+            <div>
+              <span>ช่วงรับสมัคร</span>
+              <strong>{formatDate(course.registrationStartDate)} - {formatDate(course.registrationEndDate)}</strong>
+            </div>
+
+            <div>
+              <span>วันเริ่มเรียน</span>
+              <strong>{formatDate(course.courseStartDate)}</strong>
+            </div>
+
+            <div>
+              <span>ตารางสอน</span>
+              <strong>{course.scheduleDays || '-'}</strong>
+            </div>
+          </div>
+
+          {course.tutorRemark && (
+            <p className="tc-modal-hint">หมายเหตุ: {course.tutorRemark}</p>
+          )}
+        </div>
+
+        <div className="tc-modal-section">
+          <h3>บทเรียน ({lessons.length})</h3>
+
+          {lessons.length === 0 && <p className="tc-modal-hint">ยังไม่มีบทเรียน</p>}
+
+          {lessons.map((lesson) => (
+            <div key={lesson.id} className="tc-lesson-row tc-lesson-row--column">
+              <div className="tc-lesson-row-top">
+                <div>
+                  <strong>บทที่ {lesson.lessonOrder}: {lesson.lessonTitle}</strong>
+                  {lesson.lessonContent && <p>{lesson.lessonContent}</p>}
+                </div>
+              </div>
+
+              {tests.filter((t) => t.lessonOrder === lesson.lessonOrder).length > 0 && (
+                <ul className="tc-lesson-test-list">
+                  {tests.filter((t) => t.lessonOrder === lesson.lessonOrder).map((test) => (
+                    <li key={test.id}>
+                      <strong>สอบ: {test.testTitle}</strong>
+                      {test.testDescription && <span> — {test.testDescription}</span>}
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+          ))}
+        </div>
+
+        <div className="tc-modal-footer">
+          <button onClick={onClose}>ปิด</button>
+        </div>
+      </div>
     </div>
   );
 }

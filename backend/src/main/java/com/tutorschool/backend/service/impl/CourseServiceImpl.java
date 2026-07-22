@@ -37,7 +37,6 @@ import com.tutorschool.backend.entity.NotificationType;
 import com.tutorschool.backend.entity.ReferenceType;
 import com.tutorschool.backend.entity.Tutor;
 import com.tutorschool.backend.exception.CourseScheduleConflictException;
-import com.tutorschool.backend.exception.DuplicateResourceException;
 import com.tutorschool.backend.exception.InvalidCourseDateException;
 import com.tutorschool.backend.exception.ResourceInUseException;
 import com.tutorschool.backend.exception.ResourceNotFoundException;
@@ -138,10 +137,6 @@ public class CourseServiceImpl implements CourseService {
     @Override
     @Transactional
     public CourseResponse createCourse(CreateCourseRequest request) {
-        if (courseRepository.existsByCourseCode(request.getCourseCode())) {
-            throw new DuplicateResourceException("Course code already exists: " + request.getCourseCode());
-        }
-
         Tutor tutor = TutorRepository.findById(request.getTutorId())
                 .orElseThrow(() -> new ResourceNotFoundException("Tutor", request.getTutorId()));
 
@@ -152,10 +147,10 @@ public class CourseServiceImpl implements CourseService {
         BigDecimal price = (request.getPrice() != null) ? request.getPrice() : BigDecimal.ZERO;
 
         // ระบบจัดวัน-เวลาสอนให้ติวเตอร์เองอัตโนมัติ ไม่ให้แอดมินเลือกเอง — ต้องไม่ชนกับคอร์สอื่นของติวเตอร์คนเดียวกัน
-        String scheduleDays = autoAssignScheduleDays(tutor.getId(), request.getTotalHours(), null);
+        Duration sessionLength = toSessionDuration(request.getHoursPerSession());
+        String scheduleDays = autoAssignScheduleDays(tutor.getId(), request.getTotalHours(), sessionLength, null);
 
         Course course = Course.builder()
-                .courseCode(request.getCourseCode())
                 .courseName(request.getCourseName())
                 .price(price)
                 .description(request.getDescription())
@@ -164,7 +159,8 @@ public class CourseServiceImpl implements CourseService {
                 .registrationStartDate(request.getRegistrationStartDate())
                 .registrationEndDate(request.getRegistrationEndDate())
                 .courseStartDate(request.getCourseStartDate())
-                .status(CourseStatus.DRAFT)
+                .status(CourseStatus.ACCEPTED)
+                .tutorViewed(false)
                 .tutor(tutor)
                 .scheduleDays(scheduleDays)
                 .scheduleStartTime(null)
@@ -176,6 +172,10 @@ public class CourseServiceImpl implements CourseService {
 
         course = courseRepository.save(course);
 
+        // รหัสคอร์สอิงจาก id ในฐานข้อมูล เรียงลำดับตามลำดับสร้าง แก้ไขไม่ได้ (เหมือน ENR-/EXM-)
+        course.setCourseCode("CRS-" + String.format("%04d", course.getId()));
+        course = courseRepository.save(course);
+
         sendCourseAssignedNotification(course, tutor);
 
         return courseMapper.toDetailResponse(course, 0L);
@@ -183,7 +183,6 @@ public class CourseServiceImpl implements CourseService {
 
     private static final LocalTime WORK_START = LocalTime.of(9, 0);
     private static final LocalTime WORK_END = LocalTime.of(20, 0);
-    private static final Duration SESSION_LENGTH = Duration.ofHours(2);
     private static final String[] WEEK_DAYS = {"MON", "TUE", "WED", "THU", "FRI", "SAT", "SUN"};
 
     private int computeDaysPerWeek(int totalHours) {
@@ -193,13 +192,17 @@ public class CourseServiceImpl implements CourseService {
         return 4;
     }
 
+    private Duration toSessionDuration(BigDecimal hoursPerSession) {
+        return Duration.ofMinutes(hoursPerSession.multiply(BigDecimal.valueOf(60)).longValue());
+    }
+
     /**
-     * Auto-picks weekly teaching day/time slots for a tutor (2h sessions, 09:00-20:00),
+     * Auto-picks weekly teaching day/time slots for a tutor (session length per request, 09:00-20:00),
      * avoiding any overlap with that tutor's OTHER existing courses. Number of days/week is
      * derived from totalHours (see computeDaysPerWeek). excludeCourseId lets a future
      * update-course flow exclude the course being edited from its own conflict check.
      */
-    private String autoAssignScheduleDays(Long tutorId, int totalHours, Long excludeCourseId) {
+    private String autoAssignScheduleDays(Long tutorId, int totalHours, Duration sessionLength, Long excludeCourseId) {
         int daysNeeded = computeDaysPerWeek(totalHours);
 
         Map<String, List<LocalTime[]>> busyByDay = new HashMap<>();
@@ -222,7 +225,7 @@ public class CourseServiceImpl implements CourseService {
                     .sorted(Comparator.comparing(iv -> iv[0]))
                     .toList();
 
-            LocalTime[] freeSlot = findFreeSlot(busy, WORK_START, WORK_END, SESSION_LENGTH);
+            LocalTime[] freeSlot = findFreeSlot(busy, WORK_START, WORK_END, sessionLength);
             if (freeSlot != null) {
                 assigned.put(day, freeSlot);
             }
@@ -278,7 +281,7 @@ public class CourseServiceImpl implements CourseService {
                 "ชื่อคอร์ส: " + course.getCourseName() + "\n" +
                 "วันที่เริ่มสอน: " + course.getCourseStartDate() + "\n" +
                 "จำนวนที่นั่ง: " + course.getSeatLimit() + " คน\n\n" +
-                "กรุณาเข้าสู่ระบบเพื่อตอบรับหรือปฏิเสธคอร์สนี้"
+                "กรุณาเข้าสู่ระบบเพื่อจัดเตรียมเนื้อหาบทเรียนและข้อสอบ แล้วเผยแพร่คอร์สให้นักเรียนสมัครได้"
             );
             notif.setNotificationType(NotificationType.COURSE_ASSIGNED);
             notif.setReferenceType(ReferenceType.COURSE);
@@ -295,11 +298,6 @@ public class CourseServiceImpl implements CourseService {
         Course course = courseRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Course", id));
 
-        if (!course.getCourseCode().equals(request.getCourseCode())
-                && courseRepository.existsByCourseCodeAndIdNot(request.getCourseCode(), id)) {
-            throw new DuplicateResourceException("Course code already exists: " + request.getCourseCode());
-        }
-
         Tutor Tutor = TutorRepository.findById(request.getTutorId())
                 .orElseThrow(() -> new ResourceNotFoundException("Tutor", request.getTutorId()));
 
@@ -307,7 +305,6 @@ public class CourseServiceImpl implements CourseService {
                 request.getRegistrationEndDate(),
                 request.getCourseStartDate());
 
-        course.setCourseCode(request.getCourseCode());
         course.setCourseName(request.getCourseName());
         course.setPrice(request.getPrice());
         course.setDescription(request.getDescription());
@@ -480,6 +477,19 @@ public class CourseServiceImpl implements CourseService {
         course.setStatus(CourseStatus.OPEN_FOR_REGISTRATION);
         course = courseRepository.save(course);
         return courseMapper.toDetailResponse(course, countActiveEnrollments(courseId));
+    }
+
+    @Override
+    @Transactional
+    public void markCourseViewed(Long courseId, Long tutorUserId) {
+        Course course = courseRepository.findById(courseId)
+                .orElseThrow(() -> new ResourceNotFoundException("Course", courseId));
+        verifyTutorOwnsCourse(course, tutorUserId);
+
+        if (!course.isTutorViewed()) {
+            course.setTutorViewed(true);
+            courseRepository.save(course);
+        }
     }
 
     private Tutor verifyTutorOwnsCourse(Course course, Long tutorUserId) {

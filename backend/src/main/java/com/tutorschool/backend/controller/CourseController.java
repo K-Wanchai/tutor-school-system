@@ -164,6 +164,15 @@ public class CourseController {
         return ResponseEntity.ok(ApiResponse.success("เผยแพร่คอร์สสำเร็จ นักเรียนสามารถสมัครได้แล้ว", response));
     }
 
+    @PatchMapping("/{courseId}/mark-viewed")
+    @PreAuthorize("hasRole('TUTOR')")
+    public ResponseEntity<ApiResponse<Void>> markCourseViewed(
+            @PathVariable Long courseId,
+            @AuthenticationPrincipal User currentUser) {
+        courseService.markCourseViewed(courseId, currentUser.getId());
+        return ResponseEntity.ok(ApiResponse.success("อัปเดตสถานะการเปิดดูคอร์สสำเร็จ"));
+    }
+
     @DeleteMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ApiResponse<Void>> deleteCourse(@PathVariable Long id) {

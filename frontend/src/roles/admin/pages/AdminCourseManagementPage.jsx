@@ -40,14 +40,6 @@ function Toast({ msg, type, onClose }) {
   );
 }
 
-function genCourseCode() {
-  const now = new Date();
-  const yy  = String(now.getFullYear()).slice(2);
-  const mm  = String(now.getMonth() + 1).padStart(2, '0');
-  const rnd = Math.floor(Math.random() * 900 + 100);
-  return `CRS-${yy}${mm}-${rnd}`;
-}
-
 const DAYS = [
   { key: 'MON', label: 'จ' },
   { key: 'TUE', label: 'อ' },
@@ -302,8 +294,8 @@ function ScheduleSection({ form, fld, avail, err }) {
 }
 
 const EMPTY_FORM = {
-  courseCode: '', courseName: '', tutorId: '', price: '',
-  totalHours: '', seatLimit: '',
+  courseName: '', tutorId: '', price: '',
+  totalHours: '', hoursPerSession: '', seatLimit: '',
   registrationStartDate: '', registrationEndDate: '',
   courseStartDate: '', description: '',
   scheduleSlots: {},
@@ -384,7 +376,6 @@ export default function AdminCourseManagementPage() {
   // checkSchedule: false เมื่อสร้างคอร์ส (ระบบจัดวัน-เวลาสอนให้อัตโนมัติแล้ว ไม่มี UI ให้เลือกเอง)
   function validate(f, priceRequired = true, checkSchedule = true) {
     const e = {};
-    if (!f.courseCode?.trim()) e.courseCode = 'กรุณากรอกรหัสคอร์ส';
     if (!f.courseName?.trim()) e.courseName = 'กรุณากรอกชื่อวิชา';
     if (!f.tutorId) e.tutorId = 'กรุณาเลือกติวเตอร์';
     if (priceRequired && (f.price === '' || f.price == null || isNaN(f.price))) e.price = 'กรุณากรอกราคา';
@@ -392,6 +383,13 @@ export default function AdminCourseManagementPage() {
     if (!f.totalHours || isNaN(f.totalHours) || Number(f.totalHours) < 1) e.totalHours = 'ต้องมากกว่า 0';
     if (!f.seatLimit  || isNaN(f.seatLimit)  || Number(f.seatLimit)  < 1) e.seatLimit  = 'ต้องมากกว่า 0';
     if (!f.courseStartDate) e.courseStartDate = 'กรุณาเลือกวันที่เริ่มสอน';
+
+    if (!checkSchedule) {
+      // สร้างคอร์ส (ระบบจัดตารางสอนให้อัตโนมัติ) ต้องระบุชั่วโมงเรียนต่อคาบ
+      if (!f.hoursPerSession || isNaN(f.hoursPerSession) || Number(f.hoursPerSession) <= 0) {
+        e.hoursPerSession = 'กรุณากรอกชั่วโมงเรียนต่อคาบให้มากกว่า 0';
+      }
+    }
 
     if (checkSchedule) {
       // บังคับตารางสอน
@@ -425,7 +423,7 @@ export default function AdminCourseManagementPage() {
 
   // ── CREATE
   function openCreate() {
-    setForm({ ...EMPTY_FORM, courseCode: genCourseCode() });
+    setForm({ ...EMPTY_FORM });
     setFormErr({});
     setShowCreate(true);
   }
@@ -448,7 +446,6 @@ export default function AdminCourseManagementPage() {
   function openEdit(c) {
     setSelected(c);
     setForm({
-      courseCode:            c.courseCode ?? '',
       courseName:            c.courseName ?? '',
       tutorId:               c.tutorId ?? '',
       price:                 c.price ?? '',
@@ -562,7 +559,7 @@ export default function AdminCourseManagementPage() {
         </div>
         <div className="cm-stat-card cm-stat-draft">
           <div className="cm-stat-icon">⏳</div>
-          <div><div className="cm-stat-num">{stats.draft}</div><div className="cm-stat-lbl">รอติวเตอร์ตอบรับ</div></div>
+          <div><div className="cm-stat-num">{stats.draft}</div><div className="cm-stat-lbl">กำลังจัดทำเนื้อหา</div></div>
         </div>
         <div className="cm-stat-card cm-stat-open">
           <div className="cm-stat-icon">✅</div>
@@ -643,27 +640,8 @@ export default function AdminCourseManagementPage() {
             </div>
             <form className="cm-form" onSubmit={handleCreate}>
 
-              {/* รหัสคอร์ส — auto generate */}
-              <div className="cm-field">
-                <label>รหัสคอร์ส</label>
-                <div className="cm-auto-code-row">
-                  <input
-                    className="cm-auto-code-input"
-                    value={form.courseCode}
-                    onChange={e => fld('courseCode', e.target.value)}
-                    placeholder="รหัสคอร์ส"
-                  />
-                  <button
-                    type="button"
-                    className="cm-btn-regen"
-                    title="สร้างรหัสใหม่"
-                    onClick={() => fld('courseCode', genCourseCode())}
-                  >
-                    🔄 สร้างใหม่
-                  </button>
-                </div>
-                {formErr.courseCode && <span className="cm-err">{formErr.courseCode}</span>}
-                <span className="cm-field-hint">รหัสถูกสร้างอัตโนมัติ แก้ไขได้หากต้องการ</span>
+              <div className="cm-info-box">
+                💡 รหัสคอร์สจะถูกสร้างให้อัตโนมัติตามลำดับ (เช่น CRS-0001) หลังบันทึกคอร์สนี้ ไม่สามารถแก้ไขภายหลังได้
               </div>
 
               {/* ชื่อวิชา */}
@@ -686,7 +664,7 @@ export default function AdminCourseManagementPage() {
                   <div className="cm-avail-title">📅 ตารางสอน</div>
                   <p className="cm-field-hint">
                     ระบบจะจัดวัน-เวลาสอนให้ติวเตอร์คนนี้อัตโนมัติหลังบันทึก
-                    (คาบละ 2 ชั่วโมง ช่วง 09:00–20:00 จำนวนวัน/สัปดาห์คำนวณจากจำนวนชั่วโมงรวม)
+                    (คาบละตามชั่วโมงเรียนต่อคาบที่กรอกไว้ ช่วง 09:00–20:00 จำนวนวัน/สัปดาห์คำนวณจากจำนวนชั่วโมงรวม)
                     โดยจะเลี่ยงวัน-เวลาที่ชนกับคอร์สอื่นของติวเตอร์คนเดียวกัน
                   </p>
                 </div>
@@ -705,12 +683,17 @@ export default function AdminCourseManagementPage() {
                 <span className="cm-field-hint">ราคานี้จะไม่แสดงให้ติวเตอร์เห็น</span>
               </div>
 
-              {/* ชั่วโมง + ที่นั่ง */}
-              <div className="cm-form-row">
+              {/* ชั่วโมง + ชั่วโมง/คาบ + ที่นั่ง */}
+              <div className="cm-form-row cm-form-row-3">
                 <div className="cm-field">
                   <label>ชั่วโมงรวม *</label>
                   <input type="number" min="1" value={form.totalHours} onChange={e => fld('totalHours', e.target.value)} placeholder="เช่น 40" />
                   {formErr.totalHours && <span className="cm-err">{formErr.totalHours}</span>}
+                </div>
+                <div className="cm-field">
+                  <label>ชั่วโมงเรียนต่อคาบ *</label>
+                  <input type="number" min="0.5" step="0.5" value={form.hoursPerSession} onChange={e => fld('hoursPerSession', e.target.value)} placeholder="เช่น 2" />
+                  {formErr.hoursPerSession && <span className="cm-err">{formErr.hoursPerSession}</span>}
                 </div>
                 <div className="cm-field">
                   <label>จำนวนที่นั่ง *</label>
@@ -750,8 +733,8 @@ export default function AdminCourseManagementPage() {
               </div>
 
               <div className="cm-info-box">
-                💡 คอร์สจะถูกสร้างในสถานะ <strong>รอติวเตอร์ตอบรับ</strong> ระบบจัดวัน-เวลาสอนให้อัตโนมัติ และส่งการแจ้งเตือนไปยังอีเมลติวเตอร์ทันที
-                หลังติวเตอร์ตอบรับและเพิ่มบทเรียนแล้ว ติวเตอร์จะกดเผยแพร่คอร์สเองเพื่อเปิดให้นักเรียนสมัคร
+                💡 คอร์สจะถูกมอบหมายให้ติวเตอร์ทันที ระบบจัดวัน-เวลาสอนให้อัตโนมัติ และส่งการแจ้งเตือนไปยังอีเมลติวเตอร์ทันที
+                ติวเตอร์สามารถเพิ่มบทเรียน/ข้อสอบ และกดเผยแพร่คอร์สเองเพื่อเปิดให้นักเรียนสมัครได้เลย
               </div>
 
               <div className="cm-form-actions">
@@ -777,10 +760,8 @@ export default function AdminCourseManagementPage() {
 
               <div className="cm-field">
                 <label>รหัสคอร์ส</label>
-                <div className="cm-auto-code-row">
-                  <input className="cm-auto-code-input" value={form.courseCode} onChange={e => fld('courseCode', e.target.value)} />
-                </div>
-                {formErr.courseCode && <span className="cm-err">{formErr.courseCode}</span>}
+                <span className="cm-code">{selected.courseCode}</span>
+                <span className="cm-field-hint">รหัสคอร์สแก้ไขไม่ได้</span>
               </div>
 
               <div className="cm-field">

@@ -29,14 +29,25 @@ export default function StudentEnrollmentsPage() {
     );
   }, [myEnrollments]);
 
-  // แสดงเฉพาะคอร์สที่ติวเตอร์เผยแพร่แล้ว (เปิดรับสมัคร) — คอร์สที่ยังรอตอบรับ/กำลังจัดทำเนื้อหาจะยังไม่โชว์ให้นักเรียนเห็น
-  const visibleCourses = useMemo(
-    () =>
-      courses.filter(
-        (course) => course.status === 'OPEN_FOR_REGISTRATION' && !enrolledCourseIds.has(course.id)
-      ),
-    [courses, enrolledCourseIds]
-  );
+  // แสดงเฉพาะคอร์สที่ติวเตอร์เผยแพร่แล้ว (เปิดรับสมัคร) และถึงวันเริ่มรับสมัครแล้วเท่านั้น
+  // คอร์สที่ยังจัดทำเนื้อหาอยู่ หรือยังไม่ถึงวันเปิดรับสมัคร จะยังไม่โชว์ให้นักเรียนเห็น
+  const visibleCourses = useMemo(() => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    return courses.filter((course) => {
+      if (course.status !== 'OPEN_FOR_REGISTRATION') return false;
+      if (enrolledCourseIds.has(course.id)) return false;
+
+      if (course.registrationStartDate) {
+        const startDate = new Date(course.registrationStartDate);
+        startDate.setHours(0, 0, 0, 0);
+        if (today < startDate) return false;
+      }
+
+      return true;
+    });
+  }, [courses, enrolledCourseIds]);
 
   useEffect(() => { loadPageData(); }, []);
 

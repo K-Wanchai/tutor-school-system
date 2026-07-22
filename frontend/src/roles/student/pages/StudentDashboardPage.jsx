@@ -36,20 +36,6 @@ function getPaymentStatusLabel(status) {
   return PAYMENT_STATUS_LABELS[status] || safeText(status);
 }
 
-function formatCurrency(value) {
-  if (value === null || value === undefined || value === '') {
-    return '-';
-  }
-
-  const numberValue = Number(value);
-
-  if (Number.isNaN(numberValue)) {
-    return '-';
-  }
-
-  return `${numberValue.toLocaleString('th-TH')} บาท`;
-}
-
 export default function StudentDashboardPage() {
   const navigate = useNavigate();
   const username = localStorage.getItem('username') || 'นักเรียน';
@@ -108,10 +94,6 @@ export default function StudentDashboardPage() {
     };
   }, [myCourses]);
 
-  const previewCourses = useMemo(() => {
-    return myCourses.slice(0, 3);
-  }, [myCourses]);
-
   if (loading) {
     return (
       <div className="student-dashboard-page">
@@ -147,80 +129,59 @@ export default function StudentDashboardPage() {
       )}
 
       <section className="student-stat-grid">
-        <div className="student-stat-card student-course-stat-card">
+        <button
+          type="button"
+          className="student-stat-card"
+          onClick={() => navigate('/student/courses')}
+        >
           <div className="student-stat-icon">📚</div>
-
-          <div className="student-course-stat-content">
+          <div>
             <p>คอร์สเรียนของฉัน</p>
             <h2>{courseSummary.total}</h2>
             <span>
               ชำระเงินเรียบร้อยแล้ว {courseSummary.approved} คอร์ส · รออนุมัติ {courseSummary.pending} คอร์ส
             </span>
-
-            <div className="student-course-mini-list">
-              {previewCourses.length === 0 ? (
-                <div className="student-course-mini-empty">
-                  ยังไม่มีคอร์สเรียน
-                </div>
-              ) : (
-                previewCourses.map((course) => (
-                  <button
-                    type="button"
-                    className="student-course-mini-item"
-                    key={course.id || course.enrollmentCode}
-                    onClick={() => navigate('/student/my-courses')}
-                  >
-                    <div>
-                      <strong>{safeText(course.courseName)}</strong>
-                      <small>
-                        {getEnrollmentStatusLabel(course.status)} · {getPaymentStatusLabel(course.paymentStatus)}
-                      </small>
-                    </div>
-
-                    <span>{formatCurrency(course.finalAmount || course.amount)}</span>
-                  </button>
-                ))
-              )}
-            </div>
-
-            {myCourses.length > 3 && (
-              <button
-                type="button"
-                className="student-view-all-course-btn"
-                onClick={() => navigate('/student/my-courses')}
-              >
-                ดูคอร์สทั้งหมด {myCourses.length} คอร์ส
-              </button>
-            )}
           </div>
-        </div>
+        </button>
 
-        <div className="student-stat-card">
+        <button
+          type="button"
+          className="student-stat-card"
+          onClick={() => navigate('/student/schedule')}
+        >
           <div className="student-stat-icon">📅</div>
           <div>
             <p>ตารางเรียนวันนี้</p>
             <h2>{dashboard?.todayClasses ?? '-'}</h2>
             <span>คลาสเรียนวันนี้</span>
           </div>
-        </div>
+        </button>
 
-        <div className="student-stat-card">
+        <button
+          type="button"
+          className="student-stat-card"
+          onClick={() => navigate('/student/exam-results')}
+        >
           <div className="student-stat-icon">📝</div>
           <div>
             <p>คะแนนเฉลี่ย</p>
             <h2>{dashboard?.averageScore != null ? `${dashboard.averageScore}%` : '-'}</h2>
             <span>จากผลสอบทั้งหมด</span>
           </div>
-        </div>
+        </button>
 
-        <div className="student-stat-card">
+        <button
+          type="button"
+          className="student-stat-card"
+          onClick={() => navigate('/student/attendance')}
+        >
           <div className="student-stat-icon">✅</div>
           <div>
             <p>การเข้าเรียน</p>
             <h2>{dashboard?.attendanceRate != null ? `${dashboard.attendanceRate}%` : '-'}</h2>
             <span>อัตราการเข้าเรียน</span>
           </div>
-        </div>
+        </button>
       </section>
 
       <section className="student-dashboard-grid">
@@ -234,7 +195,7 @@ export default function StudentDashboardPage() {
             <button
               type="button"
               className="student-panel-link-btn"
-              onClick={() => navigate('/student/my-courses')}
+              onClick={() => navigate('/student/courses')}
             >
               ดูทั้งหมด
             </button>
@@ -262,7 +223,7 @@ export default function StudentDashboardPage() {
                   <button
                     type="button"
                     className="student-course-btn"
-                    onClick={() => navigate('/student/my-courses')}
+                    onClick={() => navigate('/student/courses')}
                   >
                     ดูรายละเอียด
                   </button>

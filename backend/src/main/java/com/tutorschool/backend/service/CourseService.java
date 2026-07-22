@@ -41,5 +41,7 @@ public interface CourseService {
 
     CourseResponse publishCourse(Long courseId, Long tutorUserId);
 
+    void markCourseViewed(Long courseId, Long tutorUserId);
+
     void deleteCourse(Long id);
 }

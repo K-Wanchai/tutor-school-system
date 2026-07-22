@@ -6,6 +6,7 @@ import './StudentEnrollmentHistoryPage.css';
 const STATUS_MAP = {
   APPROVED:             { label: 'ชำระเงินเรียบร้อยแล้ว', cls: 'hist-badge--approved' },
   REJECTED:             { label: 'ปฏิเสธ',          cls: 'hist-badge--rejected' },
+  CANCELLED:            { label: 'ยกเลิก',          cls: 'hist-badge--cancelled' },
   PENDING_VERIFICATION: { label: 'รอการยืนยันชำระเงิน', cls: 'hist-badge--pending' },
 };
 
@@ -14,11 +15,13 @@ const FILTERS = [
   { key: 'PENDING_VERIFICATION', label: 'รอการยืนยันชำระเงิน' },
   { key: 'APPROVED',             label: 'ชำระเงินเรียบร้อยแล้ว' },
   { key: 'REJECTED',             label: 'ปฏิเสธ' },
+  { key: 'CANCELLED',            label: 'ยกเลิก' },
 ];
 
 function getDisplayStatus(en) {
   if (en.status === 'APPROVED') return 'APPROVED';
   if (en.status === 'REJECTED') return 'REJECTED';
+  if (en.status === 'CANCELLED') return 'CANCELLED';
   return 'PENDING_VERIFICATION';
 }
 
@@ -46,8 +49,11 @@ export default function StudentEnrollmentHistoryPage() {
     if (showLoading) setLoading(true);
     try {
       const data = await getMyEnrollments().catch(() => []);
+      // ยกเลิก/ถูกปฏิเสธ แสดงในประวัติเสมอ ไม่ว่าจะเคยชำระเงินหรือไม่
+      // ส่วนรายการที่ยังไม่ส่งสลิป (UNPAID/FAILED) และยังไม่ถูกยกเลิก จะไปแสดงที่หน้าชำระเงินแทน
       const submitted = (Array.isArray(data) ? data : []).filter(
-        (e) => e.paymentStatus !== 'UNPAID' && e.paymentStatus !== 'FAILED'
+        (e) => e.status === 'CANCELLED' || e.status === 'REJECTED'
+          || (e.paymentStatus !== 'UNPAID' && e.paymentStatus !== 'FAILED')
       );
       setEnrollments(submitted);
       // ถ้า modal เปิดอยู่ อัพเดตข้อมูลใน modal ด้วย
@@ -150,6 +156,7 @@ export default function StudentEnrollmentHistoryPage() {
                     <td><span className="hist-code">{en.enrollmentCode}</span></td>
                     <td className="hist-td-course">
                       <strong>{en.courseName}</strong>
+                      {en.courseCode && <span className="hist-course-code">{en.courseCode}</span>}
                     </td>
                     <td className="hist-td-date">{fmtDate(en.enrollmentDate)}</td>
                     <td className="hist-td-amount">{fmt(en.finalAmount)}</td>
@@ -176,7 +183,10 @@ export default function StudentEnrollmentHistoryPage() {
             <div className="hist-modal-header">
               <div>
                 <span className="hist-code">{modal.enrollmentCode}</span>
-                <h2>{modal.courseName}</h2>
+                <h2>
+                  {modal.courseName}
+                  {modal.courseCode && <span className="hist-course-code">{modal.courseCode}</span>}
+                </h2>
               </div>
               <button className="hist-modal-close" onClick={() => setModal(null)}>
                 <svg viewBox="0 0 20 20" fill="currentColor" width="20" height="20">

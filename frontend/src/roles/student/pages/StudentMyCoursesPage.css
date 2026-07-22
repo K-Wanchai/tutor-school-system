@@ -196,6 +196,18 @@
   line-height: 1.45;
 }
 
+.smc-course-code {
+  display: inline-block;
+  margin-left: 8px;
+  vertical-align: middle;
+  font-size: 12px;
+  font-weight: 700;
+  color: #6b7280;
+  background: #f3f4f6;
+  border-radius: 6px;
+  padding: 2px 8px;
+}
+
 .smc-status {
   flex-shrink: 0;
   display: inline-flex;
