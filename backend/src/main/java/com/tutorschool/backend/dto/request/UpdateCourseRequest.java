@@ -17,10 +17,6 @@ import java.util.List;
 @AllArgsConstructor
 public class UpdateCourseRequest {
 
-    @NotBlank(message = "Course code is required")
-    @Size(max = 50, message = "Course code must not exceed 50 characters")
-    private String courseCode;
-
     @NotBlank(message = "Course name is required")
     @Size(max = 200, message = "Course name must not exceed 200 characters")
     private String courseName;

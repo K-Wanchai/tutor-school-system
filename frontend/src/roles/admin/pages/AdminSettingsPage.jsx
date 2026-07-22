@@ -23,6 +23,7 @@ function toForm(profile) {
     bankAccountName: profile?.bankAccountName || '',
     bankAccountNumber: profile?.bankAccountNumber || '',
     bankQrCode: profile?.bankQrCode || '',
+    promptPayId: profile?.promptPayId || '',
     enrollmentPaymentDeadlineMinutes: profile?.enrollmentPaymentDeadlineMinutes ?? 15,
   };
 }
@@ -144,6 +145,10 @@ export default function AdminSettingsPage() {
     if (!form.phoneNumber.trim()) errs.phoneNumber = 'กรุณากรอกเบอร์โทรศัพท์';
     if (!form.email.trim()) errs.email = 'กรุณากรอกอีเมล';
     else if (!EMAIL_RE.test(form.email.trim())) errs.email = 'รูปแบบอีเมลไม่ถูกต้อง';
+    const promptPayDigits = form.promptPayId.replace(/[^0-9]/g, '');
+    if (promptPayDigits && ![10, 13].includes(promptPayDigits.length)) {
+      errs.promptPayId = 'กรอกเบอร์โทร 10 หลัก หรือเลขบัตรประชาชน 13 หลัก';
+    }
     const deadline = Number(form.enrollmentPaymentDeadlineMinutes);
     if (!form.enrollmentPaymentDeadlineMinutes && form.enrollmentPaymentDeadlineMinutes !== 0) {
       errs.enrollmentPaymentDeadlineMinutes = 'กรุณากรอกระยะเวลา';
@@ -325,7 +330,14 @@ export default function AdminSettingsPage() {
                     label="เลขบัญชี" name="bankAccountNumber"
                     value={form.bankAccountNumber} onChange={handleChange}
                   />
+                  <FormField
+                    label="เลขพร้อมเพย์ (เบอร์โทร/เลขบัตรประชาชน)" name="promptPayId"
+                    value={form.promptPayId} onChange={handleChange} error={errors.promptPayId}
+                  />
                 </div>
+                <p className="is-hint">
+                  กรอกแล้วระบบจะสร้าง QR พร้อมเพย์พร้อมยอดเงินที่ถูกต้องให้นักเรียนสแกนจ่ายอัตโนมัติในหน้าชำระเงิน
+                </p>
 
                 <div className="is-logo-row">
                   <div className="is-qr-preview">
@@ -356,7 +368,9 @@ export default function AdminSettingsPage() {
                         </button>
                       )}
                     </div>
-                    <p className="is-hint">รูป QR พร้อมเพย์สำหรับให้นักเรียนสแกนชำระเงิน</p>
+                    <p className="is-hint">
+                      รูปสำรอง ใช้แสดงกรณีไม่ได้กรอกเลขพร้อมเพย์ด้านบน
+                    </p>
                   </div>
                 </div>
               </div>

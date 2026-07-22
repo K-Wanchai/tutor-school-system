@@ -23,7 +23,8 @@ public class Course {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "course_code", nullable = false, unique = true, length = 50)
+    // ไม่บังคับ nullable ตอน insert เพราะ code ถูก generate จาก id หลัง save ครั้งแรก (ดู CourseServiceImpl#createCourse)
+    @Column(name = "course_code", unique = true, length = 50)
     private String courseCode;
 
     @Column(name = "course_name", nullable = false, length = 200)
@@ -71,6 +72,11 @@ public class Course {
 
     @Column(name = "tutor_remark", columnDefinition = "TEXT")
     private String tutorRemark;
+
+    /** true เมื่อติวเตอร์เปิดดูคอร์สนี้แล้ว (ใช้ตัดสิน badge แจ้งเตือนคอร์สใหม่ที่เมนู "คอร์สของฉัน") */
+    @Column(name = "tutor_viewed", nullable = false, columnDefinition = "boolean default false")
+    @Builder.Default
+    private boolean tutorViewed = false;
 
     /** วันสอนในสัปดาห์ เก็บเป็น comma-separated เช่น "MON,WED,FRI" */
     @Column(name = "schedule_days", length = 100)

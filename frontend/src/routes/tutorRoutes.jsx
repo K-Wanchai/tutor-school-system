@@ -2,7 +2,6 @@ import { Route } from 'react-router-dom';
 import ProtectedRoute from './ProtectedRoute';
 import TutorLayout from '../roles/tutor/layouts/TutorLayout';
 import TutorDashboardPage from '../roles/tutor/pages/TutorDashboardPage';
-import TutorNewCoursesPage from '../roles/tutor/pages/TutorNewCoursesPage';
 import TutorCoursesPage from '../roles/tutor/pages/TutorCoursesPage';
 import TutorNotificationsPage from '../roles/tutor/pages/TutorNotificationsPage';
 import TutorSchedulesPage from '../roles/tutor/pages/TutorSchedulesPage';
@@ -26,7 +25,6 @@ const tutorRoutes = (
     }
   >
     <Route path="dashboard" element={<TutorDashboardPage />} />
-    <Route path="new-courses" element={<TutorNewCoursesPage />} />
     <Route path="courses" element={<TutorCoursesPage />} />
     <Route path="notifications" element={<TutorNotificationsPage />} />
     <Route path="schedule" element={<TutorSchedulesPage />} />

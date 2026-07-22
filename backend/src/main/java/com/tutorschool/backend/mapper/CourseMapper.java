@@ -65,6 +65,7 @@ public class CourseMapper {
                 .teacherName(teacherName)
                 .tutorEmail(tutorEmail)
                 .tutorRemark(course.getTutorRemark())
+                .tutorViewed(course.isTutorViewed())
                 .enrolledCount(enrolledCount)
                 .lessons(lessons)
                 .tests(tests)

@@ -42,10 +42,6 @@ const FILTERS = [
     key: 'COMPLETED',
     label: 'เรียนจบแล้ว',
   },
-  {
-    key: 'CANCELLED_REJECTED',
-    label: 'ถูกยกเลิก / ถูกปฏิเสธ',
-  },
 ];
 
 function safeText(value) {
@@ -175,28 +171,29 @@ function StudentMyCoursesPage() {
     loadMyCourses();
   }, []);
 
+  // ยกเลิก/ถูกปฏิเสธ ไม่แสดงในหน้านี้ — ไปดูได้ที่หน้า "ประวัติการลงทะเบียน" แทน
+  const activeCourses = useMemo(() => {
+    return courses.filter(
+      (item) => item.status !== 'CANCELLED' && item.status !== 'REJECTED'
+    );
+  }, [courses]);
+
   const summary = useMemo(() => {
     return {
-      total: courses.length,
-      pending: courses.filter((item) => item.status === 'PENDING').length,
-      approved: courses.filter((item) => item.status === 'APPROVED').length,
-      paid: courses.filter((item) => item.paymentStatus === 'PAID').length,
+      total: activeCourses.length,
+      pending: activeCourses.filter((item) => item.status === 'PENDING').length,
+      approved: activeCourses.filter((item) => item.status === 'APPROVED').length,
+      paid: activeCourses.filter((item) => item.paymentStatus === 'PAID').length,
     };
-  }, [courses]);
+  }, [activeCourses]);
 
   const filteredCourses = useMemo(() => {
     if (activeFilter === 'ALL') {
-      return courses;
+      return activeCourses;
     }
 
-    if (activeFilter === 'CANCELLED_REJECTED') {
-      return courses.filter(
-        (item) => item.status === 'CANCELLED' || item.status === 'REJECTED'
-      );
-    }
-
-    return courses.filter((item) => item.status === activeFilter);
-  }, [courses, activeFilter]);
+    return activeCourses.filter((item) => item.status === activeFilter);
+  }, [activeCourses, activeFilter]);
 
   function handleEnterClassroom(course) {
     showToast('success', 'ฟีเจอร์ห้องเรียนจะพัฒนาในขั้นตอนถัดไป');
@@ -307,7 +304,12 @@ function StudentMyCoursesPage() {
                     <p className="smc-enrollment-code">
                       {safeText(course.enrollmentCode)}
                     </p>
-                    <h3>{safeText(course.courseName)}</h3>
+                    <h3>
+                      {safeText(course.courseName)}
+                      {course.courseCode && (
+                        <span className="smc-course-code">{course.courseCode}</span>
+                      )}
+                    </h3>
                   </div>
 
                   <span className={`smc-status smc-status-${course.status || 'DEFAULT'}`}>
@@ -429,6 +431,11 @@ function StudentMyCoursesPage() {
               <div className="smc-detail-row">
                 <span>ชื่อคอร์ส</span>
                 <strong>{safeText(selectedCourse.courseName)}</strong>
+              </div>
+
+              <div className="smc-detail-row">
+                <span>รหัสคอร์ส</span>
+                <strong>{safeText(selectedCourse.courseCode)}</strong>
               </div>
 
               <div className="smc-detail-row">

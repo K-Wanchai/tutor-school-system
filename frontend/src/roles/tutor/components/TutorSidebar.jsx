@@ -16,15 +16,6 @@ const NAV_ITEMS = [
     ),
   },
   {
-    label: 'คอร์สมาใหม่',
-    path: '/tutor/new-courses',
-    icon: (
-      <svg viewBox="0 0 20 20" fill="currentColor" width="18" height="18">
-        <path d="M10 2a1 1 0 011 1v6h6a1 1 0 110 2h-6v6a1 1 0 11-2 0v-6H3a1 1 0 110-2h6V3a1 1 0 011-1z" />
-      </svg>
-    ),
-  },
-  {
     label: 'คอร์สของฉัน',
     path: '/tutor/courses',
     icon: (
@@ -215,7 +206,7 @@ export default function TutorSidebar({ isOpen, onClose }) {
     };
   }, []);
 
-  // นับคอร์สใหม่ที่รอติวเตอร์ตอบรับ (DRAFT) ไว้โชว์เป็น badge บนเมนู "คอร์สของฉัน"
+  // นับคอร์สที่แอดมินมอบหมายมาแล้วแต่ติวเตอร์ยังไม่เคยเปิดดู ไว้โชว์เป็น badge บนเมนู "คอร์สของฉัน"
   useEffect(() => {
     let active = true;
 
@@ -223,7 +214,7 @@ export default function TutorSidebar({ isOpen, onClose }) {
       try {
         const courses = await getMyCourses();
         const count = Array.isArray(courses)
-          ? courses.filter((c) => c.status === 'DRAFT').length
+          ? courses.filter((c) => !c.tutorViewed).length
           : 0;
 
         if (active) {
@@ -332,7 +323,7 @@ export default function TutorSidebar({ isOpen, onClose }) {
                 >
                   <span className="tutor-sidebar-nav-icon">{item.icon}</span>
                   <span className="tutor-sidebar-nav-label">{item.label}</span>
-                  {item.path === '/tutor/new-courses' && newCoursesCount > 0 && (
+                  {item.path === '/tutor/courses' && newCoursesCount > 0 && (
                     <span className="tutor-sidebar-nav-badge">
                       {newCoursesCount > 99 ? '99+' : newCoursesCount}
                     </span>

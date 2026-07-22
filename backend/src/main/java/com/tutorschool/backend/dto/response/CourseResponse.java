@@ -34,6 +34,7 @@ public class CourseResponse {
     private String teacherName;
     private String tutorEmail;
     private String tutorRemark;
+    private boolean tutorViewed;
     private long enrolledCount;
     private List<CourseLessonResponse> lessons;
     private List<CourseTestResponse> tests;

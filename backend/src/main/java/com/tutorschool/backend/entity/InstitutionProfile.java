@@ -48,6 +48,9 @@ public class InstitutionProfile {
     @Column(name = "bank_qr_code", columnDefinition = "TEXT")
     private String bankQrCode;
 
+    @Column(name = "prompt_pay_id", length = 20)
+    private String promptPayId;
+
     @Column(name = "enrollment_payment_deadline_minutes")
     private Integer enrollmentPaymentDeadlineMinutes;
 

@@ -17,10 +17,6 @@ import java.util.List;
 @AllArgsConstructor
 public class CreateCourseRequest {
 
-    @NotBlank(message = "Course code is required")
-    @Size(max = 50, message = "Course code must not exceed 50 characters")
-    private String courseCode;
-
     @NotBlank(message = "Course name is required")
     @Size(max = 200, message = "Course name must not exceed 200 characters")
     private String courseName;
@@ -33,6 +29,10 @@ public class CreateCourseRequest {
     @NotNull(message = "Total hours is required")
     @Min(value = 1, message = "Total hours must be at least 1")
     private Integer totalHours;
+
+    @NotNull(message = "Hours per session is required")
+    @DecimalMin(value = "0.0", inclusive = false, message = "Hours per session must be greater than 0")
+    private BigDecimal hoursPerSession;
 
     @NotNull(message = "Seat limit is required")
     @Min(value = 1, message = "Seat limit must be at least 1")

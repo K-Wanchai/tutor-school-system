@@ -46,11 +46,11 @@ export async function getCourseById(id) {
 
 export async function createCourse(form) {
   const payload = {
-    courseCode:            form.courseCode.trim(),
     courseName:            form.courseName.trim(),
     price:                 form.price != null && form.price !== '' ? Number(form.price) : 0,
     description:           form.description?.trim() || null,
     totalHours:            Number(form.totalHours),
+    hoursPerSession:       Number(form.hoursPerSession),
     seatLimit:             Number(form.seatLimit),
     registrationStartDate: form.registrationStartDate || null,
     registrationEndDate:   form.registrationEndDate || null,
@@ -70,7 +70,6 @@ export async function createCourse(form) {
 
 export async function updateCourse(id, form) {
   const payload = {
-    courseCode:            form.courseCode.trim(),
     courseName:            form.courseName.trim(),
     price:                 form.price != null && form.price !== '' ? Number(form.price) : 0,
     description:           form.description?.trim() || null,
@@ -142,7 +141,7 @@ export async function getCourseStats() {
     const list = Array.isArray(data) ? data : (data?.content ?? []);
     return {
       total:               data?.totalElements ?? list.length,
-      draft:               list.filter(c => c.status === 'DRAFT').length,
+      draft:               list.filter(c => c.status === 'DRAFT' || c.status === 'ACCEPTED').length,
       openForRegistration: list.filter(c => c.status === 'OPEN_FOR_REGISTRATION').length,
       ongoing:             list.filter(c => c.status === 'ONGOING').length,
       completed:           list.filter(c => c.status === 'COMPLETED').length,

@@ -1,5 +1,7 @@
 import { useEffect, useState, useCallback, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
+import generatePayload from 'promptpay-qr';
+import QRCode from 'qrcode';
 import { getMyEnrollments } from '../services/studentEnrollmentService';
 import api from '../../../shared/services/api';
 import './StudentPaymentsPage.css';
@@ -333,12 +335,46 @@ function PaymentModal({ enrollment, detail, institution, slipUrl, onSlipChange, 
   );
 }
 
+function DynamicPromptPayQr({ promptPayId, amount }) {
+  const [dataUrl, setDataUrl] = useState('');
+  const [failed, setFailed] = useState(false);
+
+  useEffect(() => {
+    const numAmount = Number(amount);
+    if (!promptPayId || !numAmount || numAmount <= 0) return;
+    let cancelled = false;
+    Promise.resolve()
+      .then(() => generatePayload(promptPayId, { amount: numAmount }))
+      .then((payload) => QRCode.toDataURL(payload, { margin: 1, width: 220 }))
+      .then((url) => { if (!cancelled) setDataUrl(url); })
+      .catch(() => { if (!cancelled) setFailed(true); });
+    return () => { cancelled = true; };
+  }, [promptPayId, amount]);
+
+  if (failed) return null;
+  return (
+    <div className="pay-qr-box">
+      {dataUrl ? (
+        <>
+          <img src={dataUrl} alt="QR พร้อมเพย์ (ระบุยอดเงินแล้ว)" />
+          <span className="pay-qr-dynamic-hint">สแกนแล้วยอด {Number(amount).toLocaleString('th-TH')} บาท จะขึ้นให้อัตโนมัติ</span>
+          <a className="pay-qr-download" href={dataUrl} download="promptpay-qr.png">บันทึก QR Code</a>
+        </>
+      ) : (
+        <div className="pay-spinner" style={{ width: 24, height: 24, borderWidth: 2 }} />
+      )}
+    </div>
+  );
+}
+
 function BankInfo({ institution, totalAmount, copied, onCopy, onDownloadQR, fmt, prefix }) {
   return (
     <div className="pay-modal-section">
       <h3 className="pay-modal-section-title">ข้อมูลการชำระเงิน</h3>
       <div className="pay-bank-layout">
-        {institution.bankQrCode && (
+        {institution.promptPayId ? (
+          <DynamicPromptPayQr key={totalAmount} promptPayId={institution.promptPayId} amount={totalAmount} />
+        ) : institution.bankQrCode && (
           <div className="pay-qr-box">
             <img src={institution.bankQrCode} alt="QR โอนเงิน" />
             <button className="pay-qr-download" onClick={() => onDownloadQR(institution.bankQrCode)}>บันทึก QR Code</button>

@@ -20,6 +20,7 @@ public class InstitutionProfileMapper {
                 .bankAccountName(entity.getBankAccountName())
                 .bankAccountNumber(entity.getBankAccountNumber())
                 .bankQrCode(entity.getBankQrCode())
+                .promptPayId(entity.getPromptPayId())
                 .enrollmentPaymentDeadlineMinutes(entity.getEnrollmentPaymentDeadlineMinutes())
                 .createdAt(entity.getCreatedAt())
                 .updatedAt(entity.getUpdatedAt())
