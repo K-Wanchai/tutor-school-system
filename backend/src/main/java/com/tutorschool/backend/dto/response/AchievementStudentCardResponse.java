@@ -20,6 +20,7 @@ public class AchievementStudentCardResponse {
     private String schoolTrackName;
     private String facultyName;
     private String majorName;
+    private String vocationalMajorName;
     private String admissionRoundName;
     private String courseSummary;
     private List<String> courseNames;

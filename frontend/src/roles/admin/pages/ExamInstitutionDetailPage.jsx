@@ -12,19 +12,20 @@ import { getEnrollmentsByStudent } from '../services/adminEnrollmentService';
 import { getStudents } from '../services/adminStudentService';
 import { getFaculties, getMajors } from '../services/academicFacultyService';
 import { getSchoolTracks } from '../services/schoolTrackService';
+import { getVocationalMajors } from '../services/vocationalMajorService';
 import { getAdmissionRounds } from '../services/admissionRoundService';
 import FacultyMajorManager from '../components/FacultyMajorManager';
 import SchoolTrackManager from '../components/SchoolTrackManager';
+import VocationalMajorManager from '../components/VocationalMajorManager';
 import AdmissionRoundManager from '../components/AdmissionRoundManager';
 import { AchievementDetailBody, LEVEL_LABEL } from './StudentAchievementDetailPage';
 import './StudentAchievementDetailPage.css';
 import './ExamInstitutionDetailPage.css';
 
 const TYPE_LABEL = {
-  LOWER_SECONDARY: 'มัธยมต้น',
-  UPPER_SECONDARY: 'มัธยมปลาย',
+  SECONDARY: 'มัธยม',
+  VOCATIONAL_DIPLOMA: 'อนุปริญญา (ปวส.)',
   UNIVERSITY: 'มหาวิทยาลัย / ป.ตรี',
-  OTHER: 'อื่น ๆ',
 };
 
 const EMPTY_FORM = {
@@ -33,6 +34,7 @@ const EMPTY_FORM = {
   schoolTrackId: '',
   facultyId: '',
   academicMajorId: '',
+  vocationalMajorId: '',
   admissionRoundId: '',
   academicYear: '',
   resultDate: '',
@@ -55,6 +57,9 @@ function validateForm(f) {
   if (f.educationLevel === 'BACHELOR') {
     if (!f.facultyId) e.facultyId = 'กรุณาเลือกคณะ';
     if (!f.academicMajorId) e.academicMajorId = 'กรุณาเลือกสาขา';
+  }
+  if (f.educationLevel === 'VOCATIONAL_DIPLOMA' && !f.vocationalMajorId) {
+    e.vocationalMajorId = 'กรุณาเลือกสาขา';
   }
   if (!f.academicYear) e.academicYear = 'กรุณากรอกปีการศึกษา';
   return e;
@@ -363,6 +368,26 @@ function UniversityAchievementView({ bachelor, onViewDetail, onEdit, onDelete })
   );
 }
 
+// ── มุมมองอนุปริญญา (ปวส.): รายชื่อแบบเรียบ ไม่มีแท็บย่อย ────────────────────
+
+function VocationalAchievementView({ vocationalDiploma, onViewDetail, onEdit, onDelete }) {
+  return (
+    <div className="eid-section">
+      <AchievementTable
+        columns={[
+          { key: 'vocationalMajorName', label: 'สาขา' },
+          { key: 'admissionRoundName', label: 'รอบที่สอบติด' },
+        ]}
+        rows={vocationalDiploma}
+        emptyText="ยังไม่มีนักเรียนที่สอบติดสถาบันนี้"
+        onViewDetail={onViewDetail}
+        onEdit={onEdit}
+        onDelete={onDelete}
+      />
+    </div>
+  );
+}
+
 // ── การ์ดรายละเอียดผลสอบติด (แสดงแทนการไปหน้าใหม่) ──────────────────────────
 
 function AchievementDetailModal({ achievementId, onClose }) {
@@ -454,8 +479,10 @@ export default function ExamInstitutionDetailPage() {
   const [majorList, setMajorList] = useState([]);
   const [trackList, setTrackList] = useState([]);
   const [roundList, setRoundList] = useState([]);
+  const [vocationalMajorList, setVocationalMajorList] = useState([]);
   const [loadingMajors, setLoadingMajors] = useState(false);
   const [loadingTracks, setLoadingTracks] = useState(false);
+  const [loadingVocationalMajors, setLoadingVocationalMajors] = useState(false);
 
   // form modal state
   const [showForm, setShowForm] = useState(false);
@@ -521,6 +548,19 @@ export default function ExamInstitutionDetailPage() {
       .catch(() => setFacultyList([]));
   }, [showForm, institutionId, overview]);
 
+  // โหลดรายชื่อสาขาของสถาบันนี้ (สำหรับสถาบันประเภทอนุปริญญา หรือมหาวิทยาลัยที่เปิดหลักสูตรอนุปริญญาด้วย) เมื่อเปิดฟอร์ม
+  useEffect(() => {
+    const type = overview?.institution?.institutionType;
+    const needsVocationalMajors = type === 'VOCATIONAL_DIPLOMA'
+      || (type === 'UNIVERSITY' && overview?.institution?.offersVocationalDiploma);
+    if (!showForm || !needsVocationalMajors) { return; }
+    setLoadingVocationalMajors(true);
+    getVocationalMajors(institutionId)
+      .then((data) => setVocationalMajorList((data || []).filter((m) => m.active)))
+      .catch(() => setVocationalMajorList([]))
+      .finally(() => setLoadingVocationalMajors(false));
+  }, [showForm, institutionId, overview]);
+
   // โหลดรอบที่สอบติดของสถาบันนี้ เมื่อเปิดฟอร์ม
   useEffect(() => {
     if (!showForm) { return; }
@@ -579,8 +619,10 @@ export default function ExamInstitutionDetailPage() {
   function openCreate() {
     setFormMode('create');
     setEditingId(null);
-    const isUniversity = overview?.institution?.institutionType === 'UNIVERSITY';
-    setForm({ ...EMPTY_FORM, educationLevel: isUniversity ? 'BACHELOR' : '' });
+    const type = overview?.institution?.institutionType;
+    const mixedUniversity = type === 'UNIVERSITY' && overview?.institution?.offersVocationalDiploma;
+    const lockedLevel = mixedUniversity ? '' : type === 'UNIVERSITY' ? 'BACHELOR' : type === 'VOCATIONAL_DIPLOMA' ? 'VOCATIONAL_DIPLOMA' : '';
+    setForm({ ...EMPTY_FORM, educationLevel: lockedLevel });
     setFormErr({});
     setSelectedCourseIds([]);
     setShowForm(true);
@@ -597,6 +639,7 @@ export default function ExamInstitutionDetailPage() {
         schoolTrackId: a.schoolTrackId ?? '',
         facultyId: a.academicFacultyId ?? '',
         academicMajorId: a.academicMajorId ?? '',
+        vocationalMajorId: a.vocationalMajorId ?? '',
         admissionRoundId: a.admissionRoundId ?? '',
         academicYear: a.academicYear ?? '',
         resultDate: a.resultDate ?? '',
@@ -626,6 +669,7 @@ export default function ExamInstitutionDetailPage() {
         schoolTrackId: (form.educationLevel === 'LOWER_SECONDARY' || form.educationLevel === 'UPPER_SECONDARY') && form.schoolTrackId
           ? Number(form.schoolTrackId) : null,
         academicMajorId: form.educationLevel === 'BACHELOR' && form.academicMajorId ? Number(form.academicMajorId) : null,
+        vocationalMajorId: form.educationLevel === 'VOCATIONAL_DIPLOMA' && form.vocationalMajorId ? Number(form.vocationalMajorId) : null,
         admissionRoundId: form.admissionRoundId ? Number(form.admissionRoundId) : null,
         academicYear: Number(form.academicYear),
         resultDate: form.resultDate || null,
@@ -693,10 +737,13 @@ export default function ExamInstitutionDetailPage() {
     );
   }
 
-  const { institution, lowerSecondary, upperSecondary, bachelor } = overview;
+  const { institution, lowerSecondary, upperSecondary, vocationalDiploma, bachelor } = overview;
   const isUniversity = institution.institutionType === 'UNIVERSITY';
+  const isVocational = institution.institutionType === 'VOCATIONAL_DIPLOMA';
+  const hasVocationalDiploma = isUniversity && !!institution.offersVocationalDiploma;
   const facultyCount = new Set(bachelor.map((b) => b.facultyName).filter(Boolean)).size;
   const majorCount = new Set(bachelor.map((b) => b.majorName).filter(Boolean)).size;
+  const vocationalMajorCount = new Set(vocationalDiploma.map((v) => v.vocationalMajorName).filter(Boolean)).size;
 
   return (
     <div className="eid-page">
@@ -733,7 +780,9 @@ export default function ExamInstitutionDetailPage() {
         {isUniversity ? (
           <>
             <div className="eid-stat-card eid-stat-card--success">
-              <span className="eid-stat-value">{bachelor.length}</span>
+              <span className="eid-stat-value">
+                {hasVocationalDiploma ? bachelor.length + vocationalDiploma.length : bachelor.length}
+              </span>
               <span className="eid-stat-label">นักเรียนสอบติดทั้งหมด</span>
             </div>
             <div className="eid-stat-card">
@@ -742,6 +791,29 @@ export default function ExamInstitutionDetailPage() {
             </div>
             <div className="eid-stat-card">
               <span className="eid-stat-value">{majorCount}</span>
+              <span className="eid-stat-label">สาขา (ป.ตรี)</span>
+            </div>
+            {hasVocationalDiploma && (
+              <>
+                <div className="eid-stat-card">
+                  <span className="eid-stat-value">{vocationalDiploma.length}</span>
+                  <span className="eid-stat-label">นักเรียนสอบติด (ปวส.)</span>
+                </div>
+                <div className="eid-stat-card">
+                  <span className="eid-stat-value">{vocationalMajorCount}</span>
+                  <span className="eid-stat-label">สาขา (ปวส.)</span>
+                </div>
+              </>
+            )}
+          </>
+        ) : isVocational ? (
+          <>
+            <div className="eid-stat-card eid-stat-card--success">
+              <span className="eid-stat-value">{vocationalDiploma.length}</span>
+              <span className="eid-stat-label">นักเรียนสอบติดทั้งหมด</span>
+            </div>
+            <div className="eid-stat-card">
+              <span className="eid-stat-value">{vocationalMajorCount}</span>
               <span className="eid-stat-label">สาขา</span>
             </div>
           </>
@@ -781,14 +853,41 @@ export default function ExamInstitutionDetailPage() {
 
       {mainTab === 'config' ? (
         <>
-          {isUniversity
-            ? <FacultyMajorManager institutionId={institutionId} />
-            : <SchoolTrackManager institutionId={institutionId} />}
+          {isUniversity ? (
+            <>
+              <FacultyMajorManager institutionId={institutionId} />
+              {hasVocationalDiploma && <VocationalMajorManager institutionId={institutionId} />}
+            </>
+          ) : isVocational ? (
+            <VocationalMajorManager institutionId={institutionId} />
+          ) : (
+            <SchoolTrackManager institutionId={institutionId} />
+          )}
           <AdmissionRoundManager institutionId={institutionId} />
         </>
       ) : isUniversity ? (
-        <UniversityAchievementView
-          bachelor={bachelor}
+        <>
+          <UniversityAchievementView
+            bachelor={bachelor}
+            onViewDetail={goToAchievementDetail}
+            onEdit={openEdit}
+            onDelete={setConfirmDelete}
+          />
+          {hasVocationalDiploma && (
+            <>
+              <h3 className="eid-section-title">อนุปริญญา (ปวส.)</h3>
+              <VocationalAchievementView
+                vocationalDiploma={vocationalDiploma}
+                onViewDetail={goToAchievementDetail}
+                onEdit={openEdit}
+                onDelete={setConfirmDelete}
+              />
+            </>
+          )}
+        </>
+      ) : isVocational ? (
+        <VocationalAchievementView
+          vocationalDiploma={vocationalDiploma}
           onViewDetail={goToAchievementDetail}
           onEdit={openEdit}
           onDelete={setConfirmDelete}
@@ -833,11 +932,20 @@ export default function ExamInstitutionDetailPage() {
                 <select
                   value={form.educationLevel}
                   onChange={(e) => fld('educationLevel', e.target.value)}
-                  disabled={isUniversity}
+                  disabled={(isUniversity && !hasVocationalDiploma) || isVocational}
                 >
                   <option value="">— เลือกระดับที่สอบติด —</option>
                   {isUniversity ? (
-                    <option value="BACHELOR">มหาวิทยาลัย / ปริญญาตรี</option>
+                    hasVocationalDiploma ? (
+                      <>
+                        <option value="BACHELOR">มหาวิทยาลัย / ปริญญาตรี</option>
+                        <option value="VOCATIONAL_DIPLOMA">อนุปริญญา (ปวส.)</option>
+                      </>
+                    ) : (
+                      <option value="BACHELOR">มหาวิทยาลัย / ปริญญาตรี</option>
+                    )
+                  ) : isVocational ? (
+                    <option value="VOCATIONAL_DIPLOMA">อนุปริญญา (ปวส.)</option>
                   ) : (
                     <>
                       <option value="LOWER_SECONDARY">มัธยมต้น</option>
@@ -865,6 +973,28 @@ export default function ExamInstitutionDetailPage() {
                   {!loadingTracks && trackList.length === 0 && (
                     <span className="eid-hint">
                       ยังไม่มีสายการเรียน/ห้องเรียนของสถาบันนี้ — ไปตั้งค่าที่แท็บ "จัดการข้อมูลพื้นฐาน" ก่อน
+                    </span>
+                  )}
+                </div>
+              )}
+
+              {form.educationLevel === 'VOCATIONAL_DIPLOMA' && (
+                <div className="eid-field">
+                  <label>สาขา *</label>
+                  <select
+                    value={form.vocationalMajorId}
+                    onChange={(e) => fld('vocationalMajorId', e.target.value)}
+                    disabled={loadingVocationalMajors}
+                  >
+                    <option value="">— เลือกสาขา —</option>
+                    {vocationalMajorList.map((m) => (
+                      <option key={m.id} value={m.id}>{m.name}</option>
+                    ))}
+                  </select>
+                  {formErr.vocationalMajorId && <span className="eid-err">{formErr.vocationalMajorId}</span>}
+                  {!loadingVocationalMajors && vocationalMajorList.length === 0 && (
+                    <span className="eid-hint">
+                      ยังไม่มีสาขาของสถาบันนี้ — ไปตั้งค่าที่แท็บ "จัดการข้อมูลพื้นฐาน" ก่อน
                     </span>
                   )}
                 </div>

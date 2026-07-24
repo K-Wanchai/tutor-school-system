@@ -35,6 +35,8 @@ public class StudentExamAchievementResponse {
     private String facultyName;
     private Long academicMajorId;
     private String majorName;
+    private Long vocationalMajorId;
+    private String vocationalMajorName;
     private Long admissionRoundId;
     private String admissionRoundName;
     private Integer academicYear;

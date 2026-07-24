@@ -47,6 +47,11 @@ public class ExamInstitution {
     @Builder.Default
     private Boolean active = true;
 
+    /** ใช้เฉพาะสถาบันประเภทมหาวิทยาลัย — เปิดหากสถาบันนี้มีหลักสูตรอนุปริญญา (ปวส.) ควบคู่กับปริญญาตรีด้วย */
+    @Column(name = "offers_vocational_diploma", nullable = false)
+    @Builder.Default
+    private Boolean offersVocationalDiploma = false;
+
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;
 
@@ -59,6 +64,9 @@ public class ExamInstitution {
         updatedAt = LocalDateTime.now();
         if (active == null) {
             active = true;
+        }
+        if (offersVocationalDiploma == null) {
+            offersVocationalDiploma = false;
         }
     }
 

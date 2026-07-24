@@ -25,6 +25,7 @@ public class ExamInstitutionResponse {
     private String websiteUrl;
     private String description;
     private Boolean active;
+    private Boolean offersVocationalDiploma;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 }

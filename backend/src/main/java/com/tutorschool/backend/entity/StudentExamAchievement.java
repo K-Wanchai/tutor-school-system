@@ -53,6 +53,11 @@ public class StudentExamAchievement {
     @JoinColumn(name = "academic_major_id")
     private AcademicMajor academicMajor;
 
+    /** ใช้เมื่อ educationLevel เป็นอนุปริญญา (ปวส.) — เลือกจากข้อมูลพื้นฐานที่ตั้งค่าไว้ล่วงหน้าของสถาบันนั้น */
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "vocational_major_id")
+    private VocationalMajor vocationalMajor;
+
     /** เลือกจากรอบที่สอบติดที่ตั้งค่าไว้ล่วงหน้าของสถาบันนั้น (ไม่บังคับ) */
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "admission_round_id")

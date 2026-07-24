@@ -6,8 +6,8 @@ import './StudentAchievementDetailPage.css';
 export const LEVEL_LABEL = {
   LOWER_SECONDARY: 'มัธยมต้น',
   UPPER_SECONDARY: 'มัธยมปลาย',
+  VOCATIONAL_DIPLOMA: 'อนุปริญญา (ปวส.)',
   BACHELOR: 'มหาวิทยาลัย / ป.ตรี',
-  OTHER: 'อื่น ๆ',
 };
 
 const ENROLLMENT_STATUS_LABEL = {
@@ -63,6 +63,9 @@ function levelDetailRows(achievement) {
   }
   if (achievement.educationLevel === 'UPPER_SECONDARY') {
     return [{ label: 'สายการเรียน', value: achievement.schoolTrackName }];
+  }
+  if (achievement.educationLevel === 'VOCATIONAL_DIPLOMA') {
+    return [{ label: 'สาขา', value: achievement.vocationalMajorName }];
   }
   if (achievement.educationLevel === 'BACHELOR') {
     return [

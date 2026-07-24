@@ -32,6 +32,9 @@ public class StudentExamAchievementRequest {
     /** รหัสสาขา — บังคับเมื่อ educationLevel เป็นปริญญาตรี */
     private Long academicMajorId;
 
+    /** รหัสสาขา — บังคับเมื่อ educationLevel เป็นอนุปริญญา (ปวส.) */
+    private Long vocationalMajorId;
+
     /** รหัสรอบที่สอบติด — ไม่บังคับ */
     private Long admissionRoundId;
 

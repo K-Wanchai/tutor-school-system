@@ -14,5 +14,6 @@ public class AchievementSummaryResponse {
     private long total;
     private long lowerSecondaryCount;
     private long upperSecondaryCount;
+    private long vocationalDiplomaCount;
     private long bachelorCount;
 }

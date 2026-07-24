@@ -35,4 +35,7 @@ public class ExamInstitutionRequest {
     private String description;
 
     private Boolean active;
+
+    /** ใช้เฉพาะเมื่อ institutionType เป็นมหาวิทยาลัย — เปิดหากสถาบันนี้มีหลักสูตรอนุปริญญา (ปวส.) ด้วย */
+    private Boolean offersVocationalDiploma;
 }

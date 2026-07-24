@@ -17,5 +17,6 @@ public class InstitutionAchievementOverviewResponse {
     private AchievementSummaryResponse summary;
     private List<AchievementStudentCardResponse> lowerSecondary;
     private List<AchievementStudentCardResponse> upperSecondary;
+    private List<AchievementStudentCardResponse> vocationalDiploma;
     private List<AchievementStudentCardResponse> bachelor;
 }
