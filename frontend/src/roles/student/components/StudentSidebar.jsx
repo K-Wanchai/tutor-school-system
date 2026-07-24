@@ -1,4 +1,5 @@
 import { NavLink } from 'react-router-dom';
+import { resolveFileUrl } from '../../../shared/services/api';
 import useInstitutionProfile from '../../../shared/hooks/useInstitutionProfile';
 import './StudentSidebar.css';
 
@@ -146,7 +147,7 @@ export default function StudentSidebar({ isOpen, onClose }) {
         <div className="student-sidebar-brand">
           <div className="student-sidebar-logo">
             {profile?.logoUrl ? (
-              <img src={profile.logoUrl} alt={profile.institutionName || 'Logo'} />
+              <img src={resolveFileUrl(profile.logoUrl)} alt={profile.institutionName || 'Logo'} />
             ) : (
               <svg viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
                 <rect width="32" height="32" rx="8" fill="#7c3aed" />

@@ -146,6 +146,13 @@ export default function ExamInstitutionManagePage() {
     loadStats();
   }, [load, loadStats]);
 
+  const sortedInstitutions = useMemo(
+    () => [...institutions].sort((a, b) =>
+      (a.institutionCode || '').localeCompare(b.institutionCode || '', undefined, { numeric: true })
+    ),
+    [institutions]
+  );
+
   const stats = useMemo(() => ({
     total: statsData.length,
     secondary: statsData.filter((i) => i.institutionType === 'SECONDARY').length,
@@ -372,7 +379,7 @@ export default function ExamInstitutionManagePage() {
                 </tr>
               </thead>
               <tbody>
-                {institutions.map((inst, idx) => (
+                {sortedInstitutions.map((inst, idx) => (
                   <tr key={inst.id} className="eim-table-row">
                     <td>{idx + 1}</td>
                     <td><span className="eim-code-badge">{inst.institutionCode}</span></td>

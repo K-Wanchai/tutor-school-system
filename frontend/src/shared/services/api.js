@@ -1,12 +1,26 @@
 import axios from 'axios';
 
 const SERVER_HOST = '172.24.163.173';
-const BASE_URL = `http://${SERVER_HOST}:8080/api/v1`;
+const API_ORIGIN = `http://${SERVER_HOST}:8080`;
+const BASE_URL = `${API_ORIGIN}/api/v1`;
 
 const api = axios.create({
   baseURL: BASE_URL,
   headers: { 'Content-Type': 'application/json' },
 });
+
+// Uploaded file URLs (logo, payment slips, QR codes, ...) are read back from the
+// DB and may have an old host/IP baked in from whenever they were uploaded — this
+// machine's LAN IP changes over time. Always re-point them at the *current*
+// SERVER_HOST above so every machine renders the same image without needing a
+// backend change or re-upload; only this file's SERVER_HOST ever needs editing.
+export function resolveFileUrl(url) {
+  if (!url) return url;
+  const marker = '/uploads/';
+  const idx = url.indexOf(marker);
+  if (idx === -1) return url;
+  return API_ORIGIN + url.slice(idx);
+}
 
 api.interceptors.request.use(
   (config) => {

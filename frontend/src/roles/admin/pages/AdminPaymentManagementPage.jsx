@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { getAllEnrollments } from '../services/adminEnrollmentService';
+import { resolveFileUrl } from '../../../shared/services/api';
 import './AdminPaymentManagementPage.css';
 
 // ── Labels & Badge Maps ─────────────────────────────────────────────────────
@@ -143,8 +144,8 @@ function TransactionDetailModal({ enrollment, onClose }) {
               <h3 className="pm-detail-section-title">หลักฐานการชำระเงิน</h3>
               <div className="pm-slip-panel">
                 {enrollment.paymentSlipUrl ? (
-                  <a href={enrollment.paymentSlipUrl} target="_blank" rel="noreferrer" className="pm-slip-link">
-                    <img src={enrollment.paymentSlipUrl} alt="สลิปการชำระเงิน" className="pm-slip-img" />
+                  <a href={resolveFileUrl(enrollment.paymentSlipUrl)} target="_blank" rel="noreferrer" className="pm-slip-link">
+                    <img src={resolveFileUrl(enrollment.paymentSlipUrl)} alt="สลิปการชำระเงิน" className="pm-slip-img" />
                     <span className="pm-slip-link-text">คลิกเพื่อดูรูปเต็ม</span>
                   </a>
                 ) : (
@@ -337,7 +338,7 @@ export default function AdminPaymentManagementPage() {
                       <td className="pm-text-secondary">{PAYMENT_METHOD_LABEL[e.paymentMethod] || '—'}</td>
                       <td>
                         {e.paymentSlipUrl ? (
-                          <img src={e.paymentSlipUrl} alt="สลิป" className="pm-slip-thumb-sm" />
+                          <img src={resolveFileUrl(e.paymentSlipUrl)} alt="สลิป" className="pm-slip-thumb-sm" />
                         ) : (
                           <span className="pm-text-secondary">—</span>
                         )}

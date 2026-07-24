@@ -74,23 +74,14 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOrigins(List.of(
-                "http://localhost:5173",
-                "http://localhost:5174",
-                "http://localhost:5175",
-                "http://localhost:3000",
-                "http://172.24.179.112:5173",
-                "http://172.24.179.112:5174",
-                "http://172.24.179.112:5175",
-                "http://172.24.179.112:3000",
-                "http://172.24.176.111:5173",
-                "http://172.24.176.111:5174",
-                "http://172.24.176.111:5175",
-                "http://172.24.176.111:3000",
-                "http://172.24.163.173:5173",
-                "http://172.24.163.173:5174",
-                "http://172.24.163.173:5175",
-                "http://172.24.163.173:3000"
+        // Pattern-based instead of a fixed IP list: this dev machine's LAN IP changes
+        // (DHCP) whenever it reconnects to the network, so any fixed "http://<ip>:<port>"
+        // entry goes stale. Matching the whole office subnet + any port means changing
+        // SERVER_HOST in frontend/src/shared/services/api.js is the only thing needed
+        // when the IP changes — no backend redeploy required.
+        configuration.setAllowedOriginPatterns(List.of(
+                "http://localhost:*",
+                "http://172.24.*.*:*"
         ));
         configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
         configuration.setAllowedHeaders(List.of("Authorization", "Content-Type", "Accept"));

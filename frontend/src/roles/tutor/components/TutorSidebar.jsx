@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { NavLink } from 'react-router-dom';
-import api from '../../../shared/services/api';
+import api, { resolveFileUrl } from '../../../shared/services/api';
 import useInstitutionProfile from '../../../shared/hooks/useInstitutionProfile';
 import { getMyCourses } from '../services/tutorCourseService';
 import './TutorSidebar.css';
@@ -260,7 +260,7 @@ export default function TutorSidebar({ isOpen, onClose }) {
           <div className="tutor-sidebar-brand-main">
             <div className="tutor-sidebar-logo">
               {profile?.logoUrl ? (
-                <img src={profile.logoUrl} alt={profile.institutionName || 'Logo'} />
+                <img src={resolveFileUrl(profile.logoUrl)} alt={profile.institutionName || 'Logo'} />
               ) : (
                 <svg
                   viewBox="0 0 32 32"

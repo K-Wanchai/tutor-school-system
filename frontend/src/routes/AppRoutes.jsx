@@ -1,6 +1,7 @@
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { getToken, getRole } from '../shared/utils/tokenUtils';
 
+import LandingPage from '../auth/pages/LandingPage';
 import LoginPage from '../auth/pages/LoginPage';
 import RegisterStudentPage from '../auth/pages/RegisterStudentPage';
 import UnauthorizedPage from '../auth/pages/UnauthorizedPage';
@@ -12,7 +13,7 @@ import studentRoutes from './studentRoutes';
 function RootRedirect() {
   const token = getToken();
   const role  = getRole();
-  if (!token) return <Navigate to="/login" replace />;
+  if (!token) return <LandingPage />;
   if (role === 'ADMIN')   return <Navigate to="/admin/dashboard"   replace />;
   if (role === 'TUTOR')   return <Navigate to="/tutor/dashboard"   replace />;
   if (role === 'STUDENT') return <Navigate to="/student/dashboard" replace />;

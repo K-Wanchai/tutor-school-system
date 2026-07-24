@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import generatePayload from 'promptpay-qr';
 import QRCode from 'qrcode';
 import { getMyEnrollments } from '../services/studentEnrollmentService';
-import api from '../../../shared/services/api';
+import api, { resolveFileUrl } from '../../../shared/services/api';
 import './StudentPaymentsPage.css';
 
 /* ── Countdown hook (deadline from server) ── */
@@ -230,7 +230,7 @@ export default function StudentPaymentsPage() {
                   </svg>
                   ส่งสลิปแล้ว รอเจ้าหน้าที่ตรวจสอบ
                   {en.paymentSlipUrl && (
-                    <a href={en.paymentSlipUrl} target="_blank" rel="noreferrer" className="pay-slip-link">ดูสลิป</a>
+                    <a href={resolveFileUrl(en.paymentSlipUrl)} target="_blank" rel="noreferrer" className="pay-slip-link">ดูสลิป</a>
                   )}
                 </div>
               )}
@@ -376,7 +376,7 @@ function BankInfo({ institution, totalAmount, copied, onCopy, onDownloadQR, fmt,
           <DynamicPromptPayQr key={totalAmount} promptPayId={institution.promptPayId} amount={totalAmount} />
         ) : institution.bankQrCode && (
           <div className="pay-qr-box">
-            <img src={institution.bankQrCode} alt="QR โอนเงิน" />
+            <img src={resolveFileUrl(institution.bankQrCode)} alt="QR โอนเงิน" />
             <button className="pay-qr-download" onClick={() => onDownloadQR(institution.bankQrCode)}>บันทึก QR Code</button>
           </div>
         )}

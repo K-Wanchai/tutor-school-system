@@ -6,6 +6,7 @@ import {
   approveEnrollment,
   cancelEnrollment,
 } from '../services/adminEnrollmentService';
+import { resolveFileUrl } from '../../../shared/services/api';
 import './AdminEnrollmentManagementPage.css';
 
 // ── Labels & Badge Maps ─────────────────────────────────────────────────────
@@ -130,8 +131,8 @@ function DetailModal({ enrollment, onClose, onAction, actionPending }) {
             <div className="em-detail-section em-detail-section--full">
               <h3 className="em-detail-section-title">หลักฐานการชำระเงิน</h3>
               {enrollment.paymentSlipUrl ? (
-                <a href={enrollment.paymentSlipUrl} target="_blank" rel="noreferrer" className="em-slip-link">
-                  <img src={enrollment.paymentSlipUrl} alt="สลิปการชำระเงิน" className="em-slip-thumb" />
+                <a href={resolveFileUrl(enrollment.paymentSlipUrl)} target="_blank" rel="noreferrer" className="em-slip-link">
+                  <img src={resolveFileUrl(enrollment.paymentSlipUrl)} alt="สลิปการชำระเงิน" className="em-slip-thumb" />
                   <span>เปิดดูรูปเต็ม</span>
                 </a>
               ) : (

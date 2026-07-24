@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { getMyCourses } from '../services/studentMyCoursesService.js';
+import { resolveFileUrl } from '../../../shared/services/api';
 import './StudentMyCoursesPage.css';
 
 const ENROLLMENT_STATUS_LABELS = {
@@ -513,7 +514,7 @@ function StudentMyCoursesPage() {
                 <strong>
                   {selectedCourse.paymentSlipUrl ? (
                     <a
-                      href={selectedCourse.paymentSlipUrl}
+                      href={resolveFileUrl(selectedCourse.paymentSlipUrl)}
                       target="_blank"
                       rel="noreferrer"
                     >

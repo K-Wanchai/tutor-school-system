@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { login } from '../services/authService';
+import { resolveFileUrl } from '../../shared/services/api';
 import useInstitutionProfile from '../../shared/hooks/useInstitutionProfile';
 import './LoginPage.css';
 
@@ -42,7 +43,7 @@ export default function LoginPage() {
           <div className="auth-brand-logo">
             <div className="auth-logo-icon">
               {profile?.logoUrl ? (
-                <img src={profile.logoUrl} alt={profile.institutionName || 'Logo'} />
+                <img src={resolveFileUrl(profile.logoUrl)} alt={profile.institutionName || 'Logo'} />
               ) : (
                 <svg viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
                   <rect width="40" height="40" rx="10" fill="white" fillOpacity="0.15" />

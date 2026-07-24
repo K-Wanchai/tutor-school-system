@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
+import { resolveFileUrl } from '../../../shared/services/api';
 import {
   getInstitutionProfile,
   updateInstitutionProfile,
@@ -247,7 +248,7 @@ export default function AdminSettingsPage() {
                 <div className="is-logo-row">
                   <div className="is-logo-preview">
                     {form.logoUrl ? (
-                      <img src={form.logoUrl} alt="โลโก้สถาบัน" />
+                      <img src={resolveFileUrl(form.logoUrl)} alt="โลโก้สถาบัน" />
                     ) : (
                       <span className="is-logo-placeholder">
                         {(form.institutionName || 'S').charAt(0).toUpperCase()}
@@ -342,7 +343,7 @@ export default function AdminSettingsPage() {
                 <div className="is-logo-row">
                   <div className="is-qr-preview">
                     {form.bankQrCode ? (
-                      <img src={form.bankQrCode} alt="QR พร้อมเพย์" />
+                      <img src={resolveFileUrl(form.bankQrCode)} alt="QR พร้อมเพย์" />
                     ) : (
                       <span className="is-qr-placeholder">ไม่มี QR Code</span>
                     )}

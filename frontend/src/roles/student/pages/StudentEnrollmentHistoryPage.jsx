@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { getMyEnrollments } from '../services/studentEnrollmentService';
-import api from '../../../shared/services/api';
+import api, { resolveFileUrl } from '../../../shared/services/api';
 import './StudentEnrollmentHistoryPage.css';
 
 const STATUS_MAP = {
@@ -223,7 +223,7 @@ export default function StudentEnrollmentHistoryPage() {
                 {modal.paymentSlipUrl && (
                   <div className="hist-modal-status-item">
                     <span>สลิปการชำระ</span>
-                    <a href={modal.paymentSlipUrl} target="_blank" rel="noreferrer" className="hist-slip-link">ดูสลิป</a>
+                    <a href={resolveFileUrl(modal.paymentSlipUrl)} target="_blank" rel="noreferrer" className="hist-slip-link">ดูสลิป</a>
                   </div>
                 )}
               </div>
