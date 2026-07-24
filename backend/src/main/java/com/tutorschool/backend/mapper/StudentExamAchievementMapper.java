@@ -29,6 +29,8 @@ public class StudentExamAchievementMapper {
                 .facultyName(achievement.getAcademicMajor() != null ? achievement.getAcademicMajor().getFaculty().getName() : null)
                 .academicMajorId(achievement.getAcademicMajor() != null ? achievement.getAcademicMajor().getId() : null)
                 .majorName(achievement.getAcademicMajor() != null ? achievement.getAcademicMajor().getName() : null)
+                .vocationalMajorId(achievement.getVocationalMajor() != null ? achievement.getVocationalMajor().getId() : null)
+                .vocationalMajorName(achievement.getVocationalMajor() != null ? achievement.getVocationalMajor().getName() : null)
                 .admissionRoundId(achievement.getAdmissionRound() != null ? achievement.getAdmissionRound().getId() : null)
                 .admissionRoundName(achievement.getAdmissionRound() != null ? achievement.getAdmissionRound().getName() : null)
                 .academicYear(achievement.getAcademicYear())
@@ -55,8 +57,8 @@ public class StudentExamAchievementMapper {
         return switch (level) {
             case LOWER_SECONDARY -> "มัธยมต้น";
             case UPPER_SECONDARY -> "มัธยมปลาย";
+            case VOCATIONAL_DIPLOMA -> "อนุปริญญา (ปวส.)";
             case BACHELOR -> "ปริญญาตรี / มหาวิทยาลัย";
-            case OTHER -> "อื่น ๆ";
         };
     }
 }

@@ -11,18 +11,16 @@ import './ExamInstitutionManagePage.css';
 // ── Labels & Options ─────────────────────────────────────────────────────
 
 const TYPE_LABEL = {
-  LOWER_SECONDARY: 'มัธยมต้น',
-  UPPER_SECONDARY: 'มัธยมปลาย',
+  SECONDARY: 'มัธยม',
+  VOCATIONAL_DIPLOMA: 'อนุปริญญา (ปวส.)',
   UNIVERSITY: 'มหาวิทยาลัย / ป.ตรี',
-  OTHER: 'อื่น ๆ',
 };
 
 const TYPE_FILTER_OPTIONS = [
   { value: '', label: 'ทั้งหมด' },
-  { value: 'LOWER_SECONDARY', label: 'มัธยมต้น' },
-  { value: 'UPPER_SECONDARY', label: 'มัธยมปลาย' },
+  { value: 'SECONDARY', label: 'มัธยม' },
+  { value: 'VOCATIONAL_DIPLOMA', label: 'อนุปริญญา (ปวส.)' },
   { value: 'UNIVERSITY', label: 'มหาวิทยาลัย / ป.ตรี' },
-  { value: 'OTHER', label: 'อื่น ๆ' },
 ];
 
 const STATUS_FILTER_OPTIONS = [
@@ -40,6 +38,7 @@ const EMPTY_FORM = {
   websiteUrl: '',
   description: '',
   active: true,
+  offersVocationalDiploma: false,
 };
 
 const EMPTY_FILTERS = { keyword: '', type: '', active: '' };
@@ -149,8 +148,8 @@ export default function ExamInstitutionManagePage() {
 
   const stats = useMemo(() => ({
     total: statsData.length,
-    lowerSecondary: statsData.filter((i) => i.institutionType === 'LOWER_SECONDARY').length,
-    upperSecondary: statsData.filter((i) => i.institutionType === 'UPPER_SECONDARY').length,
+    secondary: statsData.filter((i) => i.institutionType === 'SECONDARY').length,
+    vocationalDiploma: statsData.filter((i) => i.institutionType === 'VOCATIONAL_DIPLOMA').length,
     university: statsData.filter((i) => i.institutionType === 'UNIVERSITY').length,
     active: statsData.filter((i) => i.active).length,
   }), [statsData]);
@@ -194,6 +193,7 @@ export default function ExamInstitutionManagePage() {
       websiteUrl: inst.websiteUrl ?? '',
       description: inst.description ?? '',
       active: inst.active ?? true,
+      offersVocationalDiploma: inst.offersVocationalDiploma ?? false,
     });
     setFormErr({});
     setShowForm(true);
@@ -220,6 +220,7 @@ export default function ExamInstitutionManagePage() {
         websiteUrl: form.websiteUrl?.trim() || null,
         description: form.description?.trim() || null,
         active: form.active,
+        offersVocationalDiploma: form.institutionType === 'UNIVERSITY' ? form.offersVocationalDiploma : false,
       };
 
       if (formMode === 'create') {
@@ -279,12 +280,12 @@ export default function ExamInstitutionManagePage() {
           <span className="eim-stat-label">สถาบันทั้งหมด</span>
         </div>
         <div className="eim-stat-card">
-          <span className="eim-stat-value">{loading ? '...' : stats.lowerSecondary}</span>
-          <span className="eim-stat-label">มัธยมต้น</span>
+          <span className="eim-stat-value">{loading ? '...' : stats.secondary}</span>
+          <span className="eim-stat-label">มัธยม</span>
         </div>
         <div className="eim-stat-card">
-          <span className="eim-stat-value">{loading ? '...' : stats.upperSecondary}</span>
-          <span className="eim-stat-label">มัธยมปลาย</span>
+          <span className="eim-stat-value">{loading ? '...' : stats.vocationalDiploma}</span>
+          <span className="eim-stat-label">อนุปริญญา (ปวส.)</span>
         </div>
         <div className="eim-stat-card">
           <span className="eim-stat-value">{loading ? '...' : stats.university}</span>
@@ -434,13 +435,25 @@ export default function ExamInstitutionManagePage() {
                   onChange={(e) => fld('institutionType', e.target.value)}
                 >
                   <option value="">— เลือกประเภทสถาบัน —</option>
-                  <option value="LOWER_SECONDARY">มัธยมต้น</option>
-                  <option value="UPPER_SECONDARY">มัธยมปลาย</option>
+                  <option value="SECONDARY">มัธยม</option>
+                  <option value="VOCATIONAL_DIPLOMA">อนุปริญญา (ปวส.)</option>
                   <option value="UNIVERSITY">มหาวิทยาลัย / ปริญญาตรี</option>
-                  <option value="OTHER">อื่น ๆ</option>
                 </select>
                 {formErr.institutionType && <span className="eim-err">{formErr.institutionType}</span>}
               </div>
+
+              {form.institutionType === 'UNIVERSITY' && (
+                <div className="eim-field eim-field--checkbox">
+                  <label className="eim-checkbox-label">
+                    <input
+                      type="checkbox"
+                      checked={!!form.offersVocationalDiploma}
+                      onChange={(e) => fld('offersVocationalDiploma', e.target.checked)}
+                    />
+                    มีหลักสูตรอนุปริญญา (ปวส.) ด้วย
+                  </label>
+                </div>
+              )}
 
               <div className="eim-form-row">
                 <div className="eim-field">

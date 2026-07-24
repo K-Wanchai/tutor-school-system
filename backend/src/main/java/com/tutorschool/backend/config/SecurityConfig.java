@@ -86,7 +86,11 @@ public class SecurityConfig {
                 "http://172.24.176.111:5173",
                 "http://172.24.176.111:5174",
                 "http://172.24.176.111:5175",
-                "http://172.24.176.111:3000"
+                "http://172.24.176.111:3000",
+                "http://172.24.163.173:5173",
+                "http://172.24.163.173:5174",
+                "http://172.24.163.173:5175",
+                "http://172.24.163.173:3000"
         ));
         configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
         configuration.setAllowedHeaders(List.of("Authorization", "Content-Type", "Accept"));

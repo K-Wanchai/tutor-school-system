@@ -21,6 +21,7 @@ public class ExamInstitutionMapper {
                 .websiteUrl(institution.getWebsiteUrl())
                 .description(institution.getDescription())
                 .active(institution.getActive())
+                .offersVocationalDiploma(institution.getOffersVocationalDiploma())
                 .createdAt(institution.getCreatedAt())
                 .updatedAt(institution.getUpdatedAt())
                 .build();
@@ -31,10 +32,9 @@ public class ExamInstitutionMapper {
             return "-";
         }
         return switch (type) {
-            case LOWER_SECONDARY -> "มัธยมต้น";
-            case UPPER_SECONDARY -> "มัธยมปลาย";
+            case SECONDARY -> "มัธยม";
+            case VOCATIONAL_DIPLOMA -> "อนุปริญญา (ปวส.)";
             case UNIVERSITY -> "มหาวิทยาลัย / ปริญญาตรี";
-            case OTHER -> "อื่น ๆ";
         };
     }
 }

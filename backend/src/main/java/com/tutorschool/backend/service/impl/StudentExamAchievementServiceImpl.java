@@ -16,6 +16,7 @@ import com.tutorschool.backend.entity.SchoolTrack;
 import com.tutorschool.backend.entity.Student;
 import com.tutorschool.backend.entity.StudentExamAchievement;
 import com.tutorschool.backend.entity.Tutor;
+import com.tutorschool.backend.entity.VocationalMajor;
 import com.tutorschool.backend.exception.DuplicateAchievementException;
 import com.tutorschool.backend.exception.ExamInstitutionNotFoundException;
 import com.tutorschool.backend.exception.ResourceNotFoundException;
@@ -28,6 +29,7 @@ import com.tutorschool.backend.repository.ExamInstitutionRepository;
 import com.tutorschool.backend.repository.SchoolTrackRepository;
 import com.tutorschool.backend.repository.StudentExamAchievementRepository;
 import com.tutorschool.backend.repository.StudentRepository;
+import com.tutorschool.backend.repository.VocationalMajorRepository;
 import com.tutorschool.backend.service.StudentExamAchievementService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -45,6 +47,7 @@ public class StudentExamAchievementServiceImpl implements StudentExamAchievement
     private final EnrollmentRepository enrollmentRepository;
     private final SchoolTrackRepository schoolTrackRepository;
     private final AcademicMajorRepository academicMajorRepository;
+    private final VocationalMajorRepository vocationalMajorRepository;
     private final AdmissionRoundRepository admissionRoundRepository;
     private final StudentExamAchievementMapper achievementMapper;
 
@@ -68,6 +71,7 @@ public class StudentExamAchievementServiceImpl implements StudentExamAchievement
                 .educationLevel(request.getEducationLevel())
                 .schoolTrack(resolveSchoolTrack(request.getSchoolTrackId(), institution.getId()))
                 .academicMajor(resolveAcademicMajor(request.getAcademicMajorId(), institution.getId()))
+                .vocationalMajor(resolveVocationalMajor(request.getVocationalMajorId(), institution.getId()))
                 .admissionRound(resolveAdmissionRound(request.getAdmissionRoundId(), institution.getId()))
                 .academicYear(request.getAcademicYear())
                 .resultDate(request.getResultDate())
@@ -118,6 +122,7 @@ public class StudentExamAchievementServiceImpl implements StudentExamAchievement
         achievement.setEducationLevel(request.getEducationLevel());
         achievement.setSchoolTrack(resolveSchoolTrack(request.getSchoolTrackId(), institution.getId()));
         achievement.setAcademicMajor(resolveAcademicMajor(request.getAcademicMajorId(), institution.getId()));
+        achievement.setVocationalMajor(resolveVocationalMajor(request.getVocationalMajorId(), institution.getId()));
         achievement.setAdmissionRound(resolveAdmissionRound(request.getAdmissionRoundId(), institution.getId()));
         achievement.setAcademicYear(request.getAcademicYear());
         achievement.setResultDate(request.getResultDate());
@@ -232,6 +237,9 @@ public class StudentExamAchievementServiceImpl implements StudentExamAchievement
         if (level == EducationLevel.BACHELOR && request.getAcademicMajorId() == null) {
             throw new IllegalArgumentException("กรุณาเลือกสาขาสำหรับระดับมหาวิทยาลัย");
         }
+        if (level == EducationLevel.VOCATIONAL_DIPLOMA && request.getVocationalMajorId() == null) {
+            throw new IllegalArgumentException("กรุณาเลือกสาขาสำหรับระดับอนุปริญญา (ปวส.)");
+        }
     }
 
     private SchoolTrack resolveSchoolTrack(Long schoolTrackId, Long institutionId) {
@@ -253,6 +261,18 @@ public class StudentExamAchievementServiceImpl implements StudentExamAchievement
         AcademicMajor major = academicMajorRepository.findById(academicMajorId)
                 .orElseThrow(() -> new ResourceNotFoundException("ไม่พบข้อมูลสาขา รหัส: " + academicMajorId));
         if (!major.getFaculty().getExamInstitution().getId().equals(institutionId)) {
+            throw new IllegalArgumentException("สาขาที่เลือกไม่ได้อยู่ในสถาบันนี้");
+        }
+        return major;
+    }
+
+    private VocationalMajor resolveVocationalMajor(Long vocationalMajorId, Long institutionId) {
+        if (vocationalMajorId == null) {
+            return null;
+        }
+        VocationalMajor major = vocationalMajorRepository.findById(vocationalMajorId)
+                .orElseThrow(() -> new ResourceNotFoundException("ไม่พบข้อมูลสาขา รหัส: " + vocationalMajorId));
+        if (!major.getExamInstitution().getId().equals(institutionId)) {
             throw new IllegalArgumentException("สาขาที่เลือกไม่ได้อยู่ในสถาบันนี้");
         }
         return major;

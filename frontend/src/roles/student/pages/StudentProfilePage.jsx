@@ -209,11 +209,6 @@ function StudentProfilePage() {
           <InfoRow label="เบอร์ผู้ปกครอง" value={profile.guardianPhoneNumber} />
         </InfoCard>
 
-        <InfoCard title="ข้อมูลธนาคาร" subtitle="ข้อมูลบัญชีสำหรับการชำระเงิน">
-          <InfoRow label="ธนาคาร" value={profile.bankName} />
-          <InfoRow label="ชื่อบัญชี" value={profile.bankAccountName} />
-          <InfoRow label="เลขบัญชี" value={profile.bankAccountNumber} />
-        </InfoCard>
 
         <InfoCard title="ข้อมูลระบบ" subtitle="ข้อมูลวันที่ในระบบ">
           <InfoRow label="วันที่สมัคร" value={formatDateTime(profile.createdAt)} />

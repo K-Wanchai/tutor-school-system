@@ -105,8 +105,8 @@ public class SchoolTrackServiceImpl implements SchoolTrackService {
 
     private ExamInstitution findSchool(Long institutionId) {
         ExamInstitution institution = findInstitution(institutionId);
-        if (institution.getInstitutionType() == InstitutionType.UNIVERSITY) {
-            throw new IllegalStateException("สายการเรียน/ห้องเรียนใช้ไม่ได้กับสถาบันประเภทมหาวิทยาลัย");
+        if (institution.getInstitutionType() != InstitutionType.SECONDARY) {
+            throw new IllegalStateException("สายการเรียน/ห้องเรียนใช้ได้เฉพาะสถาบันประเภทมัธยมเท่านั้น");
         }
         return institution;
     }

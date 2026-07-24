@@ -50,6 +50,7 @@ public class ExamInstitutionServiceImpl implements ExamInstitutionService {
                 .websiteUrl(request.getWebsiteUrl())
                 .description(request.getDescription())
                 .active(request.getActive() == null ? Boolean.TRUE : request.getActive())
+                .offersVocationalDiploma(resolveOffersVocationalDiploma(request))
                 .build();
 
         ExamInstitution saved = examInstitutionRepository.save(institution);
@@ -91,9 +92,18 @@ public class ExamInstitutionServiceImpl implements ExamInstitutionService {
         if (request.getActive() != null) {
             institution.setActive(request.getActive());
         }
+        institution.setOffersVocationalDiploma(resolveOffersVocationalDiploma(request));
 
         ExamInstitution saved = examInstitutionRepository.save(institution);
         return examInstitutionMapper.toResponse(saved);
+    }
+
+    // ใช้ได้เฉพาะสถาบันประเภทมหาวิทยาลัยเท่านั้น — ป้องกันไม่ให้ flag ค้างเป็น true ถ้าเปลี่ยนประเภทสถาบันออกจากมหาวิทยาลัยภายหลัง
+    private Boolean resolveOffersVocationalDiploma(ExamInstitutionRequest request) {
+        if (request.getInstitutionType() != InstitutionType.UNIVERSITY) {
+            return Boolean.FALSE;
+        }
+        return request.getOffersVocationalDiploma() == null ? Boolean.FALSE : request.getOffersVocationalDiploma();
     }
 
     @Override
@@ -126,6 +136,7 @@ public class ExamInstitutionServiceImpl implements ExamInstitutionService {
 
         List<AchievementStudentCardResponse> lowerSecondary = new ArrayList<>();
         List<AchievementStudentCardResponse> upperSecondary = new ArrayList<>();
+        List<AchievementStudentCardResponse> vocationalDiploma = new ArrayList<>();
         List<AchievementStudentCardResponse> bachelor = new ArrayList<>();
 
         for (StudentExamAchievement a : achievements) {
@@ -133,8 +144,8 @@ public class ExamInstitutionServiceImpl implements ExamInstitutionService {
             switch (a.getEducationLevel()) {
                 case LOWER_SECONDARY -> lowerSecondary.add(card);
                 case UPPER_SECONDARY -> upperSecondary.add(card);
+                case VOCATIONAL_DIPLOMA -> vocationalDiploma.add(card);
                 case BACHELOR -> bachelor.add(card);
-                default -> { /* OTHER ไม่แสดงในกลุ่มใดกลุ่มหนึ่งของหน้ารายละเอียดสถาบัน แต่ยังนับรวมใน total */ }
             }
         }
 
@@ -142,6 +153,7 @@ public class ExamInstitutionServiceImpl implements ExamInstitutionService {
                 .total(achievements.size())
                 .lowerSecondaryCount(lowerSecondary.size())
                 .upperSecondaryCount(upperSecondary.size())
+                .vocationalDiplomaCount(vocationalDiploma.size())
                 .bachelorCount(bachelor.size())
                 .build();
 
@@ -150,6 +162,7 @@ public class ExamInstitutionServiceImpl implements ExamInstitutionService {
                 .summary(summary)
                 .lowerSecondary(lowerSecondary)
                 .upperSecondary(upperSecondary)
+                .vocationalDiploma(vocationalDiploma)
                 .bachelor(bachelor)
                 .build();
     }
@@ -166,6 +179,7 @@ public class ExamInstitutionServiceImpl implements ExamInstitutionService {
                 .schoolTrackName(a.getSchoolTrack() != null ? a.getSchoolTrack().getName() : null)
                 .facultyName(a.getAcademicMajor() != null ? a.getAcademicMajor().getFaculty().getName() : null)
                 .majorName(a.getAcademicMajor() != null ? a.getAcademicMajor().getName() : null)
+                .vocationalMajorName(a.getVocationalMajor() != null ? a.getVocationalMajor().getName() : null)
                 .admissionRoundName(a.getAdmissionRound() != null ? a.getAdmissionRound().getName() : null)
                 .courseSummary("เรียน " + courseNames.size() + " คอร์ส")
                 .courseNames(courseNames)
