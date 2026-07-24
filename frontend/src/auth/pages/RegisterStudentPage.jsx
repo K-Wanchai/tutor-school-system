@@ -1,6 +1,7 @@
 import { useState, useMemo } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { register, checkAvailability } from '../services/authService';
+import useInstitutionProfile from '../../shared/hooks/useInstitutionProfile';
 import './RegisterStudentPage.css';
 
 const GRADE_LEVELS = [
@@ -49,6 +50,7 @@ function getDaysInMonth(monthNum, yearBE) {
 
 export default function RegisterStudentPage() {
   const navigate = useNavigate();
+  const profile = useInstitutionProfile();
 
   // field names ต้องตรงกับ backend RegisterRequest DTO ทุกตัว
   const [form, setForm] = useState({
@@ -233,11 +235,15 @@ export default function RegisterStudentPage() {
       <div className="auth-register-header">
         <div className="auth-register-brand">
           <div className="auth-reg-logo-icon">
-            <svg viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <rect width="32" height="32" rx="8" fill="#2563eb" />
-              <path d="M16 6L26 11V21L16 26L6 21V11L16 6Z" stroke="white" strokeWidth="1.5" fill="none" />
-              <circle cx="16" cy="16" r="3" fill="white" />
-            </svg>
+            {profile?.logoUrl ? (
+              <img src={profile.logoUrl} alt={profile.institutionName || 'Logo'} />
+            ) : (
+              <svg viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <rect width="32" height="32" rx="8" fill="#2563eb" />
+                <path d="M16 6L26 11V21L16 26L6 21V11L16 6Z" stroke="white" strokeWidth="1.5" fill="none" />
+                <circle cx="16" cy="16" r="3" fill="white" />
+              </svg>
+            )}
           </div>
           <span className="auth-reg-brand-name">KruPuk Tutor</span>
         </div>
