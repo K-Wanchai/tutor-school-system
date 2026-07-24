@@ -37,6 +37,13 @@
   height: 100%;
 }
 
+.auth-reg-logo-icon img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 8px;
+}
+
 .auth-reg-brand-name {
   font-size: 18px;
   font-weight: 700;
