@@ -54,7 +54,7 @@ public class Course {
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 30)
     @Builder.Default
-    private CourseStatus status = CourseStatus.DRAFT;
+    private CourseStatus status = CourseStatus.CLOSED;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "tutor_id", nullable = false)

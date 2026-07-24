@@ -167,12 +167,10 @@ export default function TutorClassroomsPage() {
 
         <select value={status} onChange={(e) => setStatus(e.target.value)}>
           <option value="ALL">ทุกสถานะ</option>
-          <option value="DRAFT">DRAFT</option>
-          <option value="OPEN_FOR_REGISTRATION">OPEN_FOR_REGISTRATION</option>
-          <option value="ONGOING">ONGOING</option>
-          <option value="COMPLETED">COMPLETED</option>
-          <option value="CLOSED">CLOSED</option>
-          <option value="CANCELLED">CANCELLED</option>
+          <option value="OPEN_FOR_REGISTRATION">เปิดรับสมัคร</option>
+          <option value="CLOSED">ปิดรับสมัคร</option>
+          <option value="ONGOING">กำลังเรียน</option>
+          <option value="COMPLETED">สอนจบแล้ว</option>
         </select>
       </div>
 

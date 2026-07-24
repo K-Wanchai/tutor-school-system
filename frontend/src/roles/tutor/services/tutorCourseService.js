@@ -80,12 +80,3 @@ export async function addTest(courseId, { testTitle, testDescription, testOrder,
     throw new Error(apiError(error, 'addTest'));
   }
 }
-
-export async function publishCourse(courseId) {
-  try {
-    const res = await api.patch(`/courses/${courseId}/publish`);
-    return unwrap(res);
-  } catch (error) {
-    throw new Error(apiError(error, 'publishCourse'));
-  }
-}

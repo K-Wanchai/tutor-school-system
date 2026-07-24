@@ -321,9 +321,7 @@ public class CourseScheduleServiceImpl implements CourseScheduleService {
         List<CourseScheduleResponse> responses = new ArrayList<>(
                 realSchedules.stream().map(courseScheduleMapper::toResponse).toList());
 
-        List<Course> ownCourses = courseRepository.findByTutorId(Tutor.getId()).stream()
-                .filter(c -> c.getStatus() != CourseStatus.CANCELLED && c.getStatus() != CourseStatus.DRAFT)
-                .toList();
+        List<Course> ownCourses = courseRepository.findByTutorId(Tutor.getId());
 
         for (Course course : ownCourses) {
             Set<LocalDate> covered = coveredDatesByCourse.getOrDefault(course.getId(), Set.of());

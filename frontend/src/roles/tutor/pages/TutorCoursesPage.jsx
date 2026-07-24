@@ -5,7 +5,6 @@ import {
   deleteLesson,
   getMyCourses,
   markCourseViewed,
-  publishCourse,
   updateLesson,
 } from '../services/tutorCourseService';
 
@@ -14,16 +13,6 @@ import RefreshButton from '../components/RefreshButton';
 import './TutorCoursesPage.css';
 
 const STATUS_LABEL = {
-  DRAFT: {
-    label: 'รอการตอบรับ',
-    cls: 'tc-badge-draft',
-  },
-
-  ACCEPTED: {
-    label: 'กำลังจัดทำเนื้อหา',
-    cls: 'tc-badge-accepted',
-  },
-
   OPEN_FOR_REGISTRATION: {
     label: 'เปิดรับสมัคร',
     cls: 'tc-badge-open',
@@ -35,18 +24,13 @@ const STATUS_LABEL = {
   },
 
   ONGOING: {
-    label: 'กำลังสอน',
+    label: 'กำลังเรียน',
     cls: 'tc-badge-ongoing',
   },
 
   COMPLETED: {
-    label: 'สอนจบ',
+    label: 'สอนจบแล้ว',
     cls: 'tc-badge-completed',
-  },
-
-  CANCELLED: {
-    label: 'ถูกยกเลิก',
-    cls: 'tc-badge-cancelled',
   },
 };
 
@@ -134,7 +118,7 @@ export default function TutorCoursesPage() {
           <h1>คอร์สของฉัน</h1>
 
           <p>
-            คอร์สทั้งหมดของคุณ จัดการบทเรียนและเผยแพร่ได้ที่นี่
+            คอร์สทั้งหมดของคุณ จัดการบทเรียนและข้อสอบได้ที่นี่
           </p>
         </div>
 
@@ -167,8 +151,8 @@ export default function TutorCoursesPage() {
             ทุกสถานะ
           </option>
 
-          <option value="ACCEPTED">
-            กำลังจัดทำเนื้อหา
+          <option value="CLOSED">
+            ปิดรับสมัคร
           </option>
 
           <option value="OPEN_FOR_REGISTRATION">
@@ -176,15 +160,11 @@ export default function TutorCoursesPage() {
           </option>
 
           <option value="ONGOING">
-            กำลังสอน
+            กำลังเรียน
           </option>
 
           <option value="COMPLETED">
-            สอนจบ
-          </option>
-
-          <option value="CANCELLED">
-            ถูกยกเลิก
+            สอนจบแล้ว
           </option>
         </select>
       </div>
@@ -262,7 +242,7 @@ export default function TutorCoursesPage() {
                   ดูรายละเอียด
                 </button>
 
-                {['ACCEPTED', 'OPEN_FOR_REGISTRATION', 'ONGOING'].includes(course.status) && (
+                {['CLOSED', 'OPEN_FOR_REGISTRATION', 'ONGOING'].includes(course.status) && (
                   <button className="tc-btn-accept" onClick={() => openManage(course)}>
                     📚 จัดการบทเรียน
                   </button>
@@ -392,9 +372,8 @@ function CourseDetailModal({ course, onClose }) {
 }
 
 function LessonManagerModal({ course, onClose, onChanged }) {
-  const lessonsEditable = course.status === 'ACCEPTED' || course.status === 'OPEN_FOR_REGISTRATION';
-  const testsAddable = ['ACCEPTED', 'OPEN_FOR_REGISTRATION', 'ONGOING'].includes(course.status);
-  const canPublish = course.status === 'ACCEPTED';
+  const lessonsEditable = course.status === 'CLOSED' || course.status === 'OPEN_FOR_REGISTRATION';
+  const testsAddable = ['CLOSED', 'OPEN_FOR_REGISTRATION', 'ONGOING'].includes(course.status);
 
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
@@ -505,26 +484,6 @@ function LessonManagerModal({ course, onClose, onChanged }) {
     }
   }
 
-  async function handlePublish() {
-    if (lessons.length === 0) {
-      setError('ต้องมีอย่างน้อย 1 บทเรียนก่อนเผยแพร่คอร์ส');
-      return;
-    }
-    if (!window.confirm('ยืนยันเผยแพร่คอร์สนี้? นักเรียนจะเห็นคอร์สและสามารถสมัครได้ทันที')) {
-      return;
-    }
-    setBusy(true);
-    setError('');
-    try {
-      await publishCourse(course.id);
-      await onChanged();
-    } catch (err) {
-      setError(err.message);
-    } finally {
-      setBusy(false);
-    }
-  }
-
   return (
     <div className="tc-modal-overlay" onClick={onClose}>
       <div className="tc-modal" onClick={(e) => e.stopPropagation()}>
@@ -616,11 +575,6 @@ function LessonManagerModal({ course, onClose, onChanged }) {
         </div>
 
         <div className="tc-modal-footer">
-          {canPublish && (
-            <button className="tc-btn-accept" onClick={handlePublish} disabled={busy}>
-              ✓ ยืนยันเผยแพร่คอร์ส
-            </button>
-          )}
           <button onClick={onClose}>ปิด</button>
         </div>
       </div>

@@ -141,13 +141,12 @@ export async function getCourseStats() {
     const list = Array.isArray(data) ? data : (data?.content ?? []);
     return {
       total:               data?.totalElements ?? list.length,
-      draft:               list.filter(c => c.status === 'DRAFT' || c.status === 'ACCEPTED').length,
+      closed:              list.filter(c => c.status === 'CLOSED').length,
       openForRegistration: list.filter(c => c.status === 'OPEN_FOR_REGISTRATION').length,
       ongoing:             list.filter(c => c.status === 'ONGOING').length,
       completed:           list.filter(c => c.status === 'COMPLETED').length,
-      cancelled:           list.filter(c => c.status === 'CANCELLED').length,
     };
   } catch {
-    return { total: 0, draft: 0, openForRegistration: 0, ongoing: 0, completed: 0, cancelled: 0 };
+    return { total: 0, closed: 0, openForRegistration: 0, ongoing: 0, completed: 0 };
   }
 }

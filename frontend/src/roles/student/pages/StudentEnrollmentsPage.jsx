@@ -107,12 +107,10 @@ export default function StudentEnrollmentsPage() {
 
   function getStatusLabel(status) {
     const labels = {
-      DRAFT: 'ฉบับร่าง',
       OPEN_FOR_REGISTRATION: 'เปิดรับสมัคร',
       CLOSED: 'ปิดรับสมัคร',
       ONGOING: 'กำลังเรียน',
-      COMPLETED: 'เรียนจบแล้ว',
-      CANCELLED: 'ยกเลิก',
+      COMPLETED: 'สอนจบแล้ว',
     };
 
     return labels[status] || status || '-';

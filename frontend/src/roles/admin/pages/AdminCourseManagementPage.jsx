@@ -13,13 +13,10 @@ import './AdminCourseManagementPage.css';
 
 // ──────────────── helpers ────────────────
 const STATUS_LABEL = {
-  DRAFT:                 { label: 'รอติวเตอร์ตอบรับ', cls: 'cm-badge-draft' },
-  ACCEPTED:              { label: 'กำลังจัดทำเนื้อหา', cls: 'cm-badge-draft' },
-  OPEN_FOR_REGISTRATION: { label: 'เปิดรับสมัคร',  cls: 'cm-badge-open' },
-  CLOSED:                { label: 'ปิดรับสมัคร',   cls: 'cm-badge-closed' },
-  ONGOING:               { label: 'กำลังสอน',       cls: 'cm-badge-ongoing' },
-  COMPLETED:             { label: 'สอนจบ',           cls: 'cm-badge-completed' },
-  CANCELLED:             { label: 'ยกเลิก',          cls: 'cm-badge-cancelled' },
+  OPEN_FOR_REGISTRATION: { label: 'เปิดรับสมัคร', cls: 'cm-badge-open' },
+  CLOSED:                { label: 'ปิดรับสมัคร',  cls: 'cm-badge-closed' },
+  ONGOING:               { label: 'กำลังเรียน',   cls: 'cm-badge-ongoing' },
+  COMPLETED:             { label: 'สอนจบแล้ว',    cls: 'cm-badge-completed' },
 };
 
 function StatusBadge({ status }) {
@@ -306,7 +303,7 @@ export default function AdminCourseManagementPage() {
   const [courses, setCourses]       = useState([]);
   const [tutors, setTutors]         = useState([]);
   const [tutorLoading, setTutorLoading] = useState(false);
-  const [stats, setStats]           = useState({ total: 0, draft: 0, openForRegistration: 0, ongoing: 0 });
+  const [stats, setStats]           = useState({ total: 0, closed: 0, openForRegistration: 0, ongoing: 0 });
   const [page, setPage]             = useState(0);
   const [totalPages, setTotalPages] = useState(0);
   const [loading, setLoading]       = useState(true);
@@ -558,8 +555,8 @@ export default function AdminCourseManagementPage() {
           <div><div className="cm-stat-num">{stats.total}</div><div className="cm-stat-lbl">คอร์สทั้งหมด</div></div>
         </div>
         <div className="cm-stat-card cm-stat-draft">
-          <div className="cm-stat-icon">⏳</div>
-          <div><div className="cm-stat-num">{stats.draft}</div><div className="cm-stat-lbl">กำลังจัดทำเนื้อหา</div></div>
+          <div className="cm-stat-icon">⏸</div>
+          <div><div className="cm-stat-num">{stats.closed}</div><div className="cm-stat-lbl">ปิดรับสมัคร</div></div>
         </div>
         <div className="cm-stat-card cm-stat-open">
           <div className="cm-stat-icon">✅</div>
@@ -567,7 +564,7 @@ export default function AdminCourseManagementPage() {
         </div>
         <div className="cm-stat-card cm-stat-ongoing">
           <div className="cm-stat-icon">🎓</div>
-          <div><div className="cm-stat-num">{stats.ongoing}</div><div className="cm-stat-lbl">กำลังสอน</div></div>
+          <div><div className="cm-stat-num">{stats.ongoing}</div><div className="cm-stat-lbl">กำลังเรียน</div></div>
         </div>
       </div>
 
@@ -734,7 +731,7 @@ export default function AdminCourseManagementPage() {
 
               <div className="cm-info-box">
                 💡 คอร์สจะถูกมอบหมายให้ติวเตอร์ทันที ระบบจัดวัน-เวลาสอนให้อัตโนมัติ และส่งการแจ้งเตือนไปยังอีเมลติวเตอร์ทันที
-                ติวเตอร์สามารถเพิ่มบทเรียน/ข้อสอบ และกดเผยแพร่คอร์สเองเพื่อเปิดให้นักเรียนสมัครได้เลย
+                ติวเตอร์สามารถเพิ่มบทเรียน/ข้อสอบได้เลย จากนั้นแอดมินเปลี่ยนสถานะเป็น "เปิดรับสมัคร" เพื่อให้นักเรียนสมัครได้
               </div>
 
               <div className="cm-form-actions">

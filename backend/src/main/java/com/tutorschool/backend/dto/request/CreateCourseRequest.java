@@ -1,6 +1,5 @@
 package com.tutorschool.backend.dto.request;
 
-import com.tutorschool.backend.entity.CourseStatus;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.*;
 import lombok.AllArgsConstructor;
@@ -44,8 +43,6 @@ public class CreateCourseRequest {
 
     @NotNull(message = "Course start date is required")
     private LocalDate courseStartDate;
-
-    private CourseStatus status;
 
     @NotNull(message = "Tutor ID is required")
     private Long tutorId;

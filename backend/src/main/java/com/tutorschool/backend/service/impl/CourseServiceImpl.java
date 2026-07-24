@@ -23,7 +23,6 @@ import com.tutorschool.backend.dto.request.CourseLessonRequest;
 import com.tutorschool.backend.dto.request.CourseTestRequest;
 import com.tutorschool.backend.dto.request.CreateCourseRequest;
 import com.tutorschool.backend.dto.request.CreateNotificationRequest;
-import com.tutorschool.backend.dto.request.TutorCourseResponseRequest;
 import com.tutorschool.backend.dto.request.UpdateCourseRequest;
 import com.tutorschool.backend.dto.request.UpdateCourseStatusRequest;
 import com.tutorschool.backend.dto.response.CourseResponse;
@@ -159,7 +158,7 @@ public class CourseServiceImpl implements CourseService {
                 .registrationStartDate(request.getRegistrationStartDate())
                 .registrationEndDate(request.getRegistrationEndDate())
                 .courseStartDate(request.getCourseStartDate())
-                .status(CourseStatus.ACCEPTED)
+                .status(CourseStatus.CLOSED)
                 .tutorViewed(false)
                 .tutor(tutor)
                 .scheduleDays(scheduleDays)
@@ -281,7 +280,7 @@ public class CourseServiceImpl implements CourseService {
                 "ชื่อคอร์ส: " + course.getCourseName() + "\n" +
                 "วันที่เริ่มสอน: " + course.getCourseStartDate() + "\n" +
                 "จำนวนที่นั่ง: " + course.getSeatLimit() + " คน\n\n" +
-                "กรุณาเข้าสู่ระบบเพื่อจัดเตรียมเนื้อหาบทเรียนและข้อสอบ แล้วเผยแพร่คอร์สให้นักเรียนสมัครได้"
+                "กรุณาเข้าสู่ระบบเพื่อจัดเตรียมเนื้อหาบทเรียนและข้อสอบ แอดมินจะเปิดรับสมัครให้เมื่อพร้อม"
             );
             notif.setNotificationType(NotificationType.COURSE_ASSIGNED);
             notif.setReferenceType(ReferenceType.COURSE);
@@ -336,45 +335,15 @@ public class CourseServiceImpl implements CourseService {
         Course course = courseRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Course", id));
 
+        if (request.getStatus() == CourseStatus.OPEN_FOR_REGISTRATION && course.getLessons().isEmpty()) {
+            throw new IllegalStateException("Course must have at least 1 lesson before it can be opened for registration");
+        }
+
         course.setStatus(request.getStatus());
         course = courseRepository.save(course);
         long enrolledCount = enrollmentRepository.countByCourseIdAndStatusIn(id,
                 List.of(EnrollmentStatus.PENDING, EnrollmentStatus.APPROVED));
         return courseMapper.toSummaryResponse(course, enrolledCount);
-    }
-
-    @Override
-    @Transactional
-    public CourseResponse tutorRespondToCourse(Long courseId, TutorCourseResponseRequest request, Long tutorUserId) {
-        Course course = courseRepository.findById(courseId)
-                .orElseThrow(() -> new ResourceNotFoundException("Course", courseId));
-
-        Tutor tutor = TutorRepository.findByUserId(tutorUserId)
-                .orElseThrow(() -> new ResourceNotFoundException("Tutor profile not found"));
-
-        if (!course.getTutor().getId().equals(tutor.getId())) {
-            throw new IllegalStateException("You are not assigned to this course");
-        }
-
-        if (request.isAccepted()) {
-            course.setStatus(CourseStatus.ACCEPTED);
-            if (request.getLessons() != null && !request.getLessons().isEmpty()) {
-                course.getLessons().clear();
-                addLessonsToCoure(course, request.getLessons());
-            }
-            if (request.getTests() != null && !request.getTests().isEmpty()) {
-                course.getTests().clear();
-                addTestsToCourse(course, request.getTests());
-            }
-        } else {
-            course.setStatus(CourseStatus.CANCELLED);
-            course.setTutorRemark(request.getRemark());
-        }
-
-        course = courseRepository.save(course);
-        long enrolledCount = enrollmentRepository.countByCourseIdAndStatusIn(courseId,
-                List.of(EnrollmentStatus.PENDING, EnrollmentStatus.APPROVED));
-        return courseMapper.toDetailResponse(course, enrolledCount);
     }
 
     @Override
@@ -462,25 +431,6 @@ public class CourseServiceImpl implements CourseService {
 
     @Override
     @Transactional
-    public CourseResponse publishCourse(Long courseId, Long tutorUserId) {
-        Course course = courseRepository.findById(courseId)
-                .orElseThrow(() -> new ResourceNotFoundException("Course", courseId));
-        verifyTutorOwnsCourse(course, tutorUserId);
-
-        if (course.getStatus() != CourseStatus.ACCEPTED) {
-            throw new IllegalStateException("Course must be accepted (and not already published) before it can be published");
-        }
-        if (course.getLessons().isEmpty()) {
-            throw new IllegalStateException("Course must have at least 1 lesson before it can be published");
-        }
-
-        course.setStatus(CourseStatus.OPEN_FOR_REGISTRATION);
-        course = courseRepository.save(course);
-        return courseMapper.toDetailResponse(course, countActiveEnrollments(courseId));
-    }
-
-    @Override
-    @Transactional
     public void markCourseViewed(Long courseId, Long tutorUserId) {
         Course course = courseRepository.findById(courseId)
                 .orElseThrow(() -> new ResourceNotFoundException("Course", courseId));
@@ -501,21 +451,21 @@ public class CourseServiceImpl implements CourseService {
         return tutor;
     }
 
-    // บทเรียนแก้ไข/เพิ่ม/ลบได้เฉพาะช่วง ACCEPTED/OPEN_FOR_REGISTRATION — ล็อกทันทีที่เริ่มสอน (ONGOING)
+    // บทเรียนแก้ไข/เพิ่ม/ลบได้เฉพาะช่วง CLOSED/OPEN_FOR_REGISTRATION — ล็อกทันทีที่เริ่มสอน (ONGOING)
     private void ensureLessonsEditable(Course course) {
-        if (course.getStatus() != CourseStatus.ACCEPTED && course.getStatus() != CourseStatus.OPEN_FOR_REGISTRATION) {
+        if (course.getStatus() != CourseStatus.CLOSED && course.getStatus() != CourseStatus.OPEN_FOR_REGISTRATION) {
             throw new IllegalStateException(
-                    "Lessons can only be added, edited, or deleted while the course is accepted or open for registration (not once teaching has started)");
+                    "Lessons can only be added, edited, or deleted while the course is closed or open for registration (not once teaching has started)");
         }
     }
 
     // หัวข้อสอบเพิ่มได้ต่อเนื่องแม้เริ่มสอนแล้ว (ONGOING) เพื่อให้เปิดสอบทีละบทได้
     private void ensureTestsAddable(Course course) {
-        if (course.getStatus() != CourseStatus.ACCEPTED
+        if (course.getStatus() != CourseStatus.CLOSED
                 && course.getStatus() != CourseStatus.OPEN_FOR_REGISTRATION
                 && course.getStatus() != CourseStatus.ONGOING) {
             throw new IllegalStateException(
-                    "Exam topics can only be added while the course is accepted, open for registration, or ongoing");
+                    "Exam topics can only be added while the course is closed, open for registration, or ongoing");
         }
     }
 
