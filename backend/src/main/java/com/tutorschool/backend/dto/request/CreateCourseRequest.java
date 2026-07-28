@@ -29,10 +29,6 @@ public class CreateCourseRequest {
     @Min(value = 1, message = "Total hours must be at least 1")
     private Integer totalHours;
 
-    @NotNull(message = "Hours per session is required")
-    @DecimalMin(value = "0.0", inclusive = false, message = "Hours per session must be greater than 0")
-    private BigDecimal hoursPerSession;
-
     @NotNull(message = "Seat limit is required")
     @Min(value = 1, message = "Seat limit must be at least 1")
     private Integer seatLimit;
@@ -53,6 +49,7 @@ public class CreateCourseRequest {
     @Valid
     private List<CourseTestRequest> tests;
 
+    @NotBlank(message = "Schedule days are required")
     private String scheduleDays;
     private LocalTime scheduleStartTime;
     private LocalTime scheduleEndTime;

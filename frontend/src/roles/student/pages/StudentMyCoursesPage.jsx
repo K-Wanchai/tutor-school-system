@@ -16,7 +16,6 @@ const PAYMENT_STATUS_LABELS = {
   PENDING_VERIFICATION: 'รอการยืนยันชำระเงิน',
   PAID: 'ชำระเงินแล้ว',
   FAILED: 'ชำระเงินไม่สำเร็จ',
-  REFUNDED: 'คืนเงินแล้ว',
 };
 
 const PAYMENT_METHOD_LABELS = {
@@ -344,10 +343,6 @@ function StudentMyCoursesPage() {
                     <strong>{formatCurrency(course.amount)}</strong>
                   </div>
 
-                  <div>
-                    <span>ส่วนลด</span>
-                    <strong>{formatCurrency(course.discountAmount)}</strong>
-                  </div>
 
                   <div>
                     <span>ยอดชำระ</span>
@@ -474,10 +469,6 @@ function StudentMyCoursesPage() {
                 <strong>{formatCurrency(selectedCourse.amount)}</strong>
               </div>
 
-              <div className="smc-detail-row">
-                <span>ส่วนลด</span>
-                <strong>{formatCurrency(selectedCourse.discountAmount)}</strong>
-              </div>
 
               <div className="smc-detail-row">
                 <span>ยอดชำระ</span>

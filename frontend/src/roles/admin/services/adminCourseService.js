@@ -18,6 +18,9 @@ function apiError(error, label) {
       const msgs = Object.values(errors).flat();
       if (msgs.length > 0) return msgs.join(', ');
     }
+    if (serverMsg === 'Course must have at least 1 lesson before it can be opened for registration') {
+      return 'คอร์สนี้ยังไม่มีบทเรียน กรุณาเพิ่มบทเรียนอย่างน้อย 1 บทก่อนเปิดรับสมัคร';
+    }
     return serverMsg || 'ข้อมูลไม่ถูกต้อง กรุณาตรวจสอบอีกครั้ง';
   }
   if (status === 404) return 'ไม่พบข้อมูล (404 Not Found)';
@@ -50,7 +53,6 @@ export async function createCourse(form) {
     price:                 form.price != null && form.price !== '' ? Number(form.price) : 0,
     description:           form.description?.trim() || null,
     totalHours:            Number(form.totalHours),
-    hoursPerSession:       Number(form.hoursPerSession),
     seatLimit:             Number(form.seatLimit),
     registrationStartDate: form.registrationStartDate || null,
     registrationEndDate:   form.registrationEndDate || null,

@@ -291,28 +291,7 @@ function StudentProfilePage() {
                   value={form.birthDate}
                   onChange={handleChange}
                 />
-
-                <Field
-                  label="ธนาคาร"
-                  name="bankName"
-                  value={form.bankName}
-                  onChange={handleChange}
-                />
-
-                <Field
-                  label="ชื่อบัญชีธนาคาร"
-                  name="bankAccountName"
-                  value={form.bankAccountName}
-                  onChange={handleChange}
-                />
-
-                <Field
-                  label="เลขบัญชีธนาคาร"
-                  name="bankAccountNumber"
-                  value={form.bankAccountNumber}
-                  onChange={handleChange}
-                />
-
+                
                 <div className="sp-field sp-field-full">
                   <label htmlFor="address">ที่อยู่</label>
                   <textarea

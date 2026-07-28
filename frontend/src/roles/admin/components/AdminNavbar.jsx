@@ -10,13 +10,17 @@ const BREADCRUMB_MAP = {
   '/admin/tutors':            'ติวเตอร์',
   '/admin/courses':           'คอร์สเรียน',
   '/admin/enrollments':       'การสมัครเรียน',
-  '/admin/payments':          'การชำระเงิน',
+  '/admin/payments':          'ประวัติการชำระเงิน',
   '/admin/exams':             'ข้อสอบ',
   '/admin/attendance':        'การเข้าเรียน',
   '/admin/notifications':     'การแจ้งเตือน',
   '/admin/reports':           'รายงาน',
   '/admin/exam-institutions': 'สถาบันที่จัดสอบ',
   '/admin/settings':          'ตั้งค่าสถาบัน',
+  '/admin/student-exam-achievements': 'นักเรียนที่สอบติด',
+  '/admin/courses/create': 'เพิ่มคอร์สเรียนใหม่',
+  
+
 };
 
 export default function AdminNavbar({ onMenuToggle }) {

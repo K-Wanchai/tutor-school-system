@@ -5,11 +5,13 @@ import AdminDashboardPage from '../roles/admin/pages/AdminDashboardPage';
 import AdminStudentManagementPage from '../roles/admin/pages/AdminStudentManagementPage';
 import AdminTutorManagementPage from '../roles/admin/pages/AdminTutorManagementPage';
 import AdminCourseManagementPage from '../roles/admin/pages/AdminCourseManagementPage';
+import AdminCourseCreatePage from '../roles/admin/pages/AdminCourseCreatePage';
 import AdminSettingsPage from '../roles/admin/pages/AdminSettingsPage';
 import AdminEnrollmentManagementPage from '../roles/admin/pages/AdminEnrollmentManagementPage';
 import AdminPaymentManagementPage from '../roles/admin/pages/AdminPaymentManagementPage';
 import ExamInstitutionManagePage from '../roles/admin/pages/ExamInstitutionManagePage';
 import ExamInstitutionDetailPage from '../roles/admin/pages/ExamInstitutionDetailPage';
+import StudentExamAchievementManagePage from '../roles/admin/pages/StudentExamAchievementManagePage';
 import StudentAchievementDetailPage from '../roles/admin/pages/StudentAchievementDetailPage';
 
 const adminRoutes = (
@@ -25,10 +27,12 @@ const adminRoutes = (
     <Route path="students" element={<AdminStudentManagementPage />} />
     <Route path="tutors" element={<AdminTutorManagementPage />} />
     <Route path="courses" element={<AdminCourseManagementPage />} />
+    <Route path="courses/create" element={<AdminCourseCreatePage />} />
     <Route path="enrollments" element={<AdminEnrollmentManagementPage />} />
     <Route path="payments" element={<AdminPaymentManagementPage />} />
     <Route path="exam-institutions" element={<ExamInstitutionManagePage />} />
     <Route path="exam-institutions/:institutionId" element={<ExamInstitutionDetailPage />} />
+    <Route path="student-exam-achievements" element={<StudentExamAchievementManagePage />} />
     <Route path="student-exam-achievements/:achievementId/detail" element={<StudentAchievementDetailPage />} />
     <Route path="settings" element={<AdminSettingsPage />} />
   </Route>

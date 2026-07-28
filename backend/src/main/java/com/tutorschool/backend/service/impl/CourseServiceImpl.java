@@ -1,16 +1,10 @@
 package com.tutorschool.backend.service.impl;
 
 import java.math.BigDecimal;
-import java.time.Duration;
 import java.time.LocalDate;
 import java.time.LocalTime;
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.HashMap;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -145,9 +139,9 @@ public class CourseServiceImpl implements CourseService {
 
         BigDecimal price = (request.getPrice() != null) ? request.getPrice() : BigDecimal.ZERO;
 
-        // ระบบจัดวัน-เวลาสอนให้ติวเตอร์เองอัตโนมัติ ไม่ให้แอดมินเลือกเอง — ต้องไม่ชนกับคอร์สอื่นของติวเตอร์คนเดียวกัน
-        Duration sessionLength = toSessionDuration(request.getHoursPerSession());
-        String scheduleDays = autoAssignScheduleDays(tutor.getId(), request.getTotalHours(), sessionLength, null);
+        // แอดมินเลือกวัน-เวลาสอนเอง — ต้องไม่ชนกับคอร์สอื่นของติวเตอร์คนเดียวกัน
+        String scheduleDays = request.getScheduleDays();
+        validateNoScheduleConflict(tutor.getId(), scheduleDays, null);
 
         Course course = Course.builder()
                 .courseName(request.getCourseName())
@@ -180,89 +174,35 @@ public class CourseServiceImpl implements CourseService {
         return courseMapper.toDetailResponse(course, 0L);
     }
 
-    private static final LocalTime WORK_START = LocalTime.of(9, 0);
-    private static final LocalTime WORK_END = LocalTime.of(20, 0);
-    private static final String[] WEEK_DAYS = {"MON", "TUE", "WED", "THU", "FRI", "SAT", "SUN"};
-
-    private int computeDaysPerWeek(int totalHours) {
-        if (totalHours <= 6) return 1;
-        if (totalHours <= 20) return 2;
-        if (totalHours <= 40) return 3;
-        return 4;
-    }
-
-    private Duration toSessionDuration(BigDecimal hoursPerSession) {
-        return Duration.ofMinutes(hoursPerSession.multiply(BigDecimal.valueOf(60)).longValue());
-    }
-
     /**
-     * Auto-picks weekly teaching day/time slots for a tutor (session length per request, 09:00-20:00),
-     * avoiding any overlap with that tutor's OTHER existing courses. Number of days/week is
-     * derived from totalHours (see computeDaysPerWeek). excludeCourseId lets a future
-     * update-course flow exclude the course being edited from its own conflict check.
+     * Validates that the admin-chosen scheduleDays ("MON:10:00-12:00,WED:..." format) does not
+     * overlap, on any shared day, with the SAME tutor's other existing courses. excludeCourseId
+     * lets the update-course flow exclude the course being edited from its own conflict check.
      */
-    private String autoAssignScheduleDays(Long tutorId, int totalHours, Duration sessionLength, Long excludeCourseId) {
-        int daysNeeded = computeDaysPerWeek(totalHours);
+    private void validateNoScheduleConflict(Long tutorId, String scheduleDays, Long excludeCourseId) {
+        Map<String, LocalTime[]> newSlots = ScheduleDaysParser.parseSlots(scheduleDays);
 
-        Map<String, List<LocalTime[]>> busyByDay = new HashMap<>();
         for (Course other : courseRepository.findByTutorId(tutorId)) {
             if (excludeCourseId != null && excludeCourseId.equals(other.getId())) {
                 continue;
             }
-            ScheduleDaysParser.parseSlots(other.getScheduleDays())
-                    .forEach((day, slot) -> busyByDay.computeIfAbsent(day, k -> new ArrayList<>()).add(slot));
-        }
 
-        Map<String, LocalTime[]> assigned = new LinkedHashMap<>();
+            Map<String, LocalTime[]> otherSlots = ScheduleDaysParser.parseSlots(other.getScheduleDays());
+            for (Map.Entry<String, LocalTime[]> entry : newSlots.entrySet()) {
+                LocalTime[] otherSlot = otherSlots.get(entry.getKey());
+                if (otherSlot == null) {
+                    continue;
+                }
 
-        for (String day : WEEK_DAYS) {
-            if (assigned.size() >= daysNeeded) {
-                break;
-            }
-
-            List<LocalTime[]> busy = busyByDay.getOrDefault(day, List.of()).stream()
-                    .sorted(Comparator.comparing(iv -> iv[0]))
-                    .toList();
-
-            LocalTime[] freeSlot = findFreeSlot(busy, WORK_START, WORK_END, sessionLength);
-            if (freeSlot != null) {
-                assigned.put(day, freeSlot);
+                LocalTime[] slot = entry.getValue();
+                boolean overlap = slot[0].isBefore(otherSlot[1]) && otherSlot[0].isBefore(slot[1]);
+                if (overlap) {
+                    throw new CourseScheduleConflictException(
+                            "วัน-เวลาที่เลือกชนกับคอร์ส \"" + other.getCourseName() + "\" ของติวเตอร์คนนี้ ("
+                                    + entry.getKey() + " " + otherSlot[0] + "-" + otherSlot[1] + ")");
+                }
             }
         }
-
-        if (assigned.size() < daysNeeded) {
-            throw new CourseScheduleConflictException(
-                    "ไม่สามารถจัดตารางสอนให้ติวเตอร์คนนี้ได้ครบตามจำนวนที่ต้องการ (ต้องการ "
-                            + daysNeeded + " วัน/สัปดาห์ แต่หาวัน-เวลาว่างได้เพียง " + assigned.size()
-                            + " วัน) กรุณาลดจำนวนชั่วโมงรวมของคอร์ส หรือมอบหมายติวเตอร์คนอื่น");
-        }
-
-        return java.util.Arrays.stream(WEEK_DAYS)
-                .filter(assigned::containsKey)
-                .map(day -> day + ":" + assigned.get(day)[0] + "-" + assigned.get(day)[1])
-                .collect(Collectors.joining(","));
-    }
-
-    private LocalTime[] findFreeSlot(List<LocalTime[]> busyIntervals, LocalTime workStart, LocalTime workEnd,
-                                      Duration sessionLength) {
-        LocalTime cursor = workStart;
-
-        for (LocalTime[] busy : busyIntervals) {
-            LocalTime slotEnd = cursor.plus(sessionLength);
-            if (!slotEnd.isAfter(busy[0])) {
-                return new LocalTime[]{cursor, slotEnd};
-            }
-            if (busy[1].isAfter(cursor)) {
-                cursor = busy[1];
-            }
-        }
-
-        LocalTime slotEnd = cursor.plus(sessionLength);
-        if (!slotEnd.isAfter(workEnd)) {
-            return new LocalTime[]{cursor, slotEnd};
-        }
-
-        return null;
     }
 
     private void sendCourseAssignedNotification(Course course, Tutor tutor) {
@@ -303,6 +243,8 @@ public class CourseServiceImpl implements CourseService {
         validateCourseDates(request.getRegistrationStartDate(),
                 request.getRegistrationEndDate(),
                 request.getCourseStartDate());
+
+        validateNoScheduleConflict(Tutor.getId(), request.getScheduleDays(), id);
 
         course.setCourseName(request.getCourseName());
         course.setPrice(request.getPrice());

@@ -5,8 +5,10 @@ import com.tutorschool.backend.dto.request.ConfirmEnrollmentRequest;
 import com.tutorschool.backend.dto.request.EnrollMyselfRequest;
 import com.tutorschool.backend.dto.response.ApiResponse;
 import com.tutorschool.backend.dto.response.EnrollmentResponse;
+import com.tutorschool.backend.entity.Role;
 import com.tutorschool.backend.entity.User;
 import com.tutorschool.backend.repository.StudentRepository;
+import com.tutorschool.backend.exception.ForbiddenException;
 import com.tutorschool.backend.exception.ResourceNotFoundException;
 import com.tutorschool.backend.service.EnrollmentService;
 import jakarta.validation.Valid;
@@ -143,7 +145,18 @@ public class EnrollmentController {
 
     @DeleteMapping("/{id}")
     @PreAuthorize("hasAnyRole('ADMIN', 'STUDENT')")
-    public ResponseEntity<ApiResponse<Void>> cancelEnrollment(@PathVariable Long id) {
+    public ResponseEntity<ApiResponse<Void>> cancelEnrollment(
+            @PathVariable Long id,
+            @AuthenticationPrincipal User currentUser) {
+        if (currentUser.getRole() != Role.ADMIN) {
+            Long studentId = studentRepository.findByUserId(currentUser.getId())
+                    .orElseThrow(() -> new ResourceNotFoundException("Student profile not found"))
+                    .getId();
+            EnrollmentResponse existing = enrollmentService.getEnrollmentById(id);
+            if (!studentId.equals(existing.getStudentId())) {
+                throw new ForbiddenException("You can only cancel your own enrollment");
+            }
+        }
         enrollmentService.cancelEnrollment(id);
         return ResponseEntity.ok(ApiResponse.success("Enrollment cancelled successfully"));
     }

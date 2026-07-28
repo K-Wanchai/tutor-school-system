@@ -1,41 +1,24 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { getAllEnrollments } from '../services/adminEnrollmentService';
 import { resolveFileUrl } from '../../../shared/services/api';
+import {
+  ENROLLMENT_HISTORY_STATUSES,
+  ENROLLMENT_HISTORY_STATUS_LABEL,
+  getEnrollmentHistoryStatus,
+} from '../../../shared/utils/enrollmentHistoryStatus';
 import './AdminPaymentManagementPage.css';
 
 // ── Labels & Badge Maps ─────────────────────────────────────────────────────
+// สถานะที่แสดง (badge เดียว) ใช้ชุดเดียวกับหน้าประวัติของนักเรียน — ดู shared/utils/enrollmentHistoryStatus
 
-const PAYMENT_STATUS_LABEL = {
-  UNPAID: 'ยังไม่ชำระ',
-  PENDING_VERIFICATION: 'รอการยืนยันชำระเงิน',
-  PAID: 'ชำระแล้ว',
-  FAILED: 'ไม่สำเร็จ',
-  REFUNDED: 'คืนเงินแล้ว',
-};
-
-const PAYMENT_STATUS_TONE = {
-  UNPAID: 'default',
+const STATUS_TONE = {
   PENDING_VERIFICATION: 'warning',
-  PAID: 'success',
-  FAILED: 'error',
-  REFUNDED: 'info',
-};
-
-const ENROLLMENT_STATUS_LABEL = {
-  PENDING: 'รอดำเนินการ',
-  APPROVED: 'ชำระเงินเรียบร้อยแล้ว',
-  REJECTED: 'ปฏิเสธ',
-  CANCELLED: 'ยกเลิก',
-  COMPLETED: 'เสร็จสิ้น',
-};
-
-const ENROLLMENT_STATUS_TONE = {
-  PENDING: 'warning',
   APPROVED: 'success',
   REJECTED: 'error',
   CANCELLED: 'default',
-  COMPLETED: 'info',
 };
+
+const STATUS_TABS = ['ALL', ...ENROLLMENT_HISTORY_STATUSES];
 
 const PAYMENT_METHOD_LABEL = {
   BANK_TRANSFER: 'โอนเงินผ่านธนาคาร',
@@ -44,7 +27,6 @@ const PAYMENT_METHOD_LABEL = {
   CREDIT_CARD: 'บัตรเครดิต',
 };
 
-const PAYMENT_TABS = ['ALL', 'PENDING_VERIFICATION', 'PAID', 'FAILED', 'UNPAID', 'REFUNDED'];
 const PAGE_SIZE = 10;
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -105,8 +87,7 @@ function TransactionDetailModal({ enrollment, onClose }) {
 
         <div className="pm-modal-body">
           <div className="pm-status-row">
-            <Badge value={enrollment.paymentStatus} labelMap={PAYMENT_STATUS_LABEL} toneMap={PAYMENT_STATUS_TONE} />
-            <Badge value={enrollment.status} labelMap={ENROLLMENT_STATUS_LABEL} toneMap={ENROLLMENT_STATUS_TONE} />
+            <Badge value={getEnrollmentHistoryStatus(enrollment)} labelMap={ENROLLMENT_HISTORY_STATUS_LABEL} toneMap={STATUS_TONE} />
           </div>
 
           <div className="pm-detail-grid">
@@ -134,7 +115,6 @@ function TransactionDetailModal({ enrollment, onClose }) {
               <div className="pm-detail-rows">
                 <DetailRow label="ช่องทางชำระ" value={PAYMENT_METHOD_LABEL[enrollment.paymentMethod]} />
                 <DetailRow label="ยอดเต็ม" value={formatCurrency(enrollment.amount)} />
-                {hasDiscount && <DetailRow label="ส่วนลด" value={formatCurrency(enrollment.discountAmount)} />}
                 <DetailRow label="ยอดสุทธิ" value={formatCurrency(enrollment.finalAmount)} />
                 <DetailRow label="หมายเหตุเดิม" value={enrollment.note} />
               </div>
@@ -190,18 +170,18 @@ export default function AdminPaymentManagementPage() {
   useEffect(() => { load(); }, [load]);
 
   const stats = useMemo(() => {
-    const paid = enrollments.filter((e) => e.paymentStatus === 'PAID');
+    const approved = enrollments.filter((e) => getEnrollmentHistoryStatus(e) === 'APPROVED');
     return {
-      pendingVerification: enrollments.filter((e) => e.paymentStatus === 'PENDING_VERIFICATION').length,
-      paid: paid.length,
-      failed: enrollments.filter((e) => e.paymentStatus === 'FAILED').length,
-      revenue: paid.reduce((sum, e) => sum + (Number(e.finalAmount) || 0), 0),
+      pendingVerification: enrollments.filter((e) => getEnrollmentHistoryStatus(e) === 'PENDING_VERIFICATION').length,
+      approved: approved.length,
+      rejected: enrollments.filter((e) => getEnrollmentHistoryStatus(e) === 'REJECTED').length,
+      revenue: approved.reduce((sum, e) => sum + (Number(e.finalAmount) || 0), 0),
     };
   }, [enrollments]);
 
   const filtered = useMemo(() => {
     let list = enrollments;
-    if (activeTab !== 'ALL') list = list.filter((e) => e.paymentStatus === activeTab);
+    if (activeTab !== 'ALL') list = list.filter((e) => getEnrollmentHistoryStatus(e) === activeTab);
     const term = searchTerm.trim().toLowerCase();
     if (term) {
       list = list.filter((e) =>
@@ -258,12 +238,12 @@ export default function AdminPaymentManagementPage() {
           <span className="pm-stat-label">รอตรวจสอบ</span>
         </div>
         <div className="pm-stat-card pm-stat-card--success">
-          <span className="pm-stat-value">{loading ? '...' : stats.paid}</span>
-          <span className="pm-stat-label">ชำระแล้ว</span>
+          <span className="pm-stat-value">{loading ? '...' : stats.approved}</span>
+          <span className="pm-stat-label">ชำระเงินเรียบร้อยแล้ว</span>
         </div>
         <div className="pm-stat-card pm-stat-card--error">
-          <span className="pm-stat-value">{loading ? '...' : stats.failed}</span>
-          <span className="pm-stat-label">ไม่สำเร็จ</span>
+          <span className="pm-stat-value">{loading ? '...' : stats.rejected}</span>
+          <span className="pm-stat-label">ปฏิเสธ</span>
         </div>
         <div className="pm-stat-card">
           <span className="pm-stat-value">{loading ? '...' : formatCurrency(stats.revenue)}</span>
@@ -273,13 +253,13 @@ export default function AdminPaymentManagementPage() {
 
       {/* ── Tabs ── */}
       <div className="pm-tabs">
-        {PAYMENT_TABS.map((tab) => (
+        {STATUS_TABS.map((tab) => (
           <button
             key={tab}
             className={`pm-tab${activeTab === tab ? ' pm-tab--active' : ''}`}
             onClick={() => handleTabChange(tab)}
           >
-            {tab === 'ALL' ? 'ทั้งหมด' : PAYMENT_STATUS_LABEL[tab]}
+            {tab === 'ALL' ? 'ทั้งหมด' : ENROLLMENT_HISTORY_STATUS_LABEL[tab]}
           </button>
         ))}
       </div>
@@ -343,7 +323,7 @@ export default function AdminPaymentManagementPage() {
                           <span className="pm-text-secondary">—</span>
                         )}
                       </td>
-                      <td><Badge value={e.paymentStatus} labelMap={PAYMENT_STATUS_LABEL} toneMap={PAYMENT_STATUS_TONE} /></td>
+                      <td><Badge value={getEnrollmentHistoryStatus(e)} labelMap={ENROLLMENT_HISTORY_STATUS_LABEL} toneMap={STATUS_TONE} /></td>
                       <td>
                         <button className="pm-row-btn" onClick={() => setReviewEnrollment(e)}>
                           ดูรายละเอียดทั้งหมด

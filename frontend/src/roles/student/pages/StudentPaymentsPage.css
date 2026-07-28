@@ -55,7 +55,7 @@
   .pay-card { padding: 16px; border-radius: 16px; gap: 12px; }
   .pay-amount { font-size: 22px; }
   .pay-card-footer { gap: 8px; }
-  .pay-btn-outline, .pay-btn-primary { flex: 1; justify-content: center; font-size: 13px; padding: 9px 10px; }
+  .pay-btn-outline, .pay-btn-primary, .pay-btn-danger { font-size: 13px; padding: 9px 10px; }
 
   .pay-submitted-note { flex-wrap: wrap; font-size: 13px; }
   .pay-slip-link { margin-left: 0; }
@@ -141,13 +141,17 @@
 .pay-slip-link { margin-left: auto; font-size: 13px; color: #7c3aed; text-decoration: underline; }
 
 /* Card Footer */
-.pay-card-footer { display: flex; justify-content: flex-end; gap: 10px; border-top: 1px solid #f3f4f6; padding-top: 16px; flex-wrap: wrap; }
+.pay-card-footer { display: flex; flex-direction: column; gap: 10px; border-top: 1px solid #f3f4f6; padding-top: 16px; }
 
-.pay-btn-outline { display: flex; align-items: center; gap: 6px; font-size: 14px; font-weight: 600; color: #374151; background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 10px; padding: 9px 16px; cursor: pointer; transition: background .15s; }
+.pay-btn-outline { display: flex; align-items: center; justify-content: center; gap: 6px; width: 100%; font-size: 14px; font-weight: 600; color: #374151; background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 10px; padding: 9px 16px; cursor: pointer; transition: background .15s; }
 .pay-btn-outline:hover { background: #f3f4f6; }
 
-.pay-btn-primary { display: flex; align-items: center; gap: 6px; font-size: 14px; font-weight: 700; color: white; background: #7c3aed; border: none; border-radius: 10px; padding: 9px 18px; cursor: pointer; transition: background .15s; }
+.pay-btn-primary { display: flex; align-items: center; justify-content: center; gap: 6px; width: 100%; font-size: 14px; font-weight: 700; color: white; background: #7c3aed; border: none; border-radius: 10px; padding: 9px 18px; cursor: pointer; transition: background .15s; }
 .pay-btn-primary:hover { background: #6d28d9; }
+
+.pay-btn-danger { display: flex; align-items: center; justify-content: center; gap: 6px; width: 100%; font-size: 14px; font-weight: 600; color: #b91c1c; background: #fef2f2; border: 1px solid #fecaca; border-radius: 10px; padding: 9px 16px; cursor: pointer; transition: background .15s; }
+.pay-btn-danger:hover { background: #fee2e2; }
+.pay-btn-danger:disabled { opacity: .6; cursor: not-allowed; }
 
 /* Bank */
 .pay-bank-layout { display: flex; gap: 24px; align-items: flex-start; flex-wrap: wrap; }

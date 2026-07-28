@@ -16,7 +16,6 @@ const PAYMENT_STATUS_LABEL = {
   PENDING_VERIFICATION: 'รอการยืนยันชำระเงิน',
   PAID: 'ชำระแล้ว',
   FAILED: 'ไม่สำเร็จ',
-  REFUNDED: 'คืนเงินแล้ว',
 };
 
 const PAYMENT_STATUS_TONE = {
@@ -24,7 +23,6 @@ const PAYMENT_STATUS_TONE = {
   PENDING_VERIFICATION: 'warning',
   PAID: 'success',
   FAILED: 'error',
-  REFUNDED: 'info',
 };
 
 const PAYMENT_METHOD_LABEL = {
@@ -34,9 +32,6 @@ const PAYMENT_METHOD_LABEL = {
   CREDIT_CARD: 'บัตรเครดิต',
 };
 
-// Only PENDING enrollments ever appear on this page, so tabs just narrow by
-// payment status (approved/rejected/etc. items live on the payment history page).
-const PAYMENT_FILTER_TABS = ['ALL', 'PENDING_VERIFICATION', 'UNPAID'];
 const PAGE_SIZE = 10;
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -122,7 +117,6 @@ function DetailModal({ enrollment, onClose, onAction, actionPending }) {
               <h3 className="em-detail-section-title">ข้อมูลการชำระเงิน</h3>
               <div className="em-detail-rows">
                 <DetailRow label="ยอดเต็ม" value={formatCurrency(enrollment.amount)} />
-                <DetailRow label="ส่วนลด" value={formatCurrency(enrollment.discountAmount)} />
                 <DetailRow label="ยอดสุทธิ" value={formatCurrency(enrollment.finalAmount)} />
                 <DetailRow label="ช่องทางชำระ" value={PAYMENT_METHOD_LABEL[enrollment.paymentMethod] || '—'} />
               </div>
@@ -165,13 +159,6 @@ function DetailModal({ enrollment, onClose, onAction, actionPending }) {
               >
                 ปฏิเสธการสมัคร
               </button>
-              <button
-                className="em-btn em-btn--ghost"
-                disabled={actionPending}
-                onClick={() => onAction('cancel', enrollment, note)}
-              >
-                ยกเลิกการสมัคร
-              </button>
             </div>
           </div>
         </div>
@@ -186,7 +173,6 @@ export default function AdminEnrollmentManagementPage() {
   const [enrollments, setEnrollments] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const [activeTab, setActiveTab] = useState('ALL');
   const [searchTerm, setSearchTerm] = useState('');
   const [currentPage, setCurrentPage] = useState(0);
   const [detailEnrollment, setDetailEnrollment] = useState(null);
@@ -206,7 +192,9 @@ export default function AdminEnrollmentManagementPage() {
       const list = Array.isArray(data) ? data : [];
       // This page is the review inbox — once an application is decided
       // (approved/rejected/cancelled/completed) it belongs on the history page.
-      setEnrollments(list.filter((e) => e.status === 'PENDING'));
+      // Applications with no slip uploaded yet (paymentStatus UNPAID/FAILED) still
+      // belong to the student — they only land here once there's something to review.
+      setEnrollments(list.filter((e) => e.status === 'PENDING' && e.paymentStatus === 'PENDING_VERIFICATION'));
     } catch (err) {
       setError(err.message || 'ไม่สามารถโหลดข้อมูลการสมัครเรียนได้');
     } finally {
@@ -218,13 +206,10 @@ export default function AdminEnrollmentManagementPage() {
 
   const stats = useMemo(() => ({
     total: enrollments.length,
-    awaitingSlipReview: enrollments.filter((e) => e.paymentStatus === 'PENDING_VERIFICATION').length,
-    awaitingPayment: enrollments.filter((e) => e.paymentStatus === 'UNPAID').length,
   }), [enrollments]);
 
   const filtered = useMemo(() => {
     let list = enrollments;
-    if (activeTab !== 'ALL') list = list.filter((e) => e.paymentStatus === activeTab);
     const term = searchTerm.trim().toLowerCase();
     if (term) {
       list = list.filter((e) =>
@@ -234,15 +219,10 @@ export default function AdminEnrollmentManagementPage() {
       );
     }
     return [...list].sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
-  }, [enrollments, activeTab, searchTerm]);
+  }, [enrollments, searchTerm]);
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   const pageItems = filtered.slice(currentPage * PAGE_SIZE, currentPage * PAGE_SIZE + PAGE_SIZE);
-
-  function handleTabChange(tab) {
-    setActiveTab(tab);
-    setCurrentPage(0);
-  }
 
   function handleSearchChange(e) {
     setSearchTerm(e.target.value);
@@ -294,7 +274,7 @@ export default function AdminEnrollmentManagementPage() {
       <div className="em-header">
         <div>
           <h1 className="em-title">การสมัครเรียน</h1>
-          <p className="em-subtitle">ตรวจสอบใบสมัครที่รอดำเนินการ — เมื่ออนุมัติหรือปฏิเสธแล้วจะย้ายไปหน้าประวัติการชำระเงินทันที</p>
+          <p className="em-subtitle">ตรวจสอบใบสมัครที่ส่งสลิปการชำระเงินแล้ว รอการอนุมัติ/ปฏิเสธ — เมื่ออนุมัติหรือปฏิเสธแล้วจะย้ายไปหน้าประวัติการชำระเงินทันที</p>
         </div>
         <div className="em-search-wrap">
           <svg className="em-search-icon" viewBox="0 0 20 20" fill="currentColor" width="15" height="15">
@@ -317,31 +297,10 @@ export default function AdminEnrollmentManagementPage() {
 
       {/* ── Stats ── */}
       <div className="em-stats-grid">
-        <div className="em-stat-card">
-          <span className="em-stat-value">{loading ? '...' : stats.total}</span>
-          <span className="em-stat-label">รอดำเนินการทั้งหมด</span>
-        </div>
         <div className="em-stat-card em-stat-card--warning">
-          <span className="em-stat-value">{loading ? '...' : stats.awaitingSlipReview}</span>
+          <span className="em-stat-value">{loading ? '...' : stats.total}</span>
           <span className="em-stat-label">รอการยืนยันชำระเงิน</span>
         </div>
-        <div className="em-stat-card">
-          <span className="em-stat-value">{loading ? '...' : stats.awaitingPayment}</span>
-          <span className="em-stat-label">ยังไม่ชำระเงิน</span>
-        </div>
-      </div>
-
-      {/* ── Tabs ── */}
-      <div className="em-tabs">
-        {PAYMENT_FILTER_TABS.map((tab) => (
-          <button
-            key={tab}
-            className={`em-tab${activeTab === tab ? ' em-tab--active' : ''}`}
-            onClick={() => handleTabChange(tab)}
-          >
-            {tab === 'ALL' ? 'ทั้งหมด' : PAYMENT_STATUS_LABEL[tab]}
-          </button>
-        ))}
       </div>
 
       {/* ── Table Card ── */}
@@ -363,9 +322,9 @@ export default function AdminEnrollmentManagementPage() {
 
         {!loading && !error && pageItems.length === 0 && (
           <div className="em-empty">
-            <p className="em-empty-title">ไม่พบใบสมัครที่รอดำเนินการ</p>
+            <p className="em-empty-title">ไม่พบใบสมัครที่รอตรวจสอบ</p>
             <p className="em-empty-subtitle">
-              {searchTerm ? `ไม่พบผลลัพธ์สำหรับ "${searchTerm}"` : 'ใบสมัครทั้งหมดได้รับการดำเนินการแล้ว ดูได้ที่หน้าประวัติการชำระเงิน'}
+              {searchTerm ? `ไม่พบผลลัพธ์สำหรับ "${searchTerm}"` : 'ยังไม่มีใบสมัครที่ส่งสลิปการชำระเงินเข้ามารอตรวจสอบ'}
             </p>
           </div>
         )}
