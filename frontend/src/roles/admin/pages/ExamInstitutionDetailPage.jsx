@@ -28,6 +28,9 @@ const TYPE_LABEL = {
   UNIVERSITY: 'มหาวิทยาลัย / ป.ตรี',
 };
 
+// เฉพาะการลงทะเบียนที่แอดมินยืนยัน (อนุมัติ) แล้วเท่านั้น ที่นำมาแท็กเป็นคอร์สที่เรียนในผลสอบติดได้
+const CONFIRMED_ENROLLMENT_STATUSES = ['APPROVED', 'COMPLETED'];
+
 const EMPTY_FORM = {
   studentId: '',
   educationLevel: '',
@@ -529,12 +532,17 @@ export default function ExamInstitutionDetailPage() {
       .catch(() => { /* ตัวเลือกนักเรียนเป็นข้อมูลเสริม ไม่บล็อกหน้าหลัก */ });
   }, []);
 
+  // เฉพาะคอร์สที่ลงทะเบียนและผ่านการยืนยัน (อนุมัติ) จากแอดมินแล้ว เท่านั้น ที่นำมาแท็กในผลสอบติดได้
   useEffect(() => {
     if (!form.studentId) { setStudentEnrollments([]); return; }
     let cancelled = false;
     setLoadingEnrollments(true);
     getEnrollmentsByStudent(form.studentId)
-      .then((data) => { if (!cancelled) setStudentEnrollments(Array.isArray(data) ? data : []); })
+      .then((data) => {
+        const list = Array.isArray(data) ? data : [];
+        const confirmed = list.filter((en) => CONFIRMED_ENROLLMENT_STATUSES.includes(en.status));
+        if (!cancelled) setStudentEnrollments(confirmed);
+      })
       .catch(() => { if (!cancelled) setStudentEnrollments([]); })
       .finally(() => { if (!cancelled) setLoadingEnrollments(false); });
     return () => { cancelled = true; };
@@ -614,18 +622,6 @@ export default function ExamInstitutionDetailPage() {
   function fldFaculty(val) {
     setForm((f) => ({ ...f, facultyId: val, academicMajorId: '' }));
     setFormErr((e) => ({ ...e, facultyId: '', academicMajorId: '' }));
-  }
-
-  function openCreate() {
-    setFormMode('create');
-    setEditingId(null);
-    const type = overview?.institution?.institutionType;
-    const mixedUniversity = type === 'UNIVERSITY' && overview?.institution?.offersVocationalDiploma;
-    const lockedLevel = mixedUniversity ? '' : type === 'UNIVERSITY' ? 'BACHELOR' : type === 'VOCATIONAL_DIPLOMA' ? 'VOCATIONAL_DIPLOMA' : '';
-    setForm({ ...EMPTY_FORM, educationLevel: lockedLevel });
-    setFormErr({});
-    setSelectedCourseIds([]);
-    setShowForm(true);
   }
 
   async function openEdit(achievementId) {
@@ -756,7 +752,10 @@ export default function ExamInstitutionDetailPage() {
             ← ย้อนกลับ
           </button>
           <div className="eid-header-top-actions">
-            <button className="eid-btn eid-btn--primary" onClick={openCreate}>
+            <button
+              className="eid-btn eid-btn--primary"
+              onClick={() => navigate('/admin/student-exam-achievements', { state: { presetInstitutionId: institutionId } })}
+            >
               + เพิ่มนักเรียนที่สอบติด
             </button>
             <button className="eid-btn eid-btn--ghost" onClick={() => navigate('/admin/exam-institutions')}>

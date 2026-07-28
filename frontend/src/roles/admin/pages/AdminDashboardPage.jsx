@@ -11,7 +11,6 @@ function StatusBadge({ status }) {
     REJECTED:  'error',
     VERIFIED:  'success',
     CANCELLED: 'error',
-    REFUNDED:  'default',
     PAID:      'success',
     OVERDUE:   'error',
   };
@@ -21,7 +20,6 @@ function StatusBadge({ status }) {
     REJECTED:  'ปฏิเสธ',
     VERIFIED:  'ยืนยันแล้ว',
     CANCELLED: 'ยกเลิก',
-    REFUNDED:  'คืนเงินแล้ว',
     PAID:      'ชำระแล้ว',
     OVERDUE:   'เกินกำหนด',
   };

@@ -60,8 +60,7 @@ public class StudentExamAchievementServiceImpl implements StudentExamAchievement
 
         if (achievementRepository.existsByStudentIdAndExamInstitutionIdAndEducationLevelAndAcademicYearAndActiveTrue(
                 request.getStudentId(), request.getExamInstitutionId(), request.getEducationLevel(), request.getAcademicYear())) {
-            throw new DuplicateAchievementException(
-                    "มีบันทึกผลสอบติดของนักเรียนคนนี้ ที่สถาบัน ระดับ และปีการศึกษาเดียวกันอยู่แล้ว");
+            throw new DuplicateAchievementException(buildDuplicateMessage(student, institution, request));
         }
 
         StudentExamAchievement achievement = StudentExamAchievement.builder()
@@ -112,8 +111,7 @@ public class StudentExamAchievementServiceImpl implements StudentExamAchievement
 
         if (keyChanged && achievementRepository.existsByStudentIdAndExamInstitutionIdAndEducationLevelAndAcademicYearAndActiveTrueAndIdNot(
                 request.getStudentId(), request.getExamInstitutionId(), request.getEducationLevel(), request.getAcademicYear(), id)) {
-            throw new DuplicateAchievementException(
-                    "มีบันทึกผลสอบติดของนักเรียนคนนี้ ที่สถาบัน ระดับ และปีการศึกษาเดียวกันอยู่แล้ว");
+            throw new DuplicateAchievementException(buildDuplicateMessage(student, institution, request));
         }
 
         achievement.setStudent(student);
@@ -226,6 +224,14 @@ public class StudentExamAchievementServiceImpl implements StudentExamAchievement
         }
 
         return enrollments;
+    }
+
+    private String buildDuplicateMessage(Student student, ExamInstitution institution, StudentExamAchievementRequest request) {
+        return "มีบันทึกผลสอบติดของ " + student.getFullName()
+                + " ที่สถาบัน " + institution.getInstitutionName()
+                + " ระดับ " + StudentExamAchievementMapper.toLabel(request.getEducationLevel())
+                + " ปีการศึกษา " + request.getAcademicYear()
+                + " อยู่ในระบบแล้ว กรุณาตรวจสอบรายการที่มีอยู่ หรือแก้ไขรายการเดิมแทนการเพิ่มใหม่";
     }
 
     private void validateLevelDetails(StudentExamAchievementRequest request) {

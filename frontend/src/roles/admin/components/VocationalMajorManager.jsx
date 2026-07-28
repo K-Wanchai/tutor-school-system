@@ -128,7 +128,7 @@ export default function VocationalMajorManager({ institutionId }) {
           ตั้งค่าสาขาของสถาบันนี้ล่วงหน้า เพื่อให้เลือกได้ตอนบันทึกนักเรียนที่สอบติด
         </p>
         <button className="eid-btn eid-btn--primary" onClick={() => setForm({ mode: 'create' })}>
-          + เพิ่มสาขา
+          + เพิ่มสาขา(สำปรับ ปวส.)
         </button>
       </div>
 

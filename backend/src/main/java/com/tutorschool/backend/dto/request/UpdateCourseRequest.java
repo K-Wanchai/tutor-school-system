@@ -49,6 +49,7 @@ public class UpdateCourseRequest {
     @Valid
     private List<CourseTestRequest> tests;
 
+    @NotBlank(message = "Schedule days are required")
     private String scheduleDays;
     private LocalTime scheduleStartTime;
     private LocalTime scheduleEndTime;

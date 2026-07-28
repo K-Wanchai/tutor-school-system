@@ -1,0 +1,77 @@
+/* ── Course Create page: layout ── */
+.cc-page { padding: 24px; max-width: 1300px; margin: 0 auto; }
+
+.cc-breadcrumb { font-size: 0.8rem; color: #9ca3af; margin-bottom: 4px; }
+.cc-breadcrumb a { color: #0d9488; cursor: pointer; text-decoration: none; font-weight: 600; }
+.cc-breadcrumb a:hover { text-decoration: underline; }
+
+/* ── Progress bar ── */
+.cc-progress-track { height: 6px; background: #f3f4f6; border-radius: 9999px; overflow: hidden; margin-bottom: 24px; }
+.cc-progress-fill { height: 100%; background: linear-gradient(90deg, #0d9488, #14b8a6); border-radius: 9999px; transition: width .25s ease; }
+
+/* ── Two-column layout ── */
+.cc-layout { display: grid; grid-template-columns: 1fr 320px; gap: 24px; align-items: start; }
+.cc-main { display: flex; flex-direction: column; gap: 20px; min-width: 0; }
+
+/* ── Section cards ── */
+.cc-card { background: #fff; border-radius: 16px; box-shadow: 0 1px 4px rgba(0,0,0,.08); border: 1px solid #f1f5f9; overflow: hidden; }
+.cc-card-header {
+  display: flex; align-items: flex-start; gap: 12px;
+  padding: 18px 22px; border-bottom: 1px solid #f3f4f6;
+  background: linear-gradient(180deg, #f8fffe, #ffffff);
+}
+.cc-card-step {
+  flex-shrink: 0; width: 28px; height: 28px; border-radius: 50%;
+  background: #0d9488; color: #fff; font-size: 0.8rem; font-weight: 700;
+  display: flex; align-items: center; justify-content: center;
+}
+.cc-card-icon { font-size: 1.3rem; line-height: 1.4; flex-shrink: 0; }
+.cc-card-heading h2 { margin: 0; font-size: 1rem; font-weight: 700; color: #111827; }
+.cc-card-heading p { margin: 2px 0 0; font-size: 0.8rem; color: #9ca3af; }
+.cc-card-body { padding: 20px 22px 22px; display: flex; flex-direction: column; gap: 14px; }
+
+/* ── Sidebar ── */
+.cc-sidebar { position: sticky; top: 20px; display: flex; flex-direction: column; gap: 16px; }
+.cc-sidebar-card { background: #fff; border-radius: 14px; padding: 18px; box-shadow: 0 1px 4px rgba(0,0,0,.08); border: 1px solid #f1f5f9; }
+.cc-sidebar-title { font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; color: #0f766e; margin-bottom: 10px; }
+
+.cc-preview-name { font-size: 1.05rem; font-weight: 700; color: #111827; word-break: break-word; }
+.cc-preview-tutor { font-size: 0.85rem; color: #6b7280; margin-top: 2px; }
+.cc-preview-days { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 10px; }
+.cc-preview-day-chip { background: #f0fdfa; color: #0f766e; border: 1px solid #99f6e4; border-radius: 9999px; padding: 3px 9px; font-size: 0.75rem; font-weight: 600; }
+
+.cc-preview-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 14px; padding-top: 14px; border-top: 1px dashed #e5e7eb; }
+.cc-preview-stats div { display: flex; flex-direction: column; gap: 2px; }
+.cc-preview-stats span { font-size: 0.68rem; color: #9ca3af; }
+.cc-preview-stats strong { font-size: 0.9rem; color: #111827; }
+
+.cc-checklist { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+.cc-checklist li { display: flex; align-items: center; gap: 8px; font-size: 0.85rem; color: #9ca3af; }
+.cc-checklist-icon {
+  width: 18px; height: 18px; border-radius: 50%; border: 1.5px solid #d1d5db;
+  display: flex; align-items: center; justify-content: center; font-size: 0.68rem; flex-shrink: 0;
+}
+.cc-checklist-done { color: #111827; font-weight: 500; }
+.cc-checklist-done .cc-checklist-icon { background: #0d9488; border-color: #0d9488; color: #fff; }
+
+.cc-sidebar-note {
+  font-size: 0.78rem; color: #0f766e; background: #f0fdfa; border: 1px solid #99f6e4;
+  border-radius: 12px; padding: 12px 14px; line-height: 1.55;
+}
+
+/* ── Sticky action bar ── */
+.cc-action-bar {
+  position: sticky; bottom: 0; margin-top: 24px;
+  background: #fff; border-top: 1px solid #e5e7eb;
+  padding: 14px 24px; display: flex; justify-content: flex-end; gap: 10px;
+  border-radius: 14px; box-shadow: 0 -4px 16px rgba(0,0,0,.06);
+}
+
+@media (max-width: 960px) {
+  .cc-layout { grid-template-columns: 1fr; }
+  .cc-sidebar { position: static; }
+}
+
+@media (max-width: 640px) {
+  .cc-preview-stats { grid-template-columns: 1fr 1fr; }
+}

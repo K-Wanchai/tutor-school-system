@@ -25,3 +25,8 @@ export async function enrollCourse(courseId) {
 
   return response.data.data;
 }
+
+export async function cancelEnrollment(enrollmentId) {
+  const response = await api.delete(`/enrollments/${enrollmentId}`);
+  return response.data.data;
+}

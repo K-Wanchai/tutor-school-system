@@ -68,6 +68,7 @@
 .cm-modal { background: #fff; border-radius: 16px; width: 100%; max-width: 660px; max-height: 90vh; overflow-y: auto; box-shadow: 0 20px 60px rgba(0,0,0,.25); }
 .cm-modal-sm { max-width: 420px; }
 .cm-modal-lg { max-width: 760px; }
+.cm-modal-page { margin: 0 auto; }
 .cm-modal-header { display: flex; justify-content: space-between; align-items: center; padding: 20px 24px 0; }
 .cm-modal-header h2 { font-size: 1.15rem; font-weight: 700; color: #0f766e; margin: 0; }
 .cm-modal-close { background: none; border: none; font-size: 1.2rem; cursor: pointer; color: #9ca3af; padding: 4px 8px; }

@@ -17,7 +17,6 @@ const PAYMENT_STATUS_LABELS = {
   PENDING_VERIFICATION: 'รอการยืนยันชำระเงิน',
   PAID: 'ชำระเงินแล้ว',
   FAILED: 'ชำระเงินไม่สำเร็จ',
-  REFUNDED: 'คืนเงินแล้ว',
 };
 
 function safeText(value) {

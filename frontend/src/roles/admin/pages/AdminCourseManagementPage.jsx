@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { getTutors } from '../services/adminTutorService';
 import {
-  createCourse,
   deleteCourse,
   getCourseStats,
   getCourses,
@@ -9,6 +9,15 @@ import {
   updateCourse,
   updateCourseStatus,
 } from '../services/adminCourseService';
+import {
+  DAYS,
+  DAY_LABEL_TH,
+  EMPTY_COURSE_FORM,
+  parseDaySlots,
+  encodeDaySlots,
+  validateCourseForm,
+} from '../utils/courseScheduleUtils';
+import { ScheduleSection, TutorSelectField } from '../components/CourseScheduleFields';
 import './AdminCourseManagementPage.css';
 
 // ──────────────── helpers ────────────────
@@ -37,269 +46,11 @@ function Toast({ msg, type, onClose }) {
   );
 }
 
-const DAYS = [
-  { key: 'MON', label: 'จ' },
-  { key: 'TUE', label: 'อ' },
-  { key: 'WED', label: 'พ' },
-  { key: 'THU', label: 'พฤ' },
-  { key: 'FRI', label: 'ศ' },
-  { key: 'SAT', label: 'ส' },
-  { key: 'SUN', label: 'อา' },
-];
-
-const DAY_LABEL_TH = { MON:'จันทร์', TUE:'อังคาร', WED:'พุธ', THU:'พฤหัส', FRI:'ศุกร์', SAT:'เสาร์', SUN:'อาทิตย์' };
-
-// รูปแบบใหม่: "MON:10:00-12:00,WED:13:00-15:00"
-function parseDaySlots(str) {
-  if (!str) return {};
-  const slots = {};
-  str.split(',').filter(Boolean).forEach(part => {
-    const colonIdx = part.indexOf(':');
-    if (colonIdx > 0 && colonIdx < part.length - 1) {
-      const day = part.slice(0, colonIdx);
-      const timeRange = part.slice(colonIdx + 1);
-      const dashIdx = timeRange.lastIndexOf('-');
-      slots[day] = dashIdx > 0
-        ? { start: timeRange.slice(0, dashIdx), end: timeRange.slice(dashIdx + 1) }
-        : { start: timeRange, end: '' };
-    } else {
-      // old format (just day name)
-      slots[part] = { start: '', end: '' };
-    }
-  });
-  return slots;
-}
-
-function encodeDaySlots(slots) {
-  return DAYS.map(d => d.key)
-    .filter(k => k in slots)
-    .map(k => {
-      const { start, end } = slots[k];
-      return start && end ? `${k}:${start}-${end}` : k;
-    })
-    .join(',');
-}
-
-// compat: ใช้ใน detail modal
-function parseDays(str) {
-  if (!str) return [];
-  return str.split(',').filter(Boolean).map(p => p.split(':')[0]);
-}
-
-function formatTimeRange(digits) {
-  // digits = สูงสุด 8 ตัว → HH:MM - HH:MM
-  const d = digits.slice(0, 8);
-  let out = '';
-  if (d.length >= 1) out += d.slice(0, 2).padEnd(d.length < 2 ? d.length : 2, '');
-  if (d.length >= 3) out += ':' + d.slice(2, 4).padEnd(d.length < 4 ? d.length - 2 : 2, '');
-  else if (d.length === 2) out += ':';
-  if (d.length >= 5) out += ' - ' + d.slice(4, 6).padEnd(d.length < 6 ? d.length - 4 : 2, '');
-  else if (d.length === 4) out += ' - ';
-  if (d.length >= 7) out += ':' + d.slice(6, 8).padEnd(d.length < 8 ? d.length - 6 : 2, '');
-  else if (d.length === 6) out += ':';
-  return out;
-}
-
-function TimeRangeInput({ startTime, endTime, onChangeStart, onChangeEnd }) {
-  const initDigits = (() => {
-    if (!startTime && !endTime) return '';
-    const s = (startTime || '00:00').replace(':', '');
-    const e = (endTime   || '00:00').replace(':', '');
-    return s + e;
-  })();
-
-  const [digits, setDigits] = useState(initDigits);
-
-  function handleKeyDown(e) {
-    if (e.key === 'Backspace') {
-      e.preventDefault();
-      const next = digits.slice(0, -1);
-      setDigits(next);
-      if (next.length < 4) { onChangeStart(''); onChangeEnd(''); }
-      else if (next.length < 8) {
-        onChangeStart(`${next.slice(0,2)}:${next.slice(2,4)}`);
-        onChangeEnd('');
-      } else {
-        onChangeStart(`${next.slice(0,2)}:${next.slice(2,4)}`);
-        onChangeEnd(`${next.slice(4,6)}:${next.slice(6,8)}`);
-      }
-    }
-  }
-
-  function handleInput(e) {
-    const key = e.nativeEvent?.data;
-    if (!key || !/\d/.test(key)) return;
-    if (digits.length >= 8) return;
-    const next = digits + key;
-    setDigits(next);
-    if (next.length >= 4) onChangeStart(`${next.slice(0,2)}:${next.slice(2,4)}`);
-    if (next.length >= 8) onChangeEnd(`${next.slice(4,6)}:${next.slice(6,8)}`);
-  }
-
-  return (
-    <input
-      type="text"
-      className="cm-time-range-input"
-      placeholder="10:00 - 12:00"
-      value={formatTimeRange(digits)}
-      onKeyDown={handleKeyDown}
-      onChange={handleInput}
-      inputMode="numeric"
-    />
-  );
-}
-
-// ── helper: แปลง "HH:MM" เป็นนาที
-function toMin(t) {
-  if (!t) return 0;
-  const [h, m] = t.split(':').map(Number);
-  return h * 60 + m;
-}
-
-function overlaps(s1, e1, s2, e2) {
-  return toMin(s1) < toMin(e2) && toMin(e1) > toMin(s2);
-}
-
-// ── ตรวจ conflict แต่ละวัน (per-day slots)
-function findConflictDays(scheduleSlots, avail) {
-  if (!avail || !scheduleSlots) return [];
-  return Object.entries(scheduleSlots).flatMap(([day, { start, end }]) => {
-    if (!start || !end) return [];
-    const busy = avail[day]?.busySlots ?? [];
-    return busy
-      .filter(b => overlaps(start, end, b.startTime, b.endTime))
-      .map(b => ({ day, start: b.startTime, end: b.endTime, course: b.courseTitle }));
-  });
-}
-
-// ── panel แสดงตารางว่างของติวเตอร์
-function TutorAvailabilityPanel({ avail, loading }) {
-  if (loading) {
-    return (
-      <div className="cm-avail-panel cm-avail-loading">
-        กำลังโหลดตารางว่างของติวเตอร์...
-      </div>
-    );
-  }
-  if (!avail) return null;
-
-  return (
-    <div className="cm-avail-panel">
-      <div className="cm-avail-title">ตารางว่างของติวเตอร์ (สัปดาห์นี้)</div>
-      <div className="cm-avail-rows">
-        {DAYS.map(({ key }) => {
-          const data = avail[key];
-          const freeSlots = data?.freeSlots ?? [];
-          const hasFree = freeSlots.length > 0;
-          return (
-            <div key={key} className={`cm-avail-row ${hasFree ? 'cm-avail-free' : 'cm-avail-busy'}`}>
-              <span className="cm-avail-day">{DAY_LABEL_TH[key]}</span>
-              <span className="cm-avail-slots">
-                {hasFree
-                  ? freeSlots.map((s, i) => (
-                      <span key={i} className="cm-avail-slot">
-                        {s.startTime}–{s.endTime}
-                      </span>
-                    ))
-                  : <span className="cm-avail-no">ไม่ว่าง</span>
-                }
-              </span>
-            </div>
-          );
-        })}
-      </div>
-    </div>
-  );
-}
-
-function ScheduleSection({ form, fld, avail, err }) {
-  const slots = form.scheduleSlots || {};
-  const orderedSelected = DAYS.map(d => d.key).filter(k => k in slots);
-  const conflicts = findConflictDays(slots, avail);
-  const conflictDaySet = new Set(conflicts.map(c => c.day));
-
-  function toggleDay(key) {
-    const next = { ...slots };
-    if (key in next) {
-      delete next[key];
-    } else {
-      next[key] = { start: '', end: '' };
-    }
-    fld('scheduleSlots', next);
-  }
-
-  function setSlotTime(day, field, value) {
-    fld('scheduleSlots', { ...slots, [day]: { ...slots[day], [field]: value } });
-  }
-
-  return (
-    <div className="cm-schedule-section">
-      <div className="cm-schedule-section-title">
-        <span className="cm-schedule-icon">📅</span>
-        <span>ตารางสอน *</span>
-      </div>
-
-      {/* เลือกวัน */}
-      <div className="cm-field">
-        <label>กดเลือกวันที่สอน และใส่เวลาแต่ละวัน <span className="cm-lbl-hint">(08:00–22:00)</span></label>
-        <div className="cm-day-pills">
-          {DAYS.map(d => (
-            <button key={d.key} type="button"
-              className={`cm-day-pill ${d.key in slots ? 'cm-day-pill--on' : ''}`}
-              onClick={() => toggleDay(d.key)}>
-              {d.label}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      {/* เวลาแต่ละวัน */}
-      {orderedSelected.length > 0 && (
-        <div className="cm-per-day-slots">
-          {orderedSelected.map(key => {
-            const slot = slots[key];
-            const conflict = conflicts.find(c => c.day === key);
-            return (
-              <div key={key} className={`cm-per-day-row ${conflictDaySet.has(key) ? 'cm-per-day-row--conflict' : ''}`}>
-                <span className="cm-per-day-label">{DAY_LABEL_TH[key]}</span>
-                <TimeRangeInput
-                  key={key}
-                  startTime={slot.start}
-                  endTime={slot.end}
-                  onChangeStart={v => setSlotTime(key, 'start', v)}
-                  onChangeEnd={v => setSlotTime(key, 'end', v)}
-                />
-                {conflict ? (
-                  <span className="cm-per-day-conflict-msg">
-                    ซ้ำ {conflict.start}–{conflict.end}{conflict.course ? ` (${conflict.course})` : ''}
-                  </span>
-                ) : (!slot.start || !slot.end) ? (
-                  <span className="cm-per-day-hint-msg">ยังไม่ได้ใส่เวลา</span>
-                ) : null}
-              </div>
-            );
-          })}
-        </div>
-      )}
-
-      {/* error จาก validate (submit) */}
-      {err && (
-        <div className="cm-avail-conflict"><strong>{err}</strong></div>
-      )}
-    </div>
-  );
-}
-
-const EMPTY_FORM = {
-  courseName: '', tutorId: '', price: '',
-  totalHours: '', hoursPerSession: '', seatLimit: '',
-  registrationStartDate: '', registrationEndDate: '',
-  courseStartDate: '', description: '',
-  scheduleSlots: {},
-};
-
 // ──────────────── component ────────────────
 export default function AdminCourseManagementPage() {
+  const navigate = useNavigate();
+  const location = useLocation();
+
   const [courses, setCourses]       = useState([]);
   const [tutors, setTutors]         = useState([]);
   const [tutorLoading, setTutorLoading] = useState(false);
@@ -312,19 +63,27 @@ export default function AdminCourseManagementPage() {
   const [tutorAvail, setTutorAvail]   = useState(null);
   const [availLoading, setAvailLoading] = useState(false);
 
-  const [showCreate, setShowCreate]   = useState(false);
   const [showEdit, setShowEdit]       = useState(false);
   const [showDetail, setShowDetail]   = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
   const [showStatus, setShowStatus]   = useState(false);
   const [selected, setSelected]       = useState(null);
-  const [form, setForm]               = useState(EMPTY_FORM);
+  const [form, setForm]               = useState(EMPTY_COURSE_FORM);
   const [formErr, setFormErr]         = useState({});
   const [saving, setSaving]           = useState(false);
   const [newStatus, setNewStatus]     = useState('');
 
   const notify = useCallback((msg, type = 'success') => setToast({ msg, type }), []);
   const PAGE_SIZE = 10;
+
+  // ── toast ที่ส่งมาจากหน้าเพิ่มคอร์ส (หลังสร้างคอร์สสำเร็จ)
+  useEffect(() => {
+    if (location.state?.toast) {
+      notify(location.state.toast.msg, location.state.toast.type);
+      navigate(location.pathname, { replace: true, state: {} });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // ── load courses
   const load = useCallback(async (p = 0) => {
@@ -369,74 +128,9 @@ export default function AdminCourseManagementPage() {
       .finally(() => setAvailLoading(false));
   }, [form.tutorId]); // eslint-disable-line
 
-  // ── validate
-  // checkSchedule: false เมื่อสร้างคอร์ส (ระบบจัดวัน-เวลาสอนให้อัตโนมัติแล้ว ไม่มี UI ให้เลือกเอง)
-  function validate(f, priceRequired = true, checkSchedule = true) {
-    const e = {};
-    if (!f.courseName?.trim()) e.courseName = 'กรุณากรอกชื่อวิชา';
-    if (!f.tutorId) e.tutorId = 'กรุณาเลือกติวเตอร์';
-    if (priceRequired && (f.price === '' || f.price == null || isNaN(f.price))) e.price = 'กรุณากรอกราคา';
-    else if (f.price !== '' && f.price != null && Number(f.price) < 0) e.price = 'ราคาต้องไม่ติดลบ';
-    if (!f.totalHours || isNaN(f.totalHours) || Number(f.totalHours) < 1) e.totalHours = 'ต้องมากกว่า 0';
-    if (!f.seatLimit  || isNaN(f.seatLimit)  || Number(f.seatLimit)  < 1) e.seatLimit  = 'ต้องมากกว่า 0';
-    if (!f.courseStartDate) e.courseStartDate = 'กรุณาเลือกวันที่เริ่มสอน';
-
-    if (!checkSchedule) {
-      // สร้างคอร์ส (ระบบจัดตารางสอนให้อัตโนมัติ) ต้องระบุชั่วโมงเรียนต่อคาบ
-      if (!f.hoursPerSession || isNaN(f.hoursPerSession) || Number(f.hoursPerSession) <= 0) {
-        e.hoursPerSession = 'กรุณากรอกชั่วโมงเรียนต่อคาบให้มากกว่า 0';
-      }
-    }
-
-    if (checkSchedule) {
-      // บังคับตารางสอน
-      const slots = f.scheduleSlots || {};
-      const selectedDayKeys = Object.keys(slots);
-      if (selectedDayKeys.length === 0) {
-        e.scheduleTime = 'กรุณาเลือกวันสอนอย่างน้อย 1 วัน';
-      } else {
-        const missingTime = selectedDayKeys.filter(k => !slots[k].start || !slots[k].end);
-        if (missingTime.length > 0) {
-          e.scheduleTime = `กรุณาใส่เวลาให้ครบทุกวัน: ${missingTime.map(k => DAY_LABEL_TH[k]).join(', ')}`;
-        }
-      }
-
-      // ตรวจ time conflict กับตารางของติวเตอร์
-      const conflicts = findConflictDays(f.scheduleSlots, tutorAvail);
-      if (conflicts.length > 0) {
-        e.scheduleTime = conflicts.map(c =>
-          `วัน${DAY_LABEL_TH[c.day]} ${c.start}–${c.end}${c.course ? ` (${c.course})` : ''}`
-        ).join(', ');
-      }
-    }
-
-    return e;
-  }
-
   function fld(key, val) {
     setForm(f => ({ ...f, [key]: val }));
     setFormErr(e => ({ ...e, [key]: '' }));
-  }
-
-  // ── CREATE
-  function openCreate() {
-    setForm({ ...EMPTY_FORM });
-    setFormErr({});
-    setShowCreate(true);
-  }
-  async function handleCreate(e) {
-    e.preventDefault();
-    const err = validate(form, true, false);
-    if (Object.keys(err).length) { setFormErr(err); return; }
-    setSaving(true);
-    try {
-      // ไม่ส่ง scheduleDays — ระบบหลังบ้านจะจัดวัน-เวลาสอนให้ติวเตอร์อัตโนมัติ (เลี่ยงชนกับคอร์สอื่นของติวเตอร์คนเดียวกัน)
-      await createCourse({ ...form, price: Number(form.price) });
-      notify('สร้างคอร์สสำเร็จ ระบบจัดวัน-เวลาสอนให้อัตโนมัติแล้ว และส่งการแจ้งเตือนไปยังติวเตอร์แล้ว');
-      setShowCreate(false);
-      load(0); setPage(0);
-    } catch (ex) { notify(ex.message, 'error'); }
-    finally { setSaving(false); }
   }
 
   // ── EDIT
@@ -459,7 +153,7 @@ export default function AdminCourseManagementPage() {
   }
   async function handleEdit(e) {
     e.preventDefault();
-    const err = validate(form, false);
+    const err = validateCourseForm(form, tutorAvail, false);
     if (Object.keys(err).length) { setFormErr(err); return; }
     setSaving(true);
     try {
@@ -501,40 +195,6 @@ export default function AdminCourseManagementPage() {
   // ── DETAIL
   function openDetail(c) { setSelected(c); setShowDetail(true); }
 
-  // ── Tutor dropdown option
-  function TutorOption({ t }) {
-    return (
-      <option key={t.id} value={t.id}>
-        {t.email}{t.firstName ? ` (${t.firstName} ${t.lastName})` : ''}
-        {t.specialization ? ` — ${t.specialization}` : ''}
-      </option>
-    );
-  }
-
-  // ── shared tutor select + availability panel
-  function TutorSelect({ value, onChange, err }) {
-    return (
-      <>
-        <div className="cm-field">
-          <label>ติวเตอร์ * <span className="cm-lbl-hint">(เลือกจากระบบ)</span></label>
-          <select value={value} onChange={e => onChange(e.target.value)} disabled={tutorLoading}>
-            <option value="">
-              {tutorLoading ? 'กำลังโหลดรายชื่อ...' : tutors.length === 0 ? 'ไม่พบติวเตอร์ในระบบ' : '— เลือกติวเตอร์ —'}
-            </option>
-            {tutors.map(t => <TutorOption key={t.id} t={t} />)}
-          </select>
-          {err && <span className="cm-err">{err}</span>}
-          {tutors.length > 0 && !tutorLoading && (
-            <span className="cm-field-hint">มีติวเตอร์ในระบบ {tutors.length} คน</span>
-          )}
-        </div>
-        {value && (
-          <TutorAvailabilityPanel avail={tutorAvail} loading={availLoading} />
-        )}
-      </>
-    );
-  }
-
   return (
     <div className="cm-page">
       {toast && <Toast msg={toast.msg} type={toast.type} onClose={() => setToast(null)} />}
@@ -545,7 +205,7 @@ export default function AdminCourseManagementPage() {
           <h1>จัดการคอร์สเรียน</h1>
           <p>สร้างและจัดการคอร์สเรียนทั้งหมด พร้อมส่งการแจ้งเตือนไปยังติวเตอร์</p>
         </div>
-        <button className="cm-btn-primary" onClick={openCreate}>+ เพิ่มคอร์ส</button>
+        <button className="cm-btn-primary" onClick={() => navigate('/admin/courses/create')}>+ เพิ่มคอร์ส</button>
       </div>
 
       {/* Stats */}
@@ -627,124 +287,6 @@ export default function AdminCourseManagementPage() {
         </div>
       )}
 
-      {/* ═══ CREATE MODAL ═══ */}
-      {showCreate && (
-        <div className="cm-overlay" onClick={() => setShowCreate(false)}>
-          <div className="cm-modal" onClick={e => e.stopPropagation()}>
-            <div className="cm-modal-header">
-              <h2>เพิ่มคอร์สเรียน</h2>
-              <button className="cm-modal-close" onClick={() => setShowCreate(false)}>✕</button>
-            </div>
-            <form className="cm-form" onSubmit={handleCreate}>
-
-              <div className="cm-info-box">
-                💡 รหัสคอร์สจะถูกสร้างให้อัตโนมัติตามลำดับ (เช่น CRS-0001) หลังบันทึกคอร์สนี้ ไม่สามารถแก้ไขภายหลังได้
-              </div>
-
-              {/* ชื่อวิชา */}
-              <div className="cm-field">
-                <label>ชื่อวิชา *</label>
-                <input value={form.courseName} onChange={e => fld('courseName', e.target.value)} placeholder="เช่น คณิตศาสตร์ ม.6" />
-                {formErr.courseName && <span className="cm-err">{formErr.courseName}</span>}
-              </div>
-
-              {/* ติวเตอร์ — ดึงจาก DB จริง */}
-              <TutorSelect
-                value={form.tutorId}
-                onChange={v => fld('tutorId', v)}
-                err={formErr.tutorId}
-              />
-
-              {/* ตารางสอน — ระบบจัดให้อัตโนมัติหลังบันทึก ไม่ต้องเลือกเอง */}
-              <div className="cm-field">
-                <div className="cm-avail-panel">
-                  <div className="cm-avail-title">📅 ตารางสอน</div>
-                  <p className="cm-field-hint">
-                    ระบบจะจัดวัน-เวลาสอนให้ติวเตอร์คนนี้อัตโนมัติหลังบันทึก
-                    (คาบละตามชั่วโมงเรียนต่อคาบที่กรอกไว้ ช่วง 09:00–20:00 จำนวนวัน/สัปดาห์คำนวณจากจำนวนชั่วโมงรวม)
-                    โดยจะเลี่ยงวัน-เวลาที่ชนกับคอร์สอื่นของติวเตอร์คนเดียวกัน
-                  </p>
-                </div>
-              </div>
-
-              {/* ราคา */}
-              <div className="cm-field">
-                <label>ราคาคอร์ส (บาท) *</label>
-                <input
-                  type="number" min="0" step="0.01"
-                  value={form.price}
-                  onChange={e => fld('price', e.target.value)}
-                  placeholder="0.00"
-                />
-                {formErr.price && <span className="cm-err">{formErr.price}</span>}
-                <span className="cm-field-hint">ราคานี้จะไม่แสดงให้ติวเตอร์เห็น</span>
-              </div>
-
-              {/* ชั่วโมง + ชั่วโมง/คาบ + ที่นั่ง */}
-              <div className="cm-form-row cm-form-row-3">
-                <div className="cm-field">
-                  <label>ชั่วโมงรวม *</label>
-                  <input type="number" min="1" value={form.totalHours} onChange={e => fld('totalHours', e.target.value)} placeholder="เช่น 40" />
-                  {formErr.totalHours && <span className="cm-err">{formErr.totalHours}</span>}
-                </div>
-                <div className="cm-field">
-                  <label>ชั่วโมงเรียนต่อคาบ *</label>
-                  <input type="number" min="0.5" step="0.5" value={form.hoursPerSession} onChange={e => fld('hoursPerSession', e.target.value)} placeholder="เช่น 2" />
-                  {formErr.hoursPerSession && <span className="cm-err">{formErr.hoursPerSession}</span>}
-                </div>
-                <div className="cm-field">
-                  <label>จำนวนที่นั่ง *</label>
-                  <input type="number" min="1" value={form.seatLimit} onChange={e => fld('seatLimit', e.target.value)} placeholder="เช่น 30" />
-                  {formErr.seatLimit && <span className="cm-err">{formErr.seatLimit}</span>}
-                </div>
-              </div>
-
-              {/* วันรับสมัคร */}
-              <div className="cm-form-row">
-                <div className="cm-field">
-                  <label>วันเปิดรับสมัคร</label>
-                  <input type="date" value={form.registrationStartDate} onChange={e => fld('registrationStartDate', e.target.value)} />
-                </div>
-                <div className="cm-field">
-                  <label>วันปิดรับสมัคร</label>
-                  <input type="date" value={form.registrationEndDate} onChange={e => fld('registrationEndDate', e.target.value)} />
-                </div>
-              </div>
-
-              {/* วันเริ่มสอน */}
-              <div className="cm-field">
-                <label>วันที่เริ่มสอน *</label>
-                <input type="date" value={form.courseStartDate} onChange={e => fld('courseStartDate', e.target.value)} />
-                {formErr.courseStartDate && <span className="cm-err">{formErr.courseStartDate}</span>}
-              </div>
-
-              {/* รายละเอียด — อยู่ล่างสุด */}
-              <div className="cm-field">
-                <label>รายละเอียดคอร์ส</label>
-                <textarea
-                  rows={4}
-                  value={form.description}
-                  onChange={e => fld('description', e.target.value)}
-                  placeholder="อธิบายเนื้อหาคอร์ส เป้าหมายผู้เรียน สิ่งที่จะได้รับ..."
-                />
-              </div>
-
-              <div className="cm-info-box">
-                💡 คอร์สจะถูกมอบหมายให้ติวเตอร์ทันที ระบบจัดวัน-เวลาสอนให้อัตโนมัติ และส่งการแจ้งเตือนไปยังอีเมลติวเตอร์ทันที
-                ติวเตอร์สามารถเพิ่มบทเรียน/ข้อสอบได้เลย จากนั้นแอดมินเปลี่ยนสถานะเป็น "เปิดรับสมัคร" เพื่อให้นักเรียนสมัครได้
-              </div>
-
-              <div className="cm-form-actions">
-                <button type="button" className="cm-btn-cancel" onClick={() => setShowCreate(false)}>ยกเลิก</button>
-                <button type="submit" className="cm-btn-primary" disabled={saving}>
-                  {saving ? 'กำลังสร้าง...' : '✓ สร้างคอร์สและแจ้งติวเตอร์'}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-
       {/* ═══ EDIT MODAL ═══ */}
       {showEdit && selected && (
         <div className="cm-overlay" onClick={() => setShowEdit(false)}>
@@ -767,7 +309,11 @@ export default function AdminCourseManagementPage() {
                 {formErr.courseName && <span className="cm-err">{formErr.courseName}</span>}
               </div>
 
-              <TutorSelect
+              <TutorSelectField
+                tutors={tutors}
+                tutorLoading={tutorLoading}
+                tutorAvail={tutorAvail}
+                availLoading={availLoading}
                 value={form.tutorId}
                 onChange={v => fld('tutorId', v)}
                 err={formErr.tutorId}
