@@ -22,7 +22,5 @@ public interface TutorService {
 
     void deleteTeacher(Long id);
 
-    TutorResponse toggleStatus(Long id, boolean enabled);
-
     void changePassword(Long userId, ChangePasswordRequest request);
 }

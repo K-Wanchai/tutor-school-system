@@ -80,24 +80,6 @@ export async function updateTutor(id, form) {
   }
 }
 
-export async function deactivateTutor(id) {
-  try {
-    const res = await api.patch(`/tutors/${id}/status`, { enabled: false });
-    return unwrap(res);
-  } catch (error) {
-    throw new Error(apiError(error, 'deactivateTutor'));
-  }
-}
-
-export async function activateTutor(id) {
-  try {
-    const res = await api.patch(`/tutors/${id}/status`, { enabled: true });
-    return unwrap(res);
-  } catch (error) {
-    throw new Error(apiError(error, 'activateTutor'));
-  }
-}
-
 export async function getTutorStats() {
   try {
     const res = await api.get('/tutors', { params: { page: 0, size: 5000 } });
@@ -106,8 +88,6 @@ export async function getTutorStats() {
     const now  = new Date();
     return {
       total: data?.totalElements ?? list.length,
-      active:   list.filter(t => t.enabled === true  || t.status === 'ACTIVE').length,
-      inactive: list.filter(t => t.enabled === false || t.status === 'INACTIVE').length,
       newThisMonth: list.filter(t => {
         if (!t.createdAt) return false;
         const d = new Date(t.createdAt);
@@ -115,6 +95,6 @@ export async function getTutorStats() {
       }).length,
     };
   } catch {
-    return { total: 0, active: 0, inactive: 0, newThisMonth: 0 };
+    return { total: 0, newThisMonth: 0 };
   }
 }

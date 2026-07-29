@@ -74,6 +74,17 @@ export async function approveEnrollment(id, approvedBy, note) {
   }
 }
 
+// ตีกลับให้นักเรียนแก้ไขสลิป — ไม่ใช่การปฏิเสธถาวร ยังสมัครค้างไว้ (PENDING) แต่ paymentStatus เปลี่ยนเป็น FAILED
+// เพื่อให้นักเรียนอัปโหลดสลิปใหม่ได้จากหน้าชำระเงินของตัวเอง — note คือเหตุผลที่ต้องแก้ (บังคับกรอก)
+export async function returnForSlipRevision(id, note) {
+  try {
+    const res = await api.patch(`/enrollments/${id}/return-for-revision`, { note });
+    return unwrap(res);
+  } catch (error) {
+    throw new Error(apiError(error, 'returnForSlipRevision'));
+  }
+}
+
 export async function cancelEnrollment(id) {
   try {
     const res = await api.delete(`/enrollments/${id}`);

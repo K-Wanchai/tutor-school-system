@@ -2,7 +2,7 @@ import { useEffect, useState, useCallback, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import generatePayload from 'promptpay-qr';
 import QRCode from 'qrcode';
-import { getMyEnrollments } from '../services/studentEnrollmentService';
+import { getMyEnrollments, cancelEnrollment } from '../services/studentEnrollmentService';
 import api, { resolveFileUrl } from '../../../shared/services/api';
 import './StudentPaymentsPage.css';
 
@@ -53,6 +53,7 @@ export default function StudentPaymentsPage() {
   const [slipUrls, setSlipUrls] = useState({});
   const [bulkSlipUrl, setBulkSlipUrl] = useState('');
   const [uploading, setUploading] = useState(null);
+  const [cancelling, setCancelling] = useState(null);
   const [copied, setCopied] = useState('');
   const [message, setMessage] = useState({ type: '', text: '' });
 
@@ -125,6 +126,20 @@ export default function StudentPaymentsPage() {
       }
     } finally {
       setUploading(null);
+    }
+  }
+
+  async function handleCancel(enrollment) {
+    if (!window.confirm(`ยืนยันยกเลิกการสมัครเรียน "${enrollment.courseName}" ?`)) return;
+    try {
+      setCancelling(enrollment.id);
+      setMessage({ type: '', text: '' });
+      await cancelEnrollment(enrollment.id);
+      await loadAll();
+    } catch {
+      setMessage({ type: 'error', text: 'ไม่สามารถยกเลิกการสมัครได้' });
+    } finally {
+      setCancelling(null);
     }
   }
 
@@ -235,13 +250,35 @@ export default function StudentPaymentsPage() {
                 </div>
               )}
 
+              {en.paymentStatus === 'FAILED' && (
+                <div className="pay-rejected-note">
+                  <svg viewBox="0 0 20 20" fill="currentColor" width="16" height="16">
+                    <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l6.28 11.18c.75 1.334-.213 2.987-1.744 2.987H3.72c-1.53 0-2.493-1.653-1.744-2.987l6.28-11.18zM11 14a1 1 0 11-2 0 1 1 0 012 0zm-.25-6.5a.75.75 0 00-1.5 0v3.5a.75.75 0 001.5 0v-3.5z" clipRule="evenodd" />
+                  </svg>
+                  <div>
+                    <strong>สลิปถูกส่งกลับให้แก้ไข</strong>
+                    {en.note && <p className="pay-rejected-reason">เหตุผล: {en.note}</p>}
+                  </div>
+                </div>
+              )}
+
               <div className="pay-card-footer">
+                {(en.paymentStatus === 'UNPAID' || en.paymentStatus === 'FAILED') && (
+                  <button className="pay-btn-danger" disabled={cancelling === en.id} onClick={() => handleCancel(en)}>
+                    <svg viewBox="0 0 20 20" fill="currentColor" width="15" height="15">
+                      <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
+                    </svg>
+                    {cancelling === en.id ? 'กำลังยกเลิก...' : 'ยกเลิก'}
+                  </button>
+                )}
+
                 <button className="pay-btn-outline" onClick={() => openDetailModal(en)}>
                   <svg viewBox="0 0 20 20" fill="currentColor" width="15" height="15">
                     <path d="M9 4.804A7.968 7.968 0 005.5 4c-1.255 0-2.443.29-3.5.804v10A7.969 7.969 0 015.5 14c1.669 0 3.218.51 4.5 1.385A7.962 7.962 0 0114.5 14c1.255 0 2.443.29 3.5.804v-10A7.968 7.968 0 0014.5 4c-1.255 0-2.443.29-3.5.804V12a1 1 0 11-2 0V4.804z" />
                   </svg>
                   ดูรายละเอียดคอร์ส
                 </button>
+
                 {(en.paymentStatus === 'UNPAID' || en.paymentStatus === 'FAILED') && (
                   <button className="pay-btn-primary" onClick={() => openPayModal(en)}>
                     <svg viewBox="0 0 20 20" fill="currentColor" width="15" height="15">

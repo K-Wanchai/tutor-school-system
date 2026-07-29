@@ -26,6 +26,7 @@ public class InstitutionProfileResponse {
     private String bankQrCode;
     private String promptPayId;
     private Integer enrollmentPaymentDeadlineMinutes;
+    private String termTimeSlots;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 }

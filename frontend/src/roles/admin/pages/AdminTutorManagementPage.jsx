@@ -5,8 +5,6 @@ import {
   getTutorById,
   createTutor,
   updateTutor,
-  deactivateTutor,
-  activateTutor,
   getTutorStats,
 } from '../services/adminTutorService';
 import './AdminTutorManagementPage.css';
@@ -40,25 +38,6 @@ function avatarColor(name = '') {
 
 function initials(firstName = '', lastName = '') {
   return `${firstName.charAt(0)}${lastName.charAt(0)}`.toUpperCase() || '?';
-}
-
-function isActive(tutor) {
-  if (tutor.status !== undefined && tutor.status !== null) {
-    return tutor.status === 'ACTIVE';
-  }
-  return tutor.enabled === true;
-}
-
-// ── StatusBadge ───────────────────────────────────────────────────────────────
-
-function StatusBadge({ tutor }) {
-  const active = isActive(tutor);
-  return (
-    <span className={`tm-status-badge tm-status-badge--${active ? 'success' : 'error'}`}>
-      <span className="tm-status-dot" />
-      {active ? 'ใช้งาน' : 'ปิดใช้งาน'}
-    </span>
-  );
 }
 
 // ── TutorAvatar ───────────────────────────────────────────────────────────────
@@ -108,7 +87,6 @@ function DetailModal({ tutor, onClose }) {
             <div className="tm-detail-profile-info">
               <div className="tm-detail-name">{tutor.firstName} {tutor.lastName}</div>
               <div className="tm-detail-code">{tutor.tutorCode || '—'}</div>
-              <StatusBadge tutor={tutor} />
             </div>
           </div>
 
@@ -152,7 +130,6 @@ function DetailModal({ tutor, onClose }) {
                 <DetailRow label="รหัสติวเตอร์" value={tutor.tutorCode} />
                 <DetailRow label="วันที่เพิ่ม" value={formatDateTime(tutor.createdAt)} />
                 <DetailRow label="แก้ไขล่าสุด" value={formatDateTime(tutor.updatedAt)} />
-                <DetailRow label="สถานะ" value={<StatusBadge tutor={tutor} />} />
               </div>
             </div>
           </div>
@@ -388,30 +365,13 @@ function EditModal({ tutor, onClose, onSave, saving, saveError }) {
   );
 }
 
-// ── Confirm Dialog ────────────────────────────────────────────────────────────
-
-function ConfirmDialog({ title, message, confirmLabel, confirmClass, onConfirm, onCancel }) {
-  return (
-    <div className="tm-modal-overlay" onClick={onCancel}>
-      <div className="tm-confirm" onClick={e => e.stopPropagation()}>
-        <p className="tm-confirm-title">{title}</p>
-        <p className="tm-confirm-msg">{message}</p>
-        <div className="tm-confirm-actions">
-          <button className="tm-btn tm-btn--ghost" onClick={onCancel}>ยกเลิก</button>
-          <button className={`tm-btn ${confirmClass}`} onClick={onConfirm}>{confirmLabel}</button>
-        </div>
-      </div>
-    </div>
-  );
-}
-
 // ── Main Page ─────────────────────────────────────────────────────────────────
 
 const PAGE_SIZE = 10;
 
 export default function AdminTutorManagementPage() {
   const [tutors, setTutors]               = useState([]);
-  const [stats, setStats]                 = useState({ total: 0, active: 0, inactive: 0, newThisMonth: 0 });
+  const [stats, setStats]                 = useState({ total: 0, newThisMonth: 0 });
   const [loading, setLoading]             = useState(true);
   const [statsLoading, setStatsLoading]   = useState(true);
   const [error, setError]                 = useState('');
@@ -422,7 +382,6 @@ export default function AdminTutorManagementPage() {
   const [detailTutor, setDetailTutor]     = useState(null);
   const [editTutor, setEditTutor]         = useState(null);
   const [showCreate, setShowCreate]       = useState(false);
-  const [confirm, setConfirm]             = useState(null);
   const [saving, setSaving]               = useState(false);
   const [saveError, setSaveError]         = useState('');
   const [toast, setToast]                 = useState({ type: '', msg: '' });
@@ -516,44 +475,6 @@ export default function AdminTutorManagementPage() {
     }
   }
 
-  function askDeactivate(tutor) {
-    setConfirm({
-      title: 'ปิดการใช้งานติวเตอร์',
-      message: `ยืนยันการปิดใช้งานบัญชี "${tutor.firstName} ${tutor.lastName}" ?`,
-      confirmLabel: 'ปิดการใช้งาน',
-      confirmClass: 'tm-btn--danger',
-      onConfirm: async () => {
-        setConfirm(null);
-        try {
-          await deactivateTutor(tutor.id);
-          showToast('success', 'ปิดใช้งานบัญชีสำเร็จ');
-          loadTutors(currentPage, searchTerm); reloadStats();
-        } catch (err) {
-          showToast('error', err.message || 'ไม่สามารถปิดใช้งานบัญชีได้');
-        }
-      },
-    });
-  }
-
-  function askActivate(tutor) {
-    setConfirm({
-      title: 'เปิดการใช้งานติวเตอร์',
-      message: `ยืนยันการเปิดใช้งานบัญชี "${tutor.firstName} ${tutor.lastName}" ?`,
-      confirmLabel: 'เปิดการใช้งาน',
-      confirmClass: 'tm-btn--success',
-      onConfirm: async () => {
-        setConfirm(null);
-        try {
-          await activateTutor(tutor.id);
-          showToast('success', 'เปิดใช้งานบัญชีสำเร็จ');
-          loadTutors(currentPage, searchTerm); reloadStats();
-        } catch (err) {
-          showToast('error', err.message || 'ไม่สามารถเปิดใช้งานบัญชีได้');
-        }
-      },
-    });
-  }
-
   function pageNumbers() {
     const pages = [];
     const MAX = 5;
@@ -626,17 +547,6 @@ export default function AdminTutorManagementPage() {
           }
         />
         <DashboardCard
-          title="ติวเตอร์ที่ใช้งานอยู่"
-          value={statsLoading ? '...' : stats.active}
-          subtitle="บัญชีที่ Active อยู่"
-          color="green"
-          icon={
-            <svg viewBox="0 0 20 20" fill="currentColor" width="22" height="22">
-              <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-            </svg>
-          }
-        />
-        <DashboardCard
           title="เพิ่มใหม่เดือนนี้"
           value={statsLoading ? '...' : stats.newThisMonth}
           subtitle="ติวเตอร์ที่เพิ่มเดือนนี้"
@@ -644,17 +554,6 @@ export default function AdminTutorManagementPage() {
           icon={
             <svg viewBox="0 0 20 20" fill="currentColor" width="22" height="22">
               <path d="M8 9a3 3 0 100-6 3 3 0 000 6zM8 11a6 6 0 016 6H2a6 6 0 016-6zM16 7a1 1 0 10-2 0v1h-1a1 1 0 100 2h1v1a1 1 0 102 0v-1h1a1 1 0 100-2h-1V7z" />
-            </svg>
-          }
-        />
-        <DashboardCard
-          title="ติวเตอร์ที่ปิดใช้งาน"
-          value={statsLoading ? '...' : stats.inactive}
-          subtitle="บัญชีที่ถูกปิดใช้งาน"
-          color="orange"
-          icon={
-            <svg viewBox="0 0 20 20" fill="currentColor" width="22" height="22">
-              <path fillRule="evenodd" d="M13.477 14.89A6 6 0 015.11 6.524L13.477 14.89zm1.414-1.414L6.524 5.11a6 6 0 018.367 8.367zM18 10a8 8 0 11-16 0 8 8 0 0116 0z" clipRule="evenodd" />
             </svg>
           }
         />
@@ -720,7 +619,6 @@ export default function AdminTutorManagementPage() {
                     <th>EMAIL</th>
                     <th>เบอร์โทร</th>
                     <th>วันที่เพิ่ม</th>
-                    <th>สถานะ</th>
                     <th>การจัดการ</th>
                   </tr>
                 </thead>
@@ -740,7 +638,6 @@ export default function AdminTutorManagementPage() {
                       <td className="tm-text-email">{tutor.email || '—'}</td>
                       <td className="tm-text-secondary">{tutor.phoneNumber || '—'}</td>
                       <td className="tm-text-date">{formatDate(tutor.createdAt)}</td>
-                      <td><StatusBadge tutor={tutor} /></td>
                       <td>
                         <div className="tm-row-actions">
                           <button
@@ -754,41 +651,6 @@ export default function AdminTutorManagementPage() {
                               <path fillRule="evenodd" d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.064 7-9.542 7S1.732 14.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z" clipRule="evenodd" />
                             </svg>
                           </button>
-                          <button
-                            className="tm-row-btn tm-row-btn--icon"
-                            onClick={() => { setSaveError(''); setEditTutor(tutor); }}
-                            data-tooltip="แก้ไข"
-                            aria-label="แก้ไข"
-                          >
-                            <svg viewBox="0 0 20 20" fill="currentColor" width="15" height="15">
-                              <path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z" />
-                            </svg>
-                          </button>
-                          {isActive(tutor) ? (
-                            <button
-                              className="tm-row-btn tm-row-btn--danger"
-                              onClick={() => askDeactivate(tutor)}
-                              data-tooltip="ปิดการใช้งาน"
-                              aria-label="ปิดการใช้งาน"
-                            >
-                              <svg viewBox="0 0 20 20" fill="currentColor" width="14" height="14">
-                                <path fillRule="evenodd" d="M13.477 14.89A6 6 0 015.11 6.524L13.477 14.89zm1.414-1.414L6.524 5.11a6 6 0 018.367 8.367zM18 10a8 8 0 11-16 0 8 8 0 0116 0z" clipRule="evenodd" />
-                              </svg>
-                              <span>ปิดการใช้งาน</span>
-                            </button>
-                          ) : (
-                            <button
-                              className="tm-row-btn tm-row-btn--activate"
-                              onClick={() => askActivate(tutor)}
-                              data-tooltip="เปิดการใช้งาน"
-                              aria-label="เปิดการใช้งาน"
-                            >
-                              <svg viewBox="0 0 20 20" fill="currentColor" width="14" height="14">
-                                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                              </svg>
-                              <span>เปิดการใช้งาน</span>
-                            </button>
-                          )}
                         </div>
                       </td>
                     </tr>
@@ -844,17 +706,6 @@ export default function AdminTutorManagementPage() {
           onSave={handleSave}
           saving={saving}
           saveError={saveError}
-        />
-      )}
-
-      {confirm && (
-        <ConfirmDialog
-          title={confirm.title}
-          message={confirm.message}
-          confirmLabel={confirm.confirmLabel}
-          confirmClass={confirm.confirmClass}
-          onConfirm={confirm.onConfirm}
-          onCancel={() => setConfirm(null)}
         />
       )}
     </div>

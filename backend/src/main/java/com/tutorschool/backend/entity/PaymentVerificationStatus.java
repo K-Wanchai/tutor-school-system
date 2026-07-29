@@ -5,5 +5,4 @@ public enum PaymentVerificationStatus {
     VERIFIED,
     REJECTED,
     CANCELLED,
-    REFUNDED
 }

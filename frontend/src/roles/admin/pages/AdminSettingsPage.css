@@ -203,6 +203,10 @@
   gap: 20px;
 }
 
+.is-card--full {
+  grid-column: 1 / -1;
+}
+
 /* ── Logo / QR Media Rows ────────────────────────────────────────────── */
 
 .is-logo-row {

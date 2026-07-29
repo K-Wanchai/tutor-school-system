@@ -9,6 +9,7 @@ import {
 } from '../services/tutorExamService';
 import { getMyCourses } from '../services/tutorCourseService';
 import RefreshButton from '../components/RefreshButton';
+import DateInput from '../../../shared/components/DateInput';
 import './TutorSchedulesPage.css';
 import './TutorExamSchedulePage.css';
 
@@ -84,10 +85,9 @@ function DateTime24Input({ value, onChange }) {
 
   return (
     <div className="tes-datetime24">
-      <input
-        type="date"
+      <DateInput
         value={datePart}
-        onChange={(e) => emit(e.target.value, hour || '00', minute || '00')}
+        onChange={(v) => emit(v, hour || '00', minute || '00')}
       />
       <select value={hour} onChange={(e) => emit(datePart, e.target.value, minute || '00')}>
         <option value="">ชม.</option>

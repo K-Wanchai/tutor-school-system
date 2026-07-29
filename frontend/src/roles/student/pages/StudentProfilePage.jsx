@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { getMyProfile, updateMyProfile } from '../services/studentProfileService';
+import DateInput from '../../../shared/components/DateInput';
 import './StudentProfilePage.css';
 
 const EMPTY_FORM = {
@@ -291,28 +292,7 @@ function StudentProfilePage() {
                   value={form.birthDate}
                   onChange={handleChange}
                 />
-
-                <Field
-                  label="ธนาคาร"
-                  name="bankName"
-                  value={form.bankName}
-                  onChange={handleChange}
-                />
-
-                <Field
-                  label="ชื่อบัญชีธนาคาร"
-                  name="bankAccountName"
-                  value={form.bankAccountName}
-                  onChange={handleChange}
-                />
-
-                <Field
-                  label="เลขบัญชีธนาคาร"
-                  name="bankAccountNumber"
-                  value={form.bankAccountNumber}
-                  onChange={handleChange}
-                />
-
+                
                 <div className="sp-field sp-field-full">
                   <label htmlFor="address">ที่อยู่</label>
                   <textarea
@@ -393,16 +373,24 @@ function Field({
         {required && <span className="sp-required"> *</span>}
       </label>
 
-      <input
-        id={name}
-        name={name}
-        type={type}
-        value={value || ''}
-        onChange={onChange}
-        disabled={disabled}
-        required={required}
-        placeholder={label}
-      />
+      {type === 'date' ? (
+        <DateInput
+          value={value}
+          onChange={(v) => onChange({ target: { name, value: v } })}
+          disabled={disabled}
+        />
+      ) : (
+        <input
+          id={name}
+          name={name}
+          type={type}
+          value={value || ''}
+          onChange={onChange}
+          disabled={disabled}
+          required={required}
+          placeholder={label}
+        />
+      )}
     </div>
   );
 }

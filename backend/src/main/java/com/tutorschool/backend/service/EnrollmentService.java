@@ -27,5 +27,7 @@ public interface EnrollmentService {
 
     EnrollmentResponse approveEnrollment(Long id, ApproveEnrollmentRequest request);
 
+    EnrollmentResponse returnForSlipRevision(Long id, ReturnSlipRequest request);
+
     void cancelEnrollment(Long id);
 }

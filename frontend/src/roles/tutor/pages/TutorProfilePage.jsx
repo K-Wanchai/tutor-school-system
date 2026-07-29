@@ -147,25 +147,6 @@ function TutorProfilePage() {
       }
     }
 
-    if (form.specialization.trim().length > 120) {
-      errors.specialization = 'ความเชี่ยวชาญต้องไม่เกิน 120 ตัวอักษร';
-    }
-
-    if (form.bio.trim().length > 1000) {
-      errors.bio = 'แนะนำตัวต้องไม่เกิน 1000 ตัวอักษร';
-    }
-
-    if (form.profileImageUrl.trim()) {
-      try {
-        const url = new URL(form.profileImageUrl.trim());
-        if (!['http:', 'https:'].includes(url.protocol)) {
-          errors.profileImageUrl = 'URL รูปโปรไฟล์ต้องขึ้นต้นด้วย http หรือ https';
-        }
-      } catch {
-        errors.profileImageUrl = 'URL รูปโปรไฟล์ไม่ถูกต้อง';
-      }
-    }
-
     setFieldErrors(errors);
     return Object.keys(errors).length === 0;
   };
@@ -414,56 +395,6 @@ function TutorProfilePage() {
               {fieldErrors.phoneNumber && (
                 <small className="tp-error-text">{fieldErrors.phoneNumber}</small>
               )}
-            </div>
-
-            <div className="tp-form-group">
-              <label htmlFor="specialization">วิชาที่เชี่ยวชาญ</label>
-              <input
-                id="specialization"
-                name="specialization"
-                value={form.specialization}
-                onChange={handleProfileChange}
-                placeholder="เช่น Mathematics, English, Science"
-                className={fieldErrors.specialization ? 'tp-input-error' : ''}
-              />
-              {fieldErrors.specialization && (
-                <small className="tp-error-text">{fieldErrors.specialization}</small>
-              )}
-            </div>
-
-            <div className="tp-form-group tp-form-group-full">
-              <label htmlFor="profileImageUrl">URL รูปโปรไฟล์</label>
-              <input
-                id="profileImageUrl"
-                name="profileImageUrl"
-                value={form.profileImageUrl}
-                onChange={handleProfileChange}
-                placeholder="https://example.com/profile.jpg"
-                className={fieldErrors.profileImageUrl ? 'tp-input-error' : ''}
-              />
-              {fieldErrors.profileImageUrl && (
-                <small className="tp-error-text">{fieldErrors.profileImageUrl}</small>
-              )}
-            </div>
-
-            <div className="tp-form-group tp-form-group-full">
-              <label htmlFor="bio">แนะนำตัวเอง</label>
-              <textarea
-                id="bio"
-                name="bio"
-                value={form.bio}
-                onChange={handleProfileChange}
-                placeholder="เขียนแนะนำตัว ประสบการณ์การสอน หรือแนวทางการสอนของคุณ"
-                rows="6"
-                className={fieldErrors.bio ? 'tp-input-error' : ''}
-              />
-              <div className="tp-textarea-footer">
-                {fieldErrors.bio ? (
-                  <small className="tp-error-text">{fieldErrors.bio}</small>
-                ) : (
-                  <small>{form.bio.length}/1000 ตัวอักษร</small>
-                )}
-              </div>
             </div>
           </div>
 

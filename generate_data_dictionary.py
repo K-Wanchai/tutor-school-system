@@ -376,7 +376,7 @@ TABLES.append({
         [4,  "course_id",        "BIGINT",         "8",   "อ้างอิงคอร์สที่ลงทะเบียน",                                               "FK → courses.id"],
         [5,  "enrollment_date",  "TIMESTAMP",      "-",   "วันเวลาที่ลงทะเบียน (Auto Set)",                                          ""],
         [6,  "status",           "VARCHAR",        "20",  "สถานะ: PENDING, APPROVED, REJECTED, CANCELLED",                           ""],
-        [7,  "payment_status",   "VARCHAR",        "30",  "สถานะการชำระ: UNPAID, PAID, REFUNDED",                                    ""],
+        [7,  "payment_status",   "VARCHAR",        "30",  "สถานะการชำระ: UNPAID, PAID",                                    ""],
         [8,  "payment_method",   "VARCHAR",        "20",  "วิธีชำระ: CASH, TRANSFER, QR_CODE",                                       ""],
         [9,  "amount",           "DECIMAL(10,2)",  "-",   "ราคาเต็มก่อนส่วนลด (บาท)",                                               ""],
         [10, "discount_amount",  "DECIMAL(10,2)",  "-",   "จำนวนส่วนลด (บาท) ค่าเริ่มต้น 0",                                        ""],

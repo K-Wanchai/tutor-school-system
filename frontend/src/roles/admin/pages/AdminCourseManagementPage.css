@@ -10,6 +10,7 @@
 .cm-stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 16px; margin-bottom: 24px; }
 .cm-stat-card { background: #fff; border-radius: 12px; padding: 18px; display: flex; align-items: center; gap: 14px; box-shadow: 0 1px 4px rgba(0,0,0,.08); border-left: 4px solid transparent; }
 .cm-stat-total   { border-color: #0d9488; }
+.cm-stat-pending { border-color: #94a3b8; }
 .cm-stat-draft   { border-color: #f59e0b; }
 .cm-stat-open    { border-color: #10b981; }
 .cm-stat-ongoing { border-color: #6366f1; }
@@ -68,6 +69,7 @@
 .cm-modal { background: #fff; border-radius: 16px; width: 100%; max-width: 660px; max-height: 90vh; overflow-y: auto; box-shadow: 0 20px 60px rgba(0,0,0,.25); }
 .cm-modal-sm { max-width: 420px; }
 .cm-modal-lg { max-width: 760px; }
+.cm-modal-page { margin: 0 auto; }
 .cm-modal-header { display: flex; justify-content: space-between; align-items: center; padding: 20px 24px 0; }
 .cm-modal-header h2 { font-size: 1.15rem; font-weight: 700; color: #0f766e; margin: 0; }
 .cm-modal-close { background: none; border: none; font-size: 1.2rem; cursor: pointer; color: #9ca3af; padding: 4px 8px; }
@@ -258,6 +260,16 @@
 /* ── Per-day hint (ยังไม่ได้ใส่เวลา) ── */
 .cm-per-day-hint-msg {
   font-size: 0.76rem; color: #9ca3af; font-style: italic;
+}
+
+/* ── Per-day suggested time quick-fill (from institution settings) ── */
+.cm-per-day-suggest-btn {
+  font-size: 0.76rem; color: #2563eb; font-weight: 600;
+  background: #eff6ff; border: 1px solid #dbeafe; border-radius: 6px;
+  padding: 3px 9px; cursor: pointer; white-space: nowrap;
+}
+.cm-per-day-suggest-btn:hover {
+  background: #dbeafe; border-color: #bfdbfe;
 }
 
 /* ── Schedule section title required ── */
