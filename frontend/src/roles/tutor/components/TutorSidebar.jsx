@@ -24,6 +24,19 @@ const NAV_ITEMS = [
       </svg>
     ),
   },
+   {
+    label: 'ห้องเรียน',
+    path: '/tutor/classroom',
+    icon: (
+      <svg viewBox="0 0 20 20" fill="currentColor" width="18" height="18">
+        <path
+          fillRule="evenodd"
+          d="M4 4a2 2 0 012-2h8a2 2 0 012 2v12a1 1 0 110 2h-3a1 1 0 01-1-1v-2a1 1 0 00-1-1H9a1 1 0 00-1 1v2a1 1 0 01-1 1H4a1 1 0 110-2V4zm3 1h2v2H7V5zm2 4H7v2h2V9zm2-4h2v2h-2V5zm2 4h-2v2h2V9z"
+          clipRule="evenodd"
+        />
+      </svg>
+    ),
+  },
   {
     label: 'ตารางสอน',
     path: '/tutor/schedule',
@@ -32,6 +45,19 @@ const NAV_ITEMS = [
         <path
           fillRule="evenodd"
           d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z"
+          clipRule="evenodd"
+        />
+      </svg>
+    ),
+  },
+    {
+    label: 'ข้อสอบ',
+    path: '/tutor/exams',
+    icon: (
+      <svg viewBox="0 0 20 20" fill="currentColor" width="18" height="18">
+        <path
+          fillRule="evenodd"
+          d="M6 2a2 2 0 00-2 2v12a2 2 0 002 2h8a2 2 0 002-2V7.414A2 2 0 0015.414 6L12 2.586A2 2 0 0010.586 2H6zm2 10a1 1 0 10-2 0v3a1 1 0 102 0v-3zm2-3a1 1 0 011 1v5a1 1 0 11-2 0v-5a1 1 0 011-1zm4-1a1 1 0 10-2 0v7a1 1 0 102 0V8z"
           clipRule="evenodd"
         />
       </svg>
@@ -61,19 +87,7 @@ const NAV_ITEMS = [
       </svg>
     ),
   },
-  {
-    label: 'ห้องเรียน',
-    path: '/tutor/classroom',
-    icon: (
-      <svg viewBox="0 0 20 20" fill="currentColor" width="18" height="18">
-        <path
-          fillRule="evenodd"
-          d="M4 4a2 2 0 012-2h8a2 2 0 012 2v12a1 1 0 110 2h-3a1 1 0 01-1-1v-2a1 1 0 00-1-1H9a1 1 0 00-1 1v2a1 1 0 01-1 1H4a1 1 0 110-2V4zm3 1h2v2H7V5zm2 4H7v2h2V9zm2-4h2v2h-2V5zm2 4h-2v2h2V9z"
-          clipRule="evenodd"
-        />
-      </svg>
-    ),
-  },
+ 
   {
     label: 'คะแนนรวมรายคอร์ส',
     path: '/tutor/course-scores',
@@ -92,19 +106,7 @@ const NAV_ITEMS = [
       </svg>
     ),
   },
-  {
-    label: 'ข้อสอบ',
-    path: '/tutor/exams',
-    icon: (
-      <svg viewBox="0 0 20 20" fill="currentColor" width="18" height="18">
-        <path
-          fillRule="evenodd"
-          d="M6 2a2 2 0 00-2 2v12a2 2 0 002 2h8a2 2 0 002-2V7.414A2 2 0 0015.414 6L12 2.586A2 2 0 0010.586 2H6zm2 10a1 1 0 10-2 0v3a1 1 0 102 0v-3zm2-3a1 1 0 011 1v5a1 1 0 11-2 0v-5a1 1 0 011-1zm4-1a1 1 0 10-2 0v7a1 1 0 102 0V8z"
-          clipRule="evenodd"
-        />
-      </svg>
-    ),
-  },
+
   {
     label: 'รายงาน',
     path: '/tutor/reports',

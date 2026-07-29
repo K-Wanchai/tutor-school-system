@@ -13,6 +13,11 @@ import RefreshButton from '../components/RefreshButton';
 import './TutorCoursesPage.css';
 
 const STATUS_LABEL = {
+  PENDING: {
+    label: 'รอเปิดรับสมัคร',
+    cls: 'tc-badge-draft',
+  },
+
   OPEN_FOR_REGISTRATION: {
     label: 'เปิดรับสมัคร',
     cls: 'tc-badge-open',
@@ -151,6 +156,10 @@ export default function TutorCoursesPage() {
             ทุกสถานะ
           </option>
 
+          <option value="PENDING">
+            รอเปิดรับสมัคร
+          </option>
+
           <option value="CLOSED">
             ปิดรับสมัคร
           </option>
@@ -242,7 +251,7 @@ export default function TutorCoursesPage() {
                   ดูรายละเอียด
                 </button>
 
-                {['CLOSED', 'OPEN_FOR_REGISTRATION', 'ONGOING'].includes(course.status) && (
+                {['PENDING', 'CLOSED', 'OPEN_FOR_REGISTRATION', 'ONGOING'].includes(course.status) && (
                   <button className="tc-btn-accept" onClick={() => openManage(course)}>
                     📚 จัดการบทเรียน
                   </button>
@@ -372,8 +381,8 @@ function CourseDetailModal({ course, onClose }) {
 }
 
 function LessonManagerModal({ course, onClose, onChanged }) {
-  const lessonsEditable = course.status === 'CLOSED' || course.status === 'OPEN_FOR_REGISTRATION';
-  const testsAddable = ['CLOSED', 'OPEN_FOR_REGISTRATION', 'ONGOING'].includes(course.status);
+  const lessonsEditable = ['PENDING', 'CLOSED', 'OPEN_FOR_REGISTRATION'].includes(course.status);
+  const testsAddable = ['PENDING', 'CLOSED', 'OPEN_FOR_REGISTRATION', 'ONGOING'].includes(course.status);
 
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');

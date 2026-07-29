@@ -2,8 +2,10 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { getTutors } from '../services/adminTutorService';
 import { createCourse, getTutorWeeklyAvailability } from '../services/adminCourseService';
-import { DAY_LABEL_TH, EMPTY_COURSE_FORM, encodeDaySlots, validateCourseForm } from '../utils/courseScheduleUtils';
+import { DAY_LABEL_TH, EMPTY_COURSE_FORM, encodeDaySlots, parseDaySlots, validateCourseForm } from '../utils/courseScheduleUtils';
 import { ScheduleSection, TutorSelectField } from '../components/CourseScheduleFields';
+import useInstitutionProfile from '../../../shared/hooks/useInstitutionProfile';
+import CalendarDateInput from '../../../shared/components/CalendarDateInput';
 import '../pages/AdminCourseManagementPage.css';
 import './AdminCourseCreatePage.css';
 
@@ -51,7 +53,7 @@ function SummarySidebar({ form, tutor, checklist, doneCount }) {
     <aside className="cc-sidebar">
       <div className="cc-sidebar-card">
         <div className="cc-sidebar-title">ตัวอย่างคอร์ส</div>
-        <div className="cc-preview-name">{form.courseName?.trim() || 'ชื่อวิชา...'}</div>
+        <div className="cc-preview-name">{form.courseName?.trim() || 'ชื่อคอร์ส...'}</div>
         <div className="cc-preview-tutor">
           {tutor
             ? (tutor.firstName ? `${tutor.firstName} ${tutor.lastName ?? ''}`.trim() : tutor.email)
@@ -91,7 +93,9 @@ function SummarySidebar({ form, tutor, checklist, doneCount }) {
 
       <div className="cc-sidebar-note">
         💡 คอร์สจะถูกมอบหมายให้ติวเตอร์ทันทีตามวัน-เวลาที่เลือก และส่งอีเมลแจ้งเตือนติวเตอร์ทันทีหลังบันทึก
-        ติวเตอร์เพิ่มบทเรียน/ข้อสอบได้เลย จากนั้นแอดมินเปลี่ยนสถานะเป็น "เปิดรับสมัคร" เพื่อให้นักเรียนสมัคร
+        ติวเตอร์เพิ่มบทเรียน/ข้อสอบได้เลย ระบบจะเปลี่ยนสถานะเป็น "เปิดรับสมัคร" ให้อัตโนมัติเมื่อถึงวันเปิดรับสมัคร
+        (ถ้ายังไม่มีบทเรียนจะค้างสถานะ "รอเปิดรับสมัคร" ไว้ก่อน) และปิดรับสมัครอัตโนมัติเมื่อถึงวันที่กำหนด
+        หรือแอดมินจะเปลี่ยนสถานะเองก็ได้เช่นกัน
       </div>
     </aside>
   );
@@ -99,6 +103,11 @@ function SummarySidebar({ form, tutor, checklist, doneCount }) {
 
 export default function AdminCourseCreatePage() {
   const navigate = useNavigate();
+  const institution = useInstitutionProfile();
+  const termTimeSuggestions = useMemo(
+    () => parseDaySlots(institution?.termTimeSlots),
+    [institution]
+  );
 
   const [tutors, setTutors] = useState([]);
   const [tutorLoading, setTutorLoading] = useState(false);
@@ -117,7 +126,7 @@ export default function AdminCourseCreatePage() {
     getTutors({ page: 0, size: 500 })
       .then(d => {
         const list = Array.isArray(d) ? d : (d?.content ?? []);
-        setTutors(list.filter(t => t.enabled !== false));
+        setTutors(list);
       })
       .catch(() => notify('โหลดรายชื่อติวเตอร์ไม่สำเร็จ', 'error'))
       .finally(() => setTutorLoading(false));
@@ -147,7 +156,7 @@ export default function AdminCourseCreatePage() {
     const dayKeys = Object.keys(slots);
     const scheduleDone = dayKeys.length > 0 && dayKeys.every(k => slots[k].start && slots[k].end);
     return [
-      { label: 'ชื่อวิชา', done: !!form.courseName?.trim() },
+      { label: 'ชื่อคอร์ส', done: !!form.courseName?.trim() },
       { label: 'ติวเตอร์ผู้สอน', done: !!form.tutorId },
       { label: 'ตารางสอน', done: scheduleDone },
       { label: 'ราคาคอร์ส', done: form.price !== '' && form.price != null && !isNaN(form.price) && Number(form.price) >= 0 },
@@ -197,9 +206,9 @@ export default function AdminCourseCreatePage() {
       <div className="cc-layout">
         <form id="cc-create-form" className="cc-main" onSubmit={handleSubmit}>
 
-          <SectionCard step={1} icon="📘" title="ข้อมูลพื้นฐาน" desc="ชื่อวิชาและรายละเอียดคอร์สสำหรับผู้เรียน">
+          <SectionCard step={1} icon="📘" title="ข้อมูลพื้นฐาน" desc="ชื่อคอร์สและรายละเอียดคอร์สสำหรับผู้เรียน">
             <div className="cm-field">
-              <label>ชื่อวิชา *</label>
+              <label>ชื่อคอร์ส *</label>
               <input value={form.courseName} onChange={e => fld('courseName', e.target.value)} placeholder="เช่น คณิตศาสตร์ ม.6" />
               {formErr.courseName && <span className="cm-err">{formErr.courseName}</span>}
               <span className="cm-field-hint">รหัสคอร์สจะถูกสร้างให้อัตโนมัติตามลำดับ (เช่น CRS-0001) และไม่สามารถแก้ไขภายหลังได้</span>
@@ -228,7 +237,10 @@ export default function AdminCourseCreatePage() {
           </SectionCard>
 
           <SectionCard step={3} icon="📅" title="ตารางสอน" desc="กำหนดวันและเวลาสอนในแต่ละสัปดาห์ ระบบตรวจสอบเวลาว่างของติวเตอร์ให้อัตโนมัติ">
-            <ScheduleSection form={form} fld={fld} avail={tutorAvail} err={formErr.scheduleTime} />
+            <ScheduleSection
+              form={form} fld={fld} avail={tutorAvail} err={formErr.scheduleTime}
+              suggestions={termTimeSuggestions}
+            />
           </SectionCard>
 
           <SectionCard step={4} icon="💰" title="ราคาและจำนวนที่นั่ง" desc="ราคาคอร์สจะไม่แสดงให้ติวเตอร์เห็น">
@@ -260,16 +272,16 @@ export default function AdminCourseCreatePage() {
             <div className="cm-form-row">
               <div className="cm-field">
                 <label>วันเปิดรับสมัคร</label>
-                <input type="date" value={form.registrationStartDate} onChange={e => fld('registrationStartDate', e.target.value)} />
+                <CalendarDateInput value={form.registrationStartDate} onChange={v => fld('registrationStartDate', v)} />
               </div>
               <div className="cm-field">
                 <label>วันปิดรับสมัคร</label>
-                <input type="date" value={form.registrationEndDate} onChange={e => fld('registrationEndDate', e.target.value)} />
+                <CalendarDateInput value={form.registrationEndDate} onChange={v => fld('registrationEndDate', v)} />
               </div>
             </div>
             <div className="cm-field">
               <label>วันที่เริ่มสอน *</label>
-              <input type="date" value={form.courseStartDate} onChange={e => fld('courseStartDate', e.target.value)} />
+              <CalendarDateInput value={form.courseStartDate} onChange={v => fld('courseStartDate', v)} />
               {formErr.courseStartDate && <span className="cm-err">{formErr.courseStartDate}</span>}
             </div>
           </SectionCard>

@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const SERVER_HOST = '172.24.176.66';
+const SERVER_HOST = 'localhost';
 const API_ORIGIN = `http://${SERVER_HOST}:8080`;
 const BASE_URL = `${API_ORIGIN}/api/v1`;
 

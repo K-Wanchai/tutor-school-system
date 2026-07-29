@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { getTutors } from '../services/adminTutorService';
 import {
@@ -18,14 +18,17 @@ import {
   validateCourseForm,
 } from '../utils/courseScheduleUtils';
 import { ScheduleSection, TutorSelectField } from '../components/CourseScheduleFields';
+import useInstitutionProfile from '../../../shared/hooks/useInstitutionProfile';
+import CalendarDateInput from '../../../shared/components/CalendarDateInput';
 import './AdminCourseManagementPage.css';
 
 // ──────────────── helpers ────────────────
 const STATUS_LABEL = {
-  OPEN_FOR_REGISTRATION: { label: 'เปิดรับสมัคร', cls: 'cm-badge-open' },
-  CLOSED:                { label: 'ปิดรับสมัคร',  cls: 'cm-badge-closed' },
-  ONGOING:               { label: 'กำลังเรียน',   cls: 'cm-badge-ongoing' },
-  COMPLETED:             { label: 'สอนจบแล้ว',    cls: 'cm-badge-completed' },
+  PENDING:               { label: 'รอเปิดรับสมัคร', cls: 'cm-badge-draft' },
+  OPEN_FOR_REGISTRATION: { label: 'เปิดรับสมัคร',   cls: 'cm-badge-open' },
+  CLOSED:                { label: 'ปิดรับสมัคร',    cls: 'cm-badge-closed' },
+  ONGOING:               { label: 'กำลังเรียน',     cls: 'cm-badge-ongoing' },
+  COMPLETED:             { label: 'สอนจบแล้ว',      cls: 'cm-badge-completed' },
 };
 
 function StatusBadge({ status }) {
@@ -50,11 +53,16 @@ function Toast({ msg, type, onClose }) {
 export default function AdminCourseManagementPage() {
   const navigate = useNavigate();
   const location = useLocation();
+  const institution = useInstitutionProfile();
+  const termTimeSuggestions = useMemo(
+    () => parseDaySlots(institution?.termTimeSlots),
+    [institution]
+  );
 
   const [courses, setCourses]       = useState([]);
   const [tutors, setTutors]         = useState([]);
   const [tutorLoading, setTutorLoading] = useState(false);
-  const [stats, setStats]           = useState({ total: 0, closed: 0, openForRegistration: 0, ongoing: 0 });
+  const [stats, setStats]           = useState({ total: 0, pending: 0, closed: 0, openForRegistration: 0, ongoing: 0 });
   const [page, setPage]             = useState(0);
   const [totalPages, setTotalPages] = useState(0);
   const [loading, setLoading]       = useState(true);
@@ -112,7 +120,7 @@ export default function AdminCourseManagementPage() {
     getTutors({ page: 0, size: 500 })
       .then(d => {
         const list = Array.isArray(d) ? d : (d?.content ?? []);
-        setTutors(list.filter(t => t.enabled !== false));
+        setTutors(list);
       })
       .catch(() => notify('โหลดรายชื่อติวเตอร์ไม่สำเร็จ', 'error'))
       .finally(() => setTutorLoading(false));
@@ -214,6 +222,10 @@ export default function AdminCourseManagementPage() {
           <div className="cm-stat-icon">📚</div>
           <div><div className="cm-stat-num">{stats.total}</div><div className="cm-stat-lbl">คอร์สทั้งหมด</div></div>
         </div>
+        <div className="cm-stat-card cm-stat-pending">
+          <div className="cm-stat-icon">⏳</div>
+          <div><div className="cm-stat-num">{stats.pending}</div><div className="cm-stat-lbl">รอเปิดรับสมัคร</div></div>
+        </div>
         <div className="cm-stat-card cm-stat-draft">
           <div className="cm-stat-icon">⏸</div>
           <div><div className="cm-stat-num">{stats.closed}</div><div className="cm-stat-lbl">ปิดรับสมัคร</div></div>
@@ -304,7 +316,7 @@ export default function AdminCourseManagementPage() {
               </div>
 
               <div className="cm-field">
-                <label>ชื่อวิชา *</label>
+                <label>ชื่อคอร์ส *</label>
                 <input value={form.courseName} onChange={e => fld('courseName', e.target.value)} />
                 {formErr.courseName && <span className="cm-err">{formErr.courseName}</span>}
               </div>
@@ -320,7 +332,10 @@ export default function AdminCourseManagementPage() {
               />
 
               {/* ตารางสอน — อยู่ใต้ตารางว่างของติวเตอร์ทันที */}
-              <ScheduleSection form={form} fld={fld} avail={tutorAvail} err={formErr.scheduleTime} />
+              <ScheduleSection
+                form={form} fld={fld} avail={tutorAvail} err={formErr.scheduleTime}
+                suggestions={termTimeSuggestions}
+              />
 
               <div className="cm-field">
                 <label>ราคาคอร์ส (บาท)</label>
@@ -345,17 +360,17 @@ export default function AdminCourseManagementPage() {
               <div className="cm-form-row">
                 <div className="cm-field">
                   <label>วันเปิดรับสมัคร</label>
-                  <input type="date" value={form.registrationStartDate} onChange={e => fld('registrationStartDate', e.target.value)} />
+                  <CalendarDateInput value={form.registrationStartDate} onChange={v => fld('registrationStartDate', v)} />
                 </div>
                 <div className="cm-field">
                   <label>วันปิดรับสมัคร</label>
-                  <input type="date" value={form.registrationEndDate} onChange={e => fld('registrationEndDate', e.target.value)} />
+                  <CalendarDateInput value={form.registrationEndDate} onChange={v => fld('registrationEndDate', v)} />
                 </div>
               </div>
 
               <div className="cm-field">
                 <label>วันที่เริ่มสอน *</label>
-                <input type="date" value={form.courseStartDate} onChange={e => fld('courseStartDate', e.target.value)} />
+                <CalendarDateInput value={form.courseStartDate} onChange={v => fld('courseStartDate', v)} />
                 {formErr.courseStartDate && <span className="cm-err">{formErr.courseStartDate}</span>}
               </div>
 

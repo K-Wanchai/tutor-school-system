@@ -6,6 +6,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 
@@ -20,4 +21,8 @@ public interface CourseRepository extends JpaRepository<Course, Long> {
     Page<Course> findByStatus(CourseStatus status, Pageable pageable);
 
     Page<Course> findByCourseNameContainingIgnoreCase(String courseName, Pageable pageable);
+
+    List<Course> findByStatusAndRegistrationStartDateLessThanEqual(CourseStatus status, LocalDate date);
+
+    List<Course> findByStatusAndRegistrationEndDateLessThan(CourseStatus status, LocalDate date);
 }

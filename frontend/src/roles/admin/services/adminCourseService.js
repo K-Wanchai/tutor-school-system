@@ -143,12 +143,13 @@ export async function getCourseStats() {
     const list = Array.isArray(data) ? data : (data?.content ?? []);
     return {
       total:               data?.totalElements ?? list.length,
+      pending:             list.filter(c => c.status === 'PENDING').length,
       closed:              list.filter(c => c.status === 'CLOSED').length,
       openForRegistration: list.filter(c => c.status === 'OPEN_FOR_REGISTRATION').length,
       ongoing:             list.filter(c => c.status === 'ONGOING').length,
       completed:           list.filter(c => c.status === 'COMPLETED').length,
     };
   } catch {
-    return { total: 0, closed: 0, openForRegistration: 0, ongoing: 0, completed: 0 };
+    return { total: 0, pending: 0, closed: 0, openForRegistration: 0, ongoing: 0, completed: 0 };
   }
 }

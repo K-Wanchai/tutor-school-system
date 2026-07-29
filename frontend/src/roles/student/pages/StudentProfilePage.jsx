@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { getMyProfile, updateMyProfile } from '../services/studentProfileService';
+import DateInput from '../../../shared/components/DateInput';
 import './StudentProfilePage.css';
 
 const EMPTY_FORM = {
@@ -372,16 +373,24 @@ function Field({
         {required && <span className="sp-required"> *</span>}
       </label>
 
-      <input
-        id={name}
-        name={name}
-        type={type}
-        value={value || ''}
-        onChange={onChange}
-        disabled={disabled}
-        required={required}
-        placeholder={label}
-      />
+      {type === 'date' ? (
+        <DateInput
+          value={value}
+          onChange={(v) => onChange({ target: { name, value: v } })}
+          disabled={disabled}
+        />
+      ) : (
+        <input
+          id={name}
+          name={name}
+          type={type}
+          value={value || ''}
+          onChange={onChange}
+          disabled={disabled}
+          required={required}
+          placeholder={label}
+        />
+      )}
     </div>
   );
 }
