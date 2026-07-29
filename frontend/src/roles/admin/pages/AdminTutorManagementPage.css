@@ -112,23 +112,6 @@
   border-color: #d1d5db;
 }
 
-.tm-btn--danger {
-  background: #fef2f2;
-  color: #dc2626;
-  border: 1px solid #fecaca;
-}
-.tm-btn--danger:hover:not(:disabled) {
-  background: #fee2e2;
-}
-
-.tm-btn--success {
-  background: #059669;
-  color: #ffffff;
-}
-.tm-btn--success:hover:not(:disabled) {
-  background: #047857;
-}
-
 .tm-btn-spinner {
   width: 14px;
   height: 14px;
@@ -179,7 +162,7 @@
 
 .tm-stats-grid {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(2, 1fr);
   gap: 16px;
 }
 
@@ -394,40 +377,6 @@
   line-height: 1;
 }
 
-/* ── Status Badge ────────────────────────────────────────────────────── */
-
-.tm-status-badge {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  padding: 4px 10px;
-  border-radius: 20px;
-  font-size: 11.5px;
-  font-weight: 600;
-  white-space: nowrap;
-}
-
-.tm-status-dot {
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  flex-shrink: 0;
-}
-
-.tm-status-badge--success {
-  background: #f0fdf4;
-  color: #16a34a;
-  border: 1px solid #bbf7d0;
-}
-.tm-status-badge--success .tm-status-dot { background: #16a34a; }
-
-.tm-status-badge--error {
-  background: #fef2f2;
-  color: #dc2626;
-  border: 1px solid #fecaca;
-}
-.tm-status-badge--error .tm-status-dot { background: #dc2626; }
-
 /* ── Row Actions ─────────────────────────────────────────────────────── */
 
 .tm-row-actions {
@@ -461,33 +410,6 @@
   background: #f3f4f6;
   border-color: #d1d5db;
   color: #111827;
-}
-
-.tm-row-btn--danger {
-  gap: 5px;
-  padding: 0 12px;
-  background: #fef2f2;
-  border-color: #fecaca;
-  color: #dc2626;
-}
-.tm-row-btn--danger:hover {
-  background: #fee2e2;
-  border-color: #fca5a5;
-  color: #b91c1c;
-  box-shadow: 0 2px 8px rgba(220,38,38,0.12);
-}
-
-.tm-row-btn--activate {
-  gap: 5px;
-  padding: 0 12px;
-  background: #f0fdf4;
-  border-color: #bbf7d0;
-  color: #16a34a;
-}
-.tm-row-btn--activate:hover {
-  background: #dcfce7;
-  border-color: #86efac;
-  box-shadow: 0 2px 8px rgba(22,163,74,0.12);
 }
 
 /* ── Tooltip ─────────────────────────────────────────────────────────── */
@@ -933,38 +855,6 @@
   padding-top: 20px;
   margin-top: 16px;
   border-top: 1px solid #f3f4f6;
-}
-
-/* ── Confirm Dialog ──────────────────────────────────────────────────── */
-
-.tm-confirm {
-  background: #ffffff;
-  border-radius: 16px;
-  box-shadow: 0 24px 64px rgba(0,0,0,0.18);
-  padding: 28px;
-  max-width: 380px;
-  width: 100%;
-  animation: tm-modal-in 0.18s ease;
-}
-
-.tm-confirm-title {
-  font-size: 16px;
-  font-weight: 800;
-  color: #111827;
-  margin: 0 0 8px;
-}
-
-.tm-confirm-msg {
-  font-size: 13.5px;
-  color: #6b7280;
-  margin: 0 0 24px;
-  line-height: 1.6;
-}
-
-.tm-confirm-actions {
-  display: flex;
-  justify-content: flex-end;
-  gap: 10px;
 }
 
 /* ── Responsive ──────────────────────────────────────────────────────── */

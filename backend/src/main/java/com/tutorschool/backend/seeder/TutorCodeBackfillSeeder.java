@@ -8,7 +8,6 @@ import org.springframework.boot.CommandLineRunner;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
-import java.util.UUID;
 
 @Slf4j
 @Component
@@ -29,8 +28,7 @@ public class TutorCodeBackfillSeeder implements CommandLineRunner {
         }
 
         for (Tutor tutor : tutorsWithoutCode) {
-            String tutorCode = "TUT" + UUID.randomUUID().toString().replace("-", "").substring(0, 8).toUpperCase();
-            tutor.setTutorCode(tutorCode);
+            tutor.setTutorCode("TUT-" + String.format("%04d", tutor.getId()));
         }
 
         tutorRepository.saveAll(tutorsWithoutCode);

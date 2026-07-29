@@ -54,6 +54,10 @@ public class InstitutionProfile {
     @Column(name = "enrollment_payment_deadline_minutes")
     private Integer enrollmentPaymentDeadlineMinutes;
 
+    // เวลาเรียนที่แนะนำต่อวันช่วงเปิดเทอม รูปแบบเดียวกับ scheduleDays ของคอร์ส เช่น "MON:17:00-20:00,SAT:09:00-16:00"
+    @Column(name = "term_time_slots", columnDefinition = "TEXT")
+    private String termTimeSlots;
+
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;
 

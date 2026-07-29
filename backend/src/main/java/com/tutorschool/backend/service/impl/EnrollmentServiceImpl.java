@@ -13,8 +13,10 @@ import com.tutorschool.backend.repository.EnrollmentRepository;
 import com.tutorschool.backend.repository.InstitutionProfileRepository;
 import com.tutorschool.backend.repository.StudentRepository;
 import com.tutorschool.backend.service.EnrollmentService;
+import com.tutorschool.backend.service.NotificationService;
 import com.tutorschool.backend.util.ScheduleDaysParser;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -24,7 +26,9 @@ import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class EnrollmentServiceImpl implements EnrollmentService {
@@ -36,6 +40,7 @@ public class EnrollmentServiceImpl implements EnrollmentService {
     private final CourseRepository courseRepository;
     private final EnrollmentMapper enrollmentMapper;
     private final InstitutionProfileRepository institutionProfileRepository;
+    private final NotificationService notificationService;
 
     @Override
     @Transactional(readOnly = true)
@@ -86,20 +91,35 @@ public class EnrollmentServiceImpl implements EnrollmentService {
 
         validateEnrollmentEligibility(request.getStudentId(), request.getCourseId(), course);
 
-        // Remove any cancelled record so the student can re-enroll (unique constraint).
-        // flush() is required: Hibernate flushes inserts before deletes within the same
-        // transaction, so without it the insert below would race the delete and violate
-        // the unique (student_id, course_id) constraint.
-        enrollmentRepository.findByStudentIdAndCourseId(request.getStudentId(), request.getCourseId())
-                .filter(e -> e.getStatus() == EnrollmentStatus.CANCELLED)
-                .ifPresent(e -> {
-                    enrollmentRepository.delete(e);
-                    enrollmentRepository.flush();
-                });
-
         BigDecimal amount = course.getPrice();
         BigDecimal discountAmount = BigDecimal.ZERO;
         BigDecimal finalAmount = amount.subtract(discountAmount);
+
+        // Re-enrolling after a previous cancelled attempt (e.g. payment timeout) reuses that
+        // same row/enrollmentCode instead of deleting it and inserting a new one — the unique
+        // (student_id, course_id) constraint means only one row can ever exist per pair anyway,
+        // and Payment/ExamSubmission/AttendanceRecord/CourseEvaluation rows can reference an
+        // enrollment with no cascade delete, so deleting a cancelled row is not always safe.
+        Optional<Enrollment> cancelled = enrollmentRepository.findByStudentIdAndCourseId(
+                        request.getStudentId(), request.getCourseId())
+                .filter(e -> e.getStatus() == EnrollmentStatus.CANCELLED);
+
+        if (cancelled.isPresent()) {
+            Enrollment reused = cancelled.get();
+            reused.setStatus(EnrollmentStatus.PENDING);
+            reused.setPaymentStatus(PaymentStatus.UNPAID);
+            reused.setPaymentMethod(request.getPaymentMethod());
+            reused.setAmount(amount);
+            reused.setDiscountAmount(discountAmount);
+            reused.setFinalAmount(finalAmount);
+            reused.setPaymentSlipUrl(null);
+            reused.setNote(request.getNote());
+            reused.setApprovedBy(null);
+            reused.setApprovedAt(null);
+            reused.setEnrollmentDate(LocalDateTime.now());
+            reused.setPaymentDeadline(LocalDateTime.now().plusMinutes(getPaymentDeadlineMinutes()));
+            return enrollmentMapper.toResponse(enrollmentRepository.save(reused));
+        }
 
         Enrollment enrollment = Enrollment.builder()
                 .student(student)
@@ -137,16 +157,6 @@ public class EnrollmentServiceImpl implements EnrollmentService {
 
         validateNoScheduleConflict(studentId, course);
 
-        // Remove previous cancelled record (unique constraint) — flush immediately,
-        // otherwise Hibernate flushes the insert below before this delete and the
-        // unique (student_id, course_id) constraint rejects it.
-        enrollmentRepository.findByStudentIdAndCourseId(studentId, request.getCourseId())
-                .filter(e -> e.getStatus() == EnrollmentStatus.CANCELLED)
-                .ifPresent(e -> {
-                    enrollmentRepository.delete(e);
-                    enrollmentRepository.flush();
-                });
-
         // Seat check — only count those who have confirmed payment
         long confirmed = enrollmentRepository.countConfirmedPaymentsByCourseId(course.getId());
         if (confirmed >= course.getSeatLimit()) {
@@ -154,6 +164,28 @@ public class EnrollmentServiceImpl implements EnrollmentService {
         }
 
         BigDecimal amount = course.getPrice();
+
+        // Re-enrolling after a previous cancelled attempt reuses that same row/enrollmentCode —
+        // see the matching comment in enrollStudent() for why this replaces delete+recreate.
+        Optional<Enrollment> cancelled = enrollmentRepository.findByStudentIdAndCourseId(studentId, request.getCourseId())
+                .filter(e -> e.getStatus() == EnrollmentStatus.CANCELLED);
+
+        if (cancelled.isPresent()) {
+            Enrollment reused = cancelled.get();
+            reused.setStatus(EnrollmentStatus.PENDING);
+            reused.setAmount(amount);
+            reused.setDiscountAmount(BigDecimal.ZERO);
+            reused.setFinalAmount(amount);
+            reused.setPaymentSlipUrl(request.getPaymentSlipUrl());
+            reused.setPaymentStatus(PaymentStatus.PENDING_VERIFICATION);
+            reused.setNote(null);
+            reused.setApprovedBy(null);
+            reused.setApprovedAt(null);
+            reused.setEnrollmentDate(LocalDateTime.now());
+            reused.setPaymentDeadline(null);
+            return enrollmentMapper.toResponse(enrollmentRepository.save(reused));
+        }
+
         Enrollment enrollment = Enrollment.builder()
                 .student(student)
                 .course(course)
@@ -252,6 +284,47 @@ public class EnrollmentServiceImpl implements EnrollmentService {
         }
 
         return enrollmentMapper.toResponse(enrollmentRepository.save(enrollment));
+    }
+
+    // ตีกลับให้นักเรียนแก้ไขสลิป — ไม่ใช่การปฏิเสธถาวร: status ยังคง PENDING ไว้ (ไม่แตะ APPROVED/REJECTED)
+    // เปลี่ยนแค่ paymentStatus เป็น FAILED ซึ่งหน้าชำระเงินของนักเรียนรองรับการอัปโหลดสลิปใหม่อยู่แล้ว
+    // และไม่ถูกนับที่นั่ง (countConfirmedPaymentsByCourseId นับเฉพาะ PENDING_VERIFICATION/PAID) จึงคืนที่นั่งให้อัตโนมัติ
+    @Override
+    @Transactional
+    public EnrollmentResponse returnForSlipRevision(Long id, ReturnSlipRequest request) {
+        Enrollment enrollment = enrollmentRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Enrollment", id));
+
+        enrollment.setPaymentStatus(PaymentStatus.FAILED);
+        enrollment.setNote(request.getNote());
+
+        Enrollment saved = enrollmentRepository.save(enrollment);
+        sendSlipReturnedNotification(saved);
+        return enrollmentMapper.toResponse(saved);
+    }
+
+    private void sendSlipReturnedNotification(Enrollment enrollment) {
+        try {
+            String studentEmail = enrollment.getStudent().getUser().getEmail();
+            String studentName = enrollment.getStudent().getFirstName() + " " + enrollment.getStudent().getLastName();
+            CreateNotificationRequest notif = new CreateNotificationRequest();
+            notif.setUserId(enrollment.getStudent().getUser().getId());
+            notif.setRecipientEmail(studentEmail);
+            notif.setSubject("กรุณาแก้ไขหลักฐานการชำระเงิน: " + enrollment.getCourse().getCourseName());
+            notif.setMessage(
+                "เรียน " + studentName + "\n\n" +
+                "หลักฐานการชำระเงิน (สลิป) ที่แนบมาสำหรับคอร์ส \"" + enrollment.getCourse().getCourseName() +
+                "\" (รหัสการสมัคร " + enrollment.getEnrollmentCode() + ") ไม่ถูกต้อง กรุณาอัปโหลดสลิปใหม่อีกครั้ง\n\n" +
+                "เหตุผล: " + enrollment.getNote() + "\n\n" +
+                "กรุณาเข้าสู่ระบบไปที่หน้า \"การชำระเงิน\" เพื่ออัปโหลดหลักฐานการชำระเงินใหม่"
+            );
+            notif.setNotificationType(NotificationType.PAYMENT_REJECTED);
+            notif.setReferenceType(ReferenceType.ENROLLMENT);
+            notif.setReferenceId(enrollment.getId());
+            notificationService.sendNotification(notif);
+        } catch (Exception e) {
+            log.warn("Failed to send slip-returned notification for enrollment {}: {}", enrollment.getId(), e.getMessage());
+        }
     }
 
     @Override
