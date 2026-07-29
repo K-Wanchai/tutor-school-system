@@ -1,9 +1,9 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import {
   getAllEnrollments,
-  updateEnrollmentStatus,
   updatePayment,
   approveEnrollment,
+  returnForSlipRevision,
   cancelEnrollment,
 } from '../services/adminEnrollmentService';
 import { resolveFileUrl } from '../../../shared/services/api';
@@ -136,13 +136,13 @@ function DetailModal({ enrollment, onClose, onAction, actionPending }) {
           </div>
 
           <div className="em-action-panel">
-            <label className="em-form-label">หมายเหตุ (ถ้ามี)</label>
+            <label className="em-form-label">หมายเหตุ {note.trim() ? '' : '(จำเป็นต้องระบุก่อนส่งกลับแก้ไขสลิป)'}</label>
             <textarea
               className="em-form-textarea"
               rows={2}
               value={note}
               onChange={(e) => setNote(e.target.value)}
-              placeholder="ระบุหมายเหตุประกอบการดำเนินการ..."
+              placeholder="เช่น สลิปไม่ชัดเจน / ยอดเงินไม่ตรง / รายการไม่ใช่ของคอร์สนี้..."
             />
             <div className="em-action-buttons">
               <button
@@ -150,14 +150,15 @@ function DetailModal({ enrollment, onClose, onAction, actionPending }) {
                 disabled={actionPending}
                 onClick={() => onAction('approve', enrollment, note)}
               >
-                อนุมัติการสมัคร
+                อนุมัติ
               </button>
               <button
                 className="em-btn em-btn--danger"
-                disabled={actionPending}
-                onClick={() => onAction('reject', enrollment, note)}
+                disabled={actionPending || !note.trim()}
+                title={!note.trim() ? 'กรุณาระบุเหตุผลก่อนส่งกลับให้นักเรียนแก้ไขสลิป' : undefined}
+                onClick={() => onAction('return', enrollment, note)}
               >
-                ปฏิเสธการสมัคร
+                ส่งกลับไปให้นักเรียนแก้ไขสลิป
               </button>
             </div>
           </div>
@@ -241,12 +242,14 @@ export default function AdminEnrollmentManagementPage() {
         const approvedBy = localStorage.getItem('username') || 'admin';
         await approveEnrollment(enrollment.id, approvedBy, note);
         showToast('success', 'อนุมัติการสมัครเรียนสำเร็จ');
-      } else if (action === 'reject') {
-        if (hasPendingSlip) {
-          await updatePayment(enrollment.id, { paymentStatus: 'FAILED', note: note || null });
+      } else if (action === 'return') {
+        if (!note.trim()) {
+          showToast('error', 'กรุณาระบุเหตุผลก่อนส่งกลับให้นักเรียนแก้ไขสลิป');
+          setActionPending(false);
+          return;
         }
-        await updateEnrollmentStatus(enrollment.id, 'REJECTED', note);
-        showToast('success', 'ปฏิเสธการสมัครเรียนแล้ว');
+        await returnForSlipRevision(enrollment.id, note.trim());
+        showToast('success', 'ส่งกลับให้นักเรียนแก้ไขสลิปแล้ว');
       } else if (action === 'cancel') {
         if (!window.confirm(`ยืนยันการยกเลิกการสมัครเรียนของ "${enrollment.studentName}" ?`)) {
           setActionPending(false);
@@ -274,7 +277,7 @@ export default function AdminEnrollmentManagementPage() {
       <div className="em-header">
         <div>
           <h1 className="em-title">การสมัครเรียน</h1>
-          <p className="em-subtitle">ตรวจสอบใบสมัครที่ส่งสลิปการชำระเงินแล้ว รอการอนุมัติ/ปฏิเสธ — เมื่ออนุมัติหรือปฏิเสธแล้วจะย้ายไปหน้าประวัติการชำระเงินทันที</p>
+          <p className="em-subtitle">ตรวจสอบใบสมัครที่ส่งสลิปการชำระเงินแล้ว — อนุมัติ หรือส่งกลับให้นักเรียนแก้ไขสลิปหากไม่ถูกต้อง</p>
         </div>
         <div className="em-search-wrap">
           <svg className="em-search-icon" viewBox="0 0 20 20" fill="currentColor" width="15" height="15">

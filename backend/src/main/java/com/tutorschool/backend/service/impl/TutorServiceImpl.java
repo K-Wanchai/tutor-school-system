@@ -27,8 +27,6 @@ import com.tutorschool.backend.service.TutorService;
 
 import lombok.RequiredArgsConstructor;
 
-import java.util.UUID;
-
 @Service
 @RequiredArgsConstructor
 public class TutorServiceImpl implements TutorService {
@@ -84,11 +82,8 @@ public class TutorServiceImpl implements TutorService {
     .build();
         user = userRepository.save(user);
 
-        String tutorCode = "TUT" + UUID.randomUUID().toString().replace("-", "").substring(0, 8).toUpperCase();
-
         Tutor tutor = Tutor.builder()
                 .user(user)
-                .tutorCode(tutorCode)
                 .firstName(request.getFirstName())
                 .lastName(request.getLastName())
                 .phoneNumber(request.getPhoneNumber())
@@ -96,7 +91,13 @@ public class TutorServiceImpl implements TutorService {
                 .bio(request.getBio())
                 .build();
 
-        return tutorMapper.toResponse(tutorRepository.save(tutor));
+        tutor = tutorRepository.save(tutor);
+
+        // รหัสติวเตอร์อิงจาก id ในฐานข้อมูล เรียงลำดับตามลำดับสร้าง แก้ไขไม่ได้ (เหมือน CRS-/ENR-/EXM-)
+        tutor.setTutorCode("TUT-" + String.format("%04d", tutor.getId()));
+        tutor = tutorRepository.save(tutor);
+
+        return tutorMapper.toResponse(tutor);
     }
 
     @Override
@@ -131,16 +132,6 @@ public class TutorServiceImpl implements TutorService {
             throw new ResourceInUseException("ไม่สามารถลบข้อมูลติวเตอร์ได้เนื่องจากมีคอร์สเรียนเชื่อมโยงอยู่");
         }
         tutorRepository.delete(tutor);
-    }
-
-    @Override
-    @Transactional
-    public TutorResponse toggleStatus(Long id, boolean enabled) {
-        Tutor tutor = tutorRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Tutor", id));
-        tutor.getUser().setEnabled(enabled);
-        userRepository.save(tutor.getUser());
-        return tutorMapper.toResponse(tutor);
     }
 
     @Override

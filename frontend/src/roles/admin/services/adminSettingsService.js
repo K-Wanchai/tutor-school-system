@@ -1,4 +1,5 @@
 import api from '../../../shared/services/api';
+import { encodeDaySlots } from '../utils/courseScheduleUtils';
 
 function unwrap(res) {
   return res.data?.data ?? res.data;
@@ -40,6 +41,7 @@ export async function updateInstitutionProfile(form) {
     bankQrCode: form.bankQrCode || null,
     promptPayId: form.promptPayId || null,
     enrollmentPaymentDeadlineMinutes: Number(form.enrollmentPaymentDeadlineMinutes) || 15,
+    termTimeSlots: encodeDaySlots(form.termTimeSlots || {}),
   };
   try {
     const res = await api.put('/institution-profile', payload);

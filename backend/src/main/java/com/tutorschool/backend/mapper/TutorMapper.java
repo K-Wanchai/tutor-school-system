@@ -19,7 +19,6 @@ public class TutorMapper {
                 .phoneNumber(Tutor.getPhoneNumber())
                 .specialization(Tutor.getSpecialization())
                 .bio(Tutor.getBio())
-                .enabled(Tutor.getUser().isEnabled())
                 .createdAt(Tutor.getCreatedAt())
                 .updatedAt(Tutor.getUpdatedAt())
                 .build();

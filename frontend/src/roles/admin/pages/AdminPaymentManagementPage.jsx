@@ -2,7 +2,6 @@ import { useState, useEffect, useCallback, useMemo } from 'react';
 import { getAllEnrollments } from '../services/adminEnrollmentService';
 import { resolveFileUrl } from '../../../shared/services/api';
 import {
-  ENROLLMENT_HISTORY_STATUSES,
   ENROLLMENT_HISTORY_STATUS_LABEL,
   getEnrollmentHistoryStatus,
 } from '../../../shared/utils/enrollmentHistoryStatus';
@@ -10,15 +9,13 @@ import './AdminPaymentManagementPage.css';
 
 // ── Labels & Badge Maps ─────────────────────────────────────────────────────
 // สถานะที่แสดง (badge เดียว) ใช้ชุดเดียวกับหน้าประวัติของนักเรียน — ดู shared/utils/enrollmentHistoryStatus
+// หน้านี้เป็นบันทึกรายรับ (revenue ledger) — แสดงเฉพาะรายการที่ชำระเงินเรียบร้อยแล้วเท่านั้น
+// รายการที่รอตรวจสอบอยู่ที่หน้า "การสมัครเรียน" (คิวตรวจสอบ) ส่วนที่ยกเลิก/ตีกลับแก้ไขสลิป
+// ไม่ถือเป็นธุรกรรมที่เสร็จสมบูรณ์ จึงไม่แสดงในบันทึกรายรับนี้
 
 const STATUS_TONE = {
-  PENDING_VERIFICATION: 'warning',
   APPROVED: 'success',
-  REJECTED: 'error',
-  CANCELLED: 'default',
 };
-
-const STATUS_TABS = ['ALL', ...ENROLLMENT_HISTORY_STATUSES];
 
 const PAYMENT_METHOD_LABEL = {
   BANK_TRANSFER: 'โอนเงินผ่านธนาคาร',
@@ -146,7 +143,6 @@ export default function AdminPaymentManagementPage() {
   const [enrollments, setEnrollments] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const [activeTab, setActiveTab] = useState('ALL');
   const [searchTerm, setSearchTerm] = useState('');
   const [currentPage, setCurrentPage] = useState(0);
   const [reviewEnrollment, setReviewEnrollment] = useState(null);
@@ -157,9 +153,9 @@ export default function AdminPaymentManagementPage() {
     try {
       const data = await getAllEnrollments();
       const list = Array.isArray(data) ? data : [];
-      // History only shows applications that have already been decided —
-      // still-pending ones live on the enrollment review page instead.
-      setEnrollments(list.filter((e) => e.status !== 'PENDING'));
+      // บันทึกรายรับแสดงเฉพาะรายการที่ชำระเงินเรียบร้อยแล้วเท่านั้น (APPROVED/COMPLETED) —
+      // รอตรวจสอบอยู่ที่หน้าคิวตรวจสอบ ส่วนยกเลิก/ปฏิเสธ/ตีกลับแก้ไขสลิปไม่ถือเป็นรายรับจริง
+      setEnrollments(list.filter((e) => getEnrollmentHistoryStatus(e) === 'APPROVED'));
     } catch (err) {
       setError(err.message || 'ไม่สามารถโหลดข้อมูลการชำระเงินได้');
     } finally {
@@ -169,19 +165,13 @@ export default function AdminPaymentManagementPage() {
 
   useEffect(() => { load(); }, [load]);
 
-  const stats = useMemo(() => {
-    const approved = enrollments.filter((e) => getEnrollmentHistoryStatus(e) === 'APPROVED');
-    return {
-      pendingVerification: enrollments.filter((e) => getEnrollmentHistoryStatus(e) === 'PENDING_VERIFICATION').length,
-      approved: approved.length,
-      rejected: enrollments.filter((e) => getEnrollmentHistoryStatus(e) === 'REJECTED').length,
-      revenue: approved.reduce((sum, e) => sum + (Number(e.finalAmount) || 0), 0),
-    };
-  }, [enrollments]);
+  const stats = useMemo(() => ({
+    count: enrollments.length,
+    revenue: enrollments.reduce((sum, e) => sum + (Number(e.finalAmount) || 0), 0),
+  }), [enrollments]);
 
   const filtered = useMemo(() => {
     let list = enrollments;
-    if (activeTab !== 'ALL') list = list.filter((e) => getEnrollmentHistoryStatus(e) === activeTab);
     const term = searchTerm.trim().toLowerCase();
     if (term) {
       list = list.filter((e) =>
@@ -193,15 +183,10 @@ export default function AdminPaymentManagementPage() {
       );
     }
     return [...list].sort((a, b) => new Date(b.updatedAt || 0) - new Date(a.updatedAt || 0));
-  }, [enrollments, activeTab, searchTerm]);
+  }, [enrollments, searchTerm]);
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   const pageItems = filtered.slice(currentPage * PAGE_SIZE, currentPage * PAGE_SIZE + PAGE_SIZE);
-
-  function handleTabChange(tab) {
-    setActiveTab(tab);
-    setCurrentPage(0);
-  }
 
   function handleSearchChange(e) {
     setSearchTerm(e.target.value);
@@ -216,7 +201,7 @@ export default function AdminPaymentManagementPage() {
         <div>
           <h1 className="pm-title">ประวัติการชำระเงิน</h1>
           <p className="pm-subtitle">
-            หน้านี้สำหรับดูข้อมูลเท่านั้น — สถานะจะเปลี่ยนไปตามการดำเนินการที่หน้าการสมัครเรียน
+            บันทึกรายการที่ชำระเงินเรียบร้อยแล้วเท่านั้น — สำหรับตรวจสอบใบสมัครที่รอดำเนินการ ไปที่หน้าการสมัครเรียน
           </p>
         </div>
         <div className="pm-search-wrap">
@@ -233,35 +218,14 @@ export default function AdminPaymentManagementPage() {
 
       {/* ── Stats ── */}
       <div className="pm-stats-grid">
-        <div className="pm-stat-card pm-stat-card--warning">
-          <span className="pm-stat-value">{loading ? '...' : stats.pendingVerification}</span>
-          <span className="pm-stat-label">รอตรวจสอบ</span>
-        </div>
         <div className="pm-stat-card pm-stat-card--success">
-          <span className="pm-stat-value">{loading ? '...' : stats.approved}</span>
+          <span className="pm-stat-value">{loading ? '...' : stats.count}</span>
           <span className="pm-stat-label">ชำระเงินเรียบร้อยแล้ว</span>
-        </div>
-        <div className="pm-stat-card pm-stat-card--error">
-          <span className="pm-stat-value">{loading ? '...' : stats.rejected}</span>
-          <span className="pm-stat-label">ปฏิเสธ</span>
         </div>
         <div className="pm-stat-card">
           <span className="pm-stat-value">{loading ? '...' : formatCurrency(stats.revenue)}</span>
           <span className="pm-stat-label">รายรับที่ยืนยันแล้ว</span>
         </div>
-      </div>
-
-      {/* ── Tabs ── */}
-      <div className="pm-tabs">
-        {STATUS_TABS.map((tab) => (
-          <button
-            key={tab}
-            className={`pm-tab${activeTab === tab ? ' pm-tab--active' : ''}`}
-            onClick={() => handleTabChange(tab)}
-          >
-            {tab === 'ALL' ? 'ทั้งหมด' : ENROLLMENT_HISTORY_STATUS_LABEL[tab]}
-          </button>
-        ))}
       </div>
 
       {/* ── Table Card ── */}

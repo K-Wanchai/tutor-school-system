@@ -18,7 +18,8 @@ public class Notification {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "notification_code", nullable = false, unique = true, length = 30)
+    // ไม่บังคับ nullable ตอน insert เพราะ code ถูก generate จาก id หลัง save ครั้งแรก (เหมือน Course/Enrollment)
+    @Column(name = "notification_code", unique = true, length = 30)
     private String notificationCode;
 
     @ManyToOne(fetch = FetchType.LAZY)

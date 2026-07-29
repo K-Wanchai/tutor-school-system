@@ -143,6 +143,10 @@ public class CourseServiceImpl implements CourseService {
         String scheduleDays = request.getScheduleDays();
         validateNoScheduleConflict(tutor.getId(), scheduleDays, null);
 
+        boolean hasLessons = request.getLessons() != null && !request.getLessons().isEmpty();
+        CourseStatus initialStatus = resolveAutoStatus(LocalDate.now(),
+                request.getRegistrationStartDate(), request.getRegistrationEndDate(), hasLessons);
+
         Course course = Course.builder()
                 .courseName(request.getCourseName())
                 .price(price)
@@ -152,7 +156,7 @@ public class CourseServiceImpl implements CourseService {
                 .registrationStartDate(request.getRegistrationStartDate())
                 .registrationEndDate(request.getRegistrationEndDate())
                 .courseStartDate(request.getCourseStartDate())
-                .status(CourseStatus.CLOSED)
+                .status(initialStatus)
                 .tutorViewed(false)
                 .tutor(tutor)
                 .scheduleDays(scheduleDays)
@@ -393,21 +397,71 @@ public class CourseServiceImpl implements CourseService {
         return tutor;
     }
 
-    // บทเรียนแก้ไข/เพิ่ม/ลบได้เฉพาะช่วง CLOSED/OPEN_FOR_REGISTRATION — ล็อกทันทีที่เริ่มสอน (ONGOING)
+    // บทเรียนแก้ไข/เพิ่ม/ลบได้เฉพาะช่วง PENDING/CLOSED/OPEN_FOR_REGISTRATION — ล็อกทันทีที่เริ่มสอน (ONGOING)
     private void ensureLessonsEditable(Course course) {
-        if (course.getStatus() != CourseStatus.CLOSED && course.getStatus() != CourseStatus.OPEN_FOR_REGISTRATION) {
+        if (course.getStatus() != CourseStatus.PENDING
+                && course.getStatus() != CourseStatus.CLOSED
+                && course.getStatus() != CourseStatus.OPEN_FOR_REGISTRATION) {
             throw new IllegalStateException(
-                    "Lessons can only be added, edited, or deleted while the course is closed or open for registration (not once teaching has started)");
+                    "Lessons can only be added, edited, or deleted while the course is pending, closed, or open for registration (not once teaching has started)");
         }
     }
 
     // หัวข้อสอบเพิ่มได้ต่อเนื่องแม้เริ่มสอนแล้ว (ONGOING) เพื่อให้เปิดสอบทีละบทได้
     private void ensureTestsAddable(Course course) {
-        if (course.getStatus() != CourseStatus.CLOSED
+        if (course.getStatus() != CourseStatus.PENDING
+                && course.getStatus() != CourseStatus.CLOSED
                 && course.getStatus() != CourseStatus.OPEN_FOR_REGISTRATION
                 && course.getStatus() != CourseStatus.ONGOING) {
             throw new IllegalStateException(
-                    "Exam topics can only be added while the course is closed, open for registration, or ongoing");
+                    "Exam topics can only be added while the course is pending, closed, open for registration, or ongoing");
+        }
+    }
+
+    /**
+     * คำนวณสถานะคอร์สจากวันที่รับสมัคร — ใช้ทั้งตอนสร้างคอร์สและตอน scheduler ไล่ auto-transition
+     * เพื่อให้ผลลัพธ์ตรงกันเสมอไม่ว่าจะคำนวณตอนไหน
+     */
+    private CourseStatus resolveAutoStatus(LocalDate today, LocalDate regStart, LocalDate regEnd, boolean hasLessons) {
+        if (regStart == null) {
+            return CourseStatus.CLOSED; // ไม่ได้กำหนดวันเปิดรับสมัครไว้ ไม่มีวันให้ระบบอ้างอิง ต้องให้แอดมินเปิดเอง
+        }
+        if (today.isBefore(regStart)) {
+            return CourseStatus.PENDING; // ยังไม่ถึงวันเปิดรับสมัคร
+        }
+        if (regEnd != null && today.isAfter(regEnd)) {
+            return CourseStatus.CLOSED; // ถึงวันเปิดแล้วแต่เลยวันปิดไปด้วย (เช่นตั้งวันย้อนหลัง)
+        }
+        // ถึงวันเปิดรับสมัครแล้วและยังอยู่ในช่วง — เปิดได้ก็ต่อเมื่อมีบทเรียนอย่างน้อย 1 บท
+        // ถ้ายังไม่มีบทเรียน ให้ค้างสถานะรอเปิดรับสมัครไว้ก่อน จนกว่าติวเตอร์จะเพิ่มบทเรียน
+        return hasLessons ? CourseStatus.OPEN_FOR_REGISTRATION : CourseStatus.PENDING;
+    }
+
+    @Override
+    @Transactional
+    public void autoTransitionCourses() {
+        LocalDate today = LocalDate.now();
+
+        // PENDING ที่ถึงวันเปิดรับสมัครแล้ว → เปิด/ปิด/ค้างไว้ ตามกติกาเดียวกับตอนสร้างคอร์ส
+        List<Course> pendingDue = courseRepository.findByStatusAndRegistrationStartDateLessThanEqual(
+                CourseStatus.PENDING, today);
+        for (Course course : pendingDue) {
+            CourseStatus next = resolveAutoStatus(today, course.getRegistrationStartDate(),
+                    course.getRegistrationEndDate(), !course.getLessons().isEmpty());
+            if (next != course.getStatus()) {
+                course.setStatus(next);
+                courseRepository.save(course);
+                log.info("Auto-transitioned course {} ({}) to {}", course.getId(), course.getCourseName(), next);
+            }
+        }
+
+        // OPEN_FOR_REGISTRATION ที่พ้นวันปิดรับสมัครแล้ว → ปิดรับสมัครให้อัตโนมัติ
+        List<Course> openDue = courseRepository.findByStatusAndRegistrationEndDateLessThan(
+                CourseStatus.OPEN_FOR_REGISTRATION, today);
+        if (!openDue.isEmpty()) {
+            openDue.forEach(course -> course.setStatus(CourseStatus.CLOSED));
+            courseRepository.saveAll(openDue);
+            log.info("Auto-closed {} course(s) past their registration end date", openDue.size());
         }
     }
 

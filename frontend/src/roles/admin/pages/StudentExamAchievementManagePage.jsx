@@ -15,6 +15,7 @@ import { getSchoolTracks } from '../services/schoolTrackService';
 import { getVocationalMajors } from '../services/vocationalMajorService';
 import { getAdmissionRounds } from '../services/admissionRoundService';
 import { LEVEL_LABEL } from './StudentAchievementDetailPage';
+import DateInput from '../../../shared/components/DateInput';
 import './ExamInstitutionManagePage.css';
 import './ExamInstitutionDetailPage.css';
 
@@ -901,7 +902,7 @@ export default function StudentExamAchievementManagePage() {
 
               <div className="eid-field">
                 <label>วันที่ประกาศผล / วันที่บันทึกผล</label>
-                <input type="date" value={form.resultDate} onChange={(e) => fld('resultDate', e.target.value)} />
+                <DateInput value={form.resultDate} onChange={(v) => fld('resultDate', v)} />
               </div>
 
               <div className="eid-field">

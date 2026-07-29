@@ -17,6 +17,9 @@ public class InstitutionProfileSeeder implements CommandLineRunner {
     private static final String DEFAULT_PHONE = "020000000";
     private static final String DEFAULT_EMAIL = "contact@tutorschool.com";
     private static final int DEFAULT_ENROLLMENT_PAYMENT_DEADLINE_MINUTES = 15;
+    // จ.-ศ. เรียนเย็นหลังเลิกเรียนโรงเรียนปกติ, ส.-อา. เรียนได้เต็มวัน (เว้นพักเที่ยงเองตอนจัดตารางจริง)
+    private static final String DEFAULT_TERM_TIME_SLOTS =
+            "MON:17:00-20:00,TUE:17:00-20:00,WED:17:00-20:00,THU:17:00-20:00,FRI:17:00-20:00,SAT:09:00-16:00,SUN:09:00-16:00";
 
     private final InstitutionProfileRepository institutionProfileRepository;
 
@@ -33,6 +36,7 @@ public class InstitutionProfileSeeder implements CommandLineRunner {
                 .phoneNumber(DEFAULT_PHONE)
                 .email(DEFAULT_EMAIL)
                 .enrollmentPaymentDeadlineMinutes(DEFAULT_ENROLLMENT_PAYMENT_DEADLINE_MINUTES)
+                .termTimeSlots(DEFAULT_TERM_TIME_SLOTS)
                 .build();
 
         institutionProfileRepository.save(profile);

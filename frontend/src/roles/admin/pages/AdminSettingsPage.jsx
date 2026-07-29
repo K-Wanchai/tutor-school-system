@@ -5,6 +5,9 @@ import {
   updateInstitutionProfile,
   uploadInstitutionImage,
 } from '../services/adminSettingsService';
+import { parseDaySlots } from '../utils/courseScheduleUtils';
+import { ScheduleSection } from '../components/CourseScheduleFields';
+import './AdminCourseManagementPage.css';
 import './AdminSettingsPage.css';
 
 const THAI_BANKS = [
@@ -26,6 +29,7 @@ function toForm(profile) {
     bankQrCode: profile?.bankQrCode || '',
     promptPayId: profile?.promptPayId || '',
     enrollmentPaymentDeadlineMinutes: profile?.enrollmentPaymentDeadlineMinutes ?? 15,
+    termTimeSlots: parseDaySlots(profile?.termTimeSlots),
   };
 }
 
@@ -99,6 +103,11 @@ export default function AdminSettingsPage() {
 
   function handleChange(e) {
     const { name, value } = e.target;
+    setForm((prev) => ({ ...prev, [name]: value }));
+    if (errors[name]) setErrors((prev) => ({ ...prev, [name]: '' }));
+  }
+
+  function fld(name, value) {
     setForm((prev) => ({ ...prev, [name]: value }));
     if (errors[name]) setErrors((prev) => ({ ...prev, [name]: '' }));
   }
@@ -396,6 +405,27 @@ export default function AdminSettingsPage() {
                 <p className="is-hint">
                   นับตั้งแต่นักเรียนกดสมัครเรียน หากไม่ชำระเงินภายในเวลานี้ ที่นั่งจะถูกยกเลิกอัตโนมัติ
                 </p>
+              </div>
+            </div>
+
+            {/* ── Term Time Slots Card ── */}
+            <div className="is-card is-card--full">
+              <div className="is-card-header">
+                <h2 className="is-card-title">เวลาเรียนที่แนะนำช่วงเปิดเทอม</h2>
+                <p className="is-card-subtitle">
+                  กำหนดเวลาเรียนที่เหมาะสมของแต่ละวันในสัปดาห์ตอนเปิดเทอม (นักเรียนยังเรียนโรงเรียนปกติอยู่)
+                  ใช้เป็นเวลาแนะนำให้กดเลือกเร็วๆ ตอนแอดมินจัดตารางสอนให้ติวเตอร์
+                </p>
+              </div>
+              <div className="is-card-body">
+                <ScheduleSection
+                  form={form}
+                  fld={fld}
+                  slotsField="termTimeSlots"
+                  icon="🗓️"
+                  title="เวลาเรียนแนะนำรายวัน"
+                  hint="(จ.-ศ. แนะนำช่วงเย็นหลังเลิกเรียน / ส.-อา. เต็มวันแต่อย่าลืมเว้นพักเที่ยง)"
+                />
               </div>
             </div>
           </div>

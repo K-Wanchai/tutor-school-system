@@ -250,6 +250,18 @@ export default function StudentPaymentsPage() {
                 </div>
               )}
 
+              {en.paymentStatus === 'FAILED' && (
+                <div className="pay-rejected-note">
+                  <svg viewBox="0 0 20 20" fill="currentColor" width="16" height="16">
+                    <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l6.28 11.18c.75 1.334-.213 2.987-1.744 2.987H3.72c-1.53 0-2.493-1.653-1.744-2.987l6.28-11.18zM11 14a1 1 0 11-2 0 1 1 0 012 0zm-.25-6.5a.75.75 0 00-1.5 0v3.5a.75.75 0 001.5 0v-3.5z" clipRule="evenodd" />
+                  </svg>
+                  <div>
+                    <strong>สลิปถูกส่งกลับให้แก้ไข</strong>
+                    {en.note && <p className="pay-rejected-reason">เหตุผล: {en.note}</p>}
+                  </div>
+                </div>
+              )}
+
               <div className="pay-card-footer">
                 {(en.paymentStatus === 'UNPAID' || en.paymentStatus === 'FAILED') && (
                   <button className="pay-btn-danger" disabled={cancelling === en.id} onClick={() => handleCancel(en)}>

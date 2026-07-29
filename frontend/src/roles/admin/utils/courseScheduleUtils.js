@@ -75,7 +75,7 @@ export function findConflictDays(scheduleSlots, avail) {
 
 export function validateCourseForm(f, tutorAvail, priceRequired = true) {
   const e = {};
-  if (!f.courseName?.trim()) e.courseName = 'กรุณากรอกชื่อวิชา';
+  if (!f.courseName?.trim()) e.courseName = 'กรุณากรอกชื่อคอร์ส';
   if (!f.tutorId) e.tutorId = 'กรุณาเลือกติวเตอร์';
   if (priceRequired && (f.price === '' || f.price == null || isNaN(f.price))) e.price = 'กรุณากรอกราคา';
   else if (f.price !== '' && f.price != null && Number(f.price) < 0) e.price = 'ราคาต้องไม่ติดลบ';

@@ -143,6 +143,15 @@ public class EnrollmentController {
         return ResponseEntity.ok(ApiResponse.success("Enrollment approved successfully", response));
     }
 
+    @PatchMapping("/{id}/return-for-revision")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<ApiResponse<EnrollmentResponse>> returnForSlipRevision(
+            @PathVariable Long id,
+            @Valid @RequestBody ReturnSlipRequest request) {
+        EnrollmentResponse response = enrollmentService.returnForSlipRevision(id, request);
+        return ResponseEntity.ok(ApiResponse.success("Enrollment sent back for slip revision", response));
+    }
+
     @DeleteMapping("/{id}")
     @PreAuthorize("hasAnyRole('ADMIN', 'STUDENT')")
     public ResponseEntity<ApiResponse<Void>> cancelEnrollment(

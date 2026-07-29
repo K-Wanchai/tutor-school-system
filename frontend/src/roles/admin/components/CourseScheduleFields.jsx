@@ -106,8 +106,15 @@ export function TutorAvailabilityPanel({ avail, loading }) {
   );
 }
 
-export function ScheduleSection({ form, fld, avail, err }) {
-  const slots = form.scheduleSlots || {};
+export function ScheduleSection({
+  form, fld, avail, err,
+  slotsField = 'scheduleSlots',
+  icon = '📅',
+  title = 'ตารางสอน *',
+  hint = '(08:00–22:00)',
+  suggestions,
+}) {
+  const slots = form[slotsField] || {};
   const orderedSelected = DAYS.map(d => d.key).filter(k => k in slots);
   const conflicts = findConflictDays(slots, avail);
   const conflictDaySet = new Set(conflicts.map(c => c.day));
@@ -119,23 +126,29 @@ export function ScheduleSection({ form, fld, avail, err }) {
     } else {
       next[key] = { start: '', end: '' };
     }
-    fld('scheduleSlots', next);
+    fld(slotsField, next);
   }
 
   function setSlotTime(day, field, value) {
-    fld('scheduleSlots', { ...slots, [day]: { ...slots[day], [field]: value } });
+    fld(slotsField, { ...slots, [day]: { ...slots[day], [field]: value } });
+  }
+
+  function applySuggestion(day) {
+    const s = suggestions?.[day];
+    if (!s) return;
+    fld(slotsField, { ...slots, [day]: { start: s.start, end: s.end } });
   }
 
   return (
     <div className="cm-schedule-section">
       <div className="cm-schedule-section-title">
-        <span className="cm-schedule-icon">📅</span>
-        <span>ตารางสอน *</span>
+        <span className="cm-schedule-icon">{icon}</span>
+        <span>{title}</span>
       </div>
 
       {/* เลือกวัน */}
       <div className="cm-field">
-        <label>กดเลือกวันที่สอน และใส่เวลาแต่ละวัน <span className="cm-lbl-hint">(08:00–22:00)</span></label>
+        <label>กดเลือกวันที่สอน และใส่เวลาแต่ละวัน <span className="cm-lbl-hint">{hint}</span></label>
         <div className="cm-day-pills">
           {DAYS.map(d => (
             <button key={d.key} type="button"
@@ -153,6 +166,7 @@ export function ScheduleSection({ form, fld, avail, err }) {
           {orderedSelected.map(key => {
             const slot = slots[key];
             const conflict = conflicts.find(c => c.day === key);
+            const suggestion = suggestions?.[key];
             return (
               <div key={key} className={`cm-per-day-row ${conflictDaySet.has(key) ? 'cm-per-day-row--conflict' : ''}`}>
                 <span className="cm-per-day-label">{DAY_LABEL_TH[key]}</span>
@@ -168,7 +182,13 @@ export function ScheduleSection({ form, fld, avail, err }) {
                     ซ้ำ {conflict.start}–{conflict.end}{conflict.course ? ` (${conflict.course})` : ''}
                   </span>
                 ) : (!slot.start || !slot.end) ? (
-                  <span className="cm-per-day-hint-msg">ยังไม่ได้ใส่เวลา</span>
+                  suggestion ? (
+                    <button type="button" className="cm-per-day-suggest-btn" onClick={() => applySuggestion(key)}>
+                      ใช้เวลาแนะนำ {suggestion.start}–{suggestion.end}
+                    </button>
+                  ) : (
+                    <span className="cm-per-day-hint-msg">ยังไม่ได้ใส่เวลา</span>
+                  )
                 ) : null}
               </div>
             );
