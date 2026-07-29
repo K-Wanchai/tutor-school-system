@@ -5,7 +5,7 @@ import './StudentSidebar.css';
 
 const NAV_ITEMS = [
   {
-    label: 'แดชบอร์ด',
+    label: 'แดชบอร์ดการเรียน',
     path: '/student/dashboard',
     icon: (
       <svg viewBox="0 0 20 20" fill="currentColor" width="18" height="18">
