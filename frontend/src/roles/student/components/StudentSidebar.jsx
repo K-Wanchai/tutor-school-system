@@ -5,20 +5,11 @@ import './StudentSidebar.css';
 
 const NAV_ITEMS = [
   {
-    label: 'แดชบอร์ด',
+    label: 'แดชบอร์ดการเรียน',
     path: '/student/dashboard',
     icon: (
       <svg viewBox="0 0 20 20" fill="currentColor" width="18" height="18">
         <path d="M3 4a1 1 0 011-1h12a1 1 0 011 1v2a1 1 0 01-1 1H4a1 1 0 01-1-1V4zM3 10a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H4a1 1 0 01-1-1v-6zM14 9a1 1 0 00-1 1v6a1 1 0 001 1h2a1 1 0 001-1v-6a1 1 0 00-1-1h-2z" />
-      </svg>
-    ),
-  },
-  {
-    label: 'คอร์สของฉัน',
-    path: '/student/courses',
-    icon: (
-      <svg viewBox="0 0 20 20" fill="currentColor" width="18" height="18">
-        <path d="M9 4.804A7.968 7.968 0 005.5 4c-1.255 0-2.443.29-3.5.804v10A7.969 7.969 0 015.5 14c1.669 0 3.218.51 4.5 1.385A7.962 7.962 0 0114.5 14c1.255 0 2.443.29 3.5.804v-10A7.968 7.968 0 0014.5 4c-1.255 0-2.443.29-3.5.804V12a1 1 0 11-2 0V4.804z" />
       </svg>
     ),
   },
@@ -33,6 +24,42 @@ const NAV_ITEMS = [
           d="M4 5a2 2 0 012-2 3 3 0 003 3h2a3 3 0 003-3 2 2 0 012 2v11a2 2 0 01-2 2H6a2 2 0 01-2-2V5zm3 4a1 1 0 000 2h.01a1 1 0 100-2H7zm3 0a1 1 0 000 2h3a1 1 0 100-2h-3zm-3 4a1 1 0 100 2h.01a1 1 0 100-2H7zm3 0a1 1 0 100 2h3a1 1 0 100-2h-3z"
           clipRule="evenodd"
         />
+      </svg>
+    ),
+  },
+    {
+    label: 'ประวัติการสมัครเรียน',
+    path: '/student/enrollment-history',
+    icon: (
+      <svg viewBox="0 0 20 20" fill="currentColor" width="18" height="18">
+        <path
+          fillRule="evenodd"
+          d="M3 4a1 1 0 011-1h12a1 1 0 011 1v2a1 1 0 01-1 1H4a1 1 0 01-1-1V4zM3 10a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H4a1 1 0 01-1-1v-6zM14 9a1 1 0 00-1 1v6a1 1 0 001 1h2a1 1 0 001-1v-6a1 1 0 00-1-1h-2z"
+          clipRule="evenodd"
+        />
+      </svg>
+    ),
+  },
+  {
+    label: 'การชำระเงิน',
+    path: '/student/payments',
+    icon: (
+      <svg viewBox="0 0 20 20" fill="currentColor" width="18" height="18">
+        <path d="M4 4a2 2 0 00-2 2v1h16V6a2 2 0 00-2-2H4z" />
+        <path
+          fillRule="evenodd"
+          d="M18 9H2v5a2 2 0 002 2h12a2 2 0 002-2V9zM4 13a1 1 0 011-1h1a1 1 0 110 2H5a1 1 0 01-1-1zm5-1a1 1 0 100 2h1a1 1 0 100-2H9z"
+          clipRule="evenodd"
+        />
+      </svg>
+    ),
+  },
+  {
+    label: 'คอร์สของฉัน',
+    path: '/student/courses',
+    icon: (
+      <svg viewBox="0 0 20 20" fill="currentColor" width="18" height="18">
+        <path d="M9 4.804A7.968 7.968 0 005.5 4c-1.255 0-2.443.29-3.5.804v10A7.969 7.969 0 015.5 14c1.669 0 3.218.51 4.5 1.385A7.962 7.962 0 0114.5 14c1.255 0 2.443.29 3.5.804v-10A7.968 7.968 0 0014.5 4c-1.255 0-2.443.29-3.5.804V12a1 1 0 11-2 0V4.804z" />
       </svg>
     ),
   },
@@ -68,33 +95,6 @@ const NAV_ITEMS = [
     icon: (
       <svg viewBox="0 0 20 20" fill="currentColor" width="18" height="18">
         <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-      </svg>
-    ),
-  },
-  {
-    label: 'การชำระเงิน',
-    path: '/student/payments',
-    icon: (
-      <svg viewBox="0 0 20 20" fill="currentColor" width="18" height="18">
-        <path d="M4 4a2 2 0 00-2 2v1h16V6a2 2 0 00-2-2H4z" />
-        <path
-          fillRule="evenodd"
-          d="M18 9H2v5a2 2 0 002 2h12a2 2 0 002-2V9zM4 13a1 1 0 011-1h1a1 1 0 110 2H5a1 1 0 01-1-1zm5-1a1 1 0 100 2h1a1 1 0 100-2H9z"
-          clipRule="evenodd"
-        />
-      </svg>
-    ),
-  },
-  {
-    label: 'ประวัติการลงทะเบียน',
-    path: '/student/enrollment-history',
-    icon: (
-      <svg viewBox="0 0 20 20" fill="currentColor" width="18" height="18">
-        <path
-          fillRule="evenodd"
-          d="M3 4a1 1 0 011-1h12a1 1 0 011 1v2a1 1 0 01-1 1H4a1 1 0 01-1-1V4zM3 10a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H4a1 1 0 01-1-1v-6zM14 9a1 1 0 00-1 1v6a1 1 0 001 1h2a1 1 0 001-1v-6a1 1 0 00-1-1h-2z"
-          clipRule="evenodd"
-        />
       </svg>
     ),
   },
