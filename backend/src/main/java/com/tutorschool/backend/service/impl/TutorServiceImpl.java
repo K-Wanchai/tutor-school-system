@@ -9,10 +9,12 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.tutorschool.backend.dto.request.ChangePasswordRequest;
+import com.tutorschool.backend.dto.request.CreateNotificationRequest;
 import com.tutorschool.backend.dto.request.CreateTutorRequest;
 import com.tutorschool.backend.dto.request.UpdateTutorRequest;
 import com.tutorschool.backend.dto.response.PageResponse;
 import com.tutorschool.backend.dto.response.TutorResponse;
+import com.tutorschool.backend.entity.NotificationType;
 import com.tutorschool.backend.entity.Role;
 import com.tutorschool.backend.entity.Tutor;
 import com.tutorschool.backend.entity.User;
@@ -23,10 +25,14 @@ import com.tutorschool.backend.mapper.TutorMapper;
 import com.tutorschool.backend.repository.CourseRepository;
 import com.tutorschool.backend.repository.TutorRepository;
 import com.tutorschool.backend.repository.UserRepository;
+import com.tutorschool.backend.service.EmailService;
+import com.tutorschool.backend.service.NotificationService;
 import com.tutorschool.backend.service.TutorService;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class TutorServiceImpl implements TutorService {
@@ -38,6 +44,8 @@ public class TutorServiceImpl implements TutorService {
     private final PasswordEncoder passwordEncoder;
     private final TutorMapper tutorMapper;
     private final CourseRepository courseRepository;
+    private final NotificationService notificationService;
+    private final EmailService emailService;
 
     @Override
     @Transactional(readOnly = true)
@@ -156,5 +164,21 @@ public class TutorServiceImpl implements TutorService {
 
         user.setPassword(passwordEncoder.encode(request.getNewPassword()));
         userRepository.save(user);
+
+        sendPasswordChangedNotification(user, tutor.getFirstName() + " " + tutor.getLastName());
+    }
+
+    private void sendPasswordChangedNotification(User user, String fullName) {
+        try {
+            CreateNotificationRequest notif = new CreateNotificationRequest();
+            notif.setUserId(user.getId());
+            notif.setRecipientEmail(user.getEmail());
+            notif.setSubject("รหัสผ่านของคุณถูกเปลี่ยน");
+            notif.setMessage(emailService.buildPasswordChangedEmail(fullName));
+            notif.setNotificationType(NotificationType.PASSWORD_CHANGED);
+            notificationService.sendNotification(notif);
+        } catch (Exception e) {
+            log.warn("Failed to send password-changed notification for user {}: {}", user.getId(), e.getMessage());
+        }
     }
 }

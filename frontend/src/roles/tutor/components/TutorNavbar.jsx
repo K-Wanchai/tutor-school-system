@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { NavLink, useLocation, useNavigate } from 'react-router-dom';
 import { logout } from '../../../auth/services/authService';
 import api from '../../../shared/services/api';
+import { getUsername } from '../../../shared/utils/tokenUtils';
 import './TutorNavbar.css';
 
 const PAGE_TITLES = {
@@ -82,7 +83,7 @@ export default function TutorNavbar({ onMenuToggle }) {
   const navigate = useNavigate();
   const location = useLocation();
 
-  const username = localStorage.getItem('username') || 'ติวเตอร์';
+  const username = getUsername() || 'ติวเตอร์';
   const pageTitle = getPageTitle(location.pathname);
 
   const [unreadCount, setUnreadCount] = useState(0);

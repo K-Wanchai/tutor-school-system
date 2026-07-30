@@ -1,5 +1,6 @@
 import { useLocation } from 'react-router-dom';
 import { logout } from '../../../auth/services/authService';
+import { getUsername } from '../../../shared/utils/tokenUtils';
 import './StudentNavbar.css';
 
 const PAGE_TITLES = {
@@ -30,7 +31,7 @@ function getPageTitle(pathname) {
 }
 
 export default function StudentNavbar({ onMenuToggle }) {
-  const username = localStorage.getItem('username') || 'นักเรียน';
+  const username = getUsername() || 'นักเรียน';
   const location = useLocation();
   const pageTitle = getPageTitle(location.pathname);
 

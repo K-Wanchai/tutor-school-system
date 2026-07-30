@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { getStudentDashboard } from '../services/studentDashboardService';
 import { getMyCourses } from '../services/studentMyCoursesService.js';
+import { getUsername } from '../../../shared/utils/tokenUtils';
 import './StudentDashboardPage.css';
 
 const ENROLLMENT_STATUS_LABELS = {
@@ -37,7 +38,7 @@ function getPaymentStatusLabel(status) {
 
 export default function StudentDashboardPage() {
   const navigate = useNavigate();
-  const username = localStorage.getItem('username') || 'นักเรียน';
+  const username = getUsername() || 'นักเรียน';
 
   const [dashboard, setDashboard] = useState(null);
   const [myCourses, setMyCourses] = useState([]);

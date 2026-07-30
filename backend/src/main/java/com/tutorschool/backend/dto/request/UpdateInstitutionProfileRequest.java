@@ -43,5 +43,5 @@ public class UpdateInstitutionProfileRequest {
     @Max(value = 1440, message = "Enrollment payment deadline must not exceed 1440 minutes")
     private Integer enrollmentPaymentDeadlineMinutes;
 
-    private String termTimeSlots;
+    private String allowedTimeSlots;
 }

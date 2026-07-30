@@ -40,6 +40,13 @@ public class User implements UserDetails {
     @Builder.Default
     private boolean enabled = true;
 
+    // ใช้สำหรับ flow "ลืมรหัสผ่าน" — token แบบ single-use, ล้างค่าทิ้งทันทีหลังใช้รีเซ็ตสำเร็จ (หรือหมดอายุ)
+    @Column(name = "reset_password_token", unique = true, length = 100)
+    private String resetPasswordToken;
+
+    @Column(name = "reset_password_token_expiry")
+    private LocalDateTime resetPasswordTokenExpiry;
+
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;
 

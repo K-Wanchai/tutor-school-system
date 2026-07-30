@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useLocation, matchPath } from 'react-router-dom';
 import { logout } from '../../../auth/services/authService';
 import { getExamInstitutionById } from '../services/examInstitutionService';
+import { getUsername } from '../../../shared/utils/tokenUtils';
 import './AdminNavbar.css';
 
 const BREADCRUMB_MAP = {
@@ -25,7 +26,7 @@ const BREADCRUMB_MAP = {
 
 export default function AdminNavbar({ onMenuToggle }) {
   const location = useLocation();
-  const username  = localStorage.getItem('username') || 'Administrator';
+  const username  = getUsername() || 'Administrator';
   const [institutionName, setInstitutionName] = useState('');
 
   const institutionMatch = matchPath('/admin/exam-institutions/:institutionId', location.pathname);

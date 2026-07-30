@@ -29,7 +29,7 @@ function toForm(profile) {
     bankQrCode: profile?.bankQrCode || '',
     promptPayId: profile?.promptPayId || '',
     enrollmentPaymentDeadlineMinutes: profile?.enrollmentPaymentDeadlineMinutes ?? 15,
-    termTimeSlots: parseDaySlots(profile?.termTimeSlots),
+    allowedTimeSlots: parseDaySlots(profile?.allowedTimeSlots),
   };
 }
 
@@ -408,23 +408,23 @@ export default function AdminSettingsPage() {
               </div>
             </div>
 
-            {/* ── Term Time Slots Card ── */}
+            {/* ── Allowed Time Slots Card ── */}
             <div className="is-card is-card--full">
               <div className="is-card-header">
-                <h2 className="is-card-title">เวลาเรียนที่แนะนำช่วงเปิดเทอม</h2>
+                <h2 className="is-card-title">ช่วงเวลาที่อนุญาตให้จัดตารางสอน</h2>
                 <p className="is-card-subtitle">
-                  กำหนดเวลาเรียนที่เหมาะสมของแต่ละวันในสัปดาห์ตอนเปิดเทอม (นักเรียนยังเรียนโรงเรียนปกติอยู่)
-                  ใช้เป็นเวลาแนะนำให้กดเลือกเร็วๆ ตอนแอดมินจัดตารางสอนให้ติวเตอร์
+                  กำหนดช่วงเวลาที่อนุญาตให้จัดตารางสอนในแต่ละวัน วันที่ไม่ได้ตั้งค่าไว้จะไม่จำกัดเวลา
+                  หากแอดมินลงตารางสอนของคอร์สนอกช่วงเวลานี้ ระบบจะแจ้งเตือนใต้ช่องเวลานั้นทันที
                 </p>
               </div>
               <div className="is-card-body">
                 <ScheduleSection
                   form={form}
                   fld={fld}
-                  slotsField="termTimeSlots"
-                  icon="🗓️"
-                  title="เวลาเรียนแนะนำรายวัน"
-                  hint="(จ.-ศ. แนะนำช่วงเย็นหลังเลิกเรียน / ส.-อา. เต็มวันแต่อย่าลืมเว้นพักเที่ยง)"
+                  slotsField="allowedTimeSlots"
+                  icon="✅"
+                  title="เวลาที่อนุญาตรายวัน"
+                  hint="(ว่างไว้ = ไม่จำกัดเวลาวันนั้น)"
                 />
               </div>
             </div>

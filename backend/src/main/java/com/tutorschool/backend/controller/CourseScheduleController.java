@@ -85,8 +85,9 @@ public class CourseScheduleController {
     @PreAuthorize("hasAnyRole('ADMIN', 'TUTOR')")
     public ResponseEntity<ApiResponse<TutorAvailabilityResponse>> getTutorAvailability(
             @PathVariable Long tutorId,
-            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date) {
-        TutorAvailabilityResponse response = courseScheduleService.getTutorAvailability(tutorId, date);
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date,
+            @RequestParam(required = false) Long excludeCourseId) {
+        TutorAvailabilityResponse response = courseScheduleService.getTutorAvailability(tutorId, date, excludeCourseId);
         return ResponseEntity.ok(ApiResponse.success("Tutor availability retrieved successfully", response));
     }
 

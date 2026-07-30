@@ -131,6 +131,18 @@
   grid-column: 1 / -1;
 }
 
+/* ฟอร์มเปลี่ยนรหัสผ่าน — อยู่ใน .sp-card ที่มี padding อยู่แล้ว จึงไม่ใช้ .sp-form-grid/.sp-modal-actions ซ้ำ (จะได้ padding ซ้อนสองชั้น) */
+.sp-password-fields {
+  display: grid;
+  gap: 16px;
+}
+
+.sp-password-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 18px;
+}
+
 .sp-info-row span {
   color: #6b7280;
   font-size: 13px;

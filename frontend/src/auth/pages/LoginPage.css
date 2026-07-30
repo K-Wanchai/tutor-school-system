@@ -230,6 +230,35 @@
   color: #9ca3af;
 }
 
+/* Password visibility toggle */
+.auth-password-wrap {
+  position: relative;
+}
+
+.auth-password-wrap .auth-form-input {
+  padding-right: 42px;
+}
+
+.auth-password-toggle {
+  position: absolute;
+  top: 0;
+  right: 0;
+  height: 44px;
+  width: 42px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: none;
+  color: #6b7280;
+  cursor: pointer;
+  padding: 0;
+}
+
+.auth-password-toggle:hover {
+  color: #374151;
+}
+
 .auth-form-options {
   display: flex;
   align-items: center;

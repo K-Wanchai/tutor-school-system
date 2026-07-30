@@ -22,7 +22,7 @@ public class InstitutionProfileMapper {
                 .bankQrCode(entity.getBankQrCode())
                 .promptPayId(entity.getPromptPayId())
                 .enrollmentPaymentDeadlineMinutes(entity.getEnrollmentPaymentDeadlineMinutes())
-                .termTimeSlots(entity.getTermTimeSlots())
+                .allowedTimeSlots(entity.getAllowedTimeSlots())
                 .createdAt(entity.getCreatedAt())
                 .updatedAt(entity.getUpdatedAt())
                 .build();

@@ -26,4 +26,6 @@ public interface EmailService {
                                         String score, String maxScore);
 
     String buildPasswordChangedEmail(String userName);
+
+    String buildPasswordResetEmail(String userName, String resetLink, int expiryMinutes);
 }

@@ -73,7 +73,22 @@ export function findConflictDays(scheduleSlots, avail) {
   });
 }
 
-export function validateCourseForm(f, tutorAvail, priceRequired = true) {
+// ตรวจว่าตารางสอนแต่ละวัน อยู่ "นอกช่วงเวลาที่สถาบันอนุญาต" หรือไม่
+// วันที่แอดมินไม่ได้ตั้งค่าเวลาที่อนุญาตไว้ = ไม่จำกัดเวลาสำหรับวันนั้น (ไม่ตรวจ)
+export function findOutsideAllowedDays(scheduleSlots, allowedByDay) {
+  if (!allowedByDay || !scheduleSlots) return [];
+  return Object.entries(scheduleSlots).flatMap(([day, { start, end }]) => {
+    if (!start || !end) return [];
+    const allowed = allowedByDay[day];
+    if (!allowed?.start || !allowed?.end) return [];
+    if (toMin(start) < toMin(allowed.start) || toMin(end) > toMin(allowed.end)) {
+      return [{ day, start: allowed.start, end: allowed.end }];
+    }
+    return [];
+  });
+}
+
+export function validateCourseForm(f, tutorAvail, priceRequired = true, allowedSlots) {
   const e = {};
   if (!f.courseName?.trim()) e.courseName = 'กรุณากรอกชื่อคอร์ส';
   if (!f.tutorId) e.tutorId = 'กรุณาเลือกติวเตอร์';
@@ -100,6 +115,14 @@ export function validateCourseForm(f, tutorAvail, priceRequired = true) {
   if (conflicts.length > 0) {
     e.scheduleTime = conflicts.map(c =>
       `วัน${DAY_LABEL_TH[c.day]} ${c.start}–${c.end}${c.course ? ` (${c.course})` : ''}`
+    ).join(', ');
+  }
+
+  // ตรวจว่าอยู่นอกช่วงเวลาที่สถาบันอนุญาตหรือไม่
+  const outsideAllowed = findOutsideAllowedDays(f.scheduleSlots, allowedSlots);
+  if (outsideAllowed.length > 0) {
+    e.scheduleTime = outsideAllowed.map(c =>
+      `วัน${DAY_LABEL_TH[c.day]} อยู่นอกเวลาที่สถาบันอนุญาต (${c.start}–${c.end})`
     ).join(', ');
   }
 

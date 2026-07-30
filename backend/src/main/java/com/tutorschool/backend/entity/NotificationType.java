@@ -12,5 +12,6 @@ public enum NotificationType {
     EXAM_RESULT_RELEASED,
     ATTENDANCE,
     PASSWORD_CHANGED,
+    PASSWORD_RESET_REQUESTED,
     SYSTEM
 }

@@ -1,5 +1,6 @@
 package com.tutorschool.backend.controller;
 
+import com.tutorschool.backend.dto.request.ChangePasswordRequest;
 import com.tutorschool.backend.dto.request.CreateStudentRequest;
 import com.tutorschool.backend.dto.request.UpdateStudentRequest;
 import com.tutorschool.backend.dto.response.ApiResponse;
@@ -70,6 +71,15 @@ public class StudentController {
             @Valid @RequestBody UpdateStudentRequest request) {
         StudentResponse response = studentService.updateMyProfile(currentUser.getId(), request);
         return ResponseEntity.ok(ApiResponse.success("Profile updated successfully", response));
+    }
+
+    @PostMapping("/me/change-password")
+    @PreAuthorize("hasRole('STUDENT')")
+    public ResponseEntity<ApiResponse<Void>> changePassword(
+            @AuthenticationPrincipal User currentUser,
+            @Valid @RequestBody ChangePasswordRequest request) {
+        studentService.changePassword(currentUser.getId(), request);
+        return ResponseEntity.ok(ApiResponse.success("Password changed successfully"));
     }
 
     @DeleteMapping("/{id}")

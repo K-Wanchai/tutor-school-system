@@ -1,7 +1,9 @@
 package com.tutorschool.backend.controller;
 
+import com.tutorschool.backend.dto.request.ForgotPasswordRequest;
 import com.tutorschool.backend.dto.request.LoginRequest;
 import com.tutorschool.backend.dto.request.RegisterRequest;
+import com.tutorschool.backend.dto.request.ResetPasswordRequest;
 import com.tutorschool.backend.dto.response.ApiResponse;
 import com.tutorschool.backend.dto.response.AuthResponse;
 import com.tutorschool.backend.dto.response.AvailabilityResponse;
@@ -67,6 +69,20 @@ public class AuthController {
         AuthResponse response = authService.register(request);
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(ApiResponse.success("Registration successful", response));
+    }
+
+    @PostMapping("/forgot-password")
+    public ResponseEntity<ApiResponse<Void>> forgotPassword(@Valid @RequestBody ForgotPasswordRequest request) {
+        authService.forgotPassword(request);
+        // ข้อความ generic เสมอ ไม่ว่าอีเมลนี้จะมีอยู่ในระบบหรือไม่ กัน user enumeration
+        return ResponseEntity.ok(ApiResponse.success(
+                "หากอีเมลนี้มีอยู่ในระบบ เราได้ส่งลิงก์สำหรับตั้งรหัสผ่านใหม่ไปให้แล้ว กรุณาตรวจสอบกล่องอีเมลของคุณ"));
+    }
+
+    @PostMapping("/reset-password")
+    public ResponseEntity<ApiResponse<Void>> resetPassword(@Valid @RequestBody ResetPasswordRequest request) {
+        authService.resetPassword(request);
+        return ResponseEntity.ok(ApiResponse.success("ตั้งรหัสผ่านใหม่สำเร็จ กรุณาเข้าสู่ระบบด้วยรหัสผ่านใหม่"));
     }
 
     @GetMapping("/check-availability")

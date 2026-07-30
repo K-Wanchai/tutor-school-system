@@ -484,16 +484,6 @@ export default function ExamInstitutionManagePage() {
               </div>
 
               <div className="eim-field">
-                <label>เว็บไซต์</label>
-                <input
-                  value={form.websiteUrl}
-                  onChange={(e) => fld('websiteUrl', e.target.value)}
-                  placeholder="https://..."
-                />
-                {formErr.websiteUrl && <span className="eim-err">{formErr.websiteUrl}</span>}
-              </div>
-
-              <div className="eim-field">
                 <label>รายละเอียดเพิ่มเติม</label>
                 <textarea
                   rows={3}

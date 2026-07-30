@@ -241,11 +241,20 @@
 .cm-per-day-row--conflict .cm-time-range-input {
   border-color: #f87171; background: #fff5f5;
 }
+.cm-per-day-row--forbidden .cm-time-range-input {
+  border-color: #dc2626; background: #fef2f2;
+}
 .cm-per-day-label {
   min-width: 56px; font-size: 0.86rem; font-weight: 600; color: #374151;
 }
+.cm-per-day-messages {
+  display: flex; flex-direction: column; gap: 3px;
+}
 .cm-per-day-conflict-msg {
   font-size: 0.78rem; color: #dc2626; font-weight: 500;
+}
+.cm-per-day-forbidden-msg {
+  font-size: 0.78rem; color: #b91c1c; font-weight: 700;
 }
 .cm-per-day-time-display {
   font-size: 0.88rem; color: #111827; font-weight: 500;
@@ -260,16 +269,6 @@
 /* ── Per-day hint (ยังไม่ได้ใส่เวลา) ── */
 .cm-per-day-hint-msg {
   font-size: 0.76rem; color: #9ca3af; font-style: italic;
-}
-
-/* ── Per-day suggested time quick-fill (from institution settings) ── */
-.cm-per-day-suggest-btn {
-  font-size: 0.76rem; color: #2563eb; font-weight: 600;
-  background: #eff6ff; border: 1px solid #dbeafe; border-radius: 6px;
-  padding: 3px 9px; cursor: pointer; white-space: nowrap;
-}
-.cm-per-day-suggest-btn:hover {
-  background: #dbeafe; border-color: #bfdbfe;
 }
 
 /* ── Schedule section title required ── */

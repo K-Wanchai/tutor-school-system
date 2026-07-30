@@ -41,7 +41,7 @@ export async function updateInstitutionProfile(form) {
     bankQrCode: form.bankQrCode || null,
     promptPayId: form.promptPayId || null,
     enrollmentPaymentDeadlineMinutes: Number(form.enrollmentPaymentDeadlineMinutes) || 15,
-    termTimeSlots: encodeDaySlots(form.termTimeSlots || {}),
+    allowedTimeSlots: encodeDaySlots(form.allowedTimeSlots || {}),
   };
   try {
     const res = await api.put('/institution-profile', payload);
