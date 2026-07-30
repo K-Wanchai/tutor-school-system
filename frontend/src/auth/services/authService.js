@@ -1,13 +1,17 @@
 import api from '../../shared/services/api';
-import { setToken, setRole, setRefreshToken, clearAuth } from '../../shared/utils/tokenUtils';
+import {
+  setToken, setRole, setRefreshToken, setUsername, setUserId, setEmail,
+  setRememberMe, clearAuth,
+} from '../../shared/utils/tokenUtils';
 
-const setUsername = (val) => localStorage.setItem('username', val ?? '');
-const setUserId   = (val) => { if (val != null) localStorage.setItem('userId', String(val)); };
-const setEmail    = (val) => { if (val)         localStorage.setItem('email',  val); };
-
-export const login = async (payload) => {
+// rememberMe: true = เก็บ session ไว้ที่ localStorage (คงอยู่แม้ปิดเบราว์เซอร์)
+//             false = เก็บที่ sessionStorage (หายไปเมื่อปิดแท็บ/เบราว์เซอร์)
+export const login = async (payload, rememberMe = false) => {
   const response = await api.post('/auth/login', payload);
   const data = response.data.data;
+  // ต้องล้าง session เก่าก่อน เผื่อครั้งก่อนติ๊ก/ไม่ติ๊กไว้ต่างกัน แล้วตั้งโหมด storage ก่อนเขียนค่าใดๆ
+  clearAuth();
+  setRememberMe(rememberMe);
   setToken(data.accessToken);
   setRole(data.role);
   setUsername(data.username);
@@ -27,8 +31,17 @@ export const checkAvailability = async (field, value) => {
   return response.data.data;
 };
 
+export const forgotPassword = async (email) => {
+  const response = await api.post('/auth/forgot-password', { email });
+  return response.data;
+};
+
+export const resetPassword = async ({ token, newPassword, confirmPassword }) => {
+  const response = await api.post('/auth/reset-password', { token, newPassword, confirmPassword });
+  return response.data;
+};
+
 export const logout = () => {
   clearAuth();
-  localStorage.removeItem('username');
   window.location.href = '/login';
 };

@@ -87,7 +87,7 @@ export default function RegisterStudentPage() {
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setForm({ ...form, [name]: value });
+    setForm((prev) => ({ ...prev, [name]: value }));
     setError('');
     setFieldErrors({});
     if (name in availability) {

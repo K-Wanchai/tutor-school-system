@@ -7,6 +7,7 @@ import {
   cancelEnrollment,
 } from '../services/adminEnrollmentService';
 import { resolveFileUrl } from '../../../shared/services/api';
+import { getUsername } from '../../../shared/utils/tokenUtils';
 import './AdminEnrollmentManagementPage.css';
 
 // ── Labels & Badge Maps ─────────────────────────────────────────────────────
@@ -239,7 +240,7 @@ export default function AdminEnrollmentManagementPage() {
         if (hasPendingSlip) {
           await updatePayment(enrollment.id, { paymentStatus: 'PAID', note: note || null });
         }
-        const approvedBy = localStorage.getItem('username') || 'admin';
+        const approvedBy = getUsername() || 'admin';
         await approveEnrollment(enrollment.id, approvedBy, note);
         showToast('success', 'อนุมัติการสมัครเรียนสำเร็จ');
       } else if (action === 'return') {

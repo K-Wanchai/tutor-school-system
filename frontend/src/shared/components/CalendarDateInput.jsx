@@ -111,8 +111,15 @@ export default function CalendarDateInput({ value, onChange, placeholder = 'ว�
     else setViewMonth((m) => m + 1);
   }
 
+  function goToToday() {
+    setViewYear(today.getFullYear());
+    setViewMonth(today.getMonth());
+  }
+
   const cells = buildMonthCells(viewYear, viewMonth);
   const selectedIso = value || '';
+  const todayIso = `${today.getFullYear()}-${pad2(today.getMonth() + 1)}-${pad2(today.getDate())}`;
+  const isTodayInView = viewYear === today.getFullYear() && viewMonth === today.getMonth();
 
   return (
     <div className="cdi-wrap">
@@ -138,28 +145,37 @@ export default function CalendarDateInput({ value, onChange, placeholder = 'ว�
           }}
         >
           <div className="cdi-popup-header">
-            <button type="button" className="cdi-nav-btn" onClick={prevMonth}>‹</button>
+            <button type="button" className="cdi-nav-btn" onClick={prevMonth} aria-label="เดือนก่อนหน้า">‹</button>
             <span className="cdi-popup-title">{THAI_MONTHS[viewMonth]} {viewYear}</span>
-            <button type="button" className="cdi-nav-btn" onClick={nextMonth}>›</button>
+            <button type="button" className="cdi-nav-btn" onClick={nextMonth} aria-label="เดือนถัดไป">›</button>
           </div>
           <div className="cdi-weekdays">
-            {THAI_WEEKDAYS.map((w) => <span key={w}>{w}</span>)}
+            {THAI_WEEKDAYS.map((w, i) => (
+              <span key={w} className={i === 0 || i === 6 ? 'cdi-weekday--weekend' : ''}>{w}</span>
+            ))}
           </div>
           <div className="cdi-days">
             {cells.map((d, i) => {
               if (d === null) return <span key={`empty-${i}`} className="cdi-day cdi-day--empty" />;
               const iso = `${viewYear}-${pad2(viewMonth + 1)}-${pad2(d)}`;
+              const weekday = (i % 7);
+              const cls = [
+                'cdi-day',
+                iso === selectedIso ? 'cdi-day--selected' : '',
+                iso === todayIso ? 'cdi-day--today' : '',
+                (weekday === 0 || weekday === 6) ? 'cdi-day--weekend' : '',
+              ].filter(Boolean).join(' ');
               return (
-                <button
-                  key={iso}
-                  type="button"
-                  className={`cdi-day${iso === selectedIso ? ' cdi-day--selected' : ''}`}
-                  onClick={() => pickDay(d)}
-                >
+                <button key={iso} type="button" className={cls} onClick={() => pickDay(d)}>
                   {d}
                 </button>
               );
             })}
+          </div>
+          <div className="cdi-popup-footer">
+            <button type="button" className="cdi-today-btn" onClick={goToToday} disabled={isTodayInView}>
+              <span className="cdi-today-dot" /> ไปยังวันนี้
+            </button>
           </div>
         </div>,
         document.body

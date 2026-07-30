@@ -8,52 +8,66 @@
   background: #fff;
 }
 
+.cdi-input:focus {
+  outline: none;
+  border-color: #0d9488;
+  box-shadow: 0 0 0 3px rgba(13, 148, 136, 0.12);
+}
+
+@keyframes cdi-pop-in {
+  from { opacity: 0; transform: translateY(-4px) scale(0.98); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
 .cdi-popup {
-  position: absolute;
-  top: calc(100% + 6px);
-  left: 0;
-  z-index: 40;
-  width: 260px;
+  z-index: 3000;
+  width: 272px;
   background: #ffffff;
   border: 1px solid #e5e7eb;
-  border-radius: 12px;
-  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.12);
-  padding: 12px;
+  border-radius: 14px;
+  box-shadow: 0 16px 40px rgba(15, 23, 42, 0.16), 0 2px 8px rgba(15, 23, 42, 0.06);
+  padding: 14px;
+  animation: cdi-pop-in 0.14s ease-out;
 }
 
 .cdi-popup-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 8px;
+  margin-bottom: 10px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid #f1f5f9;
 }
 
 .cdi-popup-title {
-  font-size: 0.85rem;
+  font-size: 0.88rem;
   font-weight: 700;
   color: #111827;
+  letter-spacing: 0.01em;
 }
 
 .cdi-nav-btn {
-  width: 26px;
-  height: 26px;
+  width: 28px;
+  height: 28px;
   border: none;
   background: #f3f4f6;
-  border-radius: 6px;
-  font-size: 0.95rem;
+  border-radius: 8px;
+  font-size: 1rem;
   line-height: 1;
   cursor: pointer;
   color: #374151;
+  transition: background 0.12s ease, color 0.12s ease;
 }
 
 .cdi-nav-btn:hover {
-  background: #e5e7eb;
+  background: #ccfbf1;
+  color: #0d9488;
 }
 
 .cdi-weekdays {
   display: grid;
   grid-template-columns: repeat(7, 1fr);
-  margin-bottom: 4px;
+  margin-bottom: 6px;
 }
 
 .cdi-weekdays span {
@@ -63,24 +77,35 @@
   font-weight: 600;
 }
 
+.cdi-weekday--weekend {
+  color: #f97373;
+}
+
 .cdi-days {
   display: grid;
   grid-template-columns: repeat(7, 1fr);
-  gap: 2px;
+  gap: 3px;
 }
 
 .cdi-day {
+  position: relative;
   aspect-ratio: 1;
   border: none;
   background: transparent;
-  border-radius: 6px;
+  border-radius: 8px;
   font-size: 0.8rem;
   color: #111827;
   cursor: pointer;
+  transition: background 0.12s ease, color 0.12s ease, transform 0.08s ease;
 }
 
 .cdi-day:hover {
   background: #eff6ff;
+  color: #1d4ed8;
+}
+
+.cdi-day:active {
+  transform: scale(0.92);
 }
 
 .cdi-day--empty {
@@ -88,8 +113,72 @@
   pointer-events: none;
 }
 
+.cdi-day--weekend {
+  color: #dc7a7a;
+}
+
+.cdi-day--today {
+  font-weight: 700;
+  color: #0d9488;
+  box-shadow: inset 0 0 0 1.5px #0d9488;
+}
+
+.cdi-day--today.cdi-day--weekend {
+  color: #0d9488;
+}
+
 .cdi-day--selected {
   background: #2563eb;
-  color: #ffffff;
+  color: #ffffff !important;
   font-weight: 700;
+  box-shadow: 0 2px 6px rgba(37, 99, 235, 0.35);
+}
+
+.cdi-day--selected:hover {
+  background: #1d4ed8;
+  color: #ffffff;
+}
+
+.cdi-day--today.cdi-day--selected {
+  box-shadow: 0 2px 6px rgba(37, 99, 235, 0.35);
+}
+
+.cdi-popup-footer {
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid #f1f5f9;
+  display: flex;
+  justify-content: center;
+}
+
+.cdi-today-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  border: none;
+  background: none;
+  color: #0d9488;
+  font-size: 0.78rem;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 6px;
+  transition: background 0.12s ease;
+}
+
+.cdi-today-btn:hover:not(:disabled) {
+  background: #f0fdfa;
+}
+
+.cdi-today-btn:disabled {
+  color: #9ca3af;
+  cursor: default;
+}
+
+.cdi-today-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: currentColor;
+  flex-shrink: 0;
 }

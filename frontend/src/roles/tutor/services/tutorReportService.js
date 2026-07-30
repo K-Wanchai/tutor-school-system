@@ -1,4 +1,5 @@
 import api from '../../../shared/services/api';
+import { getStoredItem, getUserId } from '../../../shared/utils/tokenUtils';
 
 const unwrap = (response) => {
   if (Array.isArray(response.data)) return response.data;
@@ -8,9 +9,9 @@ const unwrap = (response) => {
 };
 
 const getTutorId = () =>
-  localStorage.getItem('tutorId') ||
-  localStorage.getItem('userId') ||
-  localStorage.getItem('id');
+  getStoredItem('tutorId') ||
+  getUserId() ||
+  getStoredItem('id');
 
 export async function getTutorCourses() {
   const tutorId = getTutorId();

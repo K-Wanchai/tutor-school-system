@@ -1,5 +1,6 @@
 package com.tutorschool.backend.service;
 
+import com.tutorschool.backend.dto.request.ChangePasswordRequest;
 import com.tutorschool.backend.dto.request.CreateStudentRequest;
 import com.tutorschool.backend.dto.request.UpdateStudentRequest;
 import com.tutorschool.backend.dto.response.PageResponse;
@@ -20,6 +21,8 @@ public interface StudentService {
     StudentResponse getStudentByUserId(Long userId);
 
     StudentResponse updateMyProfile(Long userId, UpdateStudentRequest request);
+
+    void changePassword(Long userId, ChangePasswordRequest request);
 
     void deleteStudent(Long id);
 }

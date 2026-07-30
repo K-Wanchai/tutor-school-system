@@ -281,8 +281,22 @@ public class CourseServiceImpl implements CourseService {
         Course course = courseRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Course", id));
 
-        if (request.getStatus() == CourseStatus.OPEN_FOR_REGISTRATION && course.getLessons().isEmpty()) {
-            throw new IllegalStateException("Course must have at least 1 lesson before it can be opened for registration");
+        if (request.getStatus() == CourseStatus.OPEN_FOR_REGISTRATION) {
+            if (course.getLessons().isEmpty()) {
+                throw new IllegalStateException("Course must have at least 1 lesson before it can be opened for registration");
+            }
+
+            // นักเรียนจะไม่เห็นคอร์สที่ยังไม่ถึงวันเปิดรับสมัคร แม้สถานะจะเป็น OPEN_FOR_REGISTRATION แล้วก็ตาม
+            // (ดู visibleCourses ใน StudentEnrollmentsPage.jsx) — ป้องกันแอดมินเปิดสถานะเองแล้วงงว่าทำไมนักเรียนยังไม่เห็นคอร์ส
+            LocalDate today = LocalDate.now();
+            if (course.getRegistrationEndDate() != null && course.getRegistrationEndDate().isBefore(today)) {
+                throw new InvalidCourseDateException(
+                        "วันปิดรับสมัคร (" + course.getRegistrationEndDate()
+                                + ") ผ่านไปแล้ว กรุณาแก้ไขวันปิดรับสมัครก่อนเปิดรับสมัครคอร์สนี้");
+            }
+            if (course.getRegistrationStartDate() == null || course.getRegistrationStartDate().isAfter(today)) {
+                course.setRegistrationStartDate(today);
+            }
         }
 
         course.setStatus(request.getStatus());

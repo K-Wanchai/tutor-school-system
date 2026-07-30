@@ -9,6 +9,7 @@ import com.tutorschool.backend.exception.DuplicateResourceException;
 import com.tutorschool.backend.exception.ResourceNotFoundException;
 import com.tutorschool.backend.mapper.EnrollmentMapper;
 import com.tutorschool.backend.repository.CourseRepository;
+import com.tutorschool.backend.repository.CourseScheduleRepository;
 import com.tutorschool.backend.repository.EnrollmentRepository;
 import com.tutorschool.backend.repository.InstitutionProfileRepository;
 import com.tutorschool.backend.repository.StudentRepository;
@@ -21,6 +22,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.time.Duration;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
@@ -38,6 +40,7 @@ public class EnrollmentServiceImpl implements EnrollmentService {
     private final EnrollmentRepository enrollmentRepository;
     private final StudentRepository studentRepository;
     private final CourseRepository courseRepository;
+    private final CourseScheduleRepository courseScheduleRepository;
     private final EnrollmentMapper enrollmentMapper;
     private final InstitutionProfileRepository institutionProfileRepository;
     private final NotificationService notificationService;
@@ -376,6 +379,11 @@ public class EnrollmentServiceImpl implements EnrollmentService {
      * (scheduleStartTime/scheduleEndTime on Course are always null in practice — the admin UI
      * only ever writes times into scheduleDays). Entries without a time range (legacy "MON" only)
      * are skipped since there's nothing to compare.
+     *
+     * Same weekday+time only actually conflicts if the two courses' calendar date ranges overlap —
+     * e.g. an approved course ending 2026-08-20 does not block a new course starting 2026-08-21
+     * even if both fall on, say, every Monday 17:00-19:00. When either course's date range can't be
+     * determined, we fall back to the conservative weekday/time-only check (treat as a possible conflict).
      */
     private void validateNoScheduleConflict(Long studentId, Course newCourse) {
         Map<String, LocalTime[]> newSlots = ScheduleDaysParser.parseSlots(newCourse.getScheduleDays());
@@ -384,6 +392,8 @@ public class EnrollmentServiceImpl implements EnrollmentService {
             return;
         }
 
+        LocalDate newEnd = resolveCourseEndDate(newCourse);
+
         List<Enrollment> approvedEnrollments =
                 enrollmentRepository.findByStudentIdAndStatus(studentId, EnrollmentStatus.APPROVED);
 
@@ -391,6 +401,16 @@ public class EnrollmentServiceImpl implements EnrollmentService {
             Course existingCourse = existing.getCourse();
             if (existingCourse.getId().equals(newCourse.getId())) {
                 continue;
+            }
+
+            LocalDate existingEnd = resolveCourseEndDate(existingCourse);
+            if (newCourse.getCourseStartDate() != null && newEnd != null
+                    && existingCourse.getCourseStartDate() != null && existingEnd != null) {
+                boolean dateRangesOverlap = !newEnd.isBefore(existingCourse.getCourseStartDate())
+                        && !existingEnd.isBefore(newCourse.getCourseStartDate());
+                if (!dateRangesOverlap) {
+                    continue;
+                }
             }
 
             Map<String, LocalTime[]> existingSlots = ScheduleDaysParser.parseSlots(existingCourse.getScheduleDays());
@@ -402,15 +422,56 @@ public class EnrollmentServiceImpl implements EnrollmentService {
                 }
 
                 LocalTime newStart = entry.getValue()[0];
-                LocalTime newEnd = entry.getValue()[1];
+                LocalTime newEndTime = entry.getValue()[1];
                 LocalTime existingStart = existingRange[0];
-                LocalTime existingEnd = existingRange[1];
+                LocalTime existingEndTime = existingRange[1];
 
-                if (newStart.isBefore(existingEnd) && existingStart.isBefore(newEnd)) {
+                if (newStart.isBefore(existingEndTime) && existingStart.isBefore(newEndTime)) {
                     throw new CourseScheduleConflictException(
                             "ตารางเรียนของคอร์สนี้ชนกับคอร์สที่คุณลงทะเบียนไว้แล้ว: " + existingCourse.getCourseName());
                 }
             }
         }
+    }
+
+    /**
+     * The date of the course's last session. Prefers the actual generated CourseSchedule rows
+     * (ground truth, e.g. from generateSchedulesFromCoursePattern) when they exist; otherwise
+     * estimates it by walking the weekly scheduleDays pattern forward from courseStartDate,
+     * accumulating each matched day's session length until totalHours is covered. Returns null
+     * when there isn't enough data to determine an end date (no weekly pattern with times).
+     */
+    private LocalDate resolveCourseEndDate(Course course) {
+        List<CourseSchedule> schedules =
+                courseScheduleRepository.findByCourseIdOrderByScheduleDateAscStartTimeAsc(course.getId());
+        if (!schedules.isEmpty()) {
+            return schedules.get(schedules.size() - 1).getScheduleDate();
+        }
+        return estimateCourseEndDateFromPattern(course);
+    }
+
+    private LocalDate estimateCourseEndDateFromPattern(Course course) {
+        Map<String, LocalTime[]> daySlots = ScheduleDaysParser.parseSlots(course.getScheduleDays());
+        if (daySlots.isEmpty() || course.getTotalHours() == null || course.getCourseStartDate() == null) {
+            return null;
+        }
+
+        double remainingHours = course.getTotalHours();
+        LocalDate cursor = course.getCourseStartDate();
+        LocalDate lastMatchedDay = null;
+        int scanned = 0;
+        int safetyLimitDays = 3650; // 10 years — guards against an unmatched pattern looping forever
+
+        while (remainingHours > 0 && scanned < safetyLimitDays) {
+            LocalTime[] slot = daySlots.get(ScheduleDaysParser.toDayCode(cursor.getDayOfWeek()));
+            if (slot != null) {
+                remainingHours -= Duration.between(slot[0], slot[1]).toMinutes() / 60.0;
+                lastMatchedDay = cursor;
+            }
+            cursor = cursor.plusDays(1);
+            scanned++;
+        }
+
+        return lastMatchedDay;
     }
 }

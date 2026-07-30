@@ -5,6 +5,7 @@ import {
   ENROLLMENT_HISTORY_STATUSES,
   ENROLLMENT_HISTORY_STATUS_LABEL,
   getEnrollmentHistoryStatus,
+  isReenrollment,
 } from '../../../shared/utils/enrollmentHistoryStatus';
 import './StudentEnrollmentHistoryPage.css';
 
@@ -13,6 +14,7 @@ const STATUS_CLS = {
   CANCELLED:            'hist-badge--cancelled',
   PENDING_VERIFICATION: 'hist-badge--pending',
   NEEDS_REVISION:       'hist-badge--revision',
+  AWAITING_PAYMENT:     'hist-badge--awaiting',
 };
 
 function statusBadge(key) {
@@ -52,10 +54,12 @@ export default function StudentEnrollmentHistoryPage() {
       const data = await getMyEnrollments().catch(() => []);
       // แสดงทุกรายการที่เคย "เริ่มดำเนินการ" แล้ว — ยกเว้นแค่รายการที่ยังไม่เคยส่งสลิปเลยสักครั้ง
       // (PENDING + UNPAID) ซึ่งยังอยู่ระหว่างรอชำระเงินครั้งแรก จะไปแสดงที่หน้าชำระเงินแทน
+      // แต่ถ้าเป็นการสมัครซ้ำหลังยกเลิก/หมดเวลา (row เดิมถูกใช้ซ้ำ ดู isReenrollment) row นี้เคยมีประวัติมาก่อน
+      // แล้ว จึงต้องยังคงแสดงในหน้านี้ต่อไป (เป็นสถานะ "รอชำระเงิน") ไม่ให้ประวัติเดิมหายไปเงียบๆ
       // รายการที่ถูก "ส่งกลับแก้ไขสลิป" (PENDING + FAILED) ยังต้องคงอยู่ในประวัตินี้ด้วย ไม่ให้หายไปเงียบๆ —
       // จะแสดงเป็นสถานะ "แก้ไขสลิป" จนกว่านักเรียนจะอัปโหลดสลิปใหม่ (กลับไปเป็น PENDING_VERIFICATION ทันที)
       const submitted = (Array.isArray(data) ? data : []).filter(
-        (e) => !(e.status === 'PENDING' && e.paymentStatus === 'UNPAID')
+        (e) => !(e.status === 'PENDING' && e.paymentStatus === 'UNPAID' && !isReenrollment(e))
       );
       setEnrollments(submitted);
       // ถ้า modal เปิดอยู่ อัพเดตข้อมูลใน modal ด้วย

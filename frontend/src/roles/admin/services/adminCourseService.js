@@ -1,4 +1,5 @@
 import api from '../../../shared/services/api';
+import { toLocalISODate } from '../../../shared/utils/dateUtils';
 
 function unwrap(res) {
   return res.data?.data ?? res.data;
@@ -113,7 +114,8 @@ export async function deleteCourse(id) {
 }
 
 // ดึง availability ของ Tutor ทั้งสัปดาห์ (จ–อา ของสัปดาห์ปัจจุบัน)
-export async function getTutorWeeklyAvailability(tutorId) {
+// excludeCourseId: ตอนแก้ไขคอร์ส ไม่ต้องนับ pattern/ตารางของคอร์สที่กำลังแก้ไขเองว่าเป็นเวลาไม่ว่าง
+export async function getTutorWeeklyAvailability(tutorId, excludeCourseId) {
   const now = new Date();
   const dow = now.getDay(); // 0=อา
   const monday = new Date(now);
@@ -124,9 +126,11 @@ export async function getTutorWeeklyAvailability(tutorId) {
     DAY_KEYS.map(async (key, i) => {
       const d = new Date(monday);
       d.setDate(monday.getDate() + i);
-      const dateStr = d.toISOString().slice(0, 10);
+      const dateStr = toLocalISODate(d);
       try {
-        const res = await api.get(`/course-schedules/tutor/${tutorId}/availability`, { params: { date: dateStr } });
+        const res = await api.get(`/course-schedules/tutor/${tutorId}/availability`, {
+          params: { date: dateStr, excludeCourseId: excludeCourseId || undefined },
+        });
         return { key, data: res.data?.data };
       } catch {
         return { key, data: null };

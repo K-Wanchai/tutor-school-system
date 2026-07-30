@@ -1,9 +1,11 @@
 import { useEffect, useMemo, useState } from 'react';
 import api from '../../../shared/services/api';
+import { toLocalISODate } from '../../../shared/utils/dateUtils';
+import { getUsername } from '../../../shared/utils/tokenUtils';
 import './TutorDashboardPage.css';
 
 export default function TutorDashboardPage() {
-  const username = localStorage.getItem('username') || 'ติวเตอร์';
+  const username = getUsername() || 'ติวเตอร์';
 
   const [loading, setLoading] = useState(true);
   const [courses, setCourses] = useState([]);
@@ -55,7 +57,7 @@ export default function TutorDashboardPage() {
       ['OPEN', 'ACTIVE', 'OPEN_FOR_REGISTRATION'].includes(c.status)
     ).length;
 
-    const todayText = new Date().toISOString().slice(0, 10);
+    const todayText = toLocalISODate(new Date());
 
     const todaySchedules = schedules.filter(
       (s) => s.scheduleDate === todayText

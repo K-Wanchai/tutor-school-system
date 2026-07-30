@@ -54,8 +54,8 @@ export default function AdminCourseManagementPage() {
   const navigate = useNavigate();
   const location = useLocation();
   const institution = useInstitutionProfile();
-  const termTimeSuggestions = useMemo(
-    () => parseDaySlots(institution?.termTimeSlots),
+  const allowedSlots = useMemo(
+    () => parseDaySlots(institution?.allowedTimeSlots),
     [institution]
   );
 
@@ -126,15 +126,15 @@ export default function AdminCourseManagementPage() {
       .finally(() => setTutorLoading(false));
   }, []); // eslint-disable-line
 
-  // ── โหลด availability เมื่อเลือก tutorId
+  // ── โหลด availability เมื่อเลือก tutorId (ตอนแก้ไขคอร์ส ไม่นับตารางของคอร์สที่กำลังแก้ไขเองว่าเป็นเวลาไม่ว่าง)
   useEffect(() => {
     if (!form.tutorId) { setTutorAvail(null); return; }
     setAvailLoading(true);
-    getTutorWeeklyAvailability(form.tutorId)
+    getTutorWeeklyAvailability(form.tutorId, selected?.id)
       .then(setTutorAvail)
       .catch(() => setTutorAvail(null))
       .finally(() => setAvailLoading(false));
-  }, [form.tutorId]); // eslint-disable-line
+  }, [form.tutorId, selected]); // eslint-disable-line
 
   function fld(key, val) {
     setForm(f => ({ ...f, [key]: val }));
@@ -161,7 +161,7 @@ export default function AdminCourseManagementPage() {
   }
   async function handleEdit(e) {
     e.preventDefault();
-    const err = validateCourseForm(form, tutorAvail, false);
+    const err = validateCourseForm(form, tutorAvail, false, allowedSlots);
     if (Object.keys(err).length) { setFormErr(err); return; }
     setSaving(true);
     try {
@@ -334,7 +334,7 @@ export default function AdminCourseManagementPage() {
               {/* ตารางสอน — อยู่ใต้ตารางว่างของติวเตอร์ทันที */}
               <ScheduleSection
                 form={form} fld={fld} avail={tutorAvail} err={formErr.scheduleTime}
-                suggestions={termTimeSuggestions}
+                allowed={allowedSlots}
               />
 
               <div className="cm-field">

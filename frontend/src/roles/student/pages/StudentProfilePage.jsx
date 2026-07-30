@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { getMyProfile, updateMyProfile } from '../services/studentProfileService';
+import { getMyProfile, updateMyProfile, changePassword } from '../services/studentProfileService';
 import DateInput from '../../../shared/components/DateInput';
 import './StudentProfilePage.css';
 
@@ -15,6 +15,12 @@ const EMPTY_FORM = {
   bankAccountNumber: '',
 };
 
+const EMPTY_PASSWORD_FORM = {
+  currentPassword: '',
+  newPassword: '',
+  confirmPassword: '',
+};
+
 function StudentProfilePage() {
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -22,6 +28,9 @@ function StudentProfilePage() {
   const [form, setForm] = useState(EMPTY_FORM);
   const [saving, setSaving] = useState(false);
   const [toast, setToast] = useState({ type: '', msg: '' });
+
+  const [passwordForm, setPasswordForm] = useState(EMPTY_PASSWORD_FORM);
+  const [changingPassword, setChangingPassword] = useState(false);
 
   const initials = useMemo(() => {
     const first = profile?.firstName?.trim()?.charAt(0) || '';
@@ -107,6 +116,59 @@ function StudentProfilePage() {
     }
 
     return true;
+  }
+
+  function handlePasswordChange(e) {
+    const { name, value } = e.target;
+    setPasswordForm((prev) => ({ ...prev, [name]: value }));
+  }
+
+  function validatePasswordForm() {
+    if (!passwordForm.currentPassword.trim()) {
+      showToast('error', 'กรุณากรอกรหัสผ่านปัจจุบัน');
+      return false;
+    }
+    if (!passwordForm.newPassword.trim()) {
+      showToast('error', 'กรุณากรอกรหัสผ่านใหม่');
+      return false;
+    }
+    if (passwordForm.newPassword.length < 8) {
+      showToast('error', 'รหัสผ่านใหม่ต้องมีอย่างน้อย 8 ตัวอักษร');
+      return false;
+    }
+    if (passwordForm.newPassword !== passwordForm.confirmPassword) {
+      showToast('error', 'รหัสผ่านใหม่และยืนยันรหัสผ่านไม่ตรงกัน');
+      return false;
+    }
+    if (passwordForm.currentPassword === passwordForm.newPassword) {
+      showToast('error', 'รหัสผ่านใหม่ต้องไม่ซ้ำกับรหัสผ่านปัจจุบัน');
+      return false;
+    }
+    return true;
+  }
+
+  async function handleChangePassword(e) {
+    e.preventDefault();
+
+    if (!validatePasswordForm()) return;
+
+    try {
+      setChangingPassword(true);
+      await changePassword({
+        currentPassword: passwordForm.currentPassword,
+        newPassword: passwordForm.newPassword,
+        confirmPassword: passwordForm.confirmPassword,
+      });
+      setPasswordForm(EMPTY_PASSWORD_FORM);
+      showToast('success', 'เปลี่ยนรหัสผ่านสำเร็จ');
+    } catch (err) {
+      showToast(
+        'error',
+        err?.response?.data?.message || err?.message || 'เปลี่ยนรหัสผ่านไม่สำเร็จ'
+      );
+    } finally {
+      setChangingPassword(false);
+    }
   }
 
   async function handleSave(e) {
@@ -217,6 +279,53 @@ function StudentProfilePage() {
           <InfoRow label="User ID" value={profile.userId} />
           <InfoRow label="Student ID" value={profile.id} />
         </InfoCard>
+
+        <form className="sp-card" onSubmit={handleChangePassword}>
+          <div className="sp-card-header">
+            <h2>เปลี่ยนรหัสผ่าน</h2>
+            <p>อัปเดตรหัสผ่านเพื่อความปลอดภัยของบัญชี</p>
+          </div>
+
+          <div className="sp-password-fields">
+            <Field
+              label="รหัสผ่านปัจจุบัน"
+              name="currentPassword"
+              type="password"
+              value={passwordForm.currentPassword}
+              onChange={handlePasswordChange}
+              required
+            />
+            <Field
+              label="รหัสผ่านใหม่"
+              name="newPassword"
+              type="password"
+              value={passwordForm.newPassword}
+              onChange={handlePasswordChange}
+              required
+            />
+            <Field
+              label="ยืนยันรหัสผ่านใหม่"
+              name="confirmPassword"
+              type="password"
+              value={passwordForm.confirmPassword}
+              onChange={handlePasswordChange}
+              required
+            />
+          </div>
+
+          <div className="sp-password-actions">
+            <button type="submit" className="sp-primary-btn" disabled={changingPassword}>
+              {changingPassword ? (
+                <>
+                  <span className="sp-btn-spinner" />
+                  กำลังเปลี่ยนรหัสผ่าน...
+                </>
+              ) : (
+                'เปลี่ยนรหัสผ่าน'
+              )}
+            </button>
+          </div>
+        </form>
       </div>
 
       {editOpen && (

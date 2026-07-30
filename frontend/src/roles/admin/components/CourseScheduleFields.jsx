@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { DAYS, DAY_LABEL_TH, findConflictDays } from '../utils/courseScheduleUtils';
+import { DAYS, DAY_LABEL_TH, findConflictDays, findOutsideAllowedDays } from '../utils/courseScheduleUtils';
 
 // เดิมอยู่ใน AdminCourseManagementPage.jsx — แยกออกมาเพื่อใช้ร่วมกันกับหน้าเพิ่มคอร์ส (AdminCourseCreatePage.jsx)
 
@@ -17,7 +17,7 @@ function formatTimeRange(digits) {
   return out;
 }
 
-function TimeRangeInput({ startTime, endTime, onChangeStart, onChangeEnd }) {
+export function TimeRangeInput({ startTime, endTime, onChangeStart, onChangeEnd }) {
   const initDigits = (() => {
     if (!startTime && !endTime) return '';
     const s = (startTime || '00:00').replace(':', '');
@@ -111,13 +111,15 @@ export function ScheduleSection({
   slotsField = 'scheduleSlots',
   icon = '📅',
   title = 'ตารางสอน *',
-  hint = '(08:00–22:00)',
-  suggestions,
+  hint = '(08:00–21:00)',
+  allowed,
 }) {
   const slots = form[slotsField] || {};
   const orderedSelected = DAYS.map(d => d.key).filter(k => k in slots);
   const conflicts = findConflictDays(slots, avail);
   const conflictDaySet = new Set(conflicts.map(c => c.day));
+  const outsideAllowed = findOutsideAllowedDays(slots, allowed);
+  const outsideAllowedDaySet = new Set(outsideAllowed.map(c => c.day));
 
   function toggleDay(key) {
     const next = { ...slots };
@@ -131,12 +133,6 @@ export function ScheduleSection({
 
   function setSlotTime(day, field, value) {
     fld(slotsField, { ...slots, [day]: { ...slots[day], [field]: value } });
-  }
-
-  function applySuggestion(day) {
-    const s = suggestions?.[day];
-    if (!s) return;
-    fld(slotsField, { ...slots, [day]: { start: s.start, end: s.end } });
   }
 
   return (
@@ -166,9 +162,9 @@ export function ScheduleSection({
           {orderedSelected.map(key => {
             const slot = slots[key];
             const conflict = conflicts.find(c => c.day === key);
-            const suggestion = suggestions?.[key];
+            const outsideConflict = outsideAllowed.find(c => c.day === key);
             return (
-              <div key={key} className={`cm-per-day-row ${conflictDaySet.has(key) ? 'cm-per-day-row--conflict' : ''}`}>
+              <div key={key} className={`cm-per-day-row ${conflictDaySet.has(key) ? 'cm-per-day-row--conflict' : ''} ${outsideAllowedDaySet.has(key) ? 'cm-per-day-row--forbidden' : ''}`}>
                 <span className="cm-per-day-label">{DAY_LABEL_TH[key]}</span>
                 <TimeRangeInput
                   key={key}
@@ -177,19 +173,21 @@ export function ScheduleSection({
                   onChangeStart={v => setSlotTime(key, 'start', v)}
                   onChangeEnd={v => setSlotTime(key, 'end', v)}
                 />
-                {conflict ? (
-                  <span className="cm-per-day-conflict-msg">
-                    ซ้ำ {conflict.start}–{conflict.end}{conflict.course ? ` (${conflict.course})` : ''}
-                  </span>
-                ) : (!slot.start || !slot.end) ? (
-                  suggestion ? (
-                    <button type="button" className="cm-per-day-suggest-btn" onClick={() => applySuggestion(key)}>
-                      ใช้เวลาแนะนำ {suggestion.start}–{suggestion.end}
-                    </button>
-                  ) : (
+                <div className="cm-per-day-messages">
+                  {conflict && (
+                    <span className="cm-per-day-conflict-msg">
+                      ซ้ำ {conflict.start}–{conflict.end}{conflict.course ? ` (${conflict.course})` : ''}
+                    </span>
+                  )}
+                  {outsideConflict && (
+                    <span className="cm-per-day-forbidden-msg">
+                      ⛔ นอกเวลาที่สถาบันอนุญาต ({outsideConflict.start}–{outsideConflict.end})
+                    </span>
+                  )}
+                  {!conflict && !outsideConflict && (!slot.start || !slot.end) && (
                     <span className="cm-per-day-hint-msg">ยังไม่ได้ใส่เวลา</span>
-                  )
-                ) : null}
+                  )}
+                </div>
               </div>
             );
           })}

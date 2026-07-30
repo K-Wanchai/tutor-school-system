@@ -45,6 +45,7 @@ public class CourseScheduleServiceImpl implements CourseScheduleService {
     private final UserRepository userRepository;
     private final NotificationService notificationService;
     private final CourseScheduleMapper courseScheduleMapper;
+    private final InstitutionProfileRepository institutionProfileRepository;
 
     @Override
     @Transactional
@@ -527,14 +528,32 @@ public class CourseScheduleServiceImpl implements CourseScheduleService {
 
     @Override
     @Transactional(readOnly = true)
-    public TutorAvailabilityResponse getTutorAvailability(Long tutorId, LocalDate date) {
+    public TutorAvailabilityResponse getTutorAvailability(Long tutorId, LocalDate date, Long excludeCourseId) {
         Tutor tutor = TutorRepository.findById(tutorId)
                 .orElseThrow(() -> new ResourceNotFoundException("Tutor not found with id: " + tutorId));
 
-        List<CourseSchedule> busySchedules = courseScheduleRepository
-                .findBusySlotsByTutorAndDate(tutor.getId(), date);
+        String dayCode = ScheduleDaysParser.toDayCode(date.getDayOfWeek());
 
-        List<TutorAvailabilityResponse.TimeSlot> busySlots = busySchedules.stream()
+        // busy ที่เกิดจาก pattern การสอนรายสัปดาห์ (Course.scheduleDays) ของคอร์สอื่นของติวเตอร์คนนี้ —
+        // แหล่งข้อมูลเดียวกับที่ validateNoScheduleConflict ใช้ตรวจตอน submit เพื่อให้ panel นี้ตรงกับผลตอน submit จริง
+        List<TutorAvailabilityResponse.TimeSlot> patternBusySlots = courseRepository.findByTutorId(tutor.getId()).stream()
+                .filter(c -> excludeCourseId == null || !excludeCourseId.equals(c.getId()))
+                .flatMap(c -> {
+                    LocalTime[] slot = ScheduleDaysParser.parseSlots(c.getScheduleDays()).get(dayCode);
+                    if (slot == null) return java.util.stream.Stream.empty();
+                    return java.util.stream.Stream.of(TutorAvailabilityResponse.TimeSlot.builder()
+                            .startTime(slot[0])
+                            .endTime(slot[1])
+                            .courseTitle(c.getCourseName())
+                            .build());
+                })
+                .toList();
+
+        // busy ที่เกิดจาก session ที่ถูก generate ไว้แล้วสำหรับวันที่นี้โดยเฉพาะ (ครอบคลุมกรณีเลื่อนคาบ/คาบสอนพิเศษ
+        // ที่ไม่ตรงกับ pattern รายสัปดาห์)
+        List<TutorAvailabilityResponse.TimeSlot> datedBusySlots = courseScheduleRepository
+                .findBusySlotsByTutorAndDate(tutor.getId(), date).stream()
+                .filter(cs -> excludeCourseId == null || !excludeCourseId.equals(cs.getCourse().getId()))
                 .map(cs -> TutorAvailabilityResponse.TimeSlot.builder()
                         .startTime(cs.getStartTime())
                         .endTime(cs.getEndTime())
@@ -543,7 +562,13 @@ public class CourseScheduleServiceImpl implements CourseScheduleService {
                         .build())
                 .toList();
 
-        List<TutorAvailabilityResponse.TimeSlot> freeSlots = computeFreeSlots(busySchedules);
+        List<TutorAvailabilityResponse.TimeSlot> busySlots = new ArrayList<>(patternBusySlots);
+        busySlots.addAll(datedBusySlots);
+        busySlots.sort(Comparator.comparing(TutorAvailabilityResponse.TimeSlot::getStartTime));
+
+        LocalTime[] allowedWindow = resolveAllowedWindow(date);
+        List<TutorAvailabilityResponse.TimeSlot> freeSlots =
+                computeFreeSlots(busySlots, allowedWindow[0], allowedWindow[1]);
 
         return TutorAvailabilityResponse.builder()
                 .tutorId(tutorId)
@@ -553,30 +578,49 @@ public class CourseScheduleServiceImpl implements CourseScheduleService {
                 .build();
     }
 
-    // คำนวณ free slots จาก busy slots โดยแบ่งช่วงเวลาระหว่าง 08:00-22:00
-    private List<TutorAvailabilityResponse.TimeSlot> computeFreeSlots(List<CourseSchedule> busySchedules) {
+    // ช่วงเวลาที่สถาบันอนุญาตให้จัดตารางสอนของวันนั้น (allowedTimeSlots) — วันที่ไม่ได้ตั้งค่า = ไม่จำกัด (fallback 08:00-22:00)
+    private LocalTime[] resolveAllowedWindow(LocalDate date) {
         final LocalTime DAY_START = LocalTime.of(8, 0);
         final LocalTime DAY_END = LocalTime.of(22, 0);
 
-        List<TutorAvailabilityResponse.TimeSlot> freeSlots = new ArrayList<>();
-        LocalTime cursor = DAY_START;
+        String dayCode = ScheduleDaysParser.toDayCode(date.getDayOfWeek());
+        Map<String, LocalTime[]> allowedByDay = institutionProfileRepository.findFirstBy()
+                .map(InstitutionProfile::getAllowedTimeSlots)
+                .map(ScheduleDaysParser::parseSlots)
+                .orElseGet(Map::of);
 
-        for (CourseSchedule cs : busySchedules) {
-            if (cursor.isBefore(cs.getStartTime())) {
+        LocalTime[] allowed = allowedByDay.get(dayCode);
+        if (allowed != null) {
+            return allowed;
+        }
+        return new LocalTime[]{DAY_START, DAY_END};
+    }
+
+    // คำนวณ free slots จาก busy slots (เรียงตาม startTime แล้ว, อาจซ้อนทับกันได้) โดยแบ่งช่วงเวลาภายในหน้าต่างเวลาที่สถาบันอนุญาต
+    private List<TutorAvailabilityResponse.TimeSlot> computeFreeSlots(List<TutorAvailabilityResponse.TimeSlot> busySlots,
+                                                                        LocalTime dayStart, LocalTime dayEnd) {
+        List<TutorAvailabilityResponse.TimeSlot> freeSlots = new ArrayList<>();
+        LocalTime cursor = dayStart;
+
+        for (TutorAvailabilityResponse.TimeSlot busy : busySlots) {
+            LocalTime start = busy.getStartTime().isBefore(dayStart) ? dayStart : busy.getStartTime();
+            LocalTime end = busy.getEndTime().isAfter(dayEnd) ? dayEnd : busy.getEndTime();
+            if (!end.isAfter(cursor)) {
+                continue;
+            }
+            if (cursor.isBefore(start)) {
                 freeSlots.add(TutorAvailabilityResponse.TimeSlot.builder()
                         .startTime(cursor)
-                        .endTime(cs.getStartTime())
+                        .endTime(start)
                         .build());
             }
-            if (cs.getEndTime().isAfter(cursor)) {
-                cursor = cs.getEndTime();
-            }
+            cursor = end;
         }
 
-        if (cursor.isBefore(DAY_END)) {
+        if (cursor.isBefore(dayEnd)) {
             freeSlots.add(TutorAvailabilityResponse.TimeSlot.builder()
                     .startTime(cursor)
-                    .endTime(DAY_END)
+                    .endTime(dayEnd)
                     .build());
         }
 

@@ -104,8 +104,8 @@ function SummarySidebar({ form, tutor, checklist, doneCount }) {
 export default function AdminCourseCreatePage() {
   const navigate = useNavigate();
   const institution = useInstitutionProfile();
-  const termTimeSuggestions = useMemo(
-    () => parseDaySlots(institution?.termTimeSlots),
+  const allowedSlots = useMemo(
+    () => parseDaySlots(institution?.allowedTimeSlots),
     [institution]
   );
 
@@ -169,7 +169,7 @@ export default function AdminCourseCreatePage() {
 
   async function handleSubmit(e) {
     e.preventDefault();
-    const err = validateCourseForm(form, tutorAvail, true);
+    const err = validateCourseForm(form, tutorAvail, true, allowedSlots);
     if (Object.keys(err).length) { setFormErr(err); return; }
     setSaving(true);
     try {
@@ -239,7 +239,7 @@ export default function AdminCourseCreatePage() {
           <SectionCard step={3} icon="📅" title="ตารางสอน" desc="กำหนดวันและเวลาสอนในแต่ละสัปดาห์ ระบบตรวจสอบเวลาว่างของติวเตอร์ให้อัตโนมัติ">
             <ScheduleSection
               form={form} fld={fld} avail={tutorAvail} err={formErr.scheduleTime}
-              suggestions={termTimeSuggestions}
+              allowed={allowedSlots}
             />
           </SectionCard>
 

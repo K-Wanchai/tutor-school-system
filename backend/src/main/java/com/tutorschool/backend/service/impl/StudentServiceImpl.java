@@ -1,9 +1,12 @@
 package com.tutorschool.backend.service.impl;
 
+import com.tutorschool.backend.dto.request.ChangePasswordRequest;
+import com.tutorschool.backend.dto.request.CreateNotificationRequest;
 import com.tutorschool.backend.dto.request.CreateStudentRequest;
 import com.tutorschool.backend.dto.request.UpdateStudentRequest;
 import com.tutorschool.backend.dto.response.PageResponse;
 import com.tutorschool.backend.dto.response.StudentResponse;
+import com.tutorschool.backend.entity.NotificationType;
 import com.tutorschool.backend.entity.Role;
 import com.tutorschool.backend.entity.Student;
 import com.tutorschool.backend.entity.User;
@@ -14,8 +17,11 @@ import com.tutorschool.backend.mapper.StudentMapper;
 import com.tutorschool.backend.repository.EnrollmentRepository;
 import com.tutorschool.backend.repository.StudentRepository;
 import com.tutorschool.backend.repository.UserRepository;
+import com.tutorschool.backend.service.EmailService;
+import com.tutorschool.backend.service.NotificationService;
 import com.tutorschool.backend.service.StudentService;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -24,6 +30,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class StudentServiceImpl implements StudentService {
@@ -33,6 +40,8 @@ public class StudentServiceImpl implements StudentService {
     private final PasswordEncoder passwordEncoder;
     private final StudentMapper studentMapper;
     private final EnrollmentRepository enrollmentRepository;
+    private final NotificationService notificationService;
+    private final EmailService emailService;
 
     @Override
     @Transactional(readOnly = true)
@@ -171,6 +180,46 @@ public class StudentServiceImpl implements StudentService {
         Student student = studentRepository.findByUserId(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("Student profile not found for user id: " + userId));
         return updateStudent(student.getId(), request);
+    }
+
+    @Override
+    @Transactional
+    public void changePassword(Long userId, ChangePasswordRequest request) {
+        Student student = studentRepository.findByUserId(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("Student profile not found for user id: " + userId));
+
+        User user = student.getUser();
+
+        if (!passwordEncoder.matches(request.getCurrentPassword(), user.getPassword())) {
+            throw new IllegalArgumentException("รหัสผ่านปัจจุบันไม่ถูกต้อง");
+        }
+
+        if (!request.getNewPassword().equals(request.getConfirmPassword())) {
+            throw new IllegalArgumentException("รหัสผ่านใหม่และยืนยันรหัสผ่านไม่ตรงกัน");
+        }
+
+        if (request.getCurrentPassword().equals(request.getNewPassword())) {
+            throw new IllegalArgumentException("รหัสผ่านใหม่ต้องไม่ซ้ำกับรหัสผ่านปัจจุบัน");
+        }
+
+        user.setPassword(passwordEncoder.encode(request.getNewPassword()));
+        userRepository.save(user);
+
+        sendPasswordChangedNotification(user, student.getFullName());
+    }
+
+    private void sendPasswordChangedNotification(User user, String fullName) {
+        try {
+            CreateNotificationRequest notif = new CreateNotificationRequest();
+            notif.setUserId(user.getId());
+            notif.setRecipientEmail(user.getEmail());
+            notif.setSubject("รหัสผ่านของคุณถูกเปลี่ยน");
+            notif.setMessage(emailService.buildPasswordChangedEmail(fullName));
+            notif.setNotificationType(NotificationType.PASSWORD_CHANGED);
+            notificationService.sendNotification(notif);
+        } catch (Exception e) {
+            log.warn("Failed to send password-changed notification for user {}: {}", user.getId(), e.getMessage());
+        }
     }
 
     @Override

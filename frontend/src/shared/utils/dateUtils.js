@@ -24,6 +24,18 @@ export function formatDateTimeDMY(value) {
   return `${formatDateDMY(d)} ${hh}:${min}`;
 }
 
+// yyyy-mm-dd จากวัน/เดือน/ปี "ตามเวลาท้องถิ่น" ของ Date object — ห้ามใช้ d.toISOString().slice(0, 10)
+// แทนตรงนี้เพราะ toISOString() แปลงเป็น UTC ก่อน ถ้าเวลาท้องถิ่นเป็นช่วงตี 0-6 (ประเทศไทย UTC+7)
+// จะได้วันที่ของ "เมื่อวาน" แทน ทำให้วันที่เพี้ยนไปหนึ่งวันทั้งกระดาน (เช่น ตารางว่างของติวเตอร์รายวันเลื่อนสลับกันหมด)
+export function toLocalISODate(value) {
+  const d = toDate(value);
+  if (!d) return '';
+  const yyyy = d.getFullYear();
+  const mm = String(d.getMonth() + 1).padStart(2, '0');
+  const dd = String(d.getDate()).padStart(2, '0');
+  return `${yyyy}-${mm}-${dd}`;
+}
+
 // ISO yyyy-mm-dd (รูปแบบที่ backend/state เดิมใช้) <-> วว/ดด/ปปปป (สำหรับ DateInput)
 export function isoToDigits(iso) {
   if (!iso) return '';

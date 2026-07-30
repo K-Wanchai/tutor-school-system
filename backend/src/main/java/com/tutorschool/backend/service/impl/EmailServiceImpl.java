@@ -115,4 +115,14 @@ public class EmailServiceImpl implements EmailService {
                 "หากคุณไม่ได้เป็นผู้ดำเนินการ กรุณาติดต่อผู้ดูแลระบบทันที\n\n" +
                 "ขอแสดงความนับถือ\nTutor School System";
     }
+
+    @Override
+    public String buildPasswordResetEmail(String userName, String resetLink, int expiryMinutes) {
+        return "เรียนคุณ " + userName + ",\n\n" +
+                "เราได้รับคำขอตั้งรหัสผ่านใหม่สำหรับบัญชีของคุณ\n\n" +
+                "กรุณาคลิกลิงก์ด้านล่างเพื่อตั้งรหัสผ่านใหม่ (ลิงก์นี้จะหมดอายุภายใน " + expiryMinutes + " นาที):\n" +
+                resetLink + "\n\n" +
+                "หากคุณไม่ได้เป็นผู้ขอรีเซ็ตรหัสผ่าน กรุณาเพิกเฉยต่ออีเมลฉบับนี้ รหัสผ่านของคุณจะไม่ถูกเปลี่ยนแปลง\n\n" +
+                "ขอแสดงความนับถือ\nTutor School System";
+    }
 }

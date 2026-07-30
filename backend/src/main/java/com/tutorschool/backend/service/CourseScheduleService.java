@@ -33,5 +33,5 @@ public interface CourseScheduleService {
 
     void deleteSchedule(Long id, Long currentUserId);
 
-    TutorAvailabilityResponse getTutorAvailability(Long tutorId, LocalDate date);
+    TutorAvailabilityResponse getTutorAvailability(Long tutorId, LocalDate date, Long excludeCourseId);
 }

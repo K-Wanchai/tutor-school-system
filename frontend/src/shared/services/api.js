@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { getToken, getRefreshToken, setToken, setRefreshToken, clearAuth } from '../utils/tokenUtils';
 
 const SERVER_HOST = 'localhost';
 const API_ORIGIN = `http://${SERVER_HOST}:8080`;
@@ -39,13 +40,7 @@ function processQueue(error, token = null) {
 }
 
 function logout() {
-  localStorage.removeItem('token');
-  localStorage.removeItem('refreshToken');
-  localStorage.removeItem('role');
-  localStorage.removeItem('userId');
-  localStorage.removeItem('username');
-  localStorage.removeItem('tutorId');
-
+  clearAuth();
   window.location.href = '/login';
 }
 
@@ -54,7 +49,7 @@ function logout() {
 // =======================
 api.interceptors.request.use(
   (config) => {
-    const token = localStorage.getItem('token');
+    const token = getToken();
 
     if (token) {
       config.headers = config.headers || {};
@@ -105,7 +100,7 @@ api.interceptors.response.use(
       original._retry = true;
       isRefreshing = true;
 
-      const refreshToken = localStorage.getItem('refreshToken');
+      const refreshToken = getRefreshToken();
 
       if (!refreshToken) {
         isRefreshing = false;
@@ -123,10 +118,10 @@ api.interceptors.response.use(
         const newAccessToken = data.accessToken;
         const newRefreshToken = data.refreshToken;
 
-        localStorage.setItem('token', newAccessToken);
+        setToken(newAccessToken);
 
         if (newRefreshToken) {
-          localStorage.setItem('refreshToken', newRefreshToken);
+          setRefreshToken(newRefreshToken);
         }
 
         api.defaults.headers.common.Authorization = `Bearer ${newAccessToken}`;

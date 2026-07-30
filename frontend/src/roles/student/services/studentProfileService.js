@@ -19,3 +19,8 @@ export async function updateMyProfile(data) {
   const res = await api.put('/students/me', data);
   return unwrapApiResponse(res);
 }
+
+export async function changePassword(data) {
+  const res = await api.post('/students/me/change-password', data);
+  return unwrapApiResponse(res);
+}
