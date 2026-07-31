@@ -152,14 +152,16 @@ TABLES.append({
     "name": "users",
     "thai": "1. ผู้ใช้งานระบบ",
     "rows": [
-        [1, "id",         "BIGINT",    "8",   "รหัสผู้ใช้งาน (Auto Increment)",                     "PK"],
-        [2, "username",   "VARCHAR",   "100", "ชื่อผู้ใช้งานในระบบ",                               "UNIQUE"],
-        [3, "email",      "VARCHAR",   "255", "อีเมลผู้ใช้งาน (ใช้เป็น principal สำหรับ JWT)",    "UNIQUE"],
-        [4, "password",   "VARCHAR",   "-",   "รหัสผ่านที่เข้ารหัสด้วย BCrypt",                    ""],
-        [5, "role",       "VARCHAR",   "20",  "บทบาทผู้ใช้งาน: ADMIN, STUDENT, TUTOR",              ""],
-        [6, "is_enabled", "BOOLEAN",   "-",   "สถานะการเปิดใช้งานบัญชี (ค่าเริ่มต้น: true)",      ""],
-        [7, "created_at", "TIMESTAMP", "-",   "วันเวลาที่สร้างข้อมูล (Auto Set)",                  ""],
-        [8, "updated_at", "TIMESTAMP", "-",   "วันเวลาที่แก้ไขข้อมูลล่าสุด (Auto Update)",         ""],
+        [1, "id",                          "BIGINT",    "8",   "รหัสผู้ใช้งาน (Auto Increment)",                     "PK"],
+        [2, "username",                    "VARCHAR",   "100", "ชื่อผู้ใช้งานในระบบ",                               "UNIQUE"],
+        [3, "email",                       "VARCHAR",   "255", "อีเมลผู้ใช้งาน (ใช้เป็น principal สำหรับ JWT)",    "UNIQUE"],
+        [4, "password",                    "VARCHAR",   "-",   "รหัสผ่านที่เข้ารหัสด้วย BCrypt",                    ""],
+        [5, "role",                        "VARCHAR",   "20",  "บทบาทผู้ใช้งาน: ADMIN, TUTOR, STUDENT",              ""],
+        [6, "is_enabled",                  "BOOLEAN",   "-",   "สถานะการเปิดใช้งานบัญชี (ค่าเริ่มต้น: true)",      ""],
+        [7, "reset_password_token",        "VARCHAR",   "100", "โทเคนสำหรับรีเซ็ตรหัสผ่าน ใช้ครั้งเดียวแล้วล้างค่า (Nullable)", "UNIQUE"],
+        [8, "reset_password_token_expiry", "TIMESTAMP", "-",   "วันเวลาหมดอายุของโทเคนรีเซ็ตรหัสผ่าน",             ""],
+        [9, "created_at",                  "TIMESTAMP", "-",   "วันเวลาที่สร้างข้อมูล (Auto Set)",                  ""],
+        [10,"updated_at",                  "TIMESTAMP", "-",   "วันเวลาที่แก้ไขข้อมูลล่าสุด (Auto Update)",         ""],
     ],
     "fk_notes": None
 })
@@ -181,13 +183,15 @@ TABLES.append({
         [8,  "address",               "TEXT",      "-",   "ที่อยู่",                                              ""],
         [9,  "phone_number",          "VARCHAR",   "20",  "เบอร์โทรศัพท์",                                       ""],
         [10, "birth_date",            "DATE",      "-",   "วันเกิด",                                              ""],
-        [11, "guardian_phone_number", "VARCHAR",   "20",  "เบอร์โทรผู้ปกครอง",                                   ""],
-        [12, "bank_name",             "VARCHAR",   "100", "ชื่อธนาคาร",                                           ""],
-        [13, "bank_qr_code",          "TEXT",      "-",   "QR Code พร้อมเพย์ (Base64 หรือ URL)",                 ""],
-        [14, "bank_account_name",     "VARCHAR",   "255", "ชื่อบัญชีธนาคาร",                                    ""],
-        [15, "bank_account_number",   "VARCHAR",   "50",  "เลขที่บัญชีธนาคาร",                                  ""],
-        [16, "created_at",            "TIMESTAMP", "-",   "วันเวลาที่สร้างข้อมูล (Auto Set)",                    ""],
-        [17, "updated_at",            "TIMESTAMP", "-",   "วันเวลาที่แก้ไขข้อมูลล่าสุด (Auto Update)",           ""],
+        [11, "current_school",        "VARCHAR",   "255", "ชื่อโรงเรียน/สถานศึกษาปัจจุบัน",                     ""],
+        [12, "grade_level",           "VARCHAR",   "30",  "ระดับชั้นปัจจุบัน เช่น MATTAYOM_6, UNIVERSITY",       ""],
+        [13, "guardian_phone_number", "VARCHAR",   "20",  "เบอร์โทรผู้ปกครอง",                                   ""],
+        [14, "bank_name",             "VARCHAR",   "100", "ชื่อธนาคาร",                                           ""],
+        [15, "bank_qr_code",          "TEXT",      "-",   "QR Code พร้อมเพย์ (Base64 หรือ URL)",                 ""],
+        [16, "bank_account_name",     "VARCHAR",   "255", "ชื่อบัญชีธนาคาร",                                    ""],
+        [17, "bank_account_number",   "VARCHAR",   "50",  "เลขที่บัญชีธนาคาร",                                  ""],
+        [18, "created_at",            "TIMESTAMP", "-",   "วันเวลาที่สร้างข้อมูล (Auto Set)",                    ""],
+        [19, "updated_at",            "TIMESTAMP", "-",   "วันเวลาที่แก้ไขข้อมูลล่าสุด (Auto Update)",           ""],
     ],
     "fk_notes": [
         "user_id → users.id : นักเรียนแต่ละคนผูกกับบัญชีผู้ใช้งาน (users) แบบ One-to-One เพื่อใช้สำหรับการยืนยันตัวตนเข้าสู่ระบบ"
@@ -203,13 +207,14 @@ TABLES.append({
     "rows": [
         [1, "id",             "BIGINT",    "8",   "รหัสครูผู้สอน (Auto Increment)",                    "PK"],
         [2, "user_id",        "BIGINT",    "8",   "อ้างอิงบัญชีผู้ใช้งาน",                           "FK → users.id"],
-        [3, "first_name",     "VARCHAR",   "100", "ชื่อจริง",                                          ""],
-        [4, "last_name",      "VARCHAR",   "100", "นามสกุล",                                           ""],
-        [5, "phone_number",   "VARCHAR",   "20",  "เบอร์โทรศัพท์",                                    ""],
-        [6, "specialization", "VARCHAR",   "200", "ความเชี่ยวชาญหรือสาขาวิชาที่สอน",                 ""],
-        [7, "bio",            "TEXT",      "-",   "ประวัติย่อของครูผู้สอน",                           ""],
-        [8, "created_at",     "TIMESTAMP", "-",   "วันเวลาที่สร้างข้อมูล (Auto Set)",                 ""],
-        [9, "updated_at",     "TIMESTAMP", "-",   "วันเวลาที่แก้ไขข้อมูลล่าสุด (Auto Update)",        ""],
+        [3, "tutor_code",     "VARCHAR",   "50",  "รหัสประจำตัวติวเตอร์ (Nullable)",                 "UNIQUE"],
+        [4, "first_name",     "VARCHAR",   "100", "ชื่อจริง",                                          ""],
+        [5, "last_name",      "VARCHAR",   "100", "นามสกุล",                                           ""],
+        [6, "phone_number",   "VARCHAR",   "20",  "เบอร์โทรศัพท์",                                    ""],
+        [7, "specialization", "VARCHAR",   "200", "ความเชี่ยวชาญหรือสาขาวิชาที่สอน",                 ""],
+        [8, "bio",            "TEXT",      "-",   "ประวัติย่อของครูผู้สอน",                           ""],
+        [9, "created_at",     "TIMESTAMP", "-",   "วันเวลาที่สร้างข้อมูล (Auto Set)",                 ""],
+        [10,"updated_at",     "TIMESTAMP", "-",   "วันเวลาที่แก้ไขข้อมูลล่าสุด (Auto Update)",        ""],
     ],
     "fk_notes": [
         "user_id → users.id : ครูผู้สอนแต่ละคนผูกกับบัญชีผู้ใช้งาน (users) แบบ One-to-One เพื่อใช้สำหรับการยืนยันตัวตนเข้าสู่ระบบ"
@@ -224,7 +229,7 @@ TABLES.append({
     "thai": "4. คอร์สเรียน",
     "rows": [
         [1,  "id",                      "BIGINT",        "8",   "รหัสคอร์ส (Auto Increment)",                         "PK"],
-        [2,  "course_code",             "VARCHAR",       "50",  "รหัสคอร์ส (ไม่ซ้ำกัน)",                             "UNIQUE"],
+        [2,  "course_code",             "VARCHAR",       "50",  "รหัสคอร์ส (ไม่ซ้ำกัน, เว้นว่างตอน insert แล้วสร้างจาก id หลัง save ครั้งแรก)", "UNIQUE"],
         [3,  "course_name",             "VARCHAR",       "200", "ชื่อคอร์ส",                                           ""],
         [4,  "price",                   "DECIMAL(10,2)", "-",   "ราคาคอร์ส (หน่วย: บาท)",                             ""],
         [5,  "description",             "TEXT",          "-",   "รายละเอียดคอร์ส",                                    ""],
@@ -233,26 +238,45 @@ TABLES.append({
         [8,  "registration_start_date", "DATE",          "-",   "วันเริ่มเปิดรับสมัคร",                               ""],
         [9,  "registration_end_date",   "DATE",          "-",   "วันปิดรับสมัคร",                                     ""],
         [10, "course_start_date",       "DATE",          "-",   "วันเริ่มเรียน",                                       ""],
-        [11, "status",                  "VARCHAR",       "30",  "สถานะคอร์ส: DRAFT, PUBLISHED, CLOSED, CANCELLED",   ""],
+        [11, "status",                  "VARCHAR",       "30",  "สถานะคอร์ส: PENDING, OPEN_FOR_REGISTRATION, CLOSED, ONGOING, COMPLETED", ""],
         [12, "tutor_id",                "BIGINT",        "8",   "อ้างอิงครูผู้สอน",                                   "FK → tutors.id"],
         [13, "tutor_remark",            "TEXT",          "-",   "หมายเหตุจากครูผู้สอน",                               ""],
-        [14, "schedule_days",           "VARCHAR",       "100", "วันที่สอนในสัปดาห์ (เช่น MON,WED,FRI)",             ""],
-        [15, "schedule_start_time",     "TIME",          "-",   "เวลาเริ่มเรียนประจำสัปดาห์",                         ""],
-        [16, "schedule_end_time",       "TIME",          "-",   "เวลาสิ้นสุดการเรียนประจำสัปดาห์",                   ""],
-        [17, "created_at",              "TIMESTAMP",     "-",   "วันเวลาที่สร้างข้อมูล (Auto Set)",                   ""],
-        [18, "updated_at",              "TIMESTAMP",     "-",   "วันเวลาที่แก้ไขข้อมูลล่าสุด (Auto Update)",          ""],
+        [14, "tutor_viewed",            "BOOLEAN",       "-",   "ติวเตอร์เปิดดูคอร์สนี้แล้วหรือยัง ใช้กำหนด badge แจ้งเตือนคอร์สใหม่ (ค่าเริ่มต้น: false)", ""],
+        [15, "created_at",              "TIMESTAMP",     "-",   "วันเวลาที่สร้างข้อมูล (Auto Set)",                   ""],
+        [16, "updated_at",              "TIMESTAMP",     "-",   "วันเวลาที่แก้ไขข้อมูลล่าสุด (Auto Update)",          ""],
     ],
     "fk_notes": [
-        "tutor_id → tutors.id : ระบุครูผู้สอนที่รับผิดชอบคอร์สนี้ (Many-to-One) ครูหนึ่งคนสามารถมีหลายคอร์สได้"
+        "tutor_id → tutors.id : ระบุครูผู้สอนที่รับผิดชอบคอร์สนี้ (Many-to-One) ครูหนึ่งคนสามารถมีหลายคอร์สได้",
+        "ตารางสอนรายสัปดาห์ (วัน/เวลาเริ่ม-สิ้นสุด) ไม่ได้เก็บเป็นคอลัมน์ในตารางนี้อีกต่อไป — ย้ายไปเก็บแบบ normalized ที่ตาราง course_schedule_days แทน (ดูตารางที่ 5)"
     ]
 })
 
 # ──────────────────────────────────────────────
-# 5. course_lessons
+# 5. course_schedule_days
+# ──────────────────────────────────────────────
+TABLES.append({
+    "name": "course_schedule_days",
+    "thai": "5. ตารางวันสอนรายสัปดาห์ของคอร์ส",
+    "rows": [
+        [1, "id",           "BIGINT",    "8", "รหัสตารางวันสอน (Auto Increment)",                              "PK"],
+        [2, "course_id",    "BIGINT",    "8", "อ้างอิงคอร์สที่ตารางวันสอนนี้สังกัด",                        "FK → courses.id"],
+        [3, "day_of_week",  "VARCHAR",   "3", "รหัสวันสอน 3 ตัวอักษร: MON, TUE, WED, THU, FRI, SAT, SUN",     ""],
+        [4, "start_time",   "TIME",      "-", "เวลาเริ่มสอนของวันนี้",                                       ""],
+        [5, "end_time",     "TIME",      "-", "เวลาสิ้นสุดการสอนของวันนี้",                                 ""],
+        [6, "created_at",   "TIMESTAMP", "-", "วันเวลาที่สร้างข้อมูล (Auto Set)",                             ""],
+        [7, "updated_at",   "TIMESTAMP", "-", "วันเวลาที่แก้ไขข้อมูลล่าสุด (Auto Update)",                    ""],
+    ],
+    "fk_notes": [
+        "course_id → courses.id : ตารางวันสอนสังกัดอยู่ในคอร์ส (Many-to-One) คอร์สหนึ่งมีได้หลายวันสอนต่อสัปดาห์ ข้อมูลนี้ sync มาจาก pattern ที่ติวเตอร์กำหนดทุกครั้งที่สร้าง/แก้ไขคอร์ส เพื่อให้ระบบตรวจสอบวันเวลาสอนชนกันของติวเตอร์ได้ด้วย SQL WHERE ตรงๆ แทนการ parse สตริงใน Java"
+    ]
+})
+
+# ──────────────────────────────────────────────
+# 6. course_lessons
 # ──────────────────────────────────────────────
 TABLES.append({
     "name": "course_lessons",
-    "thai": "5. บทเรียนในคอร์ส",
+    "thai": "6. บทเรียนในคอร์ส",
     "rows": [
         [1, "id",             "BIGINT",    "8",   "รหัสบทเรียน (Auto Increment)",                     "PK"],
         [2, "course_id",      "BIGINT",    "8",   "อ้างอิงคอร์สที่บทเรียนนี้อยู่",                  "FK → courses.id"],
@@ -272,7 +296,7 @@ TABLES.append({
 # ──────────────────────────────────────────────
 TABLES.append({
     "name": "course_tests",
-    "thai": "6. แบบทดสอบประจำบทเรียน",
+    "thai": "7. แบบทดสอบประจำบทเรียน",
     "rows": [
         [1, "id",               "BIGINT",    "8",   "รหัสแบบทดสอบ (Auto Increment)",                     "PK"],
         [2, "course_id",        "BIGINT",    "8",   "อ้างอิงคอร์สที่แบบทดสอบนี้อยู่",                 "FK → courses.id"],
@@ -293,7 +317,7 @@ TABLES.append({
 # ──────────────────────────────────────────────
 TABLES.append({
     "name": "test_questions",
-    "thai": "7. คำถามในแบบทดสอบ",
+    "thai": "8. คำถามในแบบทดสอบ",
     "rows": [
         [1, "id",             "BIGINT",    "8",   "รหัสคำถาม (Auto Increment)",                                               "PK"],
         [2, "course_test_id", "BIGINT",    "8",   "อ้างอิงแบบทดสอบที่คำถามนี้อยู่",                                         "FK → course_tests.id"],
@@ -314,7 +338,7 @@ TABLES.append({
 # ──────────────────────────────────────────────
 TABLES.append({
     "name": "test_question_options",
-    "thai": "8. ตัวเลือกคำถามแบบทดสอบ",
+    "thai": "9. ตัวเลือกคำถามแบบทดสอบ",
     "rows": [
         [1, "id",           "BIGINT",    "8",   "รหัสตัวเลือก (Auto Increment)",                  "PK"],
         [2, "question_id",  "BIGINT",    "8",   "อ้างอิงคำถามที่ตัวเลือกนี้อยู่",              "FK → test_questions.id"],
@@ -334,7 +358,7 @@ TABLES.append({
 # ──────────────────────────────────────────────
 TABLES.append({
     "name": "course_schedules",
-    "thai": "9. ตารางการสอน",
+    "thai": "10. ตารางการสอน",
     "rows": [
         [1,  "id",             "BIGINT",    "8",   "รหัสตารางสอน (Auto Increment)",                                            "PK"],
         [2,  "schedule_code",  "VARCHAR",   "30",  "รหัสตารางสอน (ไม่ซ้ำกัน)",                                               "UNIQUE"],
@@ -368,25 +392,26 @@ TABLES.append({
 # ──────────────────────────────────────────────
 TABLES.append({
     "name": "enrollments",
-    "thai": "10. การลงทะเบียนเรียน",
+    "thai": "11. การลงทะเบียนเรียน",
     "rows": [
         [1,  "id",               "BIGINT",        "8",   "รหัสการลงทะเบียน (Auto Increment)",                                        "PK"],
         [2,  "enrollment_code",  "VARCHAR",        "20",  "รหัสการลงทะเบียน (ไม่ซ้ำกัน)",                                            "UNIQUE"],
         [3,  "student_id",       "BIGINT",         "8",   "อ้างอิงนักเรียนที่ลงทะเบียน",                                            "FK → students.id"],
         [4,  "course_id",        "BIGINT",         "8",   "อ้างอิงคอร์สที่ลงทะเบียน",                                               "FK → courses.id"],
         [5,  "enrollment_date",  "TIMESTAMP",      "-",   "วันเวลาที่ลงทะเบียน (Auto Set)",                                          ""],
-        [6,  "status",           "VARCHAR",        "20",  "สถานะ: PENDING, APPROVED, REJECTED, CANCELLED",                           ""],
-        [7,  "payment_status",   "VARCHAR",        "30",  "สถานะการชำระ: UNPAID, PAID",                                    ""],
-        [8,  "payment_method",   "VARCHAR",        "20",  "วิธีชำระ: CASH, TRANSFER, QR_CODE",                                       ""],
+        [6,  "status",           "VARCHAR",        "20",  "สถานะ: PENDING, APPROVED, REJECTED, CANCELLED, COMPLETED",               ""],
+        [7,  "payment_status",   "VARCHAR",        "30",  "สถานะการชำระ: UNPAID, PENDING_VERIFICATION, PAID, FAILED",               ""],
+        [8,  "payment_method",   "VARCHAR",        "20",  "วิธีชำระ: BANK_TRANSFER, PROMPTPAY, CASH, CREDIT_CARD",                  ""],
         [9,  "amount",           "DECIMAL(10,2)",  "-",   "ราคาเต็มก่อนส่วนลด (บาท)",                                               ""],
         [10, "discount_amount",  "DECIMAL(10,2)",  "-",   "จำนวนส่วนลด (บาท) ค่าเริ่มต้น 0",                                        ""],
         [11, "final_amount",     "DECIMAL(10,2)",  "-",   "ราคาสุทธิหลังหักส่วนลด (บาท)",                                           ""],
         [12, "payment_slip_url", "VARCHAR",        "500", "URL รูปสลิปการชำระเงิน",                                                 ""],
         [13, "note",             "TEXT",           "-",   "หมายเหตุเพิ่มเติม",                                                       ""],
-        [14, "approved_by",      "VARCHAR",        "100", "ผู้อนุมัติการลงทะเบียน",                                                  ""],
-        [15, "approved_at",      "TIMESTAMP",      "-",   "วันเวลาที่อนุมัติการลงทะเบียน",                                          ""],
-        [16, "created_at",       "TIMESTAMP",      "-",   "วันเวลาที่สร้างข้อมูล (Auto Set)",                                        ""],
-        [17, "updated_at",       "TIMESTAMP",      "-",   "วันเวลาที่แก้ไขข้อมูลล่าสุด (Auto Update)",                               ""],
+        [14, "payment_deadline", "TIMESTAMP",      "-",   "กำหนดเวลาชำระเงินก่อนถูกยกเลิกอัตโนมัติ (คำนวณจากค่า enrollment_payment_deadline_minutes ของสถาบัน)", ""],
+        [15, "approved_by",      "VARCHAR",        "100", "ผู้อนุมัติการลงทะเบียน",                                                  ""],
+        [16, "approved_at",      "TIMESTAMP",      "-",   "วันเวลาที่อนุมัติการลงทะเบียน",                                          ""],
+        [17, "created_at",       "TIMESTAMP",      "-",   "วันเวลาที่สร้างข้อมูล (Auto Set)",                                        ""],
+        [18, "updated_at",       "TIMESTAMP",      "-",   "วันเวลาที่แก้ไขข้อมูลล่าสุด (Auto Update)",                               ""],
     ],
     "fk_notes": [
         "student_id → students.id : ระบุนักเรียนที่ทำการลงทะเบียน (Many-to-One) นักเรียนหนึ่งคนลงทะเบียนได้หลายคอร์ส",
@@ -399,7 +424,7 @@ TABLES.append({
 # ──────────────────────────────────────────────
 TABLES.append({
     "name": "payments",
-    "thai": "11. การชำระเงิน",
+    "thai": "12. การชำระเงิน",
     "rows": [
         [1,  "id",                     "BIGINT",        "8",   "รหัสการชำระเงิน (Auto Increment)",                           "PK"],
         [2,  "payment_code",           "VARCHAR",        "20",  "รหัสการชำระเงิน (ไม่ซ้ำกัน)",                               "UNIQUE"],
@@ -408,8 +433,8 @@ TABLES.append({
         [5,  "institution_profile_id", "BIGINT",         "8",   "อ้างอิงโปรไฟล์สถาบันที่รับชำระ",                          "FK → institution_profiles.id"],
         [6,  "payment_date",           "TIMESTAMP",      "-",   "วันเวลาที่ชำระเงิน (Auto Set)",                             ""],
         [7,  "amount",                 "DECIMAL(10,2)",  "-",   "จำนวนเงินที่ชำระ (บาท)",                                   ""],
-        [8,  "payment_method",         "VARCHAR",        "20",  "วิธีการชำระ: CASH, TRANSFER, QR_CODE",                     ""],
-        [9,  "payment_status",         "VARCHAR",        "20",  "สถานะตรวจสอบ: PENDING, VERIFIED, REJECTED",               ""],
+        [8,  "payment_method",         "VARCHAR",        "20",  "วิธีการชำระ: BANK_TRANSFER, PROMPTPAY, CASH, CREDIT_CARD", ""],
+        [9,  "payment_status",         "VARCHAR",        "20",  "สถานะตรวจสอบ: PENDING, VERIFIED, REJECTED, CANCELLED",    ""],
         [10, "payment_slip_url",       "VARCHAR",        "500", "URL รูปสลิปการชำระเงิน",                                   ""],
         [11, "transaction_reference",  "VARCHAR",        "100", "หมายเลขอ้างอิงธุรกรรม",                                   ""],
         [12, "note",                   "TEXT",           "-",   "หมายเหตุเพิ่มเติม",                                        ""],
@@ -430,21 +455,24 @@ TABLES.append({
 # ──────────────────────────────────────────────
 TABLES.append({
     "name": "institution_profiles",
-    "thai": "12. โปรไฟล์สถาบัน",
+    "thai": "13. โปรไฟล์สถาบัน",
     "rows": [
-        [1,  "id",                   "BIGINT",    "8",   "รหัสโปรไฟล์สถาบัน (Auto Increment)",               "PK"],
-        [2,  "institution_code",     "VARCHAR",   "50",  "รหัสสถาบัน (ไม่ซ้ำกัน)",                          "UNIQUE"],
-        [3,  "institution_name",     "VARCHAR",   "255", "ชื่อสถาบัน",                                        ""],
-        [4,  "address",              "TEXT",      "-",   "ที่อยู่สถาบัน",                                     ""],
-        [5,  "phone_number",         "VARCHAR",   "20",  "เบอร์โทรศัพท์สถาบัน",                              ""],
-        [6,  "email",                "VARCHAR",   "255", "อีเมลติดต่อสถาบัน",                                ""],
-        [7,  "logo_url",             "TEXT",      "-",   "URL โลโก้สถาบัน",                                  ""],
-        [8,  "bank_name",            "VARCHAR",   "100", "ชื่อธนาคารสถาบัน",                                 ""],
-        [9,  "bank_account_name",    "VARCHAR",   "255", "ชื่อบัญชีธนาคารสถาบัน",                           ""],
-        [10, "bank_account_number",  "VARCHAR",   "50",  "เลขที่บัญชีธนาคารสถาบัน",                         ""],
-        [11, "bank_qr_code",         "TEXT",      "-",   "QR Code พร้อมเพย์สถาบัน (Base64 หรือ URL)",       ""],
-        [12, "created_at",           "TIMESTAMP", "-",   "วันเวลาที่สร้างข้อมูล (Auto Set)",                 ""],
-        [13, "updated_at",           "TIMESTAMP", "-",   "วันเวลาที่แก้ไขข้อมูลล่าสุด (Auto Update)",        ""],
+        [1,  "id",                                     "BIGINT",    "8",   "รหัสโปรไฟล์สถาบัน (Auto Increment)",               "PK"],
+        [2,  "institution_code",                       "VARCHAR",   "50",  "รหัสสถาบัน (ไม่ซ้ำกัน)",                          "UNIQUE"],
+        [3,  "institution_name",                       "VARCHAR",   "255", "ชื่อสถาบัน",                                        ""],
+        [4,  "address",                                "TEXT",      "-",   "ที่อยู่สถาบัน",                                     ""],
+        [5,  "phone_number",                           "VARCHAR",   "20",  "เบอร์โทรศัพท์สถาบัน",                              ""],
+        [6,  "email",                                  "VARCHAR",   "255", "อีเมลติดต่อสถาบัน",                                ""],
+        [7,  "logo_url",                                "TEXT",      "-",   "URL โลโก้สถาบัน",                                  ""],
+        [8,  "bank_name",                               "VARCHAR",   "100", "ชื่อธนาคารสถาบัน",                                 ""],
+        [9,  "bank_account_name",                       "VARCHAR",   "255", "ชื่อบัญชีธนาคารสถาบัน",                           ""],
+        [10, "bank_account_number",                     "VARCHAR",   "50",  "เลขที่บัญชีธนาคารสถาบัน",                         ""],
+        [11, "bank_qr_code",                            "TEXT",      "-",   "QR Code พร้อมเพย์สถาบัน (Base64 หรือ URL)",       ""],
+        [12, "prompt_pay_id",                           "VARCHAR",   "20",  "หมายเลขพร้อมเพย์ของสถาบัน",                       ""],
+        [13, "enrollment_payment_deadline_minutes",     "INT",       "4",   "จำนวนนาทีที่ให้ชำระเงินหลังลงทะเบียนก่อนถูกยกเลิกอัตโนมัติ", ""],
+        [14, "allowed_time_slots",                      "TEXT",      "-",   "ช่วงเวลาที่อนุญาตให้จัดตารางสอนต่อวัน เก็บเป็น pattern เช่น MON:14:00-20:00,SAT:09:00-18:00", ""],
+        [15, "created_at",                              "TIMESTAMP", "-",   "วันเวลาที่สร้างข้อมูล (Auto Set)",                 ""],
+        [16, "updated_at",                              "TIMESTAMP", "-",   "วันเวลาที่แก้ไขข้อมูลล่าสุด (Auto Update)",        ""],
     ],
     "fk_notes": None
 })
@@ -454,7 +482,7 @@ TABLES.append({
 # ──────────────────────────────────────────────
 TABLES.append({
     "name": "classroom_sessions",
-    "thai": "13. Session ห้องเรียนออนไลน์",
+    "thai": "14. Session ห้องเรียนออนไลน์",
     "rows": [
         [1,  "id",                    "BIGINT",    "8",   "รหัส Session ห้องเรียน (Auto Increment)",                      "PK"],
         [2,  "session_code",          "VARCHAR",   "50",  "รหัส Session (ไม่ซ้ำกัน)",                                    "UNIQUE"],
@@ -465,10 +493,11 @@ TABLES.append({
         [7,  "end_time",              "TIMESTAMP", "-",   "วันเวลาสิ้นสุด Session",                                     ""],
         [8,  "late_threshold_minutes","INT",        "4",   "นาทีที่ถือว่ามาสาย (ค่าเริ่มต้น: 15 นาที)",                ""],
         [9,  "join_code",             "VARCHAR",   "100", "รหัสลับสำหรับเข้าร่วม Session",                              ""],
-        [10, "is_camera_required",    "BOOLEAN",   "-",   "บังคับให้เปิดกล้องหรือไม่ (ค่าเริ่มต้น: false)",           ""],
-        [11, "status",                "VARCHAR",   "20",  "สถานะ: SCHEDULED, OPEN, CLOSED, CANCELLED",                  ""],
-        [12, "created_at",            "TIMESTAMP", "-",   "วันเวลาที่สร้างข้อมูล (Auto Set)",                           ""],
-        [13, "updated_at",            "TIMESTAMP", "-",   "วันเวลาที่แก้ไขข้อมูลล่าสุด (Auto Update)",                  ""],
+        [10, "meeting_link",          "VARCHAR",   "500", "ลิงก์ห้องเรียนออนไลน์ (Nullable)",                          ""],
+        [11, "is_camera_required",    "BOOLEAN",   "-",   "บังคับให้เปิดกล้องหรือไม่ (ค่าเริ่มต้น: false)",           ""],
+        [12, "status",                "VARCHAR",   "20",  "สถานะ: SCHEDULED, OPEN, CLOSED, CANCELLED",                  ""],
+        [13, "created_at",            "TIMESTAMP", "-",   "วันเวลาที่สร้างข้อมูล (Auto Set)",                           ""],
+        [14, "updated_at",            "TIMESTAMP", "-",   "วันเวลาที่แก้ไขข้อมูลล่าสุด (Auto Update)",                  ""],
     ],
     "fk_notes": [
         "course_id → courses.id : Session สังกัดอยู่ในคอร์ส (Many-to-One) คอร์สหนึ่งมีได้หลาย Session",
@@ -482,7 +511,7 @@ TABLES.append({
 # ──────────────────────────────────────────────
 TABLES.append({
     "name": "attendance_records",
-    "thai": "14. บันทึกการเข้าเรียน",
+    "thai": "15. บันทึกการเข้าเรียน",
     "rows": [
         [1,  "id",                  "BIGINT",    "8",   "รหัสบันทึกการเข้าเรียน (Auto Increment)",                        "PK"],
         [2,  "attendance_code",     "VARCHAR",   "50",  "รหัสบันทึก (ไม่ซ้ำกัน)",                                        "UNIQUE"],
@@ -518,7 +547,7 @@ TABLES.append({
 # ──────────────────────────────────────────────
 TABLES.append({
     "name": "attendance_audit_logs",
-    "thai": "15. บันทึกการแก้ไขสถานะการเข้าเรียน",
+    "thai": "16. บันทึกการแก้ไขสถานะการเข้าเรียน",
     "rows": [
         [1, "id",                    "BIGINT",    "8",   "รหัส Log (Auto Increment)",                                       "PK"],
         [2, "attendance_record_id",  "BIGINT",    "8",   "อ้างอิงบันทึกการเข้าเรียนที่ถูกแก้ไข",                         "FK → attendance_records.id"],
@@ -539,7 +568,7 @@ TABLES.append({
 # ──────────────────────────────────────────────
 TABLES.append({
     "name": "course_evaluations",
-    "thai": "16. การประเมินคอร์ส",
+    "thai": "17. การประเมินคอร์ส",
     "rows": [
         [1,  "id",                   "BIGINT",    "8",   "รหัสการประเมิน (Auto Increment)",                               "PK"],
         [2,  "evaluation_code",      "VARCHAR",   "20",  "รหัสการประเมิน (ไม่ซ้ำกัน)",                                  "UNIQUE"],
@@ -574,7 +603,7 @@ TABLES.append({
 # ──────────────────────────────────────────────
 TABLES.append({
     "name": "notifications",
-    "thai": "17. การแจ้งเตือน",
+    "thai": "18. การแจ้งเตือน",
     "rows": [
         [1,  "id",                "BIGINT",    "8",   "รหัสการแจ้งเตือน (Auto Increment)",                                                       "PK"],
         [2,  "notification_code", "VARCHAR",   "30",  "รหัสการแจ้งเตือน (ไม่ซ้ำกัน)",                                                           "UNIQUE"],
@@ -603,7 +632,7 @@ TABLES.append({
 # ──────────────────────────────────────────────
 TABLES.append({
     "name": "exams",
-    "thai": "18. ข้อสอบ",
+    "thai": "19. ข้อสอบ",
     "rows": [
         [1,  "id",                              "BIGINT",    "8",   "รหัสข้อสอบ (Auto Increment)",                                          "PK"],
         [2,  "exam_code",                       "VARCHAR",   "50",  "รหัสข้อสอบ (ไม่ซ้ำกัน)",                                             "UNIQUE"],
@@ -638,7 +667,7 @@ TABLES.append({
 # ──────────────────────────────────────────────
 TABLES.append({
     "name": "exam_questions",
-    "thai": "19. คำถามในข้อสอบ",
+    "thai": "20. คำถามในข้อสอบ",
     "rows": [
         [1,  "id",             "BIGINT",    "8",   "รหัสคำถาม (Auto Increment)",                                                           "PK"],
         [2,  "exam_id",        "BIGINT",    "8",   "อ้างอิงข้อสอบที่คำถามนี้สังกัด",                                                    "FK → exams.id"],
@@ -661,7 +690,7 @@ TABLES.append({
 # ──────────────────────────────────────────────
 TABLES.append({
     "name": "exam_question_options",
-    "thai": "20. ตัวเลือกคำถามในข้อสอบ",
+    "thai": "21. ตัวเลือกคำถามในข้อสอบ",
     "rows": [
         [1, "id",           "BIGINT",    "8",   "รหัสตัวเลือก (Auto Increment)",                              "PK"],
         [2, "question_id",  "BIGINT",    "8",   "อ้างอิงคำถามที่ตัวเลือกนี้สังกัด",                        "FK → exam_questions.id"],
@@ -681,7 +710,7 @@ TABLES.append({
 # ──────────────────────────────────────────────
 TABLES.append({
     "name": "exam_submissions",
-    "thai": "21. การส่งข้อสอบ",
+    "thai": "22. การส่งข้อสอบ",
     "rows": [
         [1,  "id",               "BIGINT",    "8",   "รหัสการส่งข้อสอบ (Auto Increment)",                                 "PK"],
         [2,  "submission_code",  "VARCHAR",   "50",  "รหัสการส่งข้อสอบ (ไม่ซ้ำกัน)",                                    "UNIQUE"],
@@ -713,7 +742,7 @@ TABLES.append({
 # ──────────────────────────────────────────────
 TABLES.append({
     "name": "exam_answers",
-    "thai": "22. คำตอบข้อสอบ",
+    "thai": "23. คำตอบข้อสอบ",
     "rows": [
         [1,  "id",                  "BIGINT",    "8",   "รหัสคำตอบ (Auto Increment)",                                                        "PK"],
         [2,  "submission_id",       "BIGINT",    "8",   "อ้างอิงการส่งข้อสอบที่คำตอบนี้สังกัด",                                           "FK → exam_submissions.id"],
@@ -738,7 +767,7 @@ TABLES.append({
 # ──────────────────────────────────────────────
 TABLES.append({
     "name": "exam_score_audit_logs",
-    "thai": "23. บันทึกการแก้ไขคะแนนข้อสอบ",
+    "thai": "24. บันทึกการแก้ไขคะแนนข้อสอบ",
     "rows": [
         [1, "id",            "BIGINT",    "8",   "รหัส Log (Auto Increment)",                              "PK"],
         [2, "submission_id", "BIGINT",    "8",   "อ้างอิงการส่งข้อสอบที่ถูกแก้ไขคะแนน",               "FK → exam_submissions.id"],
@@ -753,6 +782,270 @@ TABLES.append({
         "submission_id → exam_submissions.id : Log ผูกกับการส่งข้อสอบ (Many-to-One) ทุกครั้งที่แก้ไขคะแนนจะสร้าง Log ใหม่เพื่อความโปร่งใสและตรวจสอบย้อนหลังได้"
     ]
 })
+
+# ──────────────────────────────────────────────
+# 25. exam_institutions
+# ──────────────────────────────────────────────
+TABLES.append({
+    "name": "exam_institutions",
+    "thai": "25. สถาบัน/สถานศึกษาที่ใช้อ้างอิงผลสอบ",
+    "rows": [
+        [1,  "id",                          "BIGINT",    "8",   "รหัสสถาบัน (Auto Increment)",                                          "PK"],
+        [2,  "institution_code",            "VARCHAR",   "20",  "รหัสสถาบัน (ไม่ซ้ำกัน)",                                             "UNIQUE"],
+        [3,  "institution_name",            "VARCHAR",   "255", "ชื่อสถาบัน/สถานศึกษา",                                               ""],
+        [4,  "institution_type",            "VARCHAR",   "30",  "ประเภทสถาบัน: SECONDARY, VOCATIONAL_DIPLOMA, UNIVERSITY",           ""],
+        [5,  "province",                    "VARCHAR",   "100", "จังหวัดที่ตั้ง",                                                     ""],
+        [6,  "district",                    "VARCHAR",   "100", "อำเภอ/เขตที่ตั้ง",                                                   ""],
+        [7,  "address",                     "TEXT",      "-",   "ที่อยู่",                                                              ""],
+        [8,  "website_url",                 "VARCHAR",   "255", "เว็บไซต์สถาบัน",                                                     ""],
+        [9,  "description",                 "TEXT",      "-",   "รายละเอียดเพิ่มเติม",                                                 ""],
+        [10, "active",                      "BOOLEAN",   "-",   "สถานะเปิดใช้งาน (ค่าเริ่มต้น: true)",                               ""],
+        [11, "offers_vocational_diploma",   "BOOLEAN",   "-",   "เปิดหลักสูตร ปวส. ควบคู่กับปริญญาตรีหรือไม่ (เฉพาะสถาบันประเภทมหาวิทยาลัย, ค่าเริ่มต้น: false)", ""],
+        [12, "created_at",                  "TIMESTAMP", "-",   "วันเวลาที่สร้างข้อมูล (Auto Set)",                                    ""],
+        [13, "updated_at",                  "TIMESTAMP", "-",   "วันเวลาที่แก้ไขข้อมูลล่าสุด (Auto Update)",                           ""],
+    ],
+    "fk_notes": None
+})
+
+# ──────────────────────────────────────────────
+# 26. academic_faculties
+# ──────────────────────────────────────────────
+TABLES.append({
+    "name": "academic_faculties",
+    "thai": "26. คณะ (ระดับปริญญาตรี)",
+    "rows": [
+        [1, "id",                   "BIGINT",    "8",   "รหัสคณะ (Auto Increment)",                       "PK"],
+        [2, "exam_institution_id",  "BIGINT",    "8",   "อ้างอิงสถาบันที่คณะนี้สังกัด",                 "FK → exam_institutions.id"],
+        [3, "name",                 "VARCHAR",   "200", "ชื่อคณะ",                                        ""],
+        [4, "active",               "BOOLEAN",   "-",   "สถานะเปิดใช้งาน (ค่าเริ่มต้น: true)",          ""],
+        [5, "created_at",           "TIMESTAMP", "-",   "วันเวลาที่สร้างข้อมูล (Auto Set)",              ""],
+        [6, "updated_at",           "TIMESTAMP", "-",   "วันเวลาที่แก้ไขข้อมูลล่าสุด (Auto Update)",     ""],
+    ],
+    "fk_notes": [
+        "exam_institution_id → exam_institutions.id : คณะสังกัดอยู่ในสถาบัน (Many-to-One) สถาบันหนึ่งมีได้หลายคณะ"
+    ]
+})
+
+# ──────────────────────────────────────────────
+# 27. academic_majors
+# ──────────────────────────────────────────────
+TABLES.append({
+    "name": "academic_majors",
+    "thai": "27. สาขาวิชา (ระดับปริญญาตรี)",
+    "rows": [
+        [1, "id",          "BIGINT",    "8",   "รหัสสาขาวิชา (Auto Increment)",                     "PK"],
+        [2, "faculty_id",  "BIGINT",    "8",   "อ้างอิงคณะที่สาขาวิชานี้สังกัด",                  "FK → academic_faculties.id"],
+        [3, "name",        "VARCHAR",   "200", "ชื่อสาขาวิชา",                                      ""],
+        [4, "active",      "BOOLEAN",   "-",   "สถานะเปิดใช้งาน (ค่าเริ่มต้น: true)",              ""],
+        [5, "created_at",  "TIMESTAMP", "-",   "วันเวลาที่สร้างข้อมูล (Auto Set)",                  ""],
+        [6, "updated_at",  "TIMESTAMP", "-",   "วันเวลาที่แก้ไขข้อมูลล่าสุด (Auto Update)",         ""],
+    ],
+    "fk_notes": [
+        "faculty_id → academic_faculties.id : สาขาวิชาสังกัดอยู่ในคณะ (Many-to-One) ใช้ระบุผลสอบระดับปริญญาตรี (education_level = BACHELOR) ที่ตาราง student_exam_achievements"
+    ]
+})
+
+# ──────────────────────────────────────────────
+# 28. admission_rounds
+# ──────────────────────────────────────────────
+TABLES.append({
+    "name": "admission_rounds",
+    "thai": "28. รอบการรับสมัคร",
+    "rows": [
+        [1, "id",                   "BIGINT",    "8",   "รหัสรอบการรับสมัคร (Auto Increment)",           "PK"],
+        [2, "exam_institution_id",  "BIGINT",    "8",   "อ้างอิงสถาบันที่รอบรับสมัครนี้สังกัด",        "FK → exam_institutions.id"],
+        [3, "name",                 "VARCHAR",   "100", "ชื่อรอบการรับสมัคร (เช่น TCAS รอบ 1, รอบ 2)",  ""],
+        [4, "active",               "BOOLEAN",   "-",   "สถานะเปิดใช้งาน (ค่าเริ่มต้น: true)",          ""],
+        [5, "created_at",           "TIMESTAMP", "-",   "วันเวลาที่สร้างข้อมูล (Auto Set)",              ""],
+        [6, "updated_at",           "TIMESTAMP", "-",   "วันเวลาที่แก้ไขข้อมูลล่าสุด (Auto Update)",     ""],
+    ],
+    "fk_notes": [
+        "exam_institution_id → exam_institutions.id : รอบการรับสมัครสังกัดอยู่ในสถาบัน (Many-to-One)"
+    ]
+})
+
+# ──────────────────────────────────────────────
+# 29. school_tracks
+# ──────────────────────────────────────────────
+TABLES.append({
+    "name": "school_tracks",
+    "thai": "29. แผนการเรียน (ระดับมัธยมศึกษา)",
+    "rows": [
+        [1, "id",                   "BIGINT",    "8",   "รหัสแผนการเรียน (Auto Increment)",                      "PK"],
+        [2, "exam_institution_id",  "BIGINT",    "8",   "อ้างอิงสถาบันที่แผนการเรียนนี้สังกัด",                "FK → exam_institutions.id"],
+        [3, "education_level",      "VARCHAR",   "30",  "ระดับการศึกษา: LOWER_SECONDARY, UPPER_SECONDARY, VOCATIONAL_DIPLOMA, BACHELOR", ""],
+        [4, "name",                 "VARCHAR",   "100", "ชื่อแผนการเรียน/สายการเรียน",                          ""],
+        [5, "active",               "BOOLEAN",   "-",   "สถานะเปิดใช้งาน (ค่าเริ่มต้น: true)",                  ""],
+        [6, "created_at",           "TIMESTAMP", "-",   "วันเวลาที่สร้างข้อมูล (Auto Set)",                      ""],
+        [7, "updated_at",           "TIMESTAMP", "-",   "วันเวลาที่แก้ไขข้อมูลล่าสุด (Auto Update)",             ""],
+    ],
+    "fk_notes": [
+        "exam_institution_id → exam_institutions.id : แผนการเรียนสังกัดอยู่ในสถาบัน (Many-to-One) ใช้ระบุผลสอบระดับมัธยมศึกษาที่ตาราง student_exam_achievements"
+    ]
+})
+
+# ──────────────────────────────────────────────
+# 30. vocational_majors
+# ──────────────────────────────────────────────
+TABLES.append({
+    "name": "vocational_majors",
+    "thai": "30. สาขาวิชา (ระดับ ปวส.)",
+    "rows": [
+        [1, "id",                   "BIGINT",    "8",   "รหัสสาขาวิชา (Auto Increment)",                    "PK"],
+        [2, "exam_institution_id",  "BIGINT",    "8",   "อ้างอิงสถาบันที่สาขาวิชานี้สังกัด",              "FK → exam_institutions.id"],
+        [3, "name",                 "VARCHAR",   "100", "ชื่อสาขาวิชา (ปวส.)",                              ""],
+        [4, "active",               "BOOLEAN",   "-",   "สถานะเปิดใช้งาน (ค่าเริ่มต้น: true)",            ""],
+        [5, "created_at",           "TIMESTAMP", "-",   "วันเวลาที่สร้างข้อมูล (Auto Set)",                ""],
+        [6, "updated_at",           "TIMESTAMP", "-",   "วันเวลาที่แก้ไขข้อมูลล่าสุด (Auto Update)",       ""],
+    ],
+    "fk_notes": [
+        "exam_institution_id → exam_institutions.id : สาขาวิชาสังกัดอยู่ในสถาบัน (Many-to-One) ใช้ระบุผลสอบระดับ ปวส. (education_level = VOCATIONAL_DIPLOMA) ที่ตาราง student_exam_achievements"
+    ]
+})
+
+# ──────────────────────────────────────────────
+# 31. student_exam_achievements
+# ──────────────────────────────────────────────
+TABLES.append({
+    "name": "student_exam_achievements",
+    "thai": "31. ผลสอบ/สิทธิ์การเข้าศึกษาต่อของนักเรียน",
+    "rows": [
+        [1,  "id",                   "BIGINT",    "8",   "รหัสผลสอบ (Auto Increment)",                                          "PK"],
+        [2,  "student_id",           "BIGINT",    "8",   "อ้างอิงนักเรียนเจ้าของผลสอบ",                                       "FK → students.id"],
+        [3,  "exam_institution_id",  "BIGINT",    "8",   "อ้างอิงสถาบันที่ใช้ผลสอบนี้",                                       "FK → exam_institutions.id"],
+        [4,  "education_level",      "VARCHAR",   "30",  "ระดับการศึกษาของผลสอบ: LOWER_SECONDARY, UPPER_SECONDARY, VOCATIONAL_DIPLOMA, BACHELOR", ""],
+        [5,  "school_track_id",      "BIGINT",    "8",   "อ้างอิงแผนการเรียน ใช้เมื่อ education_level เป็นมัธยมศึกษา (Nullable)", "FK → school_tracks.id"],
+        [6,  "academic_major_id",    "BIGINT",    "8",   "อ้างอิงสาขาวิชาปริญญาตรี ใช้เมื่อ education_level เป็น BACHELOR (Nullable)", "FK → academic_majors.id"],
+        [7,  "vocational_major_id",  "BIGINT",    "8",   "อ้างอิงสาขาวิชา ปวส. ใช้เมื่อ education_level เป็น VOCATIONAL_DIPLOMA (Nullable)", "FK → vocational_majors.id"],
+        [8,  "admission_round_id",   "BIGINT",    "8",   "อ้างอิงรอบการรับสมัครที่เกี่ยวข้อง (Nullable)",                     "FK → admission_rounds.id"],
+        [9,  "academic_year",        "INT",       "4",   "ปีการศึกษาที่สอบผ่าน/เข้าศึกษา",                                     ""],
+        [10, "result_date",          "DATE",      "-",   "วันที่ทราบผลสอบ",                                                     ""],
+        [11, "note",                 "TEXT",      "-",   "หมายเหตุเพิ่มเติม",                                                   ""],
+        [12, "active",               "BOOLEAN",   "-",   "สถานะเปิดใช้งาน (ค่าเริ่มต้น: true)",                               ""],
+        [13, "created_at",           "TIMESTAMP", "-",   "วันเวลาที่สร้างข้อมูล (Auto Set)",                                   ""],
+        [14, "updated_at",           "TIMESTAMP", "-",   "วันเวลาที่แก้ไขข้อมูลล่าสุด (Auto Update)",                          ""],
+    ],
+    "fk_notes": [
+        "student_id → students.id : ระบุนักเรียนเจ้าของผลสอบ (Many-to-One)",
+        "exam_institution_id → exam_institutions.id : ระบุสถาบันที่ใช้ผลสอบนี้ (Many-to-One)",
+        "school_track_id → school_tracks.id : ระบุแผนการเรียน (Many-to-One, Nullable) ใช้เมื่อ education_level เป็น LOWER_SECONDARY หรือ UPPER_SECONDARY",
+        "academic_major_id → academic_majors.id : ระบุสาขาวิชาปริญญาตรี (Many-to-One, Nullable) ใช้เมื่อ education_level เป็น BACHELOR",
+        "vocational_major_id → vocational_majors.id : ระบุสาขาวิชา ปวส. (Many-to-One, Nullable) ใช้เมื่อ education_level เป็น VOCATIONAL_DIPLOMA",
+        "admission_round_id → admission_rounds.id : ระบุรอบการรับสมัครที่เกี่ยวข้อง (Many-to-One, Nullable)"
+    ]
+})
+
+# ──────────────────────────────────────────────
+# 32. student_exam_achievement_enrollments
+# ──────────────────────────────────────────────
+TABLES.append({
+    "name": "student_exam_achievement_enrollments",
+    "thai": "32. ตาราง Join ผลสอบกับการลงทะเบียนเรียนที่เกี่ยวข้อง",
+    "rows": [
+        [1, "achievement_id",  "BIGINT", "8", "อ้างอิงผลสอบของนักเรียน",                     "PK, FK → student_exam_achievements.id"],
+        [2, "enrollment_id",   "BIGINT", "8", "อ้างอิงการลงทะเบียนเรียนที่เกี่ยวข้องกับผลสอบนี้", "PK, FK → enrollments.id"],
+    ],
+    "fk_notes": [
+        "achievement_id → student_exam_achievements.id, enrollment_id → enrollments.id : ตาราง Join แบบ Many-to-Many (ไม่มี entity class แยก, เกิดจาก @JoinTable บน StudentExamAchievement.enrollments) ใช้ระบุว่าคอร์สที่นักเรียนลงทะเบียนอยู่แล้วคอร์สใดบ้างที่เกี่ยวข้องกับผลสอบ/การเตรียมสอบเข้านี้"
+    ]
+})
+
+# ──────────────────────────────────────────────
+# 33. student_code_counters
+# ──────────────────────────────────────────────
+TABLES.append({
+    "name": "student_code_counters",
+    "thai": "33. ตัวนับรหัสประจำตัวนักเรียนรายปี",
+    "rows": [
+        [1, "year_be",      "INT", "4", "ปี พ.ศ. ที่ใช้อ้างอิง (Primary Key, ไม่ใช้ Auto Increment)", "PK"],
+        [2, "last_number",  "INT", "4", "เลขลำดับล่าสุดที่ออกรหัสนักเรียนไปแล้วในปีนี้",              ""],
+    ],
+    "fk_notes": None
+})
+
+TABLES_BY_NAME = {t["name"]: t for t in TABLES}
+
+# ============================================================
+# กลุ่มตารางหลัก 12 กลุ่ม — ตารางย่อยทั้งหมดในฐานข้อมูลถูกจัดรวม
+# เข้ากับตารางหลักที่เกี่ยวข้องที่สุด ตามที่ผู้ใช้งานกำหนด
+# ============================================================
+GROUPS = [
+    {
+        "no": 1,
+        "title": "ตารางข้อมูลนักเรียน",
+        "tables": ["students", "users", "student_code_counters"],
+        "note": "รวมตาราง users (บัญชีผู้ใช้งานสำหรับเข้าสู่ระบบ ผูกแบบ One-to-One กับนักเรียน — ตารางเดียวกันนี้ยังใช้ร่วมกับติวเตอร์ในตารางข้อมูลติวเตอร์ด้วย) และ student_code_counters (ตัวนับสำหรับออกรหัสประจำตัวนักเรียนรายปี)",
+    },
+    {
+        "no": 2,
+        "title": "ตารางข้อมูลสถาบัน",
+        "tables": ["institution_profiles", "notifications"],
+        "note": "รวมตาราง notifications (ระบบแจ้งเตือน/อีเมลกลางของสถาบัน ที่ส่งถึงผู้ใช้งานทุกบทบาทเกี่ยวกับเหตุการณ์ต่างๆ ในระบบ)",
+    },
+    {
+        "no": 3,
+        "title": "ตารางข้อมูลสถาบันที่จัดสอบ",
+        "tables": ["exam_institutions", "academic_faculties", "academic_majors",
+                   "admission_rounds", "school_tracks", "vocational_majors"],
+        "note": "รวมตารางย่อยทั้งหมดที่ประกอบเป็นโครงสร้างของสถาบันที่จัดสอบ ได้แก่ คณะ/สาขาวิชา (ระดับปริญญาตรี), รอบรับสมัคร, แผนการเรียน (ระดับมัธยม) และสาขาวิชา (ระดับ ปวส.)",
+    },
+    {
+        "no": 4,
+        "title": "ตารางข้อมูลติวเตอร์",
+        "tables": ["tutors"],
+        "note": "ติวเตอร์แต่ละคนผูกกับบัญชีผู้ใช้งาน (ตาราง users) แบบ One-to-One เช่นเดียวกับนักเรียน — ดูรายละเอียดคอลัมน์ของ users ที่ตารางข้อมูลนักเรียน (กลุ่มที่ 1)",
+    },
+    {
+        "no": 5,
+        "title": "ตารางข้อมูลคอร์สเรียน",
+        "tables": ["courses", "course_lessons"],
+        "note": "รวมตาราง course_lessons (บทเรียนย่อยภายในคอร์ส)",
+    },
+    {
+        "no": 6,
+        "title": "ตารางข้อมูลสมัครเรียน",
+        "tables": ["enrollments"],
+        "note": None,
+    },
+    {
+        "no": 7,
+        "title": "ตารางข้อมูลการชำระเงิน",
+        "tables": ["payments"],
+        "note": None,
+    },
+    {
+        "no": 8,
+        "title": "ตารางข้อมูลตารางการสอบย่อย",
+        "tables": ["course_schedules", "course_schedule_days", "classroom_sessions"],
+        "note": "ระบบยังไม่มีตารางเวลาที่แยกเฉพาะสำหรับ \"การสอบย่อย\" ต่างหาก — ตารางเวลาการสอน/การสอบทั้งหมด (ทั้งคาบเรียนปกติและคาบที่ใช้สอบย่อย) ถูกจัดเก็บรวมกันในกลุ่มตารางตารางสอน (course_schedules, course_schedule_days) และตาราง session ห้องเรียนออนไลน์ (classroom_sessions) จึงนำมารวมไว้ในหมวดนี้",
+    },
+    {
+        "no": 9,
+        "title": "ตารางข้อมูลการเข้าเรียน",
+        "tables": ["attendance_records", "attendance_audit_logs"],
+        "note": "รวมตาราง attendance_audit_logs (ประวัติการแก้ไขสถานะการเข้าเรียนย้อนหลัง)",
+    },
+    {
+        "no": 10,
+        "title": "ตารางข้อมูลการสอบย่อย",
+        "tables": ["exams", "exam_questions", "exam_question_options", "exam_submissions",
+                   "exam_answers", "exam_score_audit_logs",
+                   "course_tests", "test_questions", "test_question_options"],
+        "note": "รวมทั้งสองระบบทดสอบของแพลตฟอร์มเข้าด้วยกัน: ระบบข้อสอบออนไลน์แบบเต็มรูปแบบ (exams, exam_questions, exam_question_options, exam_submissions, exam_answers, exam_score_audit_logs) และแบบทดสอบประจำบทเรียนภายในคอร์ส (course_tests, test_questions, test_question_options)",
+    },
+    {
+        "no": 11,
+        "title": "ตารางข้อมูลประเมินความพึงพอใจคอร์สเรียน",
+        "tables": ["course_evaluations"],
+        "note": None,
+    },
+    {
+        "no": 12,
+        "title": "ตารางข้อมูลผลการสอบเข้า",
+        "tables": ["student_exam_achievements", "student_exam_achievement_enrollments"],
+        "note": "รวมตาราง student_exam_achievement_enrollments (ตาราง Join ระบุว่าการลงทะเบียนเรียนคอร์สใดบ้างที่เกี่ยวข้องกับผลสอบนี้)",
+    },
+]
 
 
 # ============================================================
@@ -793,8 +1086,8 @@ r2.font.color.rgb = RGBColor.from_string("2E4057")
 doc.add_paragraph()
 info_lines = [
     "Backend: Spring Boot 3.5 · Java 21 · PostgreSQL",
-    "จำนวนตาราง: 23 ตาราง",
-    f"วันที่จัดทำ: 25 มิถุนายน 2569",
+    "จำนวนตารางหลัก: 12 ตาราง (รวมจากตารางในฐานข้อมูลทั้งหมด 33 ตาราง)",
+    f"วันที่จัดทำ: 31 กรกฎาคม 2569",
 ]
 for line in info_lines:
     p = doc.add_paragraph()
@@ -838,9 +1131,81 @@ for key, desc in legend:
 pb2 = doc.add_paragraph()
 pb2.add_run().add_break(WD_BREAK.PAGE)
 
-# ===================== ตารางทั้งหมด =====================
-for t in TABLES:
-    add_table(doc, t["name"], t["thai"], t["rows"], t.get("fk_notes"))
+# ===================== ภาพรวมการจัดกลุ่มตารางหลัก 12 กลุ่ม =====================
+ov_title = doc.add_paragraph()
+ov_run = ov_title.add_run("ภาพรวม: ตารางหลัก 12 กลุ่ม และตารางย่อยที่รวมอยู่ในแต่ละกลุ่ม")
+ov_run.font.name = FONT_NAME
+ov_run.font.size = Pt(18)
+ov_run.font.bold = True
+ov_run.font.color.rgb = RGBColor.from_string(TITLE_COLOR)
+
+ov_table = doc.add_table(rows=1, cols=3)
+ov_table.style = "Table Grid"
+ov_widths = [1.5, 7.0, 16.2]
+ov_hdr = ov_table.rows[0]
+for i, (hdr_text, w) in enumerate(zip(["No", "ตารางหลัก", "ตารางย่อยในฐานข้อมูลที่รวมอยู่ (จำนวนคอลัมน์)"], ov_widths)):
+    cell = ov_hdr.cells[i]
+    cell.width = Cm(w)
+    set_cell_bg(cell, HEADER_BG)
+    set_cell_borders(cell, "FFFFFF")
+    cell_text(cell, hdr_text, bold=True, color=WHITE, size=14, align=WD_ALIGN_PARAGRAPH.CENTER)
+
+for idx, g in enumerate(GROUPS):
+    row = ov_table.add_row()
+    bg = ALT_BG if idx % 2 == 1 else WHITE
+    sub_desc = ", ".join(f"{tn} ({len(TABLES_BY_NAME[tn]['rows'])})" for tn in g["tables"])
+    cells_data = [g["no"], g["title"], sub_desc]
+    for i, (val, w) in enumerate(zip(cells_data, ov_widths)):
+        cell = row.cells[i]
+        cell.width = Cm(w)
+        set_cell_bg(cell, bg)
+        set_cell_borders(cell, "AAAAAA")
+        cell_text(cell, val, bold=(i == 0), size=13,
+                  align=WD_ALIGN_PARAGRAPH.CENTER if i == 0 else WD_ALIGN_PARAGRAPH.LEFT)
+
+pb3 = doc.add_paragraph()
+pb3.add_run().add_break(WD_BREAK.PAGE)
+
+# ===================== ตารางหลัก 12 กลุ่ม (แต่ละกลุ่มมีตารางย่อยตามภาพรวมด้านบน) =====================
+for g in GROUPS:
+    group_heading = doc.add_paragraph()
+    group_run = group_heading.add_run(f"{g['no']}. {g['title']}")
+    group_run.font.name = FONT_NAME
+    group_run.font.size = Pt(22)
+    group_run.font.bold = True
+    group_run.font.color.rgb = RGBColor.from_string(TITLE_COLOR)
+    group_heading.paragraph_format.space_after = Pt(4)
+
+    # เส้นคั่นใต้หัวข้อกลุ่ม
+    border_p = OxmlElement("w:pBdr")
+    bottom = OxmlElement("w:bottom")
+    bottom.set(qn("w:val"), "single")
+    bottom.set(qn("w:sz"), "12")
+    bottom.set(qn("w:space"), "4")
+    bottom.set(qn("w:color"), TITLE_COLOR)
+    border_p.append(bottom)
+    group_heading._p.get_or_add_pPr().append(border_p)
+
+    if g.get("note"):
+        note_p = doc.add_paragraph()
+        note_p.paragraph_format.space_before = Pt(6)
+        note_run = note_p.add_run(f"หมายเหตุการจัดกลุ่ม: {g['note']}")
+        note_run.font.name = FONT_NAME
+        note_run.font.size = Pt(13)
+        note_run.font.italic = True
+        note_run.font.color.rgb = RGBColor.from_string("555555")
+
+    doc.add_paragraph()
+
+    for sub_idx, tname in enumerate(g["tables"], start=1):
+        t = TABLES_BY_NAME[tname]
+        sub_title = t["thai"].split(".", 1)[1].strip() if "." in t["thai"] else t["thai"]
+        sub_label = f"{g['no']}.{sub_idx} {sub_title}"
+        add_table(doc, t["name"], sub_label, t["rows"], t.get("fk_notes"))
+
+    if g is not GROUPS[-1]:
+        pbg = doc.add_paragraph()
+        pbg.add_run().add_break(WD_BREAK.PAGE)
 
 # บันทึกไฟล์
 output_path = r"C:\Users\kakmi\tutor-school-system\Data_Dictionary_TutorSchool.docx"

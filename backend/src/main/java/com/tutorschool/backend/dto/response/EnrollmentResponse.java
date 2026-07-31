@@ -11,6 +11,7 @@ import lombok.NoArgsConstructor;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Data
 @Builder
@@ -26,6 +27,7 @@ public class EnrollmentResponse {
     private String courseCode;
     private String courseName;
     private LocalDate courseStartDate;
+    private List<ScheduleDaySlotResponse> scheduleDays;
     private String tutorName;
     private String tutorEmail;
     private LocalDateTime enrollmentDate;

@@ -9,6 +9,7 @@ import {
 } from '../services/tutorCourseService';
 
 import RefreshButton from '../components/RefreshButton';
+import { formatScheduleDaysTH } from '../../../shared/utils/dateUtils';
 
 import './TutorCoursesPage.css';
 
@@ -335,7 +336,7 @@ function CourseDetailModal({ course, onClose }) {
 
             <div>
               <span>ตารางสอน</span>
-              <strong>{course.scheduleDays || '-'}</strong>
+              <strong className="schedule-multiline">{formatScheduleDaysTH(course.scheduleDays)}</strong>
             </div>
           </div>
 

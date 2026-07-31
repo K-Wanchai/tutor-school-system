@@ -17,6 +17,7 @@ public class EnrollmentMapper {
                 .courseCode(enrollment.getCourse().getCourseCode())
                 .courseName(enrollment.getCourse().getCourseName())
                 .courseStartDate(enrollment.getCourse().getCourseStartDate())
+                .scheduleDays(CourseScheduleDayMapper.toResponseList(enrollment.getCourse().getScheduleDayPatterns()))
                 .tutorName(enrollment.getCourse().getTutor().getFirstName() + " " + enrollment.getCourse().getTutor().getLastName())
                 .tutorEmail(enrollment.getCourse().getTutor().getUser().getEmail())
                 .enrollmentDate(enrollment.getEnrollmentDate())

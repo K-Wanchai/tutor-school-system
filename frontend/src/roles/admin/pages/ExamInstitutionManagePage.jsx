@@ -4,7 +4,6 @@ import {
   getExamInstitutions,
   createExamInstitution,
   updateExamInstitution,
-  deleteExamInstitution,
 } from '../services/examInstitutionService';
 import './ExamInstitutionManagePage.css';
 
@@ -23,12 +22,6 @@ const TYPE_FILTER_OPTIONS = [
   { value: 'UNIVERSITY', label: 'มหาวิทยาลัย / ป.ตรี' },
 ];
 
-const STATUS_FILTER_OPTIONS = [
-  { value: '', label: 'ทั้งหมด' },
-  { value: 'true', label: 'ใช้งาน' },
-  { value: 'false', label: 'ไม่ใช้งาน' },
-];
-
 const EMPTY_FORM = {
   institutionName: '',
   institutionType: '',
@@ -37,11 +30,10 @@ const EMPTY_FORM = {
   address: '',
   websiteUrl: '',
   description: '',
-  active: true,
   offersVocationalDiploma: false,
 };
 
-const EMPTY_FILTERS = { keyword: '', type: '', active: '' };
+const EMPTY_FILTERS = { keyword: '', type: '' };
 
 // ── Helpers ───────────────────────────────────────────────────────────────
 
@@ -71,15 +63,6 @@ function Toast({ msg, type, onClose }) {
   );
 }
 
-function StatusBadge({ active }) {
-  return (
-    <span className={`eim-badge ${active ? 'eim-badge--success' : 'eim-badge--default'}`}>
-      <span className="eim-badge-dot" />
-      {active ? 'ใช้งาน' : 'ไม่ใช้งาน'}
-    </span>
-  );
-}
-
 // ── Main Page ─────────────────────────────────────────────────────────────
 
 export default function ExamInstitutionManagePage() {
@@ -93,7 +76,6 @@ export default function ExamInstitutionManagePage() {
   // filter draft inputs (bound to form fields, applied on search)
   const [keywordDraft, setKeywordDraft] = useState('');
   const [typeDraft, setTypeDraft] = useState('');
-  const [activeDraft, setActiveDraft] = useState('');
   const [filters, setFilters] = useState(EMPTY_FILTERS);
 
   // form modal state
@@ -104,9 +86,6 @@ export default function ExamInstitutionManagePage() {
   const [formErr, setFormErr] = useState({});
   const [saving, setSaving] = useState(false);
 
-  // disable-confirm modal state
-  const [showConfirmDisable, setShowConfirmDisable] = useState(false);
-
   function notify(msg, type = 'success') {
     setToast({ msg, type });
   }
@@ -115,7 +94,6 @@ export default function ExamInstitutionManagePage() {
     const params = {};
     if (f.keyword) params.keyword = f.keyword;
     if (f.type) params.type = f.type;
-    if (f.active !== '') params.active = f.active === 'true';
     return params;
   };
 
@@ -158,12 +136,11 @@ export default function ExamInstitutionManagePage() {
     secondary: statsData.filter((i) => i.institutionType === 'SECONDARY').length,
     vocationalDiploma: statsData.filter((i) => i.institutionType === 'VOCATIONAL_DIPLOMA').length,
     university: statsData.filter((i) => i.institutionType === 'UNIVERSITY').length,
-    active: statsData.filter((i) => i.active).length,
   }), [statsData]);
 
   function handleSearch(e) {
     e.preventDefault();
-    const next = { keyword: keywordDraft.trim(), type: typeDraft, active: activeDraft };
+    const next = { keyword: keywordDraft.trim(), type: typeDraft };
     setFilters(next);
     load(next);
   }
@@ -171,7 +148,6 @@ export default function ExamInstitutionManagePage() {
   function handleClear() {
     setKeywordDraft('');
     setTypeDraft('');
-    setActiveDraft('');
     setFilters(EMPTY_FILTERS);
     load(EMPTY_FILTERS);
   }
@@ -199,16 +175,10 @@ export default function ExamInstitutionManagePage() {
       address: inst.address ?? '',
       websiteUrl: inst.websiteUrl ?? '',
       description: inst.description ?? '',
-      active: inst.active ?? true,
       offersVocationalDiploma: inst.offersVocationalDiploma ?? false,
     });
     setFormErr({});
     setShowForm(true);
-  }
-
-  function openConfirmDisable(inst) {
-    setSelected(inst);
-    setShowConfirmDisable(true);
   }
 
   async function handleSubmit(e) {
@@ -226,7 +196,7 @@ export default function ExamInstitutionManagePage() {
         address: form.address?.trim() || null,
         websiteUrl: form.websiteUrl?.trim() || null,
         description: form.description?.trim() || null,
-        active: form.active,
+        active: true,
         offersVocationalDiploma: form.institutionType === 'UNIVERSITY' ? form.offersVocationalDiploma : false,
       };
 
@@ -241,21 +211,6 @@ export default function ExamInstitutionManagePage() {
       await updateExamInstitution(selected.id, payload);
       notify('แก้ไขข้อมูลสถาบันที่จัดสอบสำเร็จ');
       setShowForm(false);
-      await load(filters);
-      await loadStats();
-    } catch (ex) {
-      notify(ex.message, 'error');
-    } finally {
-      setSaving(false);
-    }
-  }
-
-  async function handleDisable() {
-    setSaving(true);
-    try {
-      await deleteExamInstitution(selected.id);
-      notify('ปิดใช้งานสถาบันที่จัดสอบสำเร็จ');
-      setShowConfirmDisable(false);
       await load(filters);
       await loadStats();
     } catch (ex) {
@@ -298,10 +253,6 @@ export default function ExamInstitutionManagePage() {
           <span className="eim-stat-value">{loading ? '...' : stats.university}</span>
           <span className="eim-stat-label">มหาวิทยาลัย</span>
         </div>
-        <div className="eim-stat-card eim-stat-card--success">
-          <span className="eim-stat-value">{loading ? '...' : stats.active}</span>
-          <span className="eim-stat-label">สถานะใช้งาน</span>
-        </div>
       </div>
 
       {/* ── Filter / Search ── */}
@@ -319,15 +270,6 @@ export default function ExamInstitutionManagePage() {
           onChange={(e) => setTypeDraft(e.target.value)}
         >
           {TYPE_FILTER_OPTIONS.map((opt) => (
-            <option key={opt.value} value={opt.value}>{opt.label}</option>
-          ))}
-        </select>
-        <select
-          className="eim-filter-select"
-          value={activeDraft}
-          onChange={(e) => setActiveDraft(e.target.value)}
-        >
-          {STATUS_FILTER_OPTIONS.map((opt) => (
             <option key={opt.value} value={opt.value}>{opt.label}</option>
           ))}
         </select>
@@ -356,7 +298,7 @@ export default function ExamInstitutionManagePage() {
           <div className="eim-empty">
             <p className="eim-empty-title">ยังไม่มีข้อมูลสถาบันที่จัดสอบ</p>
             <p className="eim-empty-subtitle">
-              {filters.keyword || filters.type || filters.active
+              {filters.keyword || filters.type
                 ? 'ไม่พบผลลัพธ์ที่ตรงกับเงื่อนไขการค้นหา'
                 : 'กด "เพิ่มสถาบัน" เพื่อเริ่มบันทึกข้อมูลสถาบันแรก'}
             </p>
@@ -374,7 +316,6 @@ export default function ExamInstitutionManagePage() {
                   <th>ประเภท</th>
                   <th>จังหวัด</th>
                   <th>อำเภอ/เขต</th>
-                  <th>สถานะ</th>
                   <th>จัดการ</th>
                 </tr>
               </thead>
@@ -387,7 +328,6 @@ export default function ExamInstitutionManagePage() {
                     <td>{inst.institutionTypeLabel || TYPE_LABEL[inst.institutionType] || '—'}</td>
                     <td>{inst.province || '—'}</td>
                     <td>{inst.district || '—'}</td>
-                    <td><StatusBadge active={inst.active} /></td>
                     <td>
                       <div className="eim-actions">
                         <button
@@ -398,14 +338,6 @@ export default function ExamInstitutionManagePage() {
                           👁
                         </button>
                         <button className="eim-btn-icon" title="แก้ไข" onClick={() => openEdit(inst)}>✏️</button>
-                        <button
-                          className="eim-btn-icon"
-                          title="ปิดใช้งาน"
-                          disabled={!inst.active}
-                          onClick={() => openConfirmDisable(inst)}
-                        >
-                          🚫
-                        </button>
                       </div>
                     </td>
                   </tr>
@@ -493,17 +425,6 @@ export default function ExamInstitutionManagePage() {
                 />
               </div>
 
-              <div className="eim-field eim-field--checkbox">
-                <label className="eim-checkbox-label">
-                  <input
-                    type="checkbox"
-                    checked={!!form.active}
-                    onChange={(e) => fld('active', e.target.checked)}
-                  />
-                  ใช้งาน
-                </label>
-              </div>
-
               <div className="eim-form-actions">
                 <button type="button" className="eim-btn eim-btn--ghost" onClick={() => setShowForm(false)}>ยกเลิก</button>
                 <button type="submit" className="eim-btn eim-btn--primary" disabled={saving}>
@@ -511,30 +432,6 @@ export default function ExamInstitutionManagePage() {
                 </button>
               </div>
             </form>
-          </div>
-        </div>
-      )}
-
-      {/* ═══ CONFIRM DISABLE MODAL ═══ */}
-      {showConfirmDisable && selected && (
-        <div className="eim-overlay" onClick={() => setShowConfirmDisable(false)}>
-          <div className="eim-modal eim-modal--sm" onClick={(e) => e.stopPropagation()}>
-            <div className="eim-modal-header">
-              <h2>ยืนยันปิดใช้งาน</h2>
-              <button className="eim-modal-close" onClick={() => setShowConfirmDisable(false)} aria-label="ปิด">✕</button>
-            </div>
-            <div className="eim-modal-body">
-              <p>
-                ต้องการปิดใช้งานสถาบัน <strong>{selected.institutionName}</strong> ใช่หรือไม่?
-                ข้อมูลจะยังคงอยู่ในระบบแต่จะไม่แสดงเป็นตัวเลือกที่ใช้งานได้
-              </p>
-              <div className="eim-form-actions">
-                <button className="eim-btn eim-btn--ghost" onClick={() => setShowConfirmDisable(false)}>ยกเลิก</button>
-                <button className="eim-btn eim-btn--danger" onClick={handleDisable} disabled={saving}>
-                  {saving ? 'กำลังบันทึก...' : 'ปิดใช้งาน'}
-                </button>
-              </div>
-            </div>
           </div>
         </div>
       )}

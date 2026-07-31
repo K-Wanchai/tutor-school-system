@@ -7,14 +7,14 @@ import {
   getCourses,
   getTutorWeeklyAvailability,
   updateCourse,
-  updateCourseStatus,
 } from '../services/adminCourseService';
 import {
   DAYS,
   DAY_LABEL_TH,
   EMPTY_COURSE_FORM,
   parseDaySlots,
-  encodeDaySlots,
+  slotsToScheduleDaysArray,
+  scheduleDaysArrayToSlots,
   validateCourseForm,
 } from '../utils/courseScheduleUtils';
 import { ScheduleSection, TutorSelectField } from '../components/CourseScheduleFields';
@@ -74,12 +74,10 @@ export default function AdminCourseManagementPage() {
   const [showEdit, setShowEdit]       = useState(false);
   const [showDetail, setShowDetail]   = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
-  const [showStatus, setShowStatus]   = useState(false);
   const [selected, setSelected]       = useState(null);
   const [form, setForm]               = useState(EMPTY_COURSE_FORM);
   const [formErr, setFormErr]         = useState({});
   const [saving, setSaving]           = useState(false);
-  const [newStatus, setNewStatus]     = useState('');
 
   const notify = useCallback((msg, type = 'success') => setToast({ msg, type }), []);
   const PAGE_SIZE = 10;
@@ -154,7 +152,7 @@ export default function AdminCourseManagementPage() {
       registrationEndDate:   c.registrationEndDate ?? '',
       courseStartDate:       c.courseStartDate ?? '',
       description:           c.description ?? '',
-      scheduleSlots:         parseDaySlots(c.scheduleDays),
+      scheduleSlots:         scheduleDaysArrayToSlots(c.scheduleDays),
     });
     setFormErr({});
     setShowEdit(true);
@@ -165,8 +163,8 @@ export default function AdminCourseManagementPage() {
     if (Object.keys(err).length) { setFormErr(err); return; }
     setSaving(true);
     try {
-      const scheduleDays = encodeDaySlots(form.scheduleSlots || {});
-      await updateCourse(selected.id, { ...form, scheduleDays, scheduleStartTime: null, scheduleEndTime: null });
+      const scheduleDays = slotsToScheduleDaysArray(form.scheduleSlots || {});
+      await updateCourse(selected.id, { ...form, scheduleDays });
       notify('อัปเดตคอร์สสำเร็จ');
       setShowEdit(false);
       load(page);
@@ -182,19 +180,6 @@ export default function AdminCourseManagementPage() {
       await deleteCourse(selected.id);
       notify('ลบคอร์สสำเร็จ');
       setShowConfirm(false);
-      load(page);
-    } catch (ex) { notify(ex.message, 'error'); }
-    finally { setSaving(false); }
-  }
-
-  // ── STATUS
-  function openStatus(c) { setSelected(c); setNewStatus(c.status); setShowStatus(true); }
-  async function handleStatus() {
-    setSaving(true);
-    try {
-      await updateCourseStatus(selected.id, newStatus);
-      notify('อัปเดตสถานะสำเร็จ');
-      setShowStatus(false);
       load(page);
     } catch (ex) { notify(ex.message, 'error'); }
     finally { setSaving(false); }
@@ -279,7 +264,6 @@ export default function AdminCourseManagementPage() {
                     <div className="cm-actions">
                       <button className="cm-btn-icon" title="ดูรายละเอียด" onClick={() => openDetail(c)}>👁</button>
                       <button className="cm-btn-icon" title="แก้ไข" onClick={() => openEdit(c)}>✏️</button>
-                      <button className="cm-btn-icon" title="เปลี่ยนสถานะ" onClick={() => openStatus(c)}>🔄</button>
                       <button className="cm-btn-icon" title="ลบ" onClick={() => openDelete(c)}>🗑</button>
                     </div>
                   </td>
@@ -390,35 +374,6 @@ export default function AdminCourseManagementPage() {
         </div>
       )}
 
-      {/* ═══ STATUS MODAL ═══ */}
-      {showStatus && selected && (
-        <div className="cm-overlay" onClick={() => setShowStatus(false)}>
-          <div className="cm-modal cm-modal-sm" onClick={e => e.stopPropagation()}>
-            <div className="cm-modal-header">
-              <h2>เปลี่ยนสถานะคอร์ส</h2>
-              <button className="cm-modal-close" onClick={() => setShowStatus(false)}>✕</button>
-            </div>
-            <div className="cm-form">
-              <p className="cm-modal-subtitle">{selected.courseCode} — {selected.courseName}</p>
-              <div className="cm-field">
-                <label>สถานะใหม่</label>
-                <select value={newStatus} onChange={e => setNewStatus(e.target.value)}>
-                  {Object.entries(STATUS_LABEL).map(([k, v]) => (
-                    <option key={k} value={k}>{v.label}</option>
-                  ))}
-                </select>
-              </div>
-              <div className="cm-form-actions">
-                <button className="cm-btn-cancel" onClick={() => setShowStatus(false)}>ยกเลิก</button>
-                <button className="cm-btn-primary" disabled={saving} onClick={handleStatus}>
-                  {saving ? 'กำลังบันทึก...' : 'ยืนยัน'}
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
       {/* ═══ DELETE CONFIRM ═══ */}
       {showConfirm && selected && (
         <div className="cm-overlay" onClick={() => setShowConfirm(false)}>
@@ -468,14 +423,14 @@ export default function AdminCourseManagementPage() {
               </div>
 
               {/* ตารางสอน */}
-              {selected.scheduleDays && (
+              {selected.scheduleDays?.length > 0 && (
                 <div className="cm-schedule-info-box">
                   <div className="cm-schedule-info-title">📅 ตารางสอน</div>
                   <div className="cm-per-day-slots cm-per-day-slots--readonly">
                     {DAYS.map(d => d.key)
-                      .filter(k => k in parseDaySlots(selected.scheduleDays))
+                      .filter(k => k in scheduleDaysArrayToSlots(selected.scheduleDays))
                       .map(key => {
-                        const { start, end } = parseDaySlots(selected.scheduleDays)[key];
+                        const { start, end } = scheduleDaysArrayToSlots(selected.scheduleDays)[key];
                         return (
                           <div key={key} className="cm-per-day-row">
                             <span className="cm-per-day-label">{DAY_LABEL_TH[key]}</span>

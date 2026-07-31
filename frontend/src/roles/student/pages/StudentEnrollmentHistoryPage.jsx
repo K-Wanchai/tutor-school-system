@@ -7,6 +7,7 @@ import {
   getEnrollmentHistoryStatus,
   isReenrollment,
 } from '../../../shared/utils/enrollmentHistoryStatus';
+import { formatScheduleDaysTH } from '../../../shared/utils/dateUtils';
 import './StudentEnrollmentHistoryPage.css';
 
 const STATUS_CLS = {
@@ -248,7 +249,7 @@ export default function StudentEnrollmentHistoryPage() {
                       <div><span>จำนวนชั่วโมง</span><strong>{detail.totalHours != null ? `${detail.totalHours} ชั่วโมง` : '-'}</strong></div>
                       <div>
                         <span>ตารางเรียน</span>
-                        <strong>{detail.scheduleDays ? `${detail.scheduleDays} ${detail.scheduleStartTime || ''} - ${detail.scheduleEndTime || ''}`.trim() : '-'}</strong>
+                        <strong className="schedule-multiline">{formatScheduleDaysTH(detail.scheduleDays)}</strong>
                       </div>
                       <div>
                         <span>วันเริ่มเรียน</span>

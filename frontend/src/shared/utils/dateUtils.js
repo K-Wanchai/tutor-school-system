@@ -51,3 +51,20 @@ export function digitsToIso(digits) {
   const yyyy = digits.slice(4, 8);
   return `${yyyy}-${mm}-${dd}`;
 }
+
+const DAY_LABEL_TH = { MON: 'จันทร์', TUE: 'อังคาร', WED: 'พุธ', THU: 'พฤหัส', FRI: 'ศุกร์', SAT: 'เสาร์', SUN: 'อาทิตย์' };
+
+// แปลงตารางสอนจาก backend (array ของ { dayOfWeek, startTime, endTime }) เป็นข้อความไทยล้วน
+// หนึ่งวันต่อหนึ่งบรรทัด เช่น "วันอาทิตย์ 10:00 - 12:00 น.\nวันจันทร์ 13:00 - 15:00 น."
+// — ผู้ใช้ต้อง CSS white-space: pre-line เพื่อให้ขึ้นบรรทัดใหม่
+export function formatScheduleDaysTH(scheduleDays) {
+  if (!scheduleDays || scheduleDays.length === 0) return '-';
+
+  return scheduleDays
+    .map(({ dayOfWeek, startTime, endTime }) => {
+      const label = DAY_LABEL_TH[dayOfWeek] || dayOfWeek;
+      if (!startTime || !endTime) return `วัน${label}`;
+      return `วัน${label} ${startTime} - ${endTime} น.`;
+    })
+    .join('\n');
+}
