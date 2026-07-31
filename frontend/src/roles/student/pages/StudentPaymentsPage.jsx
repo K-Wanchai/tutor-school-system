@@ -4,6 +4,7 @@ import generatePayload from 'promptpay-qr';
 import QRCode from 'qrcode';
 import { getMyEnrollments, cancelEnrollment } from '../services/studentEnrollmentService';
 import api, { resolveFileUrl } from '../../../shared/services/api';
+import { formatScheduleDaysTH } from '../../../shared/utils/dateUtils';
 import './StudentPaymentsPage.css';
 
 /* ── Countdown hook (deadline from server) ── */
@@ -512,7 +513,7 @@ function CourseDetailBody({ detail, compact }) {
       <div className="pay-modal-info-grid">
         <div><span>ผู้สอน</span><strong>{detail.teacherName || '-'}</strong></div>
         <div><span>จำนวนชั่วโมง</span><strong>{detail.totalHours != null ? `${detail.totalHours} ชั่วโมง` : '-'}</strong></div>
-        <div><span>ตารางเรียน</span><strong>{detail.scheduleDays ? `${detail.scheduleDays} ${detail.scheduleStartTime || ''} - ${detail.scheduleEndTime || ''}`.trim() : '-'}</strong></div>
+        <div><span>ตารางเรียน</span><strong className="schedule-multiline">{formatScheduleDaysTH(detail.scheduleDays)}</strong></div>
         <div><span>วันเริ่มเรียน</span><strong>{detail.courseStartDate ? new Date(detail.courseStartDate).toLocaleDateString('th-TH', { year: 'numeric', month: 'long', day: 'numeric' }) : '-'}</strong></div>
       </div>
       {!compact && detail.description && <div className="pay-modal-desc"><p>{detail.description}</p></div>}

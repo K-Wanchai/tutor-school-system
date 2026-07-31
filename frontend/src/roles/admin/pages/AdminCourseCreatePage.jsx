@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { getTutors } from '../services/adminTutorService';
 import { createCourse, getTutorWeeklyAvailability } from '../services/adminCourseService';
-import { DAY_LABEL_TH, EMPTY_COURSE_FORM, encodeDaySlots, parseDaySlots, validateCourseForm } from '../utils/courseScheduleUtils';
+import { DAY_LABEL_TH, EMPTY_COURSE_FORM, slotsToScheduleDaysArray, parseDaySlots, validateCourseForm } from '../utils/courseScheduleUtils';
 import { ScheduleSection, TutorSelectField } from '../components/CourseScheduleFields';
 import useInstitutionProfile from '../../../shared/hooks/useInstitutionProfile';
 import CalendarDateInput from '../../../shared/components/CalendarDateInput';
@@ -173,8 +173,8 @@ export default function AdminCourseCreatePage() {
     if (Object.keys(err).length) { setFormErr(err); return; }
     setSaving(true);
     try {
-      const scheduleDays = encodeDaySlots(form.scheduleSlots || {});
-      await createCourse({ ...form, price: Number(form.price), scheduleDays, scheduleStartTime: null, scheduleEndTime: null });
+      const scheduleDays = slotsToScheduleDaysArray(form.scheduleSlots || {});
+      await createCourse({ ...form, price: Number(form.price), scheduleDays });
       navigate('/admin/courses', {
         state: { toast: { msg: 'สร้างคอร์สสำเร็จ และส่งการแจ้งเตือนไปยังติวเตอร์แล้ว', type: 'success' } },
       });

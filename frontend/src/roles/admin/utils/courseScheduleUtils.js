@@ -51,6 +51,22 @@ export function encodeDaySlots(slots) {
     .join(',');
 }
 
+// รูปแบบ scheduleDays ของคอร์ส (ไม่ใช่ allowedTimeSlots ของสถาบัน) ตอนนี้เป็น array ของ
+// { dayOfWeek, startTime, endTime } จาก backend แล้ว ไม่ใช่ string อีกต่อไป
+export function slotsToScheduleDaysArray(slots) {
+  return DAYS.map(d => d.key)
+    .filter(k => k in slots)
+    .map(k => ({ dayOfWeek: k, startTime: slots[k].start, endTime: slots[k].end }));
+}
+
+export function scheduleDaysArrayToSlots(scheduleDaysArray) {
+  const slots = {};
+  (scheduleDaysArray || []).forEach(({ dayOfWeek, startTime, endTime }) => {
+    slots[dayOfWeek] = { start: startTime, end: endTime };
+  });
+  return slots;
+}
+
 function toMin(t) {
   if (!t) return 0;
   const [h, m] = t.split(':').map(Number);

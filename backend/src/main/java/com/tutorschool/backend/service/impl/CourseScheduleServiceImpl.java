@@ -37,6 +37,7 @@ import java.util.Set;
 public class CourseScheduleServiceImpl implements CourseScheduleService {
 
     private final CourseScheduleRepository courseScheduleRepository;
+    private final CourseScheduleDayRepository courseScheduleDayRepository;
     private final CourseRepository courseRepository;
     private final CourseLessonRepository courseLessonRepository;
     private final TutorRepository TutorRepository;
@@ -133,7 +134,7 @@ public class CourseScheduleServiceImpl implements CourseScheduleService {
 
         validateLocationAndLink(request.getScheduleType(), request.getLocation(), request.getMeetingLink());
 
-        Map<String, LocalTime[]> daySlots = ScheduleDaysParser.parseSlots(course.getScheduleDays());
+        Map<String, LocalTime[]> daySlots = toDaySlotMap(courseScheduleDayRepository.findByCourseId(courseId));
         if (daySlots.isEmpty()) {
             throw new InvalidScheduleTimeException(
                     "Course has no weekly schedule pattern (scheduleDays) to generate from");
@@ -263,7 +264,7 @@ public class CourseScheduleServiceImpl implements CourseScheduleService {
      */
     private List<CourseScheduleResponse> buildVirtualSchedulesFromCoursePattern(
             Course course, Set<LocalDate> excludeDates) {
-        Map<String, LocalTime[]> daySlots = ScheduleDaysParser.parseSlots(course.getScheduleDays());
+        Map<String, LocalTime[]> daySlots = toDaySlotMap(courseScheduleDayRepository.findByCourseId(course.getId()));
         if (daySlots.isEmpty() || course.getCourseStartDate() == null || course.getTotalHours() == null) {
             return List.of();
         }
@@ -534,19 +535,16 @@ public class CourseScheduleServiceImpl implements CourseScheduleService {
 
         String dayCode = ScheduleDaysParser.toDayCode(date.getDayOfWeek());
 
-        // busy ที่เกิดจาก pattern การสอนรายสัปดาห์ (Course.scheduleDays) ของคอร์สอื่นของติวเตอร์คนนี้ —
+        // busy ที่เกิดจาก pattern การสอนรายสัปดาห์ (ตาราง course_schedule_days) ของคอร์สอื่นของติวเตอร์คนนี้ —
         // แหล่งข้อมูลเดียวกับที่ validateNoScheduleConflict ใช้ตรวจตอน submit เพื่อให้ panel นี้ตรงกับผลตอน submit จริง
-        List<TutorAvailabilityResponse.TimeSlot> patternBusySlots = courseRepository.findByTutorId(tutor.getId()).stream()
-                .filter(c -> excludeCourseId == null || !excludeCourseId.equals(c.getId()))
-                .flatMap(c -> {
-                    LocalTime[] slot = ScheduleDaysParser.parseSlots(c.getScheduleDays()).get(dayCode);
-                    if (slot == null) return java.util.stream.Stream.empty();
-                    return java.util.stream.Stream.of(TutorAvailabilityResponse.TimeSlot.builder()
-                            .startTime(slot[0])
-                            .endTime(slot[1])
-                            .courseTitle(c.getCourseName())
-                            .build());
-                })
+        List<TutorAvailabilityResponse.TimeSlot> patternBusySlots = courseScheduleDayRepository
+                .findByCourse_Tutor_IdAndDayOfWeek(tutor.getId(), dayCode).stream()
+                .filter(csd -> excludeCourseId == null || !excludeCourseId.equals(csd.getCourse().getId()))
+                .map(csd -> TutorAvailabilityResponse.TimeSlot.builder()
+                        .startTime(csd.getStartTime())
+                        .endTime(csd.getEndTime())
+                        .courseTitle(csd.getCourse().getCourseName())
+                        .build())
                 .toList();
 
         // busy ที่เกิดจาก session ที่ถูก generate ไว้แล้วสำหรับวันที่นี้โดยเฉพาะ (ครอบคลุมกรณีเลื่อนคาบ/คาบสอนพิเศษ
@@ -576,6 +574,16 @@ public class CourseScheduleServiceImpl implements CourseScheduleService {
                 .busySlots(busySlots)
                 .freeSlots(freeSlots)
                 .build();
+    }
+
+    // แปลงแถวตาราง course_schedule_days ของคอร์สเดียวเป็น Map<วัน, [เริ่ม,จบ]> รูปแบบเดียวกับที่
+    // ScheduleDaysParser.parseSlots เคย return จากสตริง — ใช้แทนที่การ parse Course.scheduleDays โดยตรง
+    private Map<String, LocalTime[]> toDaySlotMap(List<CourseScheduleDay> patterns) {
+        Map<String, LocalTime[]> map = new HashMap<>();
+        for (CourseScheduleDay p : patterns) {
+            map.put(p.getDayOfWeek(), new LocalTime[]{p.getStartTime(), p.getEndTime()});
+        }
+        return map;
     }
 
     // ช่วงเวลาที่สถาบันอนุญาตให้จัดตารางสอนของวันนั้น (allowedTimeSlots) — วันที่ไม่ได้ตั้งค่า = ไม่จำกัด (fallback 08:00-22:00)

@@ -6,7 +6,6 @@ import lombok.*;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -78,15 +77,10 @@ public class Course {
     @Builder.Default
     private boolean tutorViewed = false;
 
-    /** วันสอนในสัปดาห์ เก็บเป็น comma-separated เช่น "MON,WED,FRI" */
-    @Column(name = "schedule_days", length = 100)
-    private String scheduleDays;
-
-    @Column(name = "schedule_start_time")
-    private LocalTime scheduleStartTime;
-
-    @Column(name = "schedule_end_time")
-    private LocalTime scheduleEndTime;
+    /** ตารางสอนรายสัปดาห์ หนึ่งแถวต่อหนึ่งวันสอน — ดู CourseScheduleDay */
+    @OneToMany(mappedBy = "course", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
+    @Builder.Default
+    private List<CourseScheduleDay> scheduleDayPatterns = new ArrayList<>();
 
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;

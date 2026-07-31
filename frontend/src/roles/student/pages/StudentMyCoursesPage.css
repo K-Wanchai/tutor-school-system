@@ -257,6 +257,10 @@
   gap: 12px;
 }
 
+.smc-info-full {
+  grid-column: 1 / -1;
+}
+
 .smc-info-list div {
   padding: 12px;
   border-radius: 16px;

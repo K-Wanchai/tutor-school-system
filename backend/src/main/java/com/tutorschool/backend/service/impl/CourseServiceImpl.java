@@ -2,9 +2,7 @@ package com.tutorschool.backend.service.impl;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
-import java.time.LocalTime;
 import java.util.List;
-import java.util.Map;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -17,12 +15,14 @@ import com.tutorschool.backend.dto.request.CourseLessonRequest;
 import com.tutorschool.backend.dto.request.CourseTestRequest;
 import com.tutorschool.backend.dto.request.CreateCourseRequest;
 import com.tutorschool.backend.dto.request.CreateNotificationRequest;
+import com.tutorschool.backend.dto.request.ScheduleDaySlotRequest;
 import com.tutorschool.backend.dto.request.UpdateCourseRequest;
 import com.tutorschool.backend.dto.request.UpdateCourseStatusRequest;
 import com.tutorschool.backend.dto.response.CourseResponse;
 import com.tutorschool.backend.dto.response.PageResponse;
 import com.tutorschool.backend.entity.Course;
 import com.tutorschool.backend.entity.CourseLesson;
+import com.tutorschool.backend.entity.CourseScheduleDay;
 import com.tutorschool.backend.entity.CourseStatus;
 import com.tutorschool.backend.entity.CourseTest;
 import com.tutorschool.backend.entity.EnrollmentStatus;
@@ -38,13 +38,13 @@ import com.tutorschool.backend.repository.AttendanceRecordRepository;
 import com.tutorschool.backend.repository.ClassroomSessionRepository;
 import com.tutorschool.backend.repository.CourseEvaluationRepository;
 import com.tutorschool.backend.repository.CourseRepository;
+import com.tutorschool.backend.repository.CourseScheduleDayRepository;
 import com.tutorschool.backend.repository.CourseScheduleRepository;
 import com.tutorschool.backend.repository.EnrollmentRepository;
 import com.tutorschool.backend.repository.ExamRepository;
 import com.tutorschool.backend.repository.TutorRepository;
 import com.tutorschool.backend.service.CourseService;
 import com.tutorschool.backend.service.NotificationService;
-import com.tutorschool.backend.util.ScheduleDaysParser;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -62,6 +62,7 @@ public class CourseServiceImpl implements CourseService {
     private final ClassroomSessionRepository classroomSessionRepository;
     private final CourseEvaluationRepository courseEvaluationRepository;
     private final CourseScheduleRepository courseScheduleRepository;
+    private final CourseScheduleDayRepository courseScheduleDayRepository;
     private final CourseMapper courseMapper;
     private final NotificationService notificationService;
 
@@ -140,12 +141,11 @@ public class CourseServiceImpl implements CourseService {
         BigDecimal price = (request.getPrice() != null) ? request.getPrice() : BigDecimal.ZERO;
 
         // แอดมินเลือกวัน-เวลาสอนเอง — ต้องไม่ชนกับคอร์สอื่นของติวเตอร์คนเดียวกัน
-        String scheduleDays = request.getScheduleDays();
+        List<ScheduleDaySlotRequest> scheduleDays = request.getScheduleDays();
         validateNoScheduleConflict(tutor.getId(), scheduleDays, null);
 
-        boolean hasLessons = request.getLessons() != null && !request.getLessons().isEmpty();
         CourseStatus initialStatus = resolveAutoStatus(LocalDate.now(),
-                request.getRegistrationStartDate(), request.getRegistrationEndDate(), hasLessons);
+                request.getRegistrationStartDate(), request.getRegistrationEndDate());
 
         Course course = Course.builder()
                 .courseName(request.getCourseName())
@@ -159,13 +159,11 @@ public class CourseServiceImpl implements CourseService {
                 .status(initialStatus)
                 .tutorViewed(false)
                 .tutor(tutor)
-                .scheduleDays(scheduleDays)
-                .scheduleStartTime(null)
-                .scheduleEndTime(null)
                 .build();
 
         addLessonsToCoure(course, request.getLessons());
         addTestsToCourse(course, request.getTests());
+        addScheduleDayPatterns(course, scheduleDays);
 
         course = courseRepository.save(course);
 
@@ -179,33 +177,39 @@ public class CourseServiceImpl implements CourseService {
     }
 
     /**
-     * Validates that the admin-chosen scheduleDays ("MON:10:00-12:00,WED:..." format) does not
-     * overlap, on any shared day, with the SAME tutor's other existing courses. excludeCourseId
-     * lets the update-course flow exclude the course being edited from its own conflict check.
+     * Validates that the admin-chosen weekly schedule slots do not overlap, on any shared day,
+     * with the SAME tutor's other existing courses. excludeCourseId lets the update-course flow
+     * exclude the course being edited from its own conflict check.
+     *
+     * ตรวจด้วย SQL ตรงๆ ผ่าน CourseScheduleDayRepository#findOverlapping (ตาราง course_schedule_days)
+     * ไม่มีการ parse string ใดๆ แล้ว — รับ slot ที่แอดมินเลือกมาเป็น list ตรงๆ จาก request
      */
-    private void validateNoScheduleConflict(Long tutorId, String scheduleDays, Long excludeCourseId) {
-        Map<String, LocalTime[]> newSlots = ScheduleDaysParser.parseSlots(scheduleDays);
+    private void validateNoScheduleConflict(Long tutorId, List<ScheduleDaySlotRequest> scheduleDays, Long excludeCourseId) {
+        for (ScheduleDaySlotRequest slot : scheduleDays) {
+            List<CourseScheduleDay> overlapping = courseScheduleDayRepository.findOverlapping(
+                    tutorId, slot.getDayOfWeek(), slot.getStartTime(), slot.getEndTime(), excludeCourseId);
 
-        for (Course other : courseRepository.findByTutorId(tutorId)) {
-            if (excludeCourseId != null && excludeCourseId.equals(other.getId())) {
-                continue;
+            if (!overlapping.isEmpty()) {
+                CourseScheduleDay conflict = overlapping.get(0);
+                throw new CourseScheduleConflictException(
+                        "วัน-เวลาที่เลือกชนกับคอร์ส \"" + conflict.getCourse().getCourseName() + "\" ของติวเตอร์คนนี้ ("
+                                + slot.getDayOfWeek() + " " + conflict.getStartTime() + "-" + conflict.getEndTime() + ")");
             }
+        }
+    }
 
-            Map<String, LocalTime[]> otherSlots = ScheduleDaysParser.parseSlots(other.getScheduleDays());
-            for (Map.Entry<String, LocalTime[]> entry : newSlots.entrySet()) {
-                LocalTime[] otherSlot = otherSlots.get(entry.getKey());
-                if (otherSlot == null) {
-                    continue;
-                }
-
-                LocalTime[] slot = entry.getValue();
-                boolean overlap = slot[0].isBefore(otherSlot[1]) && otherSlot[0].isBefore(slot[1]);
-                if (overlap) {
-                    throw new CourseScheduleConflictException(
-                            "วัน-เวลาที่เลือกชนกับคอร์ส \"" + other.getCourseName() + "\" ของติวเตอร์คนนี้ ("
-                                    + entry.getKey() + " " + otherSlot[0] + "-" + otherSlot[1] + ")");
-                }
-            }
+    /**
+     * เพิ่มแถว course_schedule_days ให้ตรงกับ slot ที่แอดมินเลือก — เรียกตอนสร้าง/แก้ไขคอร์ส
+     * (คู่กับ course.getScheduleDayPatterns().clear() ตอน update)
+     */
+    private void addScheduleDayPatterns(Course course, List<ScheduleDaySlotRequest> scheduleDays) {
+        for (ScheduleDaySlotRequest slot : scheduleDays) {
+            course.getScheduleDayPatterns().add(CourseScheduleDay.builder()
+                    .course(course)
+                    .dayOfWeek(slot.getDayOfWeek().toUpperCase())
+                    .startTime(slot.getStartTime())
+                    .endTime(slot.getEndTime())
+                    .build());
         }
     }
 
@@ -259,15 +263,30 @@ public class CourseServiceImpl implements CourseService {
         course.setRegistrationEndDate(request.getRegistrationEndDate());
         course.setCourseStartDate(request.getCourseStartDate());
         course.setTutor(Tutor);
-        course.setScheduleDays(request.getScheduleDays());
-        course.setScheduleStartTime(request.getScheduleStartTime());
-        course.setScheduleEndTime(request.getScheduleEndTime());
 
         course.getLessons().clear();
         addLessonsToCoure(course, request.getLessons());
 
         course.getTests().clear();
         addTestsToCourse(course, request.getTests());
+
+        course.getScheduleDayPatterns().clear();
+        addScheduleDayPatterns(course, request.getScheduleDays());
+
+        // ไม่มีปุ่มเปลี่ยนสถานะเองแล้ว — แก้ไขวันที่/บทเรียนแล้วต้องเช็คสถานะให้ตรงทันที
+        // แทนที่จะรอ scheduler รอบถัดไป (สูงสุด 60 วินาที)
+        LocalDate today = LocalDate.now();
+        if (course.getStatus() == CourseStatus.PENDING
+                || course.getStatus() == CourseStatus.OPEN_FOR_REGISTRATION
+                || course.getStatus() == CourseStatus.CLOSED) {
+            course.setStatus(resolveAutoStatus(today, course.getRegistrationStartDate(),
+                    course.getRegistrationEndDate()));
+        }
+        if ((course.getStatus() == CourseStatus.OPEN_FOR_REGISTRATION || course.getStatus() == CourseStatus.CLOSED)
+                && course.getCourseStartDate() != null
+                && !course.getCourseStartDate().isAfter(today)) {
+            course.setStatus(CourseStatus.ONGOING);
+        }
 
         course = courseRepository.save(course);
         long enrolledCount = enrollmentRepository.countByCourseIdAndStatusIn(id,
@@ -282,10 +301,6 @@ public class CourseServiceImpl implements CourseService {
                 .orElseThrow(() -> new ResourceNotFoundException("Course", id));
 
         if (request.getStatus() == CourseStatus.OPEN_FOR_REGISTRATION) {
-            if (course.getLessons().isEmpty()) {
-                throw new IllegalStateException("Course must have at least 1 lesson before it can be opened for registration");
-            }
-
             // นักเรียนจะไม่เห็นคอร์สที่ยังไม่ถึงวันเปิดรับสมัคร แม้สถานะจะเป็น OPEN_FOR_REGISTRATION แล้วก็ตาม
             // (ดู visibleCourses ใน StudentEnrollmentsPage.jsx) — ป้องกันแอดมินเปิดสถานะเองแล้วงงว่าทำไมนักเรียนยังไม่เห็นคอร์ส
             LocalDate today = LocalDate.now();
@@ -435,8 +450,9 @@ public class CourseServiceImpl implements CourseService {
     /**
      * คำนวณสถานะคอร์สจากวันที่รับสมัคร — ใช้ทั้งตอนสร้างคอร์สและตอน scheduler ไล่ auto-transition
      * เพื่อให้ผลลัพธ์ตรงกันเสมอไม่ว่าจะคำนวณตอนไหน
+     * ไม่บังคับว่าต้องมีบทเรียนก่อนถึงจะเปิดรับสมัครได้ — ติวเตอร์เพิ่มบทเรียน/ข้อสอบเพิ่มเติมได้ภายหลังระหว่างเปิดรับสมัครอยู่
      */
-    private CourseStatus resolveAutoStatus(LocalDate today, LocalDate regStart, LocalDate regEnd, boolean hasLessons) {
+    private CourseStatus resolveAutoStatus(LocalDate today, LocalDate regStart, LocalDate regEnd) {
         if (regStart == null) {
             return CourseStatus.CLOSED; // ไม่ได้กำหนดวันเปิดรับสมัครไว้ ไม่มีวันให้ระบบอ้างอิง ต้องให้แอดมินเปิดเอง
         }
@@ -446,9 +462,7 @@ public class CourseServiceImpl implements CourseService {
         if (regEnd != null && today.isAfter(regEnd)) {
             return CourseStatus.CLOSED; // ถึงวันเปิดแล้วแต่เลยวันปิดไปด้วย (เช่นตั้งวันย้อนหลัง)
         }
-        // ถึงวันเปิดรับสมัครแล้วและยังอยู่ในช่วง — เปิดได้ก็ต่อเมื่อมีบทเรียนอย่างน้อย 1 บท
-        // ถ้ายังไม่มีบทเรียน ให้ค้างสถานะรอเปิดรับสมัครไว้ก่อน จนกว่าติวเตอร์จะเพิ่มบทเรียน
-        return hasLessons ? CourseStatus.OPEN_FOR_REGISTRATION : CourseStatus.PENDING;
+        return CourseStatus.OPEN_FOR_REGISTRATION;
     }
 
     @Override
@@ -461,7 +475,7 @@ public class CourseServiceImpl implements CourseService {
                 CourseStatus.PENDING, today);
         for (Course course : pendingDue) {
             CourseStatus next = resolveAutoStatus(today, course.getRegistrationStartDate(),
-                    course.getRegistrationEndDate(), !course.getLessons().isEmpty());
+                    course.getRegistrationEndDate());
             if (next != course.getStatus()) {
                 course.setStatus(next);
                 courseRepository.save(course);

@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { getMyCourses } from '../services/studentMyCoursesService.js';
 import { resolveFileUrl } from '../../../shared/services/api';
+import { formatScheduleDaysTH } from '../../../shared/utils/dateUtils';
 import './StudentMyCoursesPage.css';
 
 const ENROLLMENT_STATUS_LABELS = {
@@ -324,41 +325,18 @@ function StudentMyCoursesPage() {
                   </div>
 
                   <div>
+                    <span>ผู้สอน</span>
+                    <strong>{safeText(course.tutorName)}</strong>
+                  </div>
+
+                  <div>
                     <span>วันที่เริ่มเรียน</span>
                     <strong>{formatDate(course.courseStartDate)}</strong>
                   </div>
 
-                  <div>
-                    <span>สถานะชำระเงิน</span>
-                    <strong>{getPaymentStatusLabel(course.paymentStatus)}</strong>
-                  </div>
-
-                  <div>
-                    <span>วิธีชำระเงิน</span>
-                    <strong>{getPaymentMethodLabel(course.paymentMethod)}</strong>
-                  </div>
-
-                  <div>
-                    <span>ราคาคอร์ส</span>
-                    <strong>{formatCurrency(course.amount)}</strong>
-                  </div>
-
-
-                  <div>
-                    <span>ยอดชำระ</span>
-                    <strong className="smc-final-price">
-                      {formatCurrency(course.finalAmount)}
-                    </strong>
-                  </div>
-
-                  <div>
-                    <span>ผู้อนุมัติ</span>
-                    <strong>{safeText(course.approvedBy)}</strong>
-                  </div>
-
-                  <div>
-                    <span>วันที่อนุมัติ</span>
-                    <strong>{formatDate(course.approvedAt)}</strong>
+                  <div className="smc-info-full">
+                    <span>ตารางเรียน</span>
+                    <strong className="schedule-multiline">{formatScheduleDaysTH(course.scheduleDays)}</strong>
                   </div>
                 </div>
 
@@ -440,6 +418,11 @@ function StudentMyCoursesPage() {
               </div>
 
               <div className="smc-detail-row">
+                <span>ผู้สอน</span>
+                <strong>{safeText(selectedCourse.tutorName)}</strong>
+              </div>
+
+              <div className="smc-detail-row">
                 <span>วันที่สมัคร</span>
                 <strong>{formatDateTime(selectedCourse.enrollmentDate)}</strong>
               </div>
@@ -447,6 +430,11 @@ function StudentMyCoursesPage() {
               <div className="smc-detail-row">
                 <span>วันที่เริ่มเรียน</span>
                 <strong>{formatDate(selectedCourse.courseStartDate)}</strong>
+              </div>
+
+              <div className="smc-detail-row">
+                <span>ตารางเรียน</span>
+                <strong className="schedule-multiline">{formatScheduleDaysTH(selectedCourse.scheduleDays)}</strong>
               </div>
 
               <div className="smc-detail-row">

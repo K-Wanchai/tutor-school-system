@@ -6,6 +6,7 @@ import {
   getMyEnrollments,
 } from '../services/studentEnrollmentService';
 import api from '../../../shared/services/api';
+import { formatScheduleDaysTH } from '../../../shared/utils/dateUtils';
 import './StudentEnrollmentsPage.css';
 
 export default function StudentEnrollmentsPage() {
@@ -132,15 +133,7 @@ export default function StudentEnrollmentsPage() {
   }
 
   function formatSchedule(course) {
-    if (!course.scheduleDays && !course.scheduleStartTime && !course.scheduleEndTime) {
-      return '-';
-    }
-
-    const day = course.scheduleDays || '';
-    const start = course.scheduleStartTime || '';
-    const end = course.scheduleEndTime || '';
-
-    return `${day} ${start}${end ? ` - ${end}` : ''}`.trim();
+    return formatScheduleDaysTH(course.scheduleDays);
   }
 
   if (loading) {
@@ -253,7 +246,7 @@ export default function StudentEnrollmentsPage() {
 
                   <div className="student-course-info-full">
                     <span>ตารางเรียน</span>
-                    <strong>{formatSchedule(course)}</strong>
+                    <strong className="schedule-multiline">{formatSchedule(course)}</strong>
                   </div>
                 </div>
 

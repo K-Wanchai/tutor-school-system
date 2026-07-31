@@ -8,7 +8,6 @@ import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
-import java.time.LocalTime;
 import java.util.List;
 
 @Data
@@ -49,8 +48,7 @@ public class UpdateCourseRequest {
     @Valid
     private List<CourseTestRequest> tests;
 
-    @NotBlank(message = "Schedule days are required")
-    private String scheduleDays;
-    private LocalTime scheduleStartTime;
-    private LocalTime scheduleEndTime;
+    @NotEmpty(message = "Schedule days are required")
+    @Valid
+    private List<ScheduleDaySlotRequest> scheduleDays;
 }

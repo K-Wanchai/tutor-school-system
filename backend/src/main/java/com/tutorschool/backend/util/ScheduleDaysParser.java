@@ -7,11 +7,11 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * Parses Course.scheduleDays, which packs per-day time ranges as
- * "MON:10:00-15:00,WED:15:00-19:00" (the admin UI always writes times here —
- * Course.scheduleStartTime/scheduleEndTime are legacy columns left null).
- * Legacy entries with no time range (bare "MON") are skipped since there's
- * nothing to compare/schedule against.
+ * Parses InstitutionProfile.allowedTimeSlots, which packs per-day time ranges as
+ * "MON:10:00-15:00,WED:15:00-19:00" — the one remaining place in the system that stores a
+ * weekly pattern as a single string (course schedules were migrated off this format to the
+ * normalized course_schedule_days table, see CourseScheduleDay).
+ * Entries with no time range (bare "MON") are skipped since there's nothing to compare/schedule against.
  */
 public final class ScheduleDaysParser {
 
