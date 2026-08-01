@@ -117,6 +117,17 @@
   color: #dc7a7a;
 }
 
+.cdi-day--disabled {
+  color: #d1d5db;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+.cdi-day--disabled:hover {
+  background: transparent;
+  color: #d1d5db;
+}
+
 .cdi-day--today {
   font-weight: 700;
   color: #0d9488;

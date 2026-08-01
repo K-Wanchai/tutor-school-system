@@ -122,9 +122,6 @@ public class StudentServiceImpl implements StudentService {
                 .phoneNumber(request.getPhoneNumber())
                 .birthDate(request.getBirthDate())
                 .guardianPhoneNumber(request.getGuardianPhoneNumber())
-                .bankQrCode(request.getBankQrCode())
-                .bankAccountName(request.getBankAccountName())
-                .bankAccountNumber(request.getBankAccountNumber())
                 .build();
 
         return studentMapper.toResponse(studentRepository.save(student));
@@ -164,12 +161,6 @@ public class StudentServiceImpl implements StudentService {
         student.setPhoneNumber(request.getPhoneNumber());
         student.setBirthDate(request.getBirthDate());
         student.setGuardianPhoneNumber(request.getGuardianPhoneNumber());
-        if (request.getBankName() != null) {
-            student.setBankName(request.getBankName());
-        }
-        student.setBankQrCode(request.getBankQrCode());
-        student.setBankAccountName(request.getBankAccountName());
-        student.setBankAccountNumber(request.getBankAccountNumber());
 
         return studentMapper.toResponse(studentRepository.save(student));
     }

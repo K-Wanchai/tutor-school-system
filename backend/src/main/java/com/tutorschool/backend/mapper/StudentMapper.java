@@ -22,10 +22,6 @@ public class StudentMapper {
                 .phoneNumber(student.getPhoneNumber())
                 .birthDate(student.getBirthDate())
                 .guardianPhoneNumber(student.getGuardianPhoneNumber())
-                .bankName(student.getBankName())
-                .bankQrCode(student.getBankQrCode())
-                .bankAccountName(student.getBankAccountName())
-                .bankAccountNumber(student.getBankAccountNumber())
                 .createdAt(student.getCreatedAt())
                 .updatedAt(student.getUpdatedAt())
                 .build();

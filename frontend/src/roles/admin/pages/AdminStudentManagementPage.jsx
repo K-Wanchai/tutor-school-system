@@ -166,21 +166,6 @@ function DetailModal({ student, onClose }) {
             <div className="sm-detail-section">
               <h3 className="sm-detail-section-title">
                 <svg viewBox="0 0 20 20" fill="currentColor" width="15" height="15">
-                  <path d="M4 4a2 2 0 00-2 2v1h16V6a2 2 0 00-2-2H4z" />
-                  <path fillRule="evenodd" d="M18 9H2v5a2 2 0 002 2h12a2 2 0 002-2V9zM4 13a1 1 0 011-1h1a1 1 0 110 2H5a1 1 0 01-1-1zm5-1a1 1 0 100 2h1a1 1 0 100-2H9z" clipRule="evenodd" />
-                </svg>
-                ข้อมูลบัญชีธนาคาร
-              </h3>
-              <div className="sm-detail-rows">
-                <DetailRow label="ธนาคาร" value={student.bankName} />
-                <DetailRow label="ชื่อบัญชี" value={student.bankAccountName} />
-                <DetailRow label="เลขบัญชี" value={student.bankAccountNumber} />
-              </div>
-            </div>
-
-            <div className="sm-detail-section">
-              <h3 className="sm-detail-section-title">
-                <svg viewBox="0 0 20 20" fill="currentColor" width="15" height="15">
                   <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clipRule="evenodd" />
                 </svg>
                 ข้อมูลระบบ

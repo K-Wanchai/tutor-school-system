@@ -51,7 +51,10 @@ function computePopupPosition(anchorEl) {
 
 // ช่องเลือกวันที่จากปฏิทิน (ไม่ให้พิมพ์เอง) — แสดง/เลือกเป็น วัน/เดือน/ปี
 // value/onChange ยังเป็น ISO yyyy-mm-dd เหมือนเดิมเพื่อให้เข้ากับ state/backend เดิม
-export default function CalendarDateInput({ value, onChange, placeholder = 'วว/ดด/ปปปป', disabled }) {
+// minDate (ISO yyyy-mm-dd ไม่บังคับ) — วันที่ก่อนหน้านี้จะถูกปิดกั้น กดเลือกไม่ได้ในปฏิทิน
+// allowedWeekdays (array ของเลขวันตาม Date.getDay() 0=อาทิตย์...6=เสาร์ ไม่บังคับ) —
+// ถ้าระบุ จะปิดกั้นวันที่ไม่ตรงกับวันในสัปดาห์ที่กำหนด กดเลือกไม่ได้เช่นกัน
+export default function CalendarDateInput({ value, onChange, placeholder = 'วว/ดด/ปปปป', disabled, minDate, allowedWeekdays }) {
   const [open, setOpen] = useState(false);
   const today = new Date();
   const [viewYear, setViewYear] = useState(() => isoToParts(value)?.y ?? today.getFullYear());
@@ -159,14 +162,24 @@ export default function CalendarDateInput({ value, onChange, placeholder = 'ว�
               if (d === null) return <span key={`empty-${i}`} className="cdi-day cdi-day--empty" />;
               const iso = `${viewYear}-${pad2(viewMonth + 1)}-${pad2(d)}`;
               const weekday = (i % 7);
+              const isDisabled = (!!minDate && iso < minDate) ||
+                (!!allowedWeekdays && !allowedWeekdays.includes(weekday));
               const cls = [
                 'cdi-day',
                 iso === selectedIso ? 'cdi-day--selected' : '',
                 iso === todayIso ? 'cdi-day--today' : '',
                 (weekday === 0 || weekday === 6) ? 'cdi-day--weekend' : '',
+                isDisabled ? 'cdi-day--disabled' : '',
               ].filter(Boolean).join(' ');
               return (
-                <button key={iso} type="button" className={cls} onClick={() => pickDay(d)}>
+                <button
+                  key={iso}
+                  type="button"
+                  className={cls}
+                  onClick={() => pickDay(d)}
+                  disabled={isDisabled}
+                  aria-disabled={isDisabled}
+                >
                   {d}
                 </button>
               );

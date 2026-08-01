@@ -252,11 +252,11 @@ export default function TutorCoursesPage() {
                   ดูรายละเอียด
                 </button>
 
-                {['PENDING', 'CLOSED', 'OPEN_FOR_REGISTRATION', 'ONGOING'].includes(course.status) && (
+                {/* {['PENDING', 'CLOSED', 'OPEN_FOR_REGISTRATION', 'ONGOING'].includes(course.status) && (
                   <button className="tc-btn-accept" onClick={() => openManage(course)}>
                     📚 จัดการบทเรียน
                   </button>
-                )}
+                )} */}
               </div>
             </div>
           ))}

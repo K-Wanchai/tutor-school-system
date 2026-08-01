@@ -36,6 +36,28 @@ export function toLocalISODate(value) {
   return `${yyyy}-${mm}-${dd}`;
 }
 
+// วันนี้ตามเวลาท้องถิ่น ในรูปแบบ ISO yyyy-mm-dd
+export function todayLocalISODate() {
+  return toLocalISODate(new Date());
+}
+
+// บวก/ลบจำนวนวันจากวันที่ ISO yyyy-mm-dd แล้วคืนค่าเป็น ISO yyyy-mm-dd
+export function addDaysISO(iso, days) {
+  const d = toDate(iso);
+  if (!d) return '';
+  d.setDate(d.getDate() + days);
+  return toLocalISODate(d);
+}
+
+// วันในสัปดาห์ของวันที่ ISO yyyy-mm-dd (0=อาทิตย์ ... 6=เสาร์ ตาม Date.getDay())
+// สร้างจากปี/เดือน/วันตรงๆ (ไม่ผ่าน UTC) เพื่อไม่ให้เพี้ยนแบบเดียวกับ toLocalISODate
+export function getWeekdayOfISO(iso) {
+  if (!iso) return null;
+  const [y, m, d] = String(iso).slice(0, 10).split('-').map(Number);
+  if (!y || !m || !d) return null;
+  return new Date(y, m - 1, d).getDay();
+}
+
 // ISO yyyy-mm-dd (รูปแบบที่ backend/state เดิมใช้) <-> วว/ดด/ปปปป (สำหรับ DateInput)
 export function isoToDigits(iso) {
   if (!iso) return '';

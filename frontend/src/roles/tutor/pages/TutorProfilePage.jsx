@@ -78,9 +78,9 @@ function TutorProfilePage() {
     tutorCode: data?.tutorCode ?? '',
   });
 
-  const loadProfile = async () => {
+  const loadProfile = async (silent = false) => {
     try {
-      setLoading(true);
+      if (!silent) setLoading(true);
       setError('');
 
       const data = await getMyProfile();
@@ -202,14 +202,8 @@ function TutorProfilePage() {
     try {
       setSaving(true);
 
-      const updated = await updateMyProfile(payload);
-      const normalized = normalizeProfile({
-        ...form,
-        ...updated,
-      });
-
-      setProfile(normalized);
-      setForm(normalized);
+      await updateMyProfile(payload);
+      await loadProfile(true);
       showToast('success', 'บันทึกข้อมูลโปรไฟล์สำเร็จ');
     } catch (err) {
       showToast('error', err?.message || 'ไม่สามารถบันทึกข้อมูลโปรไฟล์ได้');

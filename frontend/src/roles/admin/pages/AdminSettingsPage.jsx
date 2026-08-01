@@ -170,9 +170,10 @@ export default function AdminSettingsPage() {
     setSaving(true);
     setSaveError('');
     try {
-      const updated = await updateInstitutionProfile(form);
-      setProfile(updated);
-      setForm(toForm(updated));
+      await updateInstitutionProfile(form);
+      const data = await getInstitutionProfile();
+      setProfile(data);
+      setForm(toForm(data));
       showToast('success', 'บันทึกข้อมูลสถาบันสำเร็จ');
     } catch (err) {
       setSaveError(err.message || 'ไม่สามารถบันทึกข้อมูลได้');

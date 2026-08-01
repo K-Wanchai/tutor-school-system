@@ -186,12 +186,8 @@ TABLES.append({
         [11, "current_school",        "VARCHAR",   "255", "ชื่อโรงเรียน/สถานศึกษาปัจจุบัน",                     ""],
         [12, "grade_level",           "VARCHAR",   "30",  "ระดับชั้นปัจจุบัน เช่น MATTAYOM_6, UNIVERSITY",       ""],
         [13, "guardian_phone_number", "VARCHAR",   "20",  "เบอร์โทรผู้ปกครอง",                                   ""],
-        [14, "bank_name",             "VARCHAR",   "100", "ชื่อธนาคาร",                                           ""],
-        [15, "bank_qr_code",          "TEXT",      "-",   "QR Code พร้อมเพย์ (Base64 หรือ URL)",                 ""],
-        [16, "bank_account_name",     "VARCHAR",   "255", "ชื่อบัญชีธนาคาร",                                    ""],
-        [17, "bank_account_number",   "VARCHAR",   "50",  "เลขที่บัญชีธนาคาร",                                  ""],
-        [18, "created_at",            "TIMESTAMP", "-",   "วันเวลาที่สร้างข้อมูล (Auto Set)",                    ""],
-        [19, "updated_at",            "TIMESTAMP", "-",   "วันเวลาที่แก้ไขข้อมูลล่าสุด (Auto Update)",           ""],
+        [14, "created_at",            "TIMESTAMP", "-",   "วันเวลาที่สร้างข้อมูล (Auto Set)",                    ""],
+        [15, "updated_at",            "TIMESTAMP", "-",   "วันเวลาที่แก้ไขข้อมูลล่าสุด (Auto Update)",           ""],
     ],
     "fk_notes": [
         "user_id → users.id : นักเรียนแต่ละคนผูกกับบัญชีผู้ใช้งาน (users) แบบ One-to-One เพื่อใช้สำหรับการยืนยันตัวตนเข้าสู่ระบบ"

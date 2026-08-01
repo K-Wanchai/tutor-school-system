@@ -57,18 +57,6 @@ public class Student {
     @Column(name = "guardian_phone_number", length = 20)
     private String guardianPhoneNumber;
 
-    @Column(name = "bank_name", length = 100)
-    private String bankName;
-
-    @Column(name = "bank_qr_code", columnDefinition = "TEXT")
-    private String bankQrCode;
-
-    @Column(name = "bank_account_name", length = 255)
-    private String bankAccountName;
-
-    @Column(name = "bank_account_number", length = 50)
-    private String bankAccountNumber;
-
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;
 

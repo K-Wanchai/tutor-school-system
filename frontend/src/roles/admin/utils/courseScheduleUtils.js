@@ -1,5 +1,7 @@
 // เดิมอยู่ใน AdminCourseManagementPage.jsx — แยกออกมาเพื่อใช้ร่วมกันกับหน้าเพิ่มคอร์ส (AdminCourseCreatePage.jsx)
 
+import { todayLocalISODate, getWeekdayOfISO } from '../../../shared/utils/dateUtils';
+
 export const DAYS = [
   { key: 'MON', label: 'จ' },
   { key: 'TUE', label: 'อ' },
@@ -11,6 +13,21 @@ export const DAYS = [
 ];
 
 export const DAY_LABEL_TH = { MON: 'จันทร์', TUE: 'อังคาร', WED: 'พุธ', THU: 'พฤหัส', FRI: 'ศุกร์', SAT: 'เสาร์', SUN: 'อาทิตย์' };
+
+// วันในสัปดาห์ตาม Date.getDay() (0=อาทิตย์ ... 6=เสาร์) ของแต่ละคีย์ใน DAYS
+const DAY_KEY_TO_JS_WEEKDAY = { MON: 1, TUE: 2, WED: 3, THU: 4, FRI: 5, SAT: 6, SUN: 0 };
+
+// วันที่ "มาก่อน" ที่สุดในสัปดาห์ (เรียงจันทร์-อาทิตย์ตาม DAYS) จากวันที่ถูกเลือกไว้ในตารางสอน
+// ใช้เป็นวันเดียวที่บังคับให้เลือกได้สำหรับ "วันที่เริ่มสอน" เพราะคาบแรกของคอร์สต้องตรงกับวันนี้เสมอ
+export function getPrimaryScheduleDayKey(scheduleSlots) {
+  const keys = Object.keys(scheduleSlots || {});
+  if (keys.length === 0) return null;
+  return DAYS.find(d => keys.includes(d.key))?.key ?? null;
+}
+
+export function dayKeyToJsWeekday(key) {
+  return key ? DAY_KEY_TO_JS_WEEKDAY[key] ?? null : null;
+}
 
 export const EMPTY_COURSE_FORM = {
   courseName: '', tutorId: '', price: '',
@@ -113,6 +130,27 @@ export function validateCourseForm(f, tutorAvail, priceRequired = true, allowedS
   if (!f.totalHours || isNaN(f.totalHours) || Number(f.totalHours) < 1) e.totalHours = 'ต้องมากกว่า 0';
   if (!f.seatLimit || isNaN(f.seatLimit) || Number(f.seatLimit) < 1) e.seatLimit = 'ต้องมากกว่า 0';
   if (!f.courseStartDate) e.courseStartDate = 'กรุณาเลือกวันที่เริ่มสอน';
+
+  // วันเปิด/ปิดรับสมัคร ต้องไม่ย้อนหลังวันปัจจุบัน
+  const today = todayLocalISODate();
+  if (f.registrationStartDate && f.registrationStartDate < today) {
+    e.registrationStartDate = 'วันเปิดรับสมัครต้องไม่ย้อนหลังวันปัจจุบัน';
+  }
+  if (f.registrationEndDate && f.registrationEndDate < today) {
+    e.registrationEndDate = 'วันปิดรับสมัครต้องไม่ย้อนหลังวันปัจจุบัน';
+  }
+  if (f.registrationEndDate && f.registrationStartDate && f.registrationEndDate < f.registrationStartDate) {
+    e.registrationEndDate = 'วันปิดรับสมัครต้องไม่ก่อนวันเปิดรับสมัคร';
+  }
+  // วันที่เริ่มสอน ต้องอยู่หลังวันปิดรับสมัคร (เลือกวันปิดหรือก่อนหน้าไม่ได้)
+  if (f.courseStartDate && f.registrationEndDate && f.courseStartDate <= f.registrationEndDate) {
+    e.courseStartDate = 'วันที่เริ่มสอนต้องอยู่หลังวันปิดรับสมัคร';
+  }
+  // วันที่เริ่มสอน ต้องตรงกับวันที่มาก่อนที่สุดในสัปดาห์จากตารางสอนที่เลือกไว้ (คาบแรกของคอร์ส)
+  const primaryDayKey = getPrimaryScheduleDayKey(f.scheduleSlots);
+  if (f.courseStartDate && primaryDayKey && getWeekdayOfISO(f.courseStartDate) !== dayKeyToJsWeekday(primaryDayKey)) {
+    e.courseStartDate = `วันที่เริ่มสอนต้องตรงกับวัน${DAY_LABEL_TH[primaryDayKey]} (วันแรกของตารางสอน)`;
+  }
 
   // บังคับตารางสอน — แอดมินต้องเลือกวัน-เวลาเอง
   const slots = f.scheduleSlots || {};

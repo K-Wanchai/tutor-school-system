@@ -219,8 +219,8 @@ export default function TestEditorModal({ test, onClose }) {
   const [error,     setError]     = useState('');
   const saveTimeout = useRef(null);
 
-  const load = useCallback(async () => {
-    setLoading(true);
+  const load = useCallback(async (silent = false) => {
+    if (!silent) setLoading(true);
     try {
       const data = await getQuestions(test.id);
       if (data.length === 0) {
@@ -289,8 +289,8 @@ export default function TestEditorModal({ test, onClose }) {
           optionOrder: oi + 1,
         })),
       }));
-      const saved = await saveAllQuestions(test.id, payload);
-      setQuestions(saved.map(q => ({ ...q, _key: q.id })));
+      await saveAllQuestions(test.id, payload);
+      await load(true);
       setSaved(true);
     } catch (e) {
       setError(e.message || 'บันทึกไม่สำเร็จ');

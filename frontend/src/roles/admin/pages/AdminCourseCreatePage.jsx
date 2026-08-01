@@ -2,10 +2,11 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { getTutors } from '../services/adminTutorService';
 import { createCourse, getTutorWeeklyAvailability } from '../services/adminCourseService';
-import { DAY_LABEL_TH, EMPTY_COURSE_FORM, slotsToScheduleDaysArray, parseDaySlots, validateCourseForm } from '../utils/courseScheduleUtils';
+import { DAY_LABEL_TH, EMPTY_COURSE_FORM, slotsToScheduleDaysArray, parseDaySlots, validateCourseForm, getPrimaryScheduleDayKey, dayKeyToJsWeekday } from '../utils/courseScheduleUtils';
 import { ScheduleSection, TutorSelectField } from '../components/CourseScheduleFields';
 import useInstitutionProfile from '../../../shared/hooks/useInstitutionProfile';
 import CalendarDateInput from '../../../shared/components/CalendarDateInput';
+import { todayLocalISODate, addDaysISO } from '../../../shared/utils/dateUtils';
 import '../pages/AdminCourseManagementPage.css';
 import './AdminCourseCreatePage.css';
 
@@ -151,6 +152,12 @@ export default function AdminCourseCreatePage() {
     [tutors, form.tutorId]
   );
 
+  // วันในสัปดาห์ที่มาก่อนที่สุดจากตารางสอนที่เลือกไว้ — "วันที่เริ่มสอน" เลือกได้เฉพาะวันนี้เท่านั้น
+  const primaryScheduleWeekday = useMemo(() => {
+    const dayKey = getPrimaryScheduleDayKey(form.scheduleSlots);
+    return dayKeyToJsWeekday(dayKey);
+  }, [form.scheduleSlots]);
+
   const checklist = useMemo(() => {
     const slots = form.scheduleSlots || {};
     const dayKeys = Object.keys(slots);
@@ -236,14 +243,7 @@ export default function AdminCourseCreatePage() {
             />
           </SectionCard>
 
-          <SectionCard step={3} icon="📅" title="ตารางสอน" desc="กำหนดวันและเวลาสอนในแต่ละสัปดาห์ ระบบตรวจสอบเวลาว่างของติวเตอร์ให้อัตโนมัติ">
-            <ScheduleSection
-              form={form} fld={fld} avail={tutorAvail} err={formErr.scheduleTime}
-              allowed={allowedSlots}
-            />
-          </SectionCard>
-
-          <SectionCard step={4} icon="💰" title="ราคาและจำนวนที่นั่ง" desc="ราคาคอร์สจะไม่แสดงให้ติวเตอร์เห็น">
+          <SectionCard step={3} icon="💰" title="ราคาและจำนวนที่นั่ง" desc="ราคาคอร์สจะไม่แสดงให้ติวเตอร์เห็น">
             <div className="cm-field">
               <label>ราคาคอร์ส (บาท) *</label>
               <input
@@ -268,20 +268,42 @@ export default function AdminCourseCreatePage() {
             </div>
           </SectionCard>
 
+          <SectionCard step={4} icon="📅" title="ตารางสอน" desc="กำหนดวันและเวลาสอนในแต่ละสัปดาห์ ระบบตรวจสอบเวลาว่างของติวเตอร์ให้อัตโนมัติ">
+            <ScheduleSection
+              form={form} fld={fld} avail={tutorAvail} err={formErr.scheduleTime}
+              allowed={allowedSlots}
+            />
+          </SectionCard>
+
           <SectionCard step={5} icon="🗓️" title="กำหนดการรับสมัคร" desc="วันเปิด-ปิดรับสมัคร และวันที่เริ่มเรียนจริง">
             <div className="cm-form-row">
               <div className="cm-field">
                 <label>วันเปิดรับสมัคร</label>
-                <CalendarDateInput value={form.registrationStartDate} onChange={v => fld('registrationStartDate', v)} />
+                <CalendarDateInput
+                  value={form.registrationStartDate}
+                  onChange={v => fld('registrationStartDate', v)}
+                  minDate={todayLocalISODate()}
+                />
+                {formErr.registrationStartDate && <span className="cm-err">{formErr.registrationStartDate}</span>}
               </div>
               <div className="cm-field">
                 <label>วันปิดรับสมัคร</label>
-                <CalendarDateInput value={form.registrationEndDate} onChange={v => fld('registrationEndDate', v)} />
+                <CalendarDateInput
+                  value={form.registrationEndDate}
+                  onChange={v => fld('registrationEndDate', v)}
+                  minDate={form.registrationStartDate || todayLocalISODate()}
+                />
+                {formErr.registrationEndDate && <span className="cm-err">{formErr.registrationEndDate}</span>}
               </div>
             </div>
             <div className="cm-field">
               <label>วันที่เริ่มสอน *</label>
-              <CalendarDateInput value={form.courseStartDate} onChange={v => fld('courseStartDate', v)} />
+              <CalendarDateInput
+                value={form.courseStartDate}
+                onChange={v => fld('courseStartDate', v)}
+                minDate={form.registrationEndDate ? addDaysISO(form.registrationEndDate, 1) : todayLocalISODate()}
+                allowedWeekdays={primaryScheduleWeekday != null ? [primaryScheduleWeekday] : undefined}
+              />
               {formErr.courseStartDate && <span className="cm-err">{formErr.courseStartDate}</span>}
             </div>
           </SectionCard>

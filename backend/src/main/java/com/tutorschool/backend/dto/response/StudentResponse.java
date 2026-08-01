@@ -31,10 +31,6 @@ public class StudentResponse {
     private String phoneNumber;
     private LocalDate birthDate;
     private String guardianPhoneNumber;
-    private String bankName;
-    private String bankQrCode;
-    private String bankAccountName;
-    private String bankAccountNumber;
 
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;

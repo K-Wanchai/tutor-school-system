@@ -31,13 +31,4 @@ public class UpdateStudentRequest {
     private LocalDate birthDate;
 
     private String guardianPhoneNumber;
-
-    @Size(max = 100)
-    private String bankName;
-
-    private String bankQrCode;
-
-    private String bankAccountName;
-
-    private String bankAccountNumber;
 }

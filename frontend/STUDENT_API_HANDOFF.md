@@ -161,10 +161,7 @@ POST /students
   "address": "string (optional)",
   "phoneNumber": "string (required, max 20)",
   "birthDate": "YYYY-MM-DD (optional)",
-  "guardianPhoneNumber": "string (optional)",
-  "bankQrCode": "string (optional)",
-  "bankAccountName": "string (optional)",
-  "bankAccountNumber": "string (optional)"
+  "guardianPhoneNumber": "string (optional)"
 }
 ```
 
@@ -191,11 +188,7 @@ PUT /students/{id}
   "address": "string (optional)",
   "phoneNumber": "string (required, max 20)",
   "birthDate": "YYYY-MM-DD (optional)",
-  "guardianPhoneNumber": "string (optional)",
-  "bankName": "string (optional, max 100)",
-  "bankQrCode": "string (optional)",
-  "bankAccountName": "string (optional)",
-  "bankAccountNumber": "string (optional)"
+  "guardianPhoneNumber": "string (optional)"
 }
 ```
 
@@ -265,12 +258,6 @@ interface StudentResponse {
   birthDate: string | null         // "YYYY-MM-DD"
   guardianPhoneNumber: string | null
 
-  // Bank
-  bankName: string | null
-  bankQrCode: string | null
-  bankAccountName: string | null
-  bankAccountNumber: string | null
-
   createdAt: string                // ISO datetime
   updatedAt: string                // ISO datetime
 }
@@ -307,6 +294,5 @@ interface StudentResponse {
 ## Notes
 
 - `status` field ใน response เป็น convenience field สำหรับ UI: `"ACTIVE"` = enabled true, `"INACTIVE"` = enabled false
-- `bankName` ไม่ถูกส่งมาใน `CreateStudentRequest` แต่สามารถ update ได้ผ่าน `PUT /students/{id}`
 - Pagination เริ่มจาก `page=0` (zero-based)
 - `keyword` search ครอบคลุม ชื่อ, รหัสนักเรียน และ field อื่นตามที่ backend implement ใน `searchStudents()`

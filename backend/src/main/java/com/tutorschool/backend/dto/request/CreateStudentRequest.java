@@ -54,10 +54,4 @@ public class CreateStudentRequest {
     private LocalDate birthDate;
 
     private String guardianPhoneNumber;
-
-    private String bankQrCode;
-
-    private String bankAccountName;
-
-    private String bankAccountNumber;
 }

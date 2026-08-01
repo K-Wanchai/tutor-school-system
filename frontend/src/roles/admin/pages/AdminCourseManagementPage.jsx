@@ -16,10 +16,13 @@ import {
   slotsToScheduleDaysArray,
   scheduleDaysArrayToSlots,
   validateCourseForm,
+  getPrimaryScheduleDayKey,
+  dayKeyToJsWeekday,
 } from '../utils/courseScheduleUtils';
 import { ScheduleSection, TutorSelectField } from '../components/CourseScheduleFields';
 import useInstitutionProfile from '../../../shared/hooks/useInstitutionProfile';
 import CalendarDateInput from '../../../shared/components/CalendarDateInput';
+import { todayLocalISODate, addDaysISO } from '../../../shared/utils/dateUtils';
 import './AdminCourseManagementPage.css';
 
 // ──────────────── helpers ────────────────
@@ -138,6 +141,12 @@ export default function AdminCourseManagementPage() {
     setForm(f => ({ ...f, [key]: val }));
     setFormErr(e => ({ ...e, [key]: '' }));
   }
+
+  // วันในสัปดาห์ที่มาก่อนที่สุดจากตารางสอนที่เลือกไว้ — "วันที่เริ่มสอน" เลือกได้เฉพาะวันนี้เท่านั้น
+  const primaryScheduleWeekday = useMemo(() => {
+    const dayKey = getPrimaryScheduleDayKey(form.scheduleSlots);
+    return dayKeyToJsWeekday(dayKey);
+  }, [form.scheduleSlots]);
 
   // ── EDIT
   function openEdit(c) {
@@ -344,17 +353,32 @@ export default function AdminCourseManagementPage() {
               <div className="cm-form-row">
                 <div className="cm-field">
                   <label>วันเปิดรับสมัคร</label>
-                  <CalendarDateInput value={form.registrationStartDate} onChange={v => fld('registrationStartDate', v)} />
+                  <CalendarDateInput
+                    value={form.registrationStartDate}
+                    onChange={v => fld('registrationStartDate', v)}
+                    minDate={todayLocalISODate()}
+                  />
+                  {formErr.registrationStartDate && <span className="cm-err">{formErr.registrationStartDate}</span>}
                 </div>
                 <div className="cm-field">
                   <label>วันปิดรับสมัคร</label>
-                  <CalendarDateInput value={form.registrationEndDate} onChange={v => fld('registrationEndDate', v)} />
+                  <CalendarDateInput
+                    value={form.registrationEndDate}
+                    onChange={v => fld('registrationEndDate', v)}
+                    minDate={form.registrationStartDate || todayLocalISODate()}
+                  />
+                  {formErr.registrationEndDate && <span className="cm-err">{formErr.registrationEndDate}</span>}
                 </div>
               </div>
 
               <div className="cm-field">
                 <label>วันที่เริ่มสอน *</label>
-                <CalendarDateInput value={form.courseStartDate} onChange={v => fld('courseStartDate', v)} />
+                <CalendarDateInput
+                  value={form.courseStartDate}
+                  onChange={v => fld('courseStartDate', v)}
+                  minDate={form.registrationEndDate ? addDaysISO(form.registrationEndDate, 1) : todayLocalISODate()}
+                  allowedWeekdays={primaryScheduleWeekday != null ? [primaryScheduleWeekday] : undefined}
+                />
                 {formErr.courseStartDate && <span className="cm-err">{formErr.courseStartDate}</span>}
               </div>
 

@@ -10,9 +10,6 @@ const EMPTY_FORM = {
   guardianPhoneNumber: '',
   birthDate: '',
   address: '',
-  bankName: '',
-  bankAccountName: '',
-  bankAccountNumber: '',
 };
 
 const EMPTY_PASSWORD_FORM = {
@@ -55,9 +52,9 @@ function StudentProfilePage() {
     return () => clearTimeout(timer);
   }, [toast]);
 
-  async function loadProfile() {
+  async function loadProfile(silent = false) {
     try {
-      setLoading(true);
+      if (!silent) setLoading(true);
       const data = await getMyProfile();
       setProfile(data);
     } catch (err) {
@@ -86,9 +83,6 @@ function StudentProfilePage() {
       guardianPhoneNumber: profile.guardianPhoneNumber || '',
       birthDate: profile.birthDate ? String(profile.birthDate).split('T')[0] : '',
       address: profile.address || '',
-      bankName: profile.bankName || '',
-      bankAccountName: profile.bankAccountName || '',
-      bankAccountNumber: profile.bankAccountNumber || '',
     });
 
     setEditOpen(true);
@@ -183,21 +177,17 @@ function StudentProfilePage() {
       address: form.address.trim() || null,
       birthDate: form.birthDate || null,
       guardianPhoneNumber: form.guardianPhoneNumber.trim() || null,
-      bankName: form.bankName.trim() || null,
-      bankAccountName: form.bankAccountName.trim() || null,
-      bankAccountNumber: form.bankAccountNumber.trim() || null,
     };
 
     try {
       setSaving(true);
 
-      const updated = await updateMyProfile(payload);
+      await updateMyProfile(payload);
 
-      setProfile(updated);
       setEditOpen(false);
       showToast('success', 'บันทึกข้อมูลสำเร็จ');
 
-      await loadProfile();
+      await loadProfile(true);
     } catch (err) {
       showToast(
         'error',
