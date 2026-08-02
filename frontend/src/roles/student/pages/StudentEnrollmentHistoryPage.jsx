@@ -13,9 +13,9 @@ import './StudentEnrollmentHistoryPage.css';
 const STATUS_CLS = {
   APPROVED:             'hist-badge--approved',
   CANCELLED:            'hist-badge--cancelled',
+  REJECTED:             'hist-badge--rejected',
   PENDING_VERIFICATION: 'hist-badge--pending',
   NEEDS_REVISION:       'hist-badge--revision',
-  AWAITING_PAYMENT:     'hist-badge--awaiting',
 };
 
 function statusBadge(key) {
@@ -56,7 +56,7 @@ export default function StudentEnrollmentHistoryPage() {
       // แสดงทุกรายการที่เคย "เริ่มดำเนินการ" แล้ว — ยกเว้นแค่รายการที่ยังไม่เคยส่งสลิปเลยสักครั้ง
       // (PENDING + UNPAID) ซึ่งยังอยู่ระหว่างรอชำระเงินครั้งแรก จะไปแสดงที่หน้าชำระเงินแทน
       // แต่ถ้าเป็นการสมัครซ้ำหลังยกเลิก/หมดเวลา (row เดิมถูกใช้ซ้ำ ดู isReenrollment) row นี้เคยมีประวัติมาก่อน
-      // แล้ว จึงต้องยังคงแสดงในหน้านี้ต่อไป (เป็นสถานะ "รอชำระเงิน") ไม่ให้ประวัติเดิมหายไปเงียบๆ
+      // แล้ว จึงต้องยังคงแสดงในหน้านี้ต่อไป (ถูกจัดเป็นสถานะ "รอการยืนยันชำระเงิน" เดียวกัน) ไม่ให้ประวัติเดิมหายไปเงียบๆ
       // รายการที่ถูก "ส่งกลับแก้ไขสลิป" (PENDING + FAILED) ยังต้องคงอยู่ในประวัตินี้ด้วย ไม่ให้หายไปเงียบๆ —
       // จะแสดงเป็นสถานะ "แก้ไขสลิป" จนกว่านักเรียนจะอัปโหลดสลิปใหม่ (กลับไปเป็น PENDING_VERIFICATION ทันที)
       const submitted = (Array.isArray(data) ? data : []).filter(
@@ -98,9 +98,10 @@ export default function StudentEnrollmentHistoryPage() {
     });
   }
 
-  const filtered = filter === 'ALL'
+  const filtered = (filter === 'ALL'
     ? enrollments
-    : enrollments.filter((e) => getDisplayStatus(e) === filter);
+    : enrollments.filter((e) => getDisplayStatus(e) === filter)
+  ).slice().sort((a, b) => new Date(b.updatedAt || b.enrollmentDate || 0) - new Date(a.updatedAt || a.enrollmentDate || 0));
 
   if (loading) return (
     <div className="hist-page">
@@ -234,6 +235,13 @@ export default function StudentEnrollmentHistoryPage() {
                   </div>
                 )}
               </div>
+
+              {modal.note && (getDisplayStatus(modal) === 'REJECTED' || getDisplayStatus(modal) === 'NEEDS_REVISION') && (
+                <div className="hist-modal-reason">
+                  <strong>{getDisplayStatus(modal) === 'REJECTED' ? 'เหตุผลที่ปฏิเสธ' : 'เหตุผลที่ต้องแก้ไขสลิป'}</strong>
+                  <p>{modal.note}</p>
+                </div>
+              )}
 
               <div className="hist-modal-divider" />
 

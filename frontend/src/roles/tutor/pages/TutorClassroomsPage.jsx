@@ -202,9 +202,8 @@ export default function TutorClassroomsPage() {
 
                   <div className="tutor-classroom-course-meta">
                     <Info label="วันเริ่มสอน" value={course.courseStartDate || course.startDate || '-'} />
-                    <Info label="ที่นั่ง" value={`${course.seatLimit || course.maxSeats || 0} คน`} />
+                    <Info label="ที่นั่ง" value={`${course.enrolledCount || 0}/${course.seatLimit || course.maxSeats || 0} คน`} />
                     <Info label="ชั่วโมงรวม" value={`${course.totalHours || 0} ชม.`} />
-                    <Info label="ผู้สมัคร" value={`${course.enrolledCount || 0} คน`} />
                   </div>
                 </div>
               </div>

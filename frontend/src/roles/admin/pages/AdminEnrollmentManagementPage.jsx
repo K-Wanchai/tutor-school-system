@@ -4,6 +4,7 @@ import {
   updatePayment,
   approveEnrollment,
   returnForSlipRevision,
+  rejectEnrollment,
   cancelEnrollment,
 } from '../services/adminEnrollmentService';
 import { resolveFileUrl } from '../../../shared/services/api';
@@ -161,6 +162,14 @@ function DetailModal({ enrollment, onClose, onAction, actionPending }) {
               >
                 ส่งกลับไปให้นักเรียนแก้ไขสลิป
               </button>
+              <button
+                className="em-btn em-btn--danger"
+                disabled={actionPending || !note.trim()}
+                title={!note.trim() ? 'กรุณาระบุเหตุผลก่อนปฏิเสธการสมัคร' : undefined}
+                onClick={() => onAction('reject', enrollment, note)}
+              >
+                ปฏิเสธการสมัคร
+              </button>
             </div>
           </div>
         </div>
@@ -251,6 +260,18 @@ export default function AdminEnrollmentManagementPage() {
         }
         await returnForSlipRevision(enrollment.id, note.trim());
         showToast('success', 'ส่งกลับให้นักเรียนแก้ไขสลิปแล้ว');
+      } else if (action === 'reject') {
+        if (!note.trim()) {
+          showToast('error', 'กรุณาระบุเหตุผลก่อนปฏิเสธการสมัคร');
+          setActionPending(false);
+          return;
+        }
+        if (!window.confirm(`ยืนยันการปฏิเสธการสมัครเรียนของ "${enrollment.studentName}" ? ที่นั่งจะถูกคืนกลับเข้าระบบ`)) {
+          setActionPending(false);
+          return;
+        }
+        await rejectEnrollment(enrollment.id, note.trim());
+        showToast('success', 'ปฏิเสธการสมัครเรียนและคืนที่นั่งแล้ว');
       } else if (action === 'cancel') {
         if (!window.confirm(`ยืนยันการยกเลิกการสมัครเรียนของ "${enrollment.studentName}" ?`)) {
           setActionPending(false);
@@ -278,7 +299,7 @@ export default function AdminEnrollmentManagementPage() {
       <div className="em-header">
         <div>
           <h1 className="em-title">การสมัครเรียน</h1>
-          <p className="em-subtitle">ตรวจสอบใบสมัครที่ส่งสลิปการชำระเงินแล้ว — อนุมัติ หรือส่งกลับให้นักเรียนแก้ไขสลิปหากไม่ถูกต้อง</p>
+          <p className="em-subtitle">ตรวจสอบใบสมัครที่ส่งสลิปการชำระเงินแล้ว — อนุมัติ ส่งกลับให้นักเรียนแก้ไขสลิปหากไม่ถูกต้อง หรือปฏิเสธการสมัคร (ที่นั่งจะถูกคืนกลับเข้าระบบอัตโนมัติ)</p>
         </div>
         <div className="em-search-wrap">
           <svg className="em-search-icon" viewBox="0 0 20 20" fill="currentColor" width="15" height="15">

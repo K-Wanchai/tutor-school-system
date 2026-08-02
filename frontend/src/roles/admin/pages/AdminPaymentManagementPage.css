@@ -87,6 +87,15 @@
 
 .pm-toast-close:hover { opacity: 1; }
 
+/* ── Filters ─────────────────────────────────────────────────────────── */
+
+.pm-filters { display: flex; gap: 8px; flex-wrap: wrap; }
+.pm-filter-btn { display: flex; align-items: center; gap: 6px; padding: 8px 16px; border-radius: 12px; border: 1px solid #e5e7eb; background: white; font-size: 13px; font-weight: 600; color: #6b7280; cursor: pointer; transition: all .15s; }
+.pm-filter-btn:hover { background: #f9fafb; color: #374151; }
+.pm-filter-btn.active { background: #7c3aed; color: white; border-color: #7c3aed; }
+.pm-filter-count { font-size: 11px; font-weight: 700; background: rgba(0,0,0,.1); padding: 1px 6px; border-radius: 10px; }
+.pm-filter-btn.active .pm-filter-count { background: rgba(255,255,255,.25); }
+
 /* ── Stats ───────────────────────────────────────────────────────────── */
 
 .pm-stats-grid {
@@ -429,6 +438,10 @@
 }
 
 .pm-status-row { display: flex; gap: 8px; flex-wrap: wrap; }
+
+.pm-modal-reason { background: #fef2f2; border: 1px solid #fecaca; border-radius: 14px; padding: 14px 16px; display: flex; flex-direction: column; gap: 6px; }
+.pm-modal-reason strong { font-size: 13px; color: #991b1b; }
+.pm-modal-reason p { margin: 0; font-size: 13px; color: #7f1d1d; line-height: 1.5; white-space: pre-wrap; }
 
 /* ── Detail Grid ─────────────────────────────────────────────────────── */
 

@@ -505,7 +505,10 @@ public class CourseServiceImpl implements CourseService {
             throw new ResourceNotFoundException("Course", id);
         }
 
-        boolean hasRelatedData = enrollmentRepository.existsByCourseId(id)
+        // ใบสมัครที่ถูกปฏิเสธ/ยกเลิกแล้วไม่ถือว่ายังมีความสัมพันธ์กับคอร์ส (ที่นั่งถูกคืนแล้ว) จึงไม่กันการลบ —
+        // กันเฉพาะใบสมัครที่ยัง PENDING/APPROVED/COMPLETED อยู่เท่านั้น
+        boolean hasRelatedData = enrollmentRepository.existsByCourseIdAndStatusNotIn(
+                        id, List.of(EnrollmentStatus.REJECTED, EnrollmentStatus.CANCELLED))
                 || examRepository.existsByCourseId(id)
                 || courseScheduleRepository.existsByCourseId(id)
                 || classroomSessionRepository.existsByCourseId(id)
@@ -515,6 +518,10 @@ public class CourseServiceImpl implements CourseService {
             throw new ResourceInUseException(
                     "ไม่สามารถลบคอร์สเรียนได้เนื่องจากมีข้อมูลเชื่อมโยงอยู่ (การสมัครเรียน/ตารางเรียน/ข้อสอบ/การเข้าเรียน)");
         }
+
+        // ลบใบสมัครที่ถูกปฏิเสธ/ยกเลิกที่ยังผูกกับคอร์สนี้ทิ้งไปด้วย — เพื่อไม่ให้เหลือแถวกำพร้าอ้างอิงคอร์สที่ถูกลบ
+        // แล้ว และเพื่อให้ประวัติการสมัครของนักเรียนสำหรับคอร์สนี้หายไปตามคอร์สที่ถูกลบ
+        enrollmentRepository.deleteByCourseId(id);
 
         // ลบ course (cascade → lessons, tests ผ่าน orphanRemoval)
         courseRepository.deleteById(id);

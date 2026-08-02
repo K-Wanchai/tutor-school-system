@@ -9,13 +9,24 @@ import './AdminPaymentManagementPage.css';
 
 // ── Labels & Badge Maps ─────────────────────────────────────────────────────
 // สถานะที่แสดง (badge เดียว) ใช้ชุดเดียวกับหน้าประวัติของนักเรียน — ดู shared/utils/enrollmentHistoryStatus
-// หน้านี้เป็นบันทึกรายรับ (revenue ledger) — แสดงเฉพาะรายการที่ชำระเงินเรียบร้อยแล้วเท่านั้น
-// รายการที่รอตรวจสอบอยู่ที่หน้า "การสมัครเรียน" (คิวตรวจสอบ) ส่วนที่ยกเลิก/ตีกลับแก้ไขสลิป
-// ไม่ถือเป็นธุรกรรมที่เสร็จสมบูรณ์ จึงไม่แสดงในบันทึกรายรับนี้
+// หน้านี้คือ "ประวัติ" ของทุกใบสมัครที่แอดมินตรวจสอบแล้ว (ไม่ว่าผลจะเป็นอนุมัติ/ปฏิเสธ/ส่งกลับแก้ไขสลิป) —
+// พอแอดมินกดปุ่มใดปุ่มหนึ่งในหน้า "การสมัครเรียน" (คิวตรวจสอบ) แล้ว แค่สถานะของ enrollment เปลี่ยน
+// รายการก็จะหลุดจากคิวและมาโผล่ที่นี่ทันทีโดยอัตโนมัติ ไม่ต้องมี logic บันทึกประวัติแยกต่างหาก
+// ส่วนสถิติรายรับ (revenue) นับเฉพาะ APPROVED เท่านั้น ส่วนที่ยกเลิก (CANCELLED จากนักเรียน/หมดเวลา)
+// ยังไม่ถือเป็นผลการตรวจสอบของแอดมิน จึงไม่แสดงในหน้านี้
 
 const STATUS_TONE = {
   APPROVED: 'success',
+  REJECTED: 'error',
+  NEEDS_REVISION: 'warning',
 };
+
+const REVIEWED_STATUSES = ['APPROVED', 'REJECTED', 'NEEDS_REVISION'];
+
+const FILTERS = [
+  { key: 'ALL', label: 'ทั้งหมด' },
+  ...REVIEWED_STATUSES.map((key) => ({ key, label: ENROLLMENT_HISTORY_STATUS_LABEL[key] })),
+];
 
 const PAYMENT_METHOD_LABEL = {
   BANK_TRANSFER: 'โอนเงินผ่านธนาคาร',
@@ -66,6 +77,8 @@ function TransactionDetailModal({ enrollment, onClose }) {
   if (!enrollment) return null;
 
   const hasDiscount = Number(enrollment.discountAmount) > 0;
+  const historyStatus = getEnrollmentHistoryStatus(enrollment);
+  const hasReasonBox = historyStatus === 'REJECTED' || historyStatus === 'NEEDS_REVISION';
 
   return (
     <div className="pm-modal-overlay" onClick={onClose}>
@@ -86,6 +99,13 @@ function TransactionDetailModal({ enrollment, onClose }) {
           <div className="pm-status-row">
             <Badge value={getEnrollmentHistoryStatus(enrollment)} labelMap={ENROLLMENT_HISTORY_STATUS_LABEL} toneMap={STATUS_TONE} />
           </div>
+
+          {hasReasonBox && enrollment.note && (
+            <div className="pm-modal-reason">
+              <strong>{historyStatus === 'REJECTED' ? 'เหตุผลที่ปฏิเสธ' : 'เหตุผลที่ส่งกลับแก้ไขสลิป'}</strong>
+              <p>{enrollment.note}</p>
+            </div>
+          )}
 
           <div className="pm-detail-grid">
             <div className="pm-detail-section">
@@ -113,7 +133,7 @@ function TransactionDetailModal({ enrollment, onClose }) {
                 <DetailRow label="ช่องทางชำระ" value={PAYMENT_METHOD_LABEL[enrollment.paymentMethod]} />
                 <DetailRow label="ยอดเต็ม" value={formatCurrency(enrollment.amount)} />
                 <DetailRow label="ยอดสุทธิ" value={formatCurrency(enrollment.finalAmount)} />
-                <DetailRow label="หมายเหตุเดิม" value={enrollment.note} />
+                {!hasReasonBox && <DetailRow label="หมายเหตุเดิม" value={enrollment.note} />}
               </div>
             </div>
 
@@ -144,6 +164,7 @@ export default function AdminPaymentManagementPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
+  const [statusFilter, setStatusFilter] = useState('ALL');
   const [currentPage, setCurrentPage] = useState(0);
   const [reviewEnrollment, setReviewEnrollment] = useState(null);
 
@@ -153,9 +174,9 @@ export default function AdminPaymentManagementPage() {
     try {
       const data = await getAllEnrollments();
       const list = Array.isArray(data) ? data : [];
-      // บันทึกรายรับแสดงเฉพาะรายการที่ชำระเงินเรียบร้อยแล้วเท่านั้น (APPROVED/COMPLETED) —
-      // รอตรวจสอบอยู่ที่หน้าคิวตรวจสอบ ส่วนยกเลิก/ปฏิเสธ/ตีกลับแก้ไขสลิปไม่ถือเป็นรายรับจริง
-      setEnrollments(list.filter((e) => getEnrollmentHistoryStatus(e) === 'APPROVED'));
+      // แสดงทุกใบสมัครที่แอดมินตรวจสอบแล้ว ไม่ว่าผลจะเป็นอนุมัติ/ปฏิเสธ/ส่งกลับแก้ไขสลิป —
+      // รอตรวจสอบอยู่ที่หน้าคิวตรวจสอบ (การสมัครเรียน) ส่วนยกเลิกเอง (CANCELLED) ไม่ถือเป็นผลตรวจสอบของแอดมิน
+      setEnrollments(list.filter((e) => REVIEWED_STATUSES.includes(getEnrollmentHistoryStatus(e))));
     } catch (err) {
       setError(err.message || 'ไม่สามารถโหลดข้อมูลการชำระเงินได้');
     } finally {
@@ -165,13 +186,23 @@ export default function AdminPaymentManagementPage() {
 
   useEffect(() => { load(); }, [load]);
 
-  const stats = useMemo(() => ({
-    count: enrollments.length,
-    revenue: enrollments.reduce((sum, e) => sum + (Number(e.finalAmount) || 0), 0),
-  }), [enrollments]);
+  const stats = useMemo(() => {
+    const approved = enrollments.filter((e) => getEnrollmentHistoryStatus(e) === 'APPROVED');
+    const rejected = enrollments.filter((e) => getEnrollmentHistoryStatus(e) === 'REJECTED');
+    const needsRevision = enrollments.filter((e) => getEnrollmentHistoryStatus(e) === 'NEEDS_REVISION');
+    return {
+      count: approved.length,
+      revenue: approved.reduce((sum, e) => sum + (Number(e.finalAmount) || 0), 0),
+      rejected: rejected.length,
+      needsRevision: needsRevision.length,
+    };
+  }, [enrollments]);
 
   const filtered = useMemo(() => {
     let list = enrollments;
+    if (statusFilter !== 'ALL') {
+      list = list.filter((e) => getEnrollmentHistoryStatus(e) === statusFilter);
+    }
     const term = searchTerm.trim().toLowerCase();
     if (term) {
       list = list.filter((e) =>
@@ -183,13 +214,18 @@ export default function AdminPaymentManagementPage() {
       );
     }
     return [...list].sort((a, b) => new Date(b.updatedAt || 0) - new Date(a.updatedAt || 0));
-  }, [enrollments, searchTerm]);
+  }, [enrollments, statusFilter, searchTerm]);
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   const pageItems = filtered.slice(currentPage * PAGE_SIZE, currentPage * PAGE_SIZE + PAGE_SIZE);
 
   function handleSearchChange(e) {
     setSearchTerm(e.target.value);
+    setCurrentPage(0);
+  }
+
+  function handleFilterChange(key) {
+    setStatusFilter(key);
     setCurrentPage(0);
   }
 
@@ -201,7 +237,7 @@ export default function AdminPaymentManagementPage() {
         <div>
           <h1 className="pm-title">ประวัติการชำระเงิน</h1>
           <p className="pm-subtitle">
-            บันทึกรายการที่ชำระเงินเรียบร้อยแล้วเท่านั้น — สำหรับตรวจสอบใบสมัครที่รอดำเนินการ ไปที่หน้าการสมัครเรียน
+            บันทึกรายการที่ตรวจสอบแล้ว (ชำระเงินเรียบร้อย/ปฏิเสธ/ส่งกลับแก้ไขสลิป) — สำหรับตรวจสอบใบสมัครที่รอดำเนินการ ไปที่หน้าการสมัครเรียน
           </p>
         </div>
         <div className="pm-search-wrap">
@@ -226,6 +262,33 @@ export default function AdminPaymentManagementPage() {
           <span className="pm-stat-value">{loading ? '...' : formatCurrency(stats.revenue)}</span>
           <span className="pm-stat-label">รายรับที่ยืนยันแล้ว</span>
         </div>
+        <div className="pm-stat-card pm-stat-card--error">
+          <span className="pm-stat-value">{loading ? '...' : stats.rejected}</span>
+          <span className="pm-stat-label">ปฏิเสธ</span>
+        </div>
+        <div className="pm-stat-card pm-stat-card--warning">
+          <span className="pm-stat-value">{loading ? '...' : stats.needsRevision}</span>
+          <span className="pm-stat-label">ส่งกลับแก้ไขสลิป</span>
+        </div>
+      </div>
+
+      {/* ── Filters ── */}
+      <div className="pm-filters">
+        {FILTERS.map((f) => {
+          const count = f.key === 'ALL'
+            ? enrollments.length
+            : enrollments.filter((e) => getEnrollmentHistoryStatus(e) === f.key).length;
+          return (
+            <button
+              key={f.key}
+              className={`pm-filter-btn ${statusFilter === f.key ? 'active' : ''}`}
+              onClick={() => handleFilterChange(f.key)}
+            >
+              {f.label}
+              <span className="pm-filter-count">{count}</span>
+            </button>
+          );
+        })}
       </div>
 
       {/* ── Table Card ── */}

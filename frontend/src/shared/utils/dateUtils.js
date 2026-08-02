@@ -79,14 +79,18 @@ const DAY_LABEL_TH = { MON: 'จันทร์', TUE: 'อังคาร', WED
 // แปลงตารางสอนจาก backend (array ของ { dayOfWeek, startTime, endTime }) เป็นข้อความไทยล้วน
 // หนึ่งวันต่อหนึ่งบรรทัด เช่น "วันอาทิตย์ 10:00 - 12:00 น.\nวันจันทร์ 13:00 - 15:00 น."
 // — ผู้ใช้ต้อง CSS white-space: pre-line เพื่อให้ขึ้นบรรทัดใหม่
+// ช่องว่างภายในแต่ละบรรทัดแทนด้วย non-breaking space (U+00A0) แทน space ธรรมดา กันไม่ให้
+// browser ตัดคำกลางบรรทัด (เช่น "น." หลุดไปขึ้นบรรทัดใหม่เองตอนกล่องแคบ) — ขึ้นบรรทัดใหม่ได้แค่ที่ \n เท่านั้น
 export function formatScheduleDaysTH(scheduleDays) {
   if (!scheduleDays || scheduleDays.length === 0) return '-';
 
   return scheduleDays
     .map(({ dayOfWeek, startTime, endTime }) => {
       const label = DAY_LABEL_TH[dayOfWeek] || dayOfWeek;
-      if (!startTime || !endTime) return `วัน${label}`;
-      return `วัน${label} ${startTime} - ${endTime} น.`;
+      const line = (!startTime || !endTime)
+        ? `วัน${label}`
+        : `วัน${label} ${startTime} - ${endTime} น.`;
+      return line.replace(new RegExp(String.fromCharCode(0x20), 'g'), String.fromCharCode(0xA0));
     })
     .join('\n');
 }

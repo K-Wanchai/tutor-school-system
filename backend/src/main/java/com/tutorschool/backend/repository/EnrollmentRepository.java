@@ -19,17 +19,23 @@ public interface EnrollmentRepository extends JpaRepository<Enrollment, Long> {
 
     List<Enrollment> findByCourseId(Long courseId);
 
-    boolean existsByCourseId(Long courseId);
-
-    Optional<Enrollment> findByStudentIdAndCourseId(Long studentId, Long courseId);
+    // REJECTED/CANCELLED rows don't count as "still linked" to the course — only an enrollment
+    // that's PENDING/APPROVED/COMPLETED should block deleting the course.
+    boolean existsByCourseIdAndStatusNotIn(Long courseId, List<EnrollmentStatus> statuses);
 
     boolean existsByStudentIdAndCourseId(Long studentId, Long courseId);
 
-    boolean existsByStudentIdAndCourseIdAndStatusNot(Long studentId, Long courseId, EnrollmentStatus status);
+    // student_id + course_id is no longer unique (a student can have a REJECTED/CANCELLED row
+    // and later a new one for the same course) — always scope lookups by status too, since
+    // findByStudentIdAndCourseId alone would throw IncorrectResultSizeDataAccessException once
+    // more than one row exists for the pair.
+    Optional<Enrollment> findByStudentIdAndCourseIdAndStatus(Long studentId, Long courseId, EnrollmentStatus status);
+
+    boolean existsByStudentIdAndCourseIdAndStatusNotIn(Long studentId, Long courseId, List<EnrollmentStatus> statuses);
 
     long countByCourseIdAndStatusIn(Long courseId, List<EnrollmentStatus> statuses);
 
-    @Query("SELECT COUNT(e) FROM Enrollment e WHERE e.course.id = :courseId AND e.paymentStatus IN ('PENDING_VERIFICATION','PAID') AND e.status != 'CANCELLED'")
+    @Query("SELECT COUNT(e) FROM Enrollment e WHERE e.course.id = :courseId AND e.paymentStatus IN ('PENDING_VERIFICATION','PAID') AND e.status NOT IN ('CANCELLED','REJECTED')")
     long countConfirmedPaymentsByCourseId(@Param("courseId") Long courseId);
 
     List<Enrollment> findByPaymentStatus(PaymentStatus paymentStatus);

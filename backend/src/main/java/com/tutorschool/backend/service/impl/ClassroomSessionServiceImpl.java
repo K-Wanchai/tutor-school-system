@@ -207,13 +207,13 @@ public class ClassroomSessionServiceImpl implements ClassroomSessionService {
 
         Student student = getStudentFromAuth(auth);
 
+        // A student can have multiple enrollment rows over time for the same course (e.g. an old
+        // REJECTED one plus a later re-application) — only the APPROVED one grants classroom access.
         Enrollment enrollment = enrollmentRepository
-                .findByStudentIdAndCourseId(student.getId(), session.getCourse().getId())
-                .orElseThrow(() -> new StudentNotEnrolledException(student.getId(), session.getCourse().getId()));
-
-        if (enrollment.getStatus() != EnrollmentStatus.APPROVED) {
-            throw new StudentNotEnrolledException("Your enrollment is not approved for this course");
-        }
+                .findByStudentIdAndCourseIdAndStatus(student.getId(), session.getCourse().getId(), EnrollmentStatus.APPROVED)
+                .orElseThrow(() -> enrollmentRepository.existsByStudentIdAndCourseId(student.getId(), session.getCourse().getId())
+                        ? new StudentNotEnrolledException("Your enrollment is not approved for this course")
+                        : new StudentNotEnrolledException(student.getId(), session.getCourse().getId()));
 
         Optional<AttendanceRecord> existingRecord =
                 attendanceRecordRepository.findByStudentIdAndSessionId(student.getId(), sessionId);

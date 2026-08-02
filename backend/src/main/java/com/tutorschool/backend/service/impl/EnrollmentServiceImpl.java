@@ -28,7 +28,6 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 
 @Slf4j
 @Service
@@ -99,32 +98,9 @@ public class EnrollmentServiceImpl implements EnrollmentService {
         BigDecimal discountAmount = BigDecimal.ZERO;
         BigDecimal finalAmount = amount.subtract(discountAmount);
 
-        // Re-enrolling after a previous cancelled attempt (e.g. payment timeout) reuses that
-        // same row/enrollmentCode instead of deleting it and inserting a new one — the unique
-        // (student_id, course_id) constraint means only one row can ever exist per pair anyway,
-        // and Payment/ExamSubmission/AttendanceRecord/CourseEvaluation rows can reference an
-        // enrollment with no cascade delete, so deleting a cancelled row is not always safe.
-        Optional<Enrollment> cancelled = enrollmentRepository.findByStudentIdAndCourseId(
-                        request.getStudentId(), request.getCourseId())
-                .filter(e -> e.getStatus() == EnrollmentStatus.CANCELLED);
-
-        if (cancelled.isPresent()) {
-            Enrollment reused = cancelled.get();
-            reused.setStatus(EnrollmentStatus.PENDING);
-            reused.setPaymentStatus(PaymentStatus.UNPAID);
-            reused.setPaymentMethod(request.getPaymentMethod());
-            reused.setAmount(amount);
-            reused.setDiscountAmount(discountAmount);
-            reused.setFinalAmount(finalAmount);
-            reused.setPaymentSlipUrl(null);
-            reused.setNote(request.getNote());
-            reused.setApprovedBy(null);
-            reused.setApprovedAt(null);
-            reused.setEnrollmentDate(LocalDateTime.now());
-            reused.setPaymentDeadline(LocalDateTime.now().plusMinutes(getPaymentDeadlineMinutes()));
-            return enrollmentMapper.toResponse(enrollmentRepository.save(reused));
-        }
-
+        // Re-enrolling after a previous cancelled or rejected attempt always creates a brand new
+        // row (own id/enrollmentCode) — student_id+course_id is not unique, so the old row stays
+        // untouched as its own history entry instead of being overwritten/reused.
         Enrollment enrollment = Enrollment.builder()
                 .student(student)
                 .course(course)
@@ -155,7 +131,8 @@ public class EnrollmentServiceImpl implements EnrollmentService {
         }
 
         // Check not already enrolled with an active record
-        if (enrollmentRepository.existsByStudentIdAndCourseIdAndStatusNot(studentId, request.getCourseId(), EnrollmentStatus.CANCELLED)) {
+        if (enrollmentRepository.existsByStudentIdAndCourseIdAndStatusNotIn(
+                studentId, request.getCourseId(), List.of(EnrollmentStatus.CANCELLED, EnrollmentStatus.REJECTED))) {
             throw new DuplicateResourceException("Student is already enrolled in this course");
         }
 
@@ -169,27 +146,8 @@ public class EnrollmentServiceImpl implements EnrollmentService {
 
         BigDecimal amount = course.getPrice();
 
-        // Re-enrolling after a previous cancelled attempt reuses that same row/enrollmentCode —
-        // see the matching comment in enrollStudent() for why this replaces delete+recreate.
-        Optional<Enrollment> cancelled = enrollmentRepository.findByStudentIdAndCourseId(studentId, request.getCourseId())
-                .filter(e -> e.getStatus() == EnrollmentStatus.CANCELLED);
-
-        if (cancelled.isPresent()) {
-            Enrollment reused = cancelled.get();
-            reused.setStatus(EnrollmentStatus.PENDING);
-            reused.setAmount(amount);
-            reused.setDiscountAmount(BigDecimal.ZERO);
-            reused.setFinalAmount(amount);
-            reused.setPaymentSlipUrl(request.getPaymentSlipUrl());
-            reused.setPaymentStatus(PaymentStatus.PENDING_VERIFICATION);
-            reused.setNote(null);
-            reused.setApprovedBy(null);
-            reused.setApprovedAt(null);
-            reused.setEnrollmentDate(LocalDateTime.now());
-            reused.setPaymentDeadline(null);
-            return enrollmentMapper.toResponse(enrollmentRepository.save(reused));
-        }
-
+        // Re-enrolling after a previous cancelled or rejected attempt always creates a brand new
+        // row — see the matching comment in enrollStudent() for why.
         Enrollment enrollment = Enrollment.builder()
                 .student(student)
                 .course(course)
@@ -307,6 +265,47 @@ public class EnrollmentServiceImpl implements EnrollmentService {
         return enrollmentMapper.toResponse(saved);
     }
 
+    // ปฏิเสธการสมัคร (ถาวร) — ต่างจาก returnForSlipRevision ตรงที่ status เปลี่ยนเป็น REJECTED เลย ไม่ใช่ PENDING
+    // ที่นั่งจะถูกคืนกลับเข้าพูลอัตโนมัติ เพราะทั้ง countByCourseIdAndStatusIn (นับเฉพาะ PENDING/APPROVED)
+    // และ countConfirmedPaymentsByCourseId (exclude CANCELLED/REJECTED) ไม่นับ enrollment ที่ REJECTED แล้ว
+    @Override
+    @Transactional
+    public EnrollmentResponse rejectEnrollment(Long id, RejectEnrollmentRequest request) {
+        Enrollment enrollment = enrollmentRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Enrollment", id));
+
+        enrollment.setStatus(EnrollmentStatus.REJECTED);
+        enrollment.setNote(request.getNote());
+
+        Enrollment saved = enrollmentRepository.save(enrollment);
+        sendRejectionNotification(saved);
+        return enrollmentMapper.toResponse(saved);
+    }
+
+    private void sendRejectionNotification(Enrollment enrollment) {
+        try {
+            String studentEmail = enrollment.getStudent().getUser().getEmail();
+            String studentName = enrollment.getStudent().getFirstName() + " " + enrollment.getStudent().getLastName();
+            CreateNotificationRequest notif = new CreateNotificationRequest();
+            notif.setUserId(enrollment.getStudent().getUser().getId());
+            notif.setRecipientEmail(studentEmail);
+            notif.setSubject("ใบสมัครไม่ได้รับการอนุมัติ: " + enrollment.getCourse().getCourseName());
+            notif.setMessage(
+                "เรียน " + studentName + "\n\n" +
+                "ใบสมัครเรียนคอร์ส \"" + enrollment.getCourse().getCourseName() +
+                "\" (รหัสการสมัคร " + enrollment.getEnrollmentCode() + ") ไม่ได้รับการอนุมัติ\n\n" +
+                "เหตุผล: " + enrollment.getNote() + "\n\n" +
+                "ที่นั่งของคอร์สนี้ถูกคืนกลับเข้าระบบแล้ว หากต้องการสมัครใหม่สามารถทำได้ที่หน้าคอร์สเรียน"
+            );
+            notif.setNotificationType(NotificationType.PAYMENT_REJECTED);
+            notif.setReferenceType(ReferenceType.ENROLLMENT);
+            notif.setReferenceId(enrollment.getId());
+            notificationService.sendNotification(notif);
+        } catch (Exception e) {
+            log.warn("Failed to send rejection notification for enrollment {}: {}", enrollment.getId(), e.getMessage());
+        }
+    }
+
     private void sendSlipReturnedNotification(Enrollment enrollment) {
         try {
             String studentEmail = enrollment.getStudent().getUser().getEmail();
@@ -359,8 +358,9 @@ public class EnrollmentServiceImpl implements EnrollmentService {
             throw new IllegalStateException("Course is not open for registration");
         }
 
-        // Allow re-enrollment if previous attempt was cancelled (expired deadline)
-        if (enrollmentRepository.existsByStudentIdAndCourseIdAndStatusNot(studentId, courseId, EnrollmentStatus.CANCELLED)) {
+        // Allow re-enrollment if previous attempt was cancelled (expired deadline) or rejected by admin
+        if (enrollmentRepository.existsByStudentIdAndCourseIdAndStatusNotIn(
+                studentId, courseId, List.of(EnrollmentStatus.CANCELLED, EnrollmentStatus.REJECTED))) {
             throw new DuplicateResourceException("Student is already enrolled in this course");
         }
 

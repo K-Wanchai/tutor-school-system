@@ -233,7 +233,7 @@ export default function TutorCoursesPage() {
                   <span>จำนวนนักเรียน</span>
 
                   <strong>
-                    {course.enrolledCount || 0}{' '}
+                    {course.enrolledCount || 0}/{course.seatLimit || 0}{' '}
                     คน
                   </strong>
                 </div>

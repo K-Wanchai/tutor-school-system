@@ -50,14 +50,13 @@ public class ExamSubmissionServiceImpl implements ExamSubmissionService {
         validateExamIsOpen(exam);
         validateExamTimeWindow(exam);
 
+        // A student can have multiple enrollment rows over time for the same course (e.g. an old
+        // REJECTED one plus a later re-application) — only the APPROVED one grants exam access.
         Enrollment enrollment = enrollmentRepository
-                .findByStudentIdAndCourseId(student.getId(), exam.getCourse().getId())
-                .orElseThrow(() -> new ExamAccessDeniedException(
-                        "You must be enrolled in this course before taking the exam"));
-
-        if (enrollment.getStatus() != EnrollmentStatus.APPROVED) {
-            throw new ExamAccessDeniedException("Your enrollment must be APPROVED to take this exam");
-        }
+                .findByStudentIdAndCourseIdAndStatus(student.getId(), exam.getCourse().getId(), EnrollmentStatus.APPROVED)
+                .orElseThrow(() -> enrollmentRepository.existsByStudentIdAndCourseId(student.getId(), exam.getCourse().getId())
+                        ? new ExamAccessDeniedException("Your enrollment must be APPROVED to take this exam")
+                        : new ExamAccessDeniedException("You must be enrolled in this course before taking the exam"));
 
         // ตรวจสอบว่ามีการสอบที่ค้างอยู่หรือไม่
         if (submissionRepository.existsByExamIdAndStudentIdAndStatus(
