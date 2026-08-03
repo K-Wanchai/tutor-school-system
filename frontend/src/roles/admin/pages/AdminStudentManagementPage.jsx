@@ -87,48 +87,6 @@ function DetailModal({ student, onClose }) {
               <div className="sm-detail-name">{student.firstName} {student.lastName}</div>
               <div className="sm-detail-code">{student.studentCode || '—'}</div>
             </div>
-            <div className="sm-detail-qr">
-              <div className="sm-qr-box">
-                <svg viewBox="0 0 80 80" fill="none" xmlns="http://www.w3.org/2000/svg" width="72" height="72">
-                  <rect x="2" y="2" width="24" height="24" rx="2" stroke="#111827" strokeWidth="3" fill="none" />
-                  <rect x="8" y="8" width="12" height="12" rx="1" fill="#111827" />
-                  <rect x="54" y="2" width="24" height="24" rx="2" stroke="#111827" strokeWidth="3" fill="none" />
-                  <rect x="60" y="8" width="12" height="12" rx="1" fill="#111827" />
-                  <rect x="2" y="54" width="24" height="24" rx="2" stroke="#111827" strokeWidth="3" fill="none" />
-                  <rect x="8" y="60" width="12" height="12" rx="1" fill="#111827" />
-                  <rect x="32" y="2" width="6" height="6" rx="1" fill="#111827" />
-                  <rect x="40" y="2" width="6" height="6" rx="1" fill="#111827" />
-                  <rect x="32" y="10" width="6" height="6" rx="1" fill="#111827" />
-                  <rect x="48" y="10" width="6" height="6" rx="1" fill="#111827" />
-                  <rect x="40" y="18" width="6" height="6" rx="1" fill="#111827" />
-                  <rect x="2" y="32" width="6" height="6" rx="1" fill="#111827" />
-                  <rect x="10" y="32" width="6" height="6" rx="1" fill="#111827" />
-                  <rect x="26" y="32" width="6" height="6" rx="1" fill="#111827" />
-                  <rect x="34" y="32" width="6" height="6" rx="1" fill="#111827" />
-                  <rect x="50" y="32" width="6" height="6" rx="1" fill="#111827" />
-                  <rect x="58" y="32" width="6" height="6" rx="1" fill="#111827" />
-                  <rect x="66" y="32" width="6" height="6" rx="1" fill="#111827" />
-                  <rect x="74" y="32" width="6" height="6" rx="1" fill="#111827" />
-                  <rect x="2" y="40" width="6" height="6" rx="1" fill="#111827" />
-                  <rect x="18" y="40" width="6" height="6" rx="1" fill="#111827" />
-                  <rect x="34" y="40" width="6" height="6" rx="1" fill="#111827" />
-                  <rect x="42" y="40" width="6" height="6" rx="1" fill="#111827" />
-                  <rect x="58" y="40" width="6" height="6" rx="1" fill="#111827" />
-                  <rect x="74" y="40" width="6" height="6" rx="1" fill="#111827" />
-                  <rect x="10" y="48" width="6" height="6" rx="1" fill="#111827" />
-                  <rect x="26" y="48" width="6" height="6" rx="1" fill="#111827" />
-                  <rect x="50" y="48" width="6" height="6" rx="1" fill="#111827" />
-                  <rect x="34" y="56" width="6" height="6" rx="1" fill="#111827" />
-                  <rect x="58" y="56" width="6" height="6" rx="1" fill="#111827" />
-                  <rect x="74" y="56" width="6" height="6" rx="1" fill="#111827" />
-                  <rect x="42" y="64" width="6" height="6" rx="1" fill="#111827" />
-                  <rect x="66" y="64" width="6" height="6" rx="1" fill="#111827" />
-                  <rect x="58" y="72" width="6" height="6" rx="1" fill="#111827" />
-                  <rect x="74" y="72" width="6" height="6" rx="1" fill="#111827" />
-                </svg>
-              </div>
-              <p className="sm-qr-code-text">{student.studentCode || '—'}</p>
-            </div>
           </div>
 
           {/* Info Grid */}

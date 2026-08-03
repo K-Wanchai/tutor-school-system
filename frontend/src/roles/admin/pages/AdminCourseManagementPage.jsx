@@ -246,7 +246,7 @@ export default function AdminCourseManagementPage() {
               <tr>
                 <th>รหัสคอร์ส</th>
                 <th>ชื่อคอร์ส</th>
-                <th>ติวเตอร์</th>
+                <th>ผู้สอน</th>
                 <th>ที่นั่ง</th>
                 <th>ราคา</th>
                 <th>วันเริ่มสอน</th>

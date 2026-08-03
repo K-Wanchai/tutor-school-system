@@ -142,26 +142,6 @@ export default function TutorNavbar({ onMenuToggle }) {
       </div>
 
       <div className="tutor-navbar-right">
-        <NavLink
-          to="/tutor/notifications"
-          className={({ isActive }) =>
-            `tutor-navbar-notification-btn${
-              isActive ? ' tutor-navbar-notification-btn--active' : ''
-            }`
-          }
-          aria-label="การแจ้งเตือน"
-          title="การแจ้งเตือน"
-        >
-          <span className="tutor-navbar-notification-icon">
-            <BellIcon />
-          </span>
-
-          {unreadCount > 0 && (
-            <span className="tutor-navbar-notification-badge">
-              {unreadCount > 99 ? '99+' : unreadCount}
-            </span>
-          )}
-        </NavLink>
 
         <button
           type="button"

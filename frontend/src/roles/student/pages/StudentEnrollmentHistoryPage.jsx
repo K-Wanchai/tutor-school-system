@@ -113,7 +113,7 @@ export default function StudentEnrollmentHistoryPage() {
     <div className="hist-page">
       <div className="hist-header">
         <div>
-          <h1>ประวัติการลงทะเบียน</h1>
+          <h1>ประวัติการสมัครเรียน</h1>
           <p>รายการคอร์สที่ยืนยันการชำระเงินแล้ว — สถานะอัพเดตอัตโนมัติ</p>
         </div>
       </div>

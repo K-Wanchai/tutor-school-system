@@ -323,12 +323,12 @@ export default function AdminPaymentManagementPage() {
               <table className="pm-table">
                 <thead>
                   <tr>
-                    <th>รหัสคอร์ส</th>
+                    <th>รหัสการสมัครเรียน</th>
                     <th>นักเรียน</th>
+                    <th>รหัสคอร์ส</th>
                     <th>คอร์ส</th>
                     <th>ผู้สอน</th>
                     <th>ราคา</th>
-                    <th>ช่องทางชำระ</th>
                     <th>สลิป</th>
                     <th>สถานะ</th>
                     <th>รายละเอียด</th>
@@ -337,12 +337,13 @@ export default function AdminPaymentManagementPage() {
                 <tbody>
                   {pageItems.map((e) => (
                     <tr key={e.id} className="pm-table-row">
-                      <td><span className="pm-code-badge">{e.courseCode || '—'}</span></td>
+                      <td><span className="pm-code-badge">{e.enrollmentCode || '—'}</span></td>
                       <td className="pm-text-name">{e.studentName || '—'}</td>
+                      <td><span className="pm-code-badge">{e.courseCode || '—'}</span></td>
                       <td>{e.courseName || '—'}</td>
                       <td>{e.tutorName || '—'}</td>
                       <td className="pm-text-amount">{formatCurrency(e.finalAmount)}</td>
-                      <td className="pm-text-secondary">{PAYMENT_METHOD_LABEL[e.paymentMethod] || '—'}</td>
+                      
                       <td>
                         {e.paymentSlipUrl ? (
                           <img src={resolveFileUrl(e.paymentSlipUrl)} alt="สลิป" className="pm-slip-thumb-sm" />
