@@ -419,6 +419,21 @@
   color: #374151;
 }
 
+.eim-field-hint {
+  font-size: 12px;
+  font-weight: 400;
+  color: #9ca3af;
+}
+
+.eim-locked-field {
+  padding: 9px 12px;
+  border: 1px solid #f3f4f6;
+  border-radius: 8px;
+  font-size: 13.5px;
+  color: #6b7280;
+  background: #f9fafb;
+}
+
 .eim-field input,
 .eim-field select,
 .eim-field textarea {

@@ -50,25 +50,37 @@ export default function StudentEnrollmentsPage() {
     });
   }, [courses, enrolledCourseIds]);
 
-  useEffect(() => { loadPageData(); }, []);
+  useEffect(() => { loadPageData(); }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // จำนวนที่นั่งเปลี่ยนได้ตลอดเวลาจากนักเรียนคนอื่น — ดึงข้อมูลคอร์สซ้ำเป็นระยะแบบเงียบๆ
+  // (ไม่แตะ loading/error state) เพื่อให้ตัวเลขที่นั่งและปุ่มสมัคร/เต็มแล้วอัปเดตเองโดยไม่ต้องรีเฟรชหน้า
+  useEffect(() => {
+    const interval = setInterval(() => {
+      fetchCourseData().catch(() => {});
+    }, 10000);
+    return () => clearInterval(interval);
+  }, []);
+
+  async function fetchCourseData() {
+    const [courseData, enrollmentData, institutionData] = await Promise.all([
+      getAvailableCourses(),
+      getMyEnrollments().catch(() => []),
+      api.get('/institution-profile').then((r) => r.data?.data).catch(() => null),
+    ]);
+
+    setCourses(courseData?.content || []);
+    setMyEnrollments(Array.isArray(enrollmentData) ? enrollmentData : []);
+    if (institutionData?.enrollmentPaymentDeadlineMinutes) {
+      setPaymentDeadlineMinutes(institutionData.enrollmentPaymentDeadlineMinutes);
+    }
+  }
 
   async function loadPageData() {
     try {
       setLoading(true);
       setErrorMessage('');
       setSuccessMessage('');
-
-      const [courseData, enrollmentData, institutionData] = await Promise.all([
-        getAvailableCourses(),
-        getMyEnrollments().catch(() => []),
-        api.get('/institution-profile').then((r) => r.data?.data).catch(() => null),
-      ]);
-
-      setCourses(courseData?.content || []);
-      setMyEnrollments(Array.isArray(enrollmentData) ? enrollmentData : []);
-      if (institutionData?.enrollmentPaymentDeadlineMinutes) {
-        setPaymentDeadlineMinutes(institutionData.enrollmentPaymentDeadlineMinutes);
-      }
+      await fetchCourseData();
     } catch (error) {
       setErrorMessage(
         error?.response?.data?.message || 'ไม่สามารถโหลดข้อมูลการสมัครเรียนได้'

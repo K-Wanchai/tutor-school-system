@@ -10,6 +10,7 @@ import com.tutorschool.backend.exception.ExamInstitutionNotFoundException;
 import com.tutorschool.backend.exception.ResourceNotFoundException;
 import com.tutorschool.backend.mapper.AcademicFacultyMapper;
 import com.tutorschool.backend.repository.AcademicFacultyRepository;
+import com.tutorschool.backend.repository.AcademicMajorRepository;
 import com.tutorschool.backend.repository.ExamInstitutionRepository;
 import com.tutorschool.backend.service.AcademicFacultyService;
 import lombok.RequiredArgsConstructor;
@@ -23,6 +24,7 @@ import java.util.List;
 public class AcademicFacultyServiceImpl implements AcademicFacultyService {
 
     private final AcademicFacultyRepository academicFacultyRepository;
+    private final AcademicMajorRepository academicMajorRepository;
     private final ExamInstitutionRepository examInstitutionRepository;
     private final AcademicFacultyMapper academicFacultyMapper;
 
@@ -31,7 +33,7 @@ public class AcademicFacultyServiceImpl implements AcademicFacultyService {
     public List<AcademicFacultyResponse> getFaculties(Long institutionId) {
         findInstitution(institutionId);
         return academicFacultyRepository.findByExamInstitutionIdOrderByNameAsc(institutionId).stream()
-                .map(academicFacultyMapper::toResponse)
+                .map(f -> academicFacultyMapper.toResponse(f, academicMajorRepository.countByFacultyId(f.getId())))
                 .toList();
     }
 

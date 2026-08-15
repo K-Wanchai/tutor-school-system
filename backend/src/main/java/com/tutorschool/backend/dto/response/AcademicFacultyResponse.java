@@ -17,6 +17,7 @@ public class AcademicFacultyResponse {
     private Long examInstitutionId;
     private String name;
     private Boolean active;
+    private Long majorCount;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 }

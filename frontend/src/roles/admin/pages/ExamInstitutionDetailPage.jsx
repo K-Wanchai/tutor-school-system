@@ -549,26 +549,28 @@ export default function ExamInstitutionDetailPage() {
     return () => { cancelled = true; };
   }, [form.studentId]);
 
-  // โหลดรายชื่อคณะของสถาบันนี้ (สำหรับสถาบันประเภทมหาวิทยาลัย) เมื่อเปิดฟอร์ม
+  // โหลดรายชื่อคณะของสถาบันนี้ (สำหรับสถาบันประเภทมหาวิทยาลัย) — ใช้ทั้งเป็นตัวเลือกในฟอร์ม และ
+  // จำนวนคณะ/สาขาจริงบนการ์ดสรุปด้านบน จึงโหลดตั้งแต่หน้าเปิด (ไม่รอเปิดฟอร์ม) และโหลดใหม่เมื่อกลับมา
+  // แท็บ "นักเรียนที่สอบติด" หลังไปแก้ไขคณะ/สาขาที่แท็บ "จัดการข้อมูลพื้นฐาน" เพื่อให้ตัวเลขล่าสุดเสมอ
   useEffect(() => {
-    if (!showForm || overview?.institution?.institutionType !== 'UNIVERSITY') { return; }
+    if (overview?.institution?.institutionType !== 'UNIVERSITY') { return; }
     getFaculties(institutionId)
       .then((data) => setFacultyList((data || []).filter((f) => f.active)))
       .catch(() => setFacultyList([]));
-  }, [showForm, institutionId, overview]);
+  }, [institutionId, overview, mainTab]);
 
-  // โหลดรายชื่อสาขาของสถาบันนี้ (สำหรับสถาบันประเภทอนุปริญญา หรือมหาวิทยาลัยที่เปิดหลักสูตรอนุปริญญาด้วย) เมื่อเปิดฟอร์ม
+  // โหลดรายชื่อสาขาของสถาบันนี้ (สำหรับสถาบันประเภทอนุปริญญา หรือมหาวิทยาลัยที่เปิดหลักสูตรอนุปริญญาด้วย)
   useEffect(() => {
     const type = overview?.institution?.institutionType;
     const needsVocationalMajors = type === 'VOCATIONAL_DIPLOMA'
       || (type === 'UNIVERSITY' && overview?.institution?.offersVocationalDiploma);
-    if (!showForm || !needsVocationalMajors) { return; }
+    if (!needsVocationalMajors) { return; }
     setLoadingVocationalMajors(true);
     getVocationalMajors(institutionId)
       .then((data) => setVocationalMajorList((data || []).filter((m) => m.active)))
       .catch(() => setVocationalMajorList([]))
       .finally(() => setLoadingVocationalMajors(false));
-  }, [showForm, institutionId, overview]);
+  }, [institutionId, overview, mainTab]);
 
   // โหลดรอบที่สอบติดของสถาบันนี้ เมื่อเปิดฟอร์ม
   useEffect(() => {
@@ -738,9 +740,11 @@ export default function ExamInstitutionDetailPage() {
   const isUniversity = institution.institutionType === 'UNIVERSITY';
   const isVocational = institution.institutionType === 'VOCATIONAL_DIPLOMA';
   const hasVocationalDiploma = isUniversity && !!institution.offersVocationalDiploma;
-  const facultyCount = new Set(bachelor.map((b) => b.facultyName).filter(Boolean)).size;
-  const majorCount = new Set(bachelor.map((b) => b.majorName).filter(Boolean)).size;
-  const vocationalMajorCount = new Set(vocationalDiploma.map((v) => v.vocationalMajorName).filter(Boolean)).size;
+  // จำนวนคณะ/สาขาที่ตั้งค่าไว้จริงของสถาบันนี้ (ไม่ใช่นับจากนักเรียนที่สอบติดแล้ว) — ดึงจาก
+  // facultyList/vocationalMajorList ที่โหลดไว้ด้านบน เพื่อให้การ์ดสรุปแสดงถูกต้องแม้ยังไม่มีนักเรียนสอบติดเลย
+  const facultyCount = facultyList.length;
+  const majorCount = facultyList.reduce((sum, f) => sum + (f.majorCount ?? 0), 0);
+  const vocationalMajorCount = vocationalMajorList.length;
 
   return (
     <div className="eid-page">

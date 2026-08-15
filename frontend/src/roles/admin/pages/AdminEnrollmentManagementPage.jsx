@@ -155,7 +155,7 @@ function DetailModal({ enrollment, onClose, onAction, actionPending }) {
                 อนุมัติ
               </button>
               <button
-                className="em-btn em-btn--danger"
+                className="em-btn em-btn--warning"
                 disabled={actionPending || !note.trim()}
                 title={!note.trim() ? 'กรุณาระบุเหตุผลก่อนส่งกลับให้นักเรียนแก้ไขสลิป' : undefined}
                 onClick={() => onAction('return', enrollment, note)}

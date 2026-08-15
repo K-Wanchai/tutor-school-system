@@ -26,7 +26,7 @@ import java.util.List;
 @RequiredArgsConstructor
 public class ExamInstitutionServiceImpl implements ExamInstitutionService {
 
-    private static final String CODE_PREFIX = "EXI-";
+    private static final java.util.regex.Pattern INSTITUTION_CODE_PATTERN = java.util.regex.Pattern.compile("^\\d{4}$");
 
     private final ExamInstitutionRepository examInstitutionRepository;
     private final ExamInstitutionMapper examInstitutionMapper;
@@ -40,8 +40,16 @@ public class ExamInstitutionServiceImpl implements ExamInstitutionService {
             throw new DuplicateResourceException("มีชื่อสถาบันนี้อยู่ในระบบแล้ว: " + name);
         }
 
+        String code = request.getInstitutionCode() == null ? "" : request.getInstitutionCode().trim();
+        if (!INSTITUTION_CODE_PATTERN.matcher(code).matches()) {
+            throw new IllegalArgumentException("กรุณากรอกรหัสสถาบันเป็นตัวเลข 4 หลัก");
+        }
+        if (examInstitutionRepository.existsByInstitutionCode(code)) {
+            throw new DuplicateResourceException("มีรหัสสถาบันนี้อยู่ในระบบแล้ว: " + code);
+        }
+
         ExamInstitution institution = ExamInstitution.builder()
-                .institutionCode(generateInstitutionCode())
+                .institutionCode(code)
                 .institutionName(name)
                 .institutionType(request.getInstitutionType())
                 .province(request.getProvince())
@@ -81,6 +89,9 @@ public class ExamInstitutionServiceImpl implements ExamInstitutionService {
                 && examInstitutionRepository.existsByInstitutionNameIgnoreCaseAndIdNot(newName, id)) {
             throw new DuplicateResourceException("มีชื่อสถาบันนี้อยู่ในระบบแล้ว: " + newName);
         }
+
+        // รหัสสถาบันแก้ไขไม่ได้หลังสร้างแล้ว (เหมือนรหัสคอร์ส/รหัสการสมัคร) — ไม่แตะ institutionCode ที่นี่
+        // แม้ request จะส่งค่ามาก็ตาม
 
         institution.setInstitutionName(newName);
         institution.setInstitutionType(request.getInstitutionType());
@@ -191,13 +202,4 @@ public class ExamInstitutionServiceImpl implements ExamInstitutionService {
                 .orElseThrow(() -> new ExamInstitutionNotFoundException("ไม่พบข้อมูลสถาบันที่จัดสอบ รหัส: " + id));
     }
 
-    private String generateInstitutionCode() {
-        long sequence = examInstitutionRepository.count();
-        String code;
-        do {
-            sequence++;
-            code = CODE_PREFIX + String.format("%04d", sequence);
-        } while (examInstitutionRepository.existsByInstitutionCode(code));
-        return code;
-    }
 }

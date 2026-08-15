@@ -121,6 +121,13 @@ export function ScheduleSection({
   const outsideAllowed = findOutsideAllowedDays(slots, allowed);
   const outsideAllowedDaySet = new Set(outsideAllowed.map(c => c.day));
 
+  // วันที่ติวเตอร์ไม่ว่างทั้งวัน (ไม่มี freeSlots เหลือเลย) — กดเลือกไม่ได้ตั้งแต่แรก แทนที่จะให้เลือกได้
+  // แล้วค่อยไปเจอข้อความ conflict ทีหลัง ยกเว้นวันที่เลือกไว้อยู่แล้วยังต้องกดเอาออกได้เสมอ
+  // ใช้เกณฑ์เดียวกับ TutorAvailabilityPanel ("ไม่ว่าง" เมื่อ freeSlots ว่างเปล่า) เพื่อให้ตรงกับที่ panel แสดง
+  const fullyBusyDaySet = new Set(
+    avail ? DAYS.map(d => d.key).filter(k => (avail[k]?.freeSlots?.length ?? 0) === 0) : []
+  );
+
   function toggleDay(key) {
     const next = { ...slots };
     if (key in next) {
@@ -146,13 +153,19 @@ export function ScheduleSection({
       <div className="cm-field">
         <label>กดเลือกวันที่สอน และใส่เวลาแต่ละวัน <span className="cm-lbl-hint">{hint}</span></label>
         <div className="cm-day-pills">
-          {DAYS.map(d => (
-            <button key={d.key} type="button"
-              className={`cm-day-pill ${d.key in slots ? 'cm-day-pill--on' : ''}`}
-              onClick={() => toggleDay(d.key)}>
-              {d.label}
-            </button>
-          ))}
+          {DAYS.map(d => {
+            const selected = d.key in slots;
+            const disabled = !selected && fullyBusyDaySet.has(d.key);
+            return (
+              <button key={d.key} type="button"
+                className={`cm-day-pill ${selected ? 'cm-day-pill--on' : ''} ${disabled ? 'cm-day-pill--disabled' : ''}`}
+                disabled={disabled}
+                title={disabled ? 'ติวเตอร์ไม่ว่างทั้งวันนี้' : undefined}
+                onClick={() => toggleDay(d.key)}>
+                {d.label}
+              </button>
+            );
+          })}
         </div>
       </div>
 

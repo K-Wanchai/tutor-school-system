@@ -9,6 +9,8 @@ public interface AcademicMajorRepository extends JpaRepository<AcademicMajor, Lo
 
     List<AcademicMajor> findByFacultyIdOrderByNameAsc(Long facultyId);
 
+    long countByFacultyId(Long facultyId);
+
     boolean existsByFacultyIdAndNameIgnoreCase(Long facultyId, String name);
 
     boolean existsByFacultyIdAndNameIgnoreCaseAndIdNot(Long facultyId, String name, Long id);

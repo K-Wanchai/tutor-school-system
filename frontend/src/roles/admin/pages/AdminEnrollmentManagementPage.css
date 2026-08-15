@@ -372,6 +372,9 @@
 .em-btn--danger { background: #dc2626; color: #ffffff; }
 .em-btn--danger:hover:not(:disabled) { background: #b91c1c; }
 
+.em-btn--warning { background: #f59e0b; color: #ffffff; }
+.em-btn--warning:hover:not(:disabled) { background: #d97706; }
+
 .em-btn--info { background: #2563eb; color: #ffffff; }
 .em-btn--info:hover:not(:disabled) { background: #1d4ed8; }
 

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import api from '../../../shared/services/api';
 import { toLocalISODate } from '../../../shared/utils/dateUtils';
 import { getUsername } from '../../../shared/utils/tokenUtils';
@@ -26,31 +26,40 @@ export default function TutorDashboardPage() {
     return [];
   };
 
-  useEffect(() => {
-    async function loadDashboard() {
-      try {
-        setLoading(true);
+  const loadDashboard = useCallback(async ({ silent = false } = {}) => {
+    try {
+      if (!silent) setLoading(true);
 
-        const requests = [
-          api.get('/courses/my-courses').catch(() => ({ data: [] })),
-          api.get('/course-schedules/tutor/me').catch(() => ({ data: [] })),
-          api.get('/classroom-sessions/tutor/me').catch(() => ({ data: [] })),
-          api.get('/course-evaluations/tutor/me').catch(() => ({ data: [] })),
-        ];
+      const requests = [
+        api.get('/courses/my-courses').catch(() => ({ data: [] })),
+        api.get('/course-schedules/tutor/me').catch(() => ({ data: [] })),
+        api.get('/classroom-sessions/tutor/me').catch(() => ({ data: [] })),
+        api.get('/course-evaluations/tutor/me').catch(() => ({ data: [] })),
+      ];
 
-        const [coursesRes, schedulesRes, sessionsRes, evaluationsRes] = await Promise.all(requests);
+      const [coursesRes, schedulesRes, sessionsRes, evaluationsRes] = await Promise.all(requests);
 
-        setCourses(getData(coursesRes));
-        setSchedules(getData(schedulesRes));
-        setSessions(getData(sessionsRes));
-        setEvaluations(getData(evaluationsRes));
-      } finally {
-        setLoading(false);
-      }
+      setCourses(getData(coursesRes));
+      setSchedules(getData(schedulesRes));
+      setSessions(getData(sessionsRes));
+      setEvaluations(getData(evaluationsRes));
+    } finally {
+      if (!silent) setLoading(false);
     }
-
-    loadDashboard();
   }, []);
+
+  useEffect(() => {
+    loadDashboard();
+  }, [loadDashboard]);
+
+  // จำนวนที่นั่งเปลี่ยนได้ตลอดเวลาจากการสมัคร/อนุมัติ/ยกเลิกของนักเรียน — ดึงข้อมูลซ้ำเป็นระยะแบบ
+  // เงียบๆ (ไม่แตะ loading spinner) เพื่อให้ตัวเลขที่นั่งบนแดชบอร์ดอัปเดตเองโดยไม่ต้องรีเฟรชหน้า
+  useEffect(() => {
+    const interval = setInterval(() => {
+      loadDashboard({ silent: true });
+    }, 10000);
+    return () => clearInterval(interval);
+  }, [loadDashboard]);
 
   const summary = useMemo(() => {
     const activeCourses = courses.filter((c) =>

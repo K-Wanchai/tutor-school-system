@@ -43,6 +43,7 @@ import com.tutorschool.backend.repository.CourseScheduleRepository;
 import com.tutorschool.backend.repository.EnrollmentRepository;
 import com.tutorschool.backend.repository.ExamRepository;
 import com.tutorschool.backend.repository.TutorRepository;
+import com.tutorschool.backend.util.ScheduleDaysParser;
 import com.tutorschool.backend.service.CourseService;
 import com.tutorschool.backend.service.NotificationService;
 
@@ -143,6 +144,7 @@ public class CourseServiceImpl implements CourseService {
         // แอดมินเลือกวัน-เวลาสอนเอง — ต้องไม่ชนกับคอร์สอื่นของติวเตอร์คนเดียวกัน
         List<ScheduleDaySlotRequest> scheduleDays = request.getScheduleDays();
         validateNoScheduleConflict(tutor.getId(), scheduleDays, null);
+        validateStartDateMatchesSchedule(request.getCourseStartDate(), scheduleDays);
 
         CourseStatus initialStatus = resolveAutoStatus(LocalDate.now(),
                 request.getRegistrationStartDate(), request.getRegistrationEndDate());
@@ -253,6 +255,7 @@ public class CourseServiceImpl implements CourseService {
                 request.getCourseStartDate());
 
         validateNoScheduleConflict(Tutor.getId(), request.getScheduleDays(), id);
+        validateStartDateMatchesSchedule(request.getCourseStartDate(), request.getScheduleDays());
 
         course.setCourseName(request.getCourseName());
         course.setPrice(request.getPrice());
@@ -577,6 +580,24 @@ public class CourseServiceImpl implements CourseService {
         if (regEnd != null && courseStart != null && regEnd.isAfter(courseStart)) {
             throw new InvalidCourseDateException(
                     "Registration end date must not be after course start date");
+        }
+    }
+
+    /**
+     * วันที่เริ่มสอนต้องตรงกับวันในสัปดาห์ของ scheduleDays อย่างน้อยหนึ่งวัน (เช่น ตารางสอน จ/พ/ศ
+     * ก็เริ่มได้ทั้งวันจันทร์ พุธ หรือศุกร์) — กันไม่ให้ข้อมูลไม่ตรงกันหลุดผ่าน API ตรงๆ
+     * โดยไม่ผ่านหน้าเว็บ (ฝั่ง frontend เช็คแบบเดียวกันใน courseScheduleUtils.js)
+     */
+    private void validateStartDateMatchesSchedule(LocalDate courseStart, List<ScheduleDaySlotRequest> scheduleDays) {
+        if (courseStart == null || scheduleDays == null || scheduleDays.isEmpty()) {
+            return;
+        }
+        String startDayCode = ScheduleDaysParser.toDayCode(courseStart.getDayOfWeek());
+        boolean matches = scheduleDays.stream()
+                .anyMatch(slot -> slot.getDayOfWeek() != null && startDayCode.equalsIgnoreCase(slot.getDayOfWeek()));
+        if (!matches) {
+            throw new InvalidCourseDateException(
+                    "Course start date must fall on one of the selected schedule days");
         }
     }
 }

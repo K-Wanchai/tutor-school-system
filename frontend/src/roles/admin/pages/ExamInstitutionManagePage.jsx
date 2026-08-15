@@ -23,6 +23,7 @@ const TYPE_FILTER_OPTIONS = [
 ];
 
 const EMPTY_FORM = {
+  institutionCode: '',
   institutionName: '',
   institutionType: '',
   province: '',
@@ -37,8 +38,12 @@ const EMPTY_FILTERS = { keyword: '', type: '' };
 
 // ── Helpers ───────────────────────────────────────────────────────────────
 
-function validateForm(f) {
+function validateForm(f, isCreate) {
   const e = {};
+  // รหัสสถาบันแก้ไขไม่ได้หลังสร้างแล้ว จึงบังคับตรวจรูปแบบเฉพาะตอนสร้างเท่านั้น
+  if (isCreate && !/^\d{4}$/.test((f.institutionCode || '').trim())) {
+    e.institutionCode = 'กรุณากรอกรหัสสถาบันเป็นตัวเลข 4 หลัก';
+  }
   if (!f.institutionName?.trim()) e.institutionName = 'กรุณากรอกชื่อสถาบัน';
   if (!f.institutionType) e.institutionType = 'กรุณาเลือกประเภทสถาบัน';
   const website = f.websiteUrl?.trim();
@@ -168,6 +173,7 @@ export default function ExamInstitutionManagePage() {
     setFormMode('edit');
     setSelected(inst);
     setForm({
+      institutionCode: inst.institutionCode ?? '',
       institutionName: inst.institutionName ?? '',
       institutionType: inst.institutionType ?? '',
       province: inst.province ?? '',
@@ -183,7 +189,8 @@ export default function ExamInstitutionManagePage() {
 
   async function handleSubmit(e) {
     e.preventDefault();
-    const err = validateForm(form);
+    const isCreate = formMode === 'create';
+    const err = validateForm(form, isCreate);
     if (Object.keys(err).length) { setFormErr(err); return; }
 
     setSaving(true);
@@ -200,14 +207,15 @@ export default function ExamInstitutionManagePage() {
         offersVocationalDiploma: form.institutionType === 'UNIVERSITY' ? form.offersVocationalDiploma : false,
       };
 
-      if (formMode === 'create') {
-        const created = await createExamInstitution(payload);
+      if (isCreate) {
+        const created = await createExamInstitution({ ...payload, institutionCode: form.institutionCode.trim() });
         setShowForm(false);
         // พาไปตั้งค่าคณะ/สาขา (มหาวิทยาลัย) หรือสายการเรียน/ห้องเรียน (โรงเรียน) ทันที ก่อนเริ่มบันทึกนักเรียนที่สอบติด
         navigate(`/admin/exam-institutions/${created.id}`, { state: { openConfig: true } });
         return;
       }
 
+      // รหัสสถาบันแก้ไขไม่ได้ — ไม่ส่ง institutionCode ไปตอนอัปเดต
       await updateExamInstitution(selected.id, payload);
       notify('แก้ไขข้อมูลสถาบันที่จัดสอบสำเร็จ');
       setShowForm(false);
@@ -357,6 +365,25 @@ export default function ExamInstitutionManagePage() {
               <button className="eim-modal-close" onClick={() => setShowForm(false)} aria-label="ปิด">✕</button>
             </div>
             <form className="eim-form" onSubmit={handleSubmit}>
+              {formMode === 'create' ? (
+                <div className="eim-field">
+                  <label>รหัสสถาบัน * <span className="eim-field-hint">(รหัสจริง 4 หลัก)</span></label>
+                  <input
+                    value={form.institutionCode}
+                    onChange={(e) => fld('institutionCode', e.target.value.replace(/\D/g, '').slice(0, 4))}
+                    placeholder="เช่น 0004"
+                    inputMode="numeric"
+                    maxLength={4}
+                  />
+                  {formErr.institutionCode && <span className="eim-err">{formErr.institutionCode}</span>}
+                </div>
+              ) : (
+                <div className="eim-field">
+                  <label>รหัสสถาบัน</label>
+                  <div className="eim-locked-field">{form.institutionCode || '—'}</div>
+                </div>
+              )}
+
               <div className="eim-field">
                 <label>ชื่อสถาบัน *</label>
                 <input
