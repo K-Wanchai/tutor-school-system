@@ -23,9 +23,18 @@ export default function TutorClassroomsPage() {
     loadClassroomPage();
   }, []);
 
-  async function loadClassroomPage() {
+  // จำนวนที่นั่ง (enrolledCount) เปลี่ยนได้ตลอดเวลาจากการสมัคร/อนุมัติ/ยกเลิกของนักเรียน — ดึงข้อมูล
+  // คอร์สซ้ำเป็นระยะแบบเงียบๆ (ไม่แตะ loading spinner) เพื่อให้ตัวเลขอัปเดตเองโดยไม่ต้องรีเฟรชหน้า
+  useEffect(() => {
+    const interval = setInterval(() => {
+      loadClassroomPage({ silent: true });
+    }, 10000);
+    return () => clearInterval(interval);
+  }, []);
+
+  async function loadClassroomPage({ silent = false } = {}) {
     try {
-      setLoading(true);
+      if (!silent) setLoading(true);
 
       const [sessionData, courseData] = await Promise.all([
         getClassroomSessions(),
@@ -51,9 +60,9 @@ export default function TutorClassroomsPage() {
       setCourses(merged);
     } catch (error) {
       console.error('Load classroom page error:', error);
-      setCourses([]);
+      if (!silent) setCourses([]);
     } finally {
-      setLoading(false);
+      if (!silent) setLoading(false);
     }
   }
 

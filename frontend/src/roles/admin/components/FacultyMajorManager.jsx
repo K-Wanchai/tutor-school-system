@@ -276,6 +276,7 @@ export default function FacultyMajorManager({ institutionId }) {
                 >
                   <span>{expandedId === f.id ? '▾' : '▸'}</span>
                   <span className={f.active ? '' : 'eid-config-inactive'}>{f.name}</span>
+                  <span className="eid-config-count-badge">{f.majorCount ?? 0} สาขา</span>
                 </button>
                 <div className="eid-actions">
                   <button className="eid-btn-icon" title="แก้ไข" onClick={() => setForm({ mode: 'edit', faculty: f })}>✏️</button>

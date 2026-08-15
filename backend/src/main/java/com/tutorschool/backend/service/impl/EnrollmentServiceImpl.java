@@ -238,6 +238,12 @@ public class EnrollmentServiceImpl implements EnrollmentService {
         Enrollment enrollment = enrollmentRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Enrollment", id));
 
+        // Re-check schedule conflicts here, not just at signup — the student's set of APPROVED
+        // courses can change between signup and approval (e.g. another enrollment got approved
+        // while this one was sent back for slip revision), so a stale eligibility check at
+        // signup time is not enough to guarantee no overlap at the moment this one becomes APPROVED.
+        validateNoScheduleConflict(enrollment.getStudent().getId(), enrollment.getCourse());
+
         enrollment.setStatus(EnrollmentStatus.APPROVED);
         enrollment.setApprovedBy(request.getApprovedBy());
         enrollment.setApprovedAt(LocalDateTime.now());
@@ -383,6 +389,13 @@ public class EnrollmentServiceImpl implements EnrollmentService {
      * e.g. an approved course ending 2026-08-20 does not block a new course starting 2026-08-21
      * even if both fall on, say, every Monday 17:00-19:00. When either course's date range can't be
      * determined, we fall back to the conservative weekday/time-only check (treat as a possible conflict).
+     *
+     * A PENDING enrollment that was returned to the student for slip revision (paymentStatus FAILED —
+     * "NEEDS_REVISION" on the frontend, see enrollmentHistoryStatus.js) also blocks, same as APPROVED.
+     * It's still an open application the student intends to keep — nothing has rejected it — so leaving
+     * it out let a student register a second, time-conflicting course while the first was mid-revision,
+     * and once both later got approved the two schedules overlapped. It keeps blocking until the admin
+     * explicitly rejects it (or the student cancels it) — resubmitting a fixed slip does not clear it.
      */
     private void validateNoScheduleConflict(Long studentId, Course newCourse) {
         List<CourseScheduleDay> newSlots = courseScheduleDayRepository.findByCourseId(newCourse.getId());
@@ -393,10 +406,13 @@ public class EnrollmentServiceImpl implements EnrollmentService {
 
         LocalDate newEnd = resolveCourseEndDate(newCourse);
 
-        List<Enrollment> approvedEnrollments =
-                enrollmentRepository.findByStudentIdAndStatus(studentId, EnrollmentStatus.APPROVED);
+        List<Enrollment> blockingEnrollments = new java.util.ArrayList<>(
+                enrollmentRepository.findByStudentIdAndStatus(studentId, EnrollmentStatus.APPROVED));
+        enrollmentRepository.findByStudentIdAndStatus(studentId, EnrollmentStatus.PENDING).stream()
+                .filter(e -> e.getPaymentStatus() == PaymentStatus.FAILED)
+                .forEach(blockingEnrollments::add);
 
-        for (Enrollment existing : approvedEnrollments) {
+        for (Enrollment existing : blockingEnrollments) {
             Course existingCourse = existing.getCourse();
             if (existingCourse.getId().equals(newCourse.getId())) {
                 continue;
@@ -424,8 +440,12 @@ public class EnrollmentServiceImpl implements EnrollmentService {
 
                 if (newSlot.getStartTime().isBefore(existingSlot.getEndTime())
                         && existingSlot.getStartTime().isBefore(newSlot.getEndTime())) {
-                    throw new CourseScheduleConflictException(
-                            "ตารางเรียนของคอร์สนี้ชนกับคอร์สที่คุณลงทะเบียนไว้แล้ว: " + existingCourse.getCourseName());
+                    String message = existing.getStatus() == EnrollmentStatus.APPROVED
+                            ? "ตารางเรียนของคอร์สนี้ชนกับคอร์สที่คุณลงทะเบียนไว้แล้ว: " + existingCourse.getCourseName()
+                            : "ตารางเรียนของคอร์สนี้ชนกับคอร์ส \"" + existingCourse.getCourseName()
+                                    + "\" ที่คุณสมัครไว้และถูกส่งกลับให้แก้ไขสลิปการชำระเงินอยู่ "
+                                    + "กรุณารอผลการตรวจสอบคอร์สดังกล่าว (อนุมัติ/ปฏิเสธ) ก่อนจึงจะสมัครคอร์สนี้ได้";
+                    throw new CourseScheduleConflictException(message);
                 }
             }
         }

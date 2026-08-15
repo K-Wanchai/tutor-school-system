@@ -16,8 +16,7 @@ import {
   slotsToScheduleDaysArray,
   scheduleDaysArrayToSlots,
   validateCourseForm,
-  getPrimaryScheduleDayKey,
-  dayKeyToJsWeekday,
+  getScheduleWeekdays,
 } from '../utils/courseScheduleUtils';
 import { ScheduleSection, TutorSelectField } from '../components/CourseScheduleFields';
 import useInstitutionProfile from '../../../shared/hooks/useInstitutionProfile';
@@ -95,8 +94,9 @@ export default function AdminCourseManagementPage() {
   }, []);
 
   // ── load courses
-  const load = useCallback(async (p = 0) => {
-    setLoading(true);
+  // silent: true = polling แบบเงียบๆ ในพื้นหลัง ไม่แตะ loading/error UI (ใช้อัปเดตจำนวนที่นั่งแบบเรียลไทม์)
+  const load = useCallback(async (p = 0, { silent = false } = {}) => {
+    if (!silent) setLoading(true);
     try {
       const [data, s] = await Promise.all([
         getCourses({ page: p, size: PAGE_SIZE }),
@@ -106,14 +106,23 @@ export default function AdminCourseManagementPage() {
       setCourses(list);
       setTotalPages(data?.totalPages ?? 1);
       setStats(s);
+      // มี detail modal เปิดอยู่ — อัปเดตข้อมูลที่แสดง (เช่นจำนวนที่นั่ง) ให้ตรงกับรายการล่าสุดไปด้วย
+      setSelected(prev => (prev ? (list.find(c => c.id === prev.id) || prev) : prev));
     } catch (e) {
-      notify(e.message, 'error');
+      if (!silent) notify(e.message, 'error');
     } finally {
-      setLoading(false);
+      if (!silent) setLoading(false);
     }
   }, [notify]);
 
   useEffect(() => { load(0); }, []); // eslint-disable-line
+
+  // จำนวนที่นั่งเปลี่ยนได้ตลอดเวลาจากการสมัคร/อนุมัติ/ยกเลิกของนักเรียน — ดึงรายการคอร์สซ้ำเป็นระยะ
+  // แบบเงียบๆ เพื่อให้ตารางและ detail modal ที่เปิดอยู่เห็นจำนวนที่นั่งล่าสุดโดยไม่ต้องรีเฟรชหน้า
+  useEffect(() => {
+    const interval = setInterval(() => { load(page, { silent: true }); }, 10000);
+    return () => clearInterval(interval);
+  }, [page, load]);
 
   // ── load tutors from real DB
   useEffect(() => {
@@ -142,11 +151,11 @@ export default function AdminCourseManagementPage() {
     setFormErr(e => ({ ...e, [key]: '' }));
   }
 
-  // วันในสัปดาห์ที่มาก่อนที่สุดจากตารางสอนที่เลือกไว้ — "วันที่เริ่มสอน" เลือกได้เฉพาะวันนี้เท่านั้น
-  const primaryScheduleWeekday = useMemo(() => {
-    const dayKey = getPrimaryScheduleDayKey(form.scheduleSlots);
-    return dayKeyToJsWeekday(dayKey);
-  }, [form.scheduleSlots]);
+  // วันในสัปดาห์ทั้งหมดที่เลือกไว้ในตารางสอน — "วันที่เริ่มสอน" เลือกได้เฉพาะวันเหล่านี้เท่านั้น
+  const scheduleWeekdays = useMemo(
+    () => getScheduleWeekdays(form.scheduleSlots),
+    [form.scheduleSlots]
+  );
 
   // ── EDIT
   function openEdit(c) {
@@ -377,7 +386,7 @@ export default function AdminCourseManagementPage() {
                   value={form.courseStartDate}
                   onChange={v => fld('courseStartDate', v)}
                   minDate={form.registrationEndDate ? addDaysISO(form.registrationEndDate, 1) : todayLocalISODate()}
-                  allowedWeekdays={primaryScheduleWeekday != null ? [primaryScheduleWeekday] : undefined}
+                  allowedWeekdays={scheduleWeekdays.length > 0 ? scheduleWeekdays : undefined}
                 />
                 {formErr.courseStartDate && <span className="cm-err">{formErr.courseStartDate}</span>}
               </div>

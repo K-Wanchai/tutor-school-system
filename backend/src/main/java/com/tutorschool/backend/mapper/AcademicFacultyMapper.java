@@ -8,11 +8,16 @@ import org.springframework.stereotype.Component;
 public class AcademicFacultyMapper {
 
     public AcademicFacultyResponse toResponse(AcademicFaculty faculty) {
+        return toResponse(faculty, null);
+    }
+
+    public AcademicFacultyResponse toResponse(AcademicFaculty faculty, Long majorCount) {
         return AcademicFacultyResponse.builder()
                 .id(faculty.getId())
                 .examInstitutionId(faculty.getExamInstitution().getId())
                 .name(faculty.getName())
                 .active(faculty.getActive())
+                .majorCount(majorCount)
                 .createdAt(faculty.getCreatedAt())
                 .updatedAt(faculty.getUpdatedAt())
                 .build();

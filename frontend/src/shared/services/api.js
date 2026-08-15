@@ -1,7 +1,7 @@
 import axios from 'axios';
 import { getToken, getRefreshToken, setToken, setRefreshToken, clearAuth } from '../utils/tokenUtils';
 
-const SERVER_HOST = '172.24.178.46';
+const SERVER_HOST = 'localhost';
 const API_ORIGIN = `http://${SERVER_HOST}:8080`;
 const BASE_URL = `${API_ORIGIN}/api/v1`;
 

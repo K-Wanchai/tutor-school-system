@@ -17,16 +17,15 @@ export const DAY_LABEL_TH = { MON: 'จันทร์', TUE: 'อังคา�
 // วันในสัปดาห์ตาม Date.getDay() (0=อาทิตย์ ... 6=เสาร์) ของแต่ละคีย์ใน DAYS
 const DAY_KEY_TO_JS_WEEKDAY = { MON: 1, TUE: 2, WED: 3, THU: 4, FRI: 5, SAT: 6, SUN: 0 };
 
-// วันที่ "มาก่อน" ที่สุดในสัปดาห์ (เรียงจันทร์-อาทิตย์ตาม DAYS) จากวันที่ถูกเลือกไว้ในตารางสอน
-// ใช้เป็นวันเดียวที่บังคับให้เลือกได้สำหรับ "วันที่เริ่มสอน" เพราะคาบแรกของคอร์สต้องตรงกับวันนี้เสมอ
-export function getPrimaryScheduleDayKey(scheduleSlots) {
-  const keys = Object.keys(scheduleSlots || {});
-  if (keys.length === 0) return null;
-  return DAYS.find(d => keys.includes(d.key))?.key ?? null;
-}
-
 export function dayKeyToJsWeekday(key) {
   return key ? DAY_KEY_TO_JS_WEEKDAY[key] ?? null : null;
+}
+
+// วันในสัปดาห์ (Date.getDay()) ของทุกวันที่ถูกเลือกไว้ในตารางสอน — ใช้จำกัดให้ "วันที่เริ่มสอน"
+// เลือกได้เฉพาะวันที่ตรงกับวันสอนวันใดวันหนึ่งที่เลือกไว้เท่านั้น (ไม่ใช่แค่วันแรกของสัปดาห์)
+export function getScheduleWeekdays(scheduleSlots) {
+  const keys = Object.keys(scheduleSlots || {});
+  return keys.map(k => DAY_KEY_TO_JS_WEEKDAY[k]).filter(v => v != null);
 }
 
 export const EMPTY_COURSE_FORM = {
@@ -146,10 +145,11 @@ export function validateCourseForm(f, tutorAvail, priceRequired = true, allowedS
   if (f.courseStartDate && f.registrationEndDate && f.courseStartDate <= f.registrationEndDate) {
     e.courseStartDate = 'วันที่เริ่มสอนต้องอยู่หลังวันปิดรับสมัคร';
   }
-  // วันที่เริ่มสอน ต้องตรงกับวันที่มาก่อนที่สุดในสัปดาห์จากตารางสอนที่เลือกไว้ (คาบแรกของคอร์ส)
-  const primaryDayKey = getPrimaryScheduleDayKey(f.scheduleSlots);
-  if (f.courseStartDate && primaryDayKey && getWeekdayOfISO(f.courseStartDate) !== dayKeyToJsWeekday(primaryDayKey)) {
-    e.courseStartDate = `วันที่เริ่มสอนต้องตรงกับวัน${DAY_LABEL_TH[primaryDayKey]} (วันแรกของตารางสอน)`;
+  // วันที่เริ่มสอน ต้องตรงกับวันใดวันหนึ่งในตารางสอนที่เลือกไว้ (เช่น เลือกสอน จ/พ/ศ ก็เริ่มได้ทั้ง จ, พ หรือ ศ)
+  const scheduleWeekdays = getScheduleWeekdays(f.scheduleSlots);
+  if (f.courseStartDate && scheduleWeekdays.length > 0 && !scheduleWeekdays.includes(getWeekdayOfISO(f.courseStartDate))) {
+    const dayLabels = DAYS.filter(d => scheduleWeekdays.includes(dayKeyToJsWeekday(d.key))).map(d => DAY_LABEL_TH[d.key]).join(', ');
+    e.courseStartDate = `วันที่เริ่มสอนต้องตรงกับวันในตารางสอน (${dayLabels})`;
   }
 
   // บังคับตารางสอน — แอดมินต้องเลือกวัน-เวลาเอง

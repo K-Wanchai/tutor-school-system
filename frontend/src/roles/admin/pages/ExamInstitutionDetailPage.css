@@ -771,6 +771,16 @@
   text-decoration: line-through;
 }
 
+.eid-config-count-badge {
+  font-size: 11.5px;
+  font-weight: 600;
+  color: #0f766e;
+  background: #f0fdfa;
+  border: 1px solid #99f6e4;
+  border-radius: 9999px;
+  padding: 2px 9px;
+}
+
 /* ── Responsive ──────────────────────────────────────────────────────── */
 
 @media (max-width: 900px) {
