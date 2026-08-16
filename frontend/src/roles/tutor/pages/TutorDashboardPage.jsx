@@ -1,10 +1,17 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import api from '../../../shared/services/api';
 import { toLocalISODate } from '../../../shared/utils/dateUtils';
 import { getUsername } from '../../../shared/utils/tokenUtils';
 import './TutorDashboardPage.css';
 
+function formatDate(value) {
+  if (!value) return '-';
+  return new Date(value).toLocaleDateString('th-TH', { year: 'numeric', month: 'short', day: 'numeric' });
+}
+
 export default function TutorDashboardPage() {
+  const navigate = useNavigate();
   const username = getUsername() || 'ติวเตอร์';
 
   const [loading, setLoading] = useState(true);
@@ -115,11 +122,11 @@ export default function TutorDashboardPage() {
       ) : (
         <>
           <div className="tutor-dashboard-stats">
-            <StatCard title="คอร์สทั้งหมด" value={summary.totalCourses} desc="คอร์สที่รับผิดชอบ" />
-            <StatCard title="คอร์สที่เปิดอยู่" value={summary.activeCourses} desc="คอร์สที่กำลังใช้งาน" />
-            <StatCard title="ตารางสอนวันนี้" value={summary.todaySchedules} desc="จำนวนคาบวันนี้" />
-            <StatCard title="ห้องเรียนเปิดอยู่" value={summary.openSessions} desc="ห้องเรียนที่ใช้งาน" />
-            <StatCard title="คะแนนประเมินเฉลี่ย" value={summary.avgRating} desc={`${summary.totalEvaluations} รีวิว`} />
+            <StatCard title="คอร์สทั้งหมด" value={summary.totalCourses} desc="คอร์สที่รับผิดชอบ" onClick={() => navigate('/tutor/courses')} />
+            <StatCard title="คอร์สที่เปิดอยู่" value={summary.activeCourses} desc="คอร์สที่กำลังใช้งาน" onClick={() => navigate('/tutor/courses')} />
+            <StatCard title="ตารางสอนวันนี้" value={summary.todaySchedules} desc="จำนวนคาบวันนี้" onClick={() => navigate('/tutor/schedule')} />
+            <StatCard title="ห้องเรียนเปิดอยู่" value={summary.openSessions} desc="ห้องเรียนที่ใช้งาน" onClick={() => navigate('/tutor/classroom')} />
+            <StatCard title="คะแนนประเมินเฉลี่ย" value={summary.avgRating} desc={`${summary.totalEvaluations} รีวิว`} onClick={() => navigate('/tutor/evaluations')} />
           </div>
 
           <div className="tutor-dashboard-grid">
@@ -138,7 +145,7 @@ export default function TutorDashboardPage() {
                       <div>
                         <h3>{item.courseName || 'ไม่ระบุชื่อคอร์ส'}</h3>
                         <p>
-                          {item.scheduleDate || '-'} · {item.startTime || '-'} - {item.endTime || '-'}
+                          {formatDate(item.scheduleDate)} · {item.startTime || '-'} - {item.endTime || '-'}
                         </p>
                       </div>
                       <StatusBadge status={item.status} />
@@ -163,7 +170,7 @@ export default function TutorDashboardPage() {
                       <div>
                         <h3>{item.courseName || 'ไม่ระบุชื่อคอร์ส'}</h3>
                         <p>
-                          {item.courseCode || '-'} · {item.maxSeats || 0} ที่นั่ง
+                          {item.courseCode || '-'} · {item.enrolledCount || 0}/{item.seatLimit || item.maxSeats || 0} ที่นั่ง
                         </p>
                       </div>
                       <StatusBadge status={item.status} />
@@ -200,9 +207,20 @@ export default function TutorDashboardPage() {
   );
 }
 
-function StatCard({ title, value, desc }) {
+function StatCard({ title, value, desc, onClick }) {
   return (
-    <div className="tutor-stat-card">
+    <div
+      className="tutor-stat-card tutor-stat-card--clickable"
+      role="button"
+      tabIndex={0}
+      onClick={onClick}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          onClick();
+        }
+      }}
+    >
       <p>{title}</p>
       <h2>{value}</h2>
       <span>{desc}</span>

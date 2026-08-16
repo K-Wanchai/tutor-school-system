@@ -60,6 +60,19 @@
   box-shadow: 0 1px 4px rgba(0, 0, 0, 0.04);
 }
 
+.tutor-stat-card--clickable {
+  cursor: pointer;
+  transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
+}
+
+.tutor-stat-card--clickable:hover,
+.tutor-stat-card--clickable:focus-visible {
+  transform: translateY(-2px);
+  border-color: #a7f3d0;
+  box-shadow: 0 8px 20px rgba(5, 150, 105, 0.12);
+  outline: none;
+}
+
 .tutor-stat-card p {
   margin: 0 0 12px;
   font-size: 13px;

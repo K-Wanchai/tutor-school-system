@@ -6,9 +6,16 @@ import {
 } from '../services/tutorClassroomService';
 import { getMyCourses } from '../services/tutorCourseService';
 import TestEditorModal from '../components/TestEditorModal';
+import { useToast } from '../../../shared/components/Toast';
 import './TutorClassroomsPage.css';
 
+function formatDate(value) {
+  if (!value) return '-';
+  return new Date(value).toLocaleDateString('th-TH', { year: 'numeric', month: 'short', day: 'numeric' });
+}
+
 export default function TutorClassroomsPage() {
+  const { showToast, toastElement } = useToast();
   const [courses, setCourses] = useState([]);
   const [keyword, setKeyword] = useState('');
   const [status, setStatus] = useState('ALL');
@@ -97,7 +104,7 @@ export default function TutorClassroomsPage() {
       await closeClassroomSession(sessionId);
       await loadClassroomPage();
     } catch (error) {
-      alert('ปิดห้องเรียนไม่สำเร็จ');
+      showToast('error', 'ปิดห้องเรียนไม่สำเร็จ');
       console.error(error);
     }
   }
@@ -150,6 +157,8 @@ export default function TutorClassroomsPage() {
 
   return (
     <div className="tutor-classroom-page">
+      {toastElement}
+
       <div className="tutor-classroom-header">
         <div>
           <span className="tutor-classroom-kicker">COURSE CLASSROOM PLAN</span>
@@ -210,7 +219,7 @@ export default function TutorClassroomsPage() {
                   <p>{course.description || 'ไม่มีรายละเอียดคอร์ส'}</p>
 
                   <div className="tutor-classroom-course-meta">
-                    <Info label="วันเริ่มสอน" value={course.courseStartDate || course.startDate || '-'} />
+                    <Info label="วันเริ่มสอน" value={formatDate(course.courseStartDate || course.startDate)} />
                     <Info label="ที่นั่ง" value={`${course.enrolledCount || 0}/${course.seatLimit || course.maxSeats || 0} คน`} />
                     <Info label="ชั่วโมงรวม" value={`${course.totalHours || 0} ชม.`} />
                   </div>
@@ -233,7 +242,7 @@ export default function TutorClassroomsPage() {
                           <div>
                             <strong>{session.sessionCode || `SESSION-${session.id}`}</strong>
                             <p>
-                              {session.scheduleDate || '-'} · {session.startTime || '-'} - {session.endTime || '-'}
+                              {formatDate(session.scheduleDate)} · {session.startTime || '-'} - {session.endTime || '-'}
                             </p>
                           </div>
 

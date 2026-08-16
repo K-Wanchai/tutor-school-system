@@ -24,6 +24,11 @@ import CalendarDateInput from '../../../shared/components/CalendarDateInput';
 import { todayLocalISODate, addDaysISO } from '../../../shared/utils/dateUtils';
 import './AdminCourseManagementPage.css';
 
+function formatDate(value) {
+  if (!value) return '-';
+  return new Date(value).toLocaleDateString('th-TH', { year: 'numeric', month: 'short', day: 'numeric' });
+}
+
 // ──────────────── helpers ────────────────
 const STATUS_LABEL = {
   PENDING:               { label: 'รอเปิดรับสมัคร', cls: 'cm-badge-draft' },
@@ -276,7 +281,7 @@ export default function AdminCourseManagementPage() {
                   </td>
                   <td>{c.enrolledCount}/{c.seatLimit}</td>
                   <td>{c.price != null && Number(c.price) > 0 ? Number(c.price).toLocaleString() + ' ฿' : '—'}</td>
-                  <td>{c.courseStartDate || '—'}</td>
+                  <td>{formatDate(c.courseStartDate)}</td>
                   <td><StatusBadge status={c.status} /></td>
                   <td>
                     <div className="cm-actions">
@@ -450,9 +455,9 @@ export default function AdminCourseManagementPage() {
                 <div><label>ราคา</label><span>{selected.price != null && Number(selected.price) > 0 ? Number(selected.price).toLocaleString() + ' บาท' : '—'}</span></div>
                 <div><label>ชั่วโมงรวม</label><span>{selected.totalHours} ชั่วโมง</span></div>
                 <div><label>ที่นั่ง</label><span>{selected.enrolledCount}/{selected.seatLimit} คน</span></div>
-                <div><label>วันเริ่มสอน</label><span>{selected.courseStartDate || '—'}</span></div>
-                <div><label>เปิดรับสมัคร</label><span>{selected.registrationStartDate || '—'}</span></div>
-                <div><label>ปิดรับสมัคร</label><span>{selected.registrationEndDate || '—'}</span></div>
+                <div><label>วันเริ่มสอน</label><span>{formatDate(selected.courseStartDate)}</span></div>
+                <div><label>เปิดรับสมัคร</label><span>{formatDate(selected.registrationStartDate)}</span></div>
+                <div><label>ปิดรับสมัคร</label><span>{formatDate(selected.registrationEndDate)}</span></div>
               </div>
 
               {/* ตารางสอน */}

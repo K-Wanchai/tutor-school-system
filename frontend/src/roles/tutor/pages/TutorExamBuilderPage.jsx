@@ -9,6 +9,7 @@ import {
   updateOption,
   updateQuestion,
 } from '../services/tutorExamService';
+import { useConfirm } from '../../../shared/components/ConfirmDialog';
 import './TutorExamBuilderPage.css';
 
 const QUESTION_TYPES = [
@@ -32,6 +33,7 @@ function emptyOptionRow() {
 export default function TutorExamBuilderPage() {
   const { examId } = useParams();
   const navigate = useNavigate();
+  const { confirm, confirmDialog } = useConfirm();
 
   const [exam, setExam] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -145,7 +147,13 @@ export default function TutorExamBuilderPage() {
   }
 
   async function handleDeleteQuestion(questionId) {
-    if (!window.confirm('ลบคำถามนี้?')) return;
+    const ok = await confirm({
+      title: 'ยืนยันการลบคำถาม',
+      message: 'ลบคำถามนี้?',
+      confirmText: 'ลบคำถาม',
+      danger: true,
+    });
+    if (!ok) return;
     setBusy(true);
     try {
       await deleteQuestion(questionId);
@@ -159,6 +167,8 @@ export default function TutorExamBuilderPage() {
 
   return (
     <div className="teb-page">
+      {confirmDialog}
+
       <div className="teb-header">
         <button type="button" className="teb-back" onClick={() => navigate('/tutor/exam-schedule')}>
           ‹ กลับไปตารางสอบ
@@ -309,6 +319,7 @@ export default function TutorExamBuilderPage() {
 function QuestionCard({ index, question, editable, editing, onStartEdit, onStopEdit, onDelete, onChanged, busy, setBusy, setError }) {
   const [form, setForm] = useState(null);
   const [newOptionText, setNewOptionText] = useState('');
+  const { confirm, confirmDialog } = useConfirm();
 
   useEffect(() => {
     if (editing) {
@@ -354,7 +365,13 @@ function QuestionCard({ index, question, editable, editing, onStartEdit, onStopE
   }
 
   async function removeOption(optionId) {
-    if (!window.confirm('ลบตัวเลือกนี้?')) return;
+    const ok = await confirm({
+      title: 'ยืนยันการลบตัวเลือก',
+      message: 'ลบตัวเลือกนี้?',
+      confirmText: 'ลบตัวเลือก',
+      danger: true,
+    });
+    if (!ok) return;
     setBusy(true);
     setError('');
     try {
@@ -387,6 +404,8 @@ function QuestionCard({ index, question, editable, editing, onStartEdit, onStopE
 
   return (
     <div className="teb-question-card">
+      {confirmDialog}
+
       <div className="teb-question-top">
         <span className="teb-question-index">ข้อ {index}</span>
         <span className="teb-question-type">{typeLabel}</span>

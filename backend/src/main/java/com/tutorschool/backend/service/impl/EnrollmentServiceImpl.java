@@ -390,12 +390,15 @@ public class EnrollmentServiceImpl implements EnrollmentService {
      * even if both fall on, say, every Monday 17:00-19:00. When either course's date range can't be
      * determined, we fall back to the conservative weekday/time-only check (treat as a possible conflict).
      *
-     * A PENDING enrollment that was returned to the student for slip revision (paymentStatus FAILED —
-     * "NEEDS_REVISION" on the frontend, see enrollmentHistoryStatus.js) also blocks, same as APPROVED.
-     * It's still an open application the student intends to keep — nothing has rejected it — so leaving
-     * it out let a student register a second, time-conflicting course while the first was mid-revision,
-     * and once both later got approved the two schedules overlapped. It keeps blocking until the admin
-     * explicitly rejects it (or the student cancels it) — resubmitting a fixed slip does not clear it.
+     * Any PENDING enrollment blocks too, same as APPROVED — regardless of paymentStatus (UNPAID still
+     * within the payment deadline, PENDING_VERIFICATION awaiting the admin's first review, or FAILED /
+     * "NEEDS_REVISION" after being returned for slip revision). It's still an open application the
+     * student intends to keep — nothing has rejected or cancelled it — so leaving any of those substates
+     * unblocked let a student register and pay for a second, time-conflicting course before the first
+     * one had even been looked at once, and once one of the two later got approved the other became
+     * unapprovable (schedule conflict) despite already being paid for, with no in-system refund path.
+     * Blocking at signup/payment time — not just at approval — is what actually prevents that. It keeps
+     * blocking until the admin rejects it or the student cancels it.
      */
     private void validateNoScheduleConflict(Long studentId, Course newCourse) {
         List<CourseScheduleDay> newSlots = courseScheduleDayRepository.findByCourseId(newCourse.getId());
@@ -408,9 +411,7 @@ public class EnrollmentServiceImpl implements EnrollmentService {
 
         List<Enrollment> blockingEnrollments = new java.util.ArrayList<>(
                 enrollmentRepository.findByStudentIdAndStatus(studentId, EnrollmentStatus.APPROVED));
-        enrollmentRepository.findByStudentIdAndStatus(studentId, EnrollmentStatus.PENDING).stream()
-                .filter(e -> e.getPaymentStatus() == PaymentStatus.FAILED)
-                .forEach(blockingEnrollments::add);
+        blockingEnrollments.addAll(enrollmentRepository.findByStudentIdAndStatus(studentId, EnrollmentStatus.PENDING));
 
         for (Enrollment existing : blockingEnrollments) {
             Course existingCourse = existing.getCourse();
@@ -443,8 +444,8 @@ public class EnrollmentServiceImpl implements EnrollmentService {
                     String message = existing.getStatus() == EnrollmentStatus.APPROVED
                             ? "ตารางเรียนของคอร์สนี้ชนกับคอร์สที่คุณลงทะเบียนไว้แล้ว: " + existingCourse.getCourseName()
                             : "ตารางเรียนของคอร์สนี้ชนกับคอร์ส \"" + existingCourse.getCourseName()
-                                    + "\" ที่คุณสมัครไว้และถูกส่งกลับให้แก้ไขสลิปการชำระเงินอยู่ "
-                                    + "กรุณารอผลการตรวจสอบคอร์สดังกล่าว (อนุมัติ/ปฏิเสธ) ก่อนจึงจะสมัครคอร์สนี้ได้";
+                                    + "\" ที่คุณมีใบสมัครค้างอยู่ (ยังไม่ได้รับการอนุมัติหรือปฏิเสธ) "
+                                    + "กรุณารอผลการตรวจสอบคอร์สดังกล่าวก่อนจึงจะสมัครคอร์สนี้ได้";
                     throw new CourseScheduleConflictException(message);
                 }
             }

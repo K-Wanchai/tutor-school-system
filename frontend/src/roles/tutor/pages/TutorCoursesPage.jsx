@@ -13,6 +13,11 @@ import { formatScheduleDaysTH } from '../../../shared/utils/dateUtils';
 
 import './TutorCoursesPage.css';
 
+function formatDate(value) {
+  if (!value) return '-';
+  return new Date(value).toLocaleDateString('th-TH', { year: 'numeric', month: 'short', day: 'numeric' });
+}
+
 const STATUS_LABEL = {
   PENDING: {
     label: 'รอเปิดรับสมัคร',
@@ -242,7 +247,7 @@ export default function TutorCoursesPage() {
                   <span>เริ่มเรียน</span>
 
                   <strong>
-                    {course.courseStartDate || '-'}
+                    {formatDate(course.courseStartDate)}
                   </strong>
                 </div>
               </div>
@@ -284,11 +289,6 @@ export default function TutorCoursesPage() {
 function CourseDetailModal({ course, onClose }) {
   const lessons = [...(course.lessons || [])].sort((a, b) => (a.lessonOrder || 0) - (b.lessonOrder || 0));
   const tests = [...(course.tests || [])].sort((a, b) => (a.testOrder || 0) - (b.testOrder || 0));
-
-  function formatDate(value) {
-    if (!value) return '-';
-    return new Date(value).toLocaleDateString('th-TH', { year: 'numeric', month: 'short', day: 'numeric' });
-  }
 
   return (
     <div className="tc-modal-overlay" onClick={onClose}>

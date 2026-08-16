@@ -419,6 +419,10 @@
   background: #dc2626;
 }
 
+.smc-toast-info {
+  background: #2563eb;
+}
+
 @keyframes smc-toast-in {
   from {
     opacity: 0;

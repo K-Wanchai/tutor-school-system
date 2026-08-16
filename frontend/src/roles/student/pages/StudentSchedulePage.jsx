@@ -479,7 +479,7 @@ export default function StudentSchedulePage() {
   }
 
   function handleJoinClass() {
-    alert('ฟีเจอร์เข้าเรียนจะพัฒนาในขั้นตอนถัดไป');
+    showToast('info', 'ฟีเจอร์เข้าเรียนจะพัฒนาในขั้นตอนถัดไป');
   }
 
   function handleOpenMeeting(url) {
