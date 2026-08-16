@@ -7,10 +7,12 @@ import {
 } from '../services/studentEnrollmentService';
 import api from '../../../shared/services/api';
 import { formatScheduleDaysTH } from '../../../shared/utils/dateUtils';
+import { useConfirm } from '../../../shared/components/ConfirmDialog';
 import './StudentEnrollmentsPage.css';
 
 export default function StudentEnrollmentsPage() {
   const navigate = useNavigate();
+  const { confirm, confirmDialog } = useConfirm();
   const [courses, setCourses] = useState([]);
   const [myEnrollments, setMyEnrollments] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -95,9 +97,11 @@ export default function StudentEnrollmentsPage() {
     if (!course) return;
 
     const price = course.price != null ? `${Number(course.price).toLocaleString('th-TH')} บาท` : '-';
-    const ok = window.confirm(
-      `ยืนยันการสมัครเรียน?\n\nคอร์ส: ${course.courseName}\nราคา: ${price}\n\nคุณจะต้องชำระเงินภายใน ${paymentDeadlineMinutes} นาที มิฉะนั้นการสมัครจะถูกยกเลิกอัตโนมัติ`
-    );
+    const ok = await confirm({
+      title: 'ยืนยันการสมัครเรียน',
+      message: `คอร์ส: ${course.courseName}\nราคา: ${price}\n\nคุณจะต้องชำระเงินภายใน ${paymentDeadlineMinutes} นาที มิฉะนั้นการสมัครจะถูกยกเลิกอัตโนมัติ`,
+      confirmText: 'ยืนยันสมัคร',
+    });
     if (!ok) return;
 
     try {
@@ -161,6 +165,8 @@ export default function StudentEnrollmentsPage() {
 
   return (
     <div className="student-enroll-page">
+      {confirmDialog}
+
       <div className="student-enroll-header">
         <div>
           <h1>การสมัครเรียน</h1>

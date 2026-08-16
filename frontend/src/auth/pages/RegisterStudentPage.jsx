@@ -3,6 +3,7 @@ import { useNavigate, Link } from 'react-router-dom';
 import { register, checkAvailability } from '../services/authService';
 import { resolveFileUrl } from '../../shared/services/api';
 import useInstitutionProfile from '../../shared/hooks/useInstitutionProfile';
+import { useToast } from '../../shared/components/Toast';
 import './RegisterStudentPage.css';
 
 const GRADE_LEVELS = [
@@ -52,6 +53,7 @@ function getDaysInMonth(monthNum, yearBE) {
 export default function RegisterStudentPage() {
   const navigate = useNavigate();
   const profile = useInstitutionProfile();
+  const { showToast, toastElement } = useToast();
 
   // field names ต้องตรงกับ backend RegisterRequest DTO ทุกตัว
   const [form, setForm] = useState({
@@ -205,8 +207,8 @@ export default function RegisterStudentPage() {
       };
 
       await register(payload);
-      window.alert('สมัครสมาชิกสำเร็จ! กรุณาเข้าสู่ระบบด้วยบัญชีที่สมัครไว้');
-      navigate('/login');
+      showToast('success', 'สมัครสมาชิกสำเร็จ! กรุณาเข้าสู่ระบบด้วยบัญชีที่สมัครไว้');
+      window.setTimeout(() => navigate('/login'), 1500);
     } catch (err) {
       const data = err.response?.data;
       const status = err.response?.status;
@@ -233,6 +235,8 @@ export default function RegisterStudentPage() {
 
   return (
     <div className="auth-register-page">
+      {toastElement}
+
       <div className="auth-register-header">
         <div className="auth-register-brand">
           <div className="auth-reg-logo-icon">

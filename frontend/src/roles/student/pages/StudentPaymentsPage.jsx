@@ -5,6 +5,7 @@ import QRCode from 'qrcode';
 import { getMyEnrollments, cancelEnrollment } from '../services/studentEnrollmentService';
 import api, { resolveFileUrl } from '../../../shared/services/api';
 import { formatScheduleDaysTH } from '../../../shared/utils/dateUtils';
+import { useConfirm } from '../../../shared/components/ConfirmDialog';
 import './StudentPaymentsPage.css';
 
 /* ── Countdown hook (deadline from server) ── */
@@ -44,6 +45,7 @@ function CountdownBadge({ deadline, onExpired }) {
 
 export default function StudentPaymentsPage() {
   const navigate = useNavigate();
+  const { confirm, confirmDialog } = useConfirm();
   const [enrollments, setEnrollments] = useState([]);
   const [institution, setInstitution] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -131,7 +133,13 @@ export default function StudentPaymentsPage() {
   }
 
   async function handleCancel(enrollment) {
-    if (!window.confirm(`ยืนยันยกเลิกการสมัครเรียน "${enrollment.courseName}" ?`)) return;
+    const ok = await confirm({
+      title: 'ยืนยันการยกเลิกการสมัคร',
+      message: `ยกเลิกการสมัครเรียน "${enrollment.courseName}" ?`,
+      confirmText: 'ยกเลิกการสมัคร',
+      danger: true,
+    });
+    if (!ok) return;
     try {
       setCancelling(enrollment.id);
       setMessage({ type: '', text: '' });
@@ -195,6 +203,8 @@ export default function StudentPaymentsPage() {
 
   return (
     <div className="pay-page">
+      {confirmDialog}
+
       <div className="pay-header">
         <div className="pay-header-row">
           <div>

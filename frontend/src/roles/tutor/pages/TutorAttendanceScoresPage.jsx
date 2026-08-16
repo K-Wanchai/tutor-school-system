@@ -3,6 +3,11 @@ import { useNavigate } from 'react-router-dom';
 import { getTutorCourses } from '../services/tutorAttendanceScoreService';
 import './TutorAttendanceScoresPage.css';
 
+function formatDate(value) {
+  if (!value) return '-';
+  return new Date(value).toLocaleDateString('th-TH', { year: 'numeric', month: 'short', day: 'numeric' });
+}
+
 export default function TutorAttendanceScoresPage() {
   const navigate = useNavigate();
   const [courses, setCourses] = useState([]);
@@ -81,7 +86,7 @@ export default function TutorAttendanceScoresPage() {
 
                 <div>
                   <span>เริ่มเรียน</span>
-                  <strong>{course.startDate || '-'}</strong>
+                  <strong>{formatDate(course.startDate)}</strong>
                 </div>
               </div>
 

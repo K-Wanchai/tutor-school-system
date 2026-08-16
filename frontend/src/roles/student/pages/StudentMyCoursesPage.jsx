@@ -197,8 +197,7 @@ function StudentMyCoursesPage() {
   }, [activeCourses, activeFilter]);
 
   function handleEnterClassroom(course) {
-    showToast('success', 'ฟีเจอร์ห้องเรียนจะพัฒนาในขั้นตอนถัดไป');
-    alert(`ฟีเจอร์ห้องเรียนจะพัฒนาในขั้นตอนถัดไป\nคอร์ส: ${course.courseName || '-'}`);
+    showToast('info', `ฟีเจอร์ห้องเรียนจะพัฒนาในขั้นตอนถัดไป — คอร์ส: ${course.courseName || '-'}`);
   }
 
   return (

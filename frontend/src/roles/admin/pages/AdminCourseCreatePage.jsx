@@ -39,6 +39,22 @@ function SectionCard({ step, icon, title, desc, children }) {
   );
 }
 
+const DRAFT_STORAGE_KEY = 'admin-course-create-draft';
+
+function loadDraftForm() {
+  try {
+    const raw = sessionStorage.getItem(DRAFT_STORAGE_KEY);
+    if (!raw) return EMPTY_COURSE_FORM;
+    return { ...EMPTY_COURSE_FORM, ...JSON.parse(raw) };
+  } catch {
+    return EMPTY_COURSE_FORM;
+  }
+}
+
+function clearDraftForm() {
+  sessionStorage.removeItem(DRAFT_STORAGE_KEY);
+}
+
 function formatBaht(price) {
   const n = Number(price);
   if (price === '' || price == null || isNaN(n)) return null;
@@ -115,10 +131,20 @@ export default function AdminCourseCreatePage() {
   const [tutorAvail, setTutorAvail] = useState(null);
   const [availLoading, setAvailLoading] = useState(false);
 
-  const [form, setForm] = useState(EMPTY_COURSE_FORM);
+  const [form, setForm] = useState(loadDraftForm);
   const [formErr, setFormErr] = useState({});
   const [saving, setSaving] = useState(false);
   const [toast, setToast] = useState(null);
+
+  // เก็บฉบับร่างไว้ใน sessionStorage ทุกครั้งที่ฟอร์มเปลี่ยน — กันข้อมูลหายตอนรีเฟรช/เปลี่ยนหน้าโดยไม่ตั้งใจ
+  // จะล้างออกก็ต่อเมื่อกด "ยกเลิก" หรือสร้างคอร์สสำเร็จเท่านั้น (ดู handleCancel / handleSubmit)
+  useEffect(() => {
+    try {
+      sessionStorage.setItem(DRAFT_STORAGE_KEY, JSON.stringify(form));
+    } catch {
+      // เต็ม/ถูกบล็อก (private mode) — ปล่อยผ่าน ไม่ใช่ข้อมูลสำคัญระดับต้องแจ้งเตือนผู้ใช้
+    }
+  }, [form]);
 
   const notify = useCallback((msg, type = 'success') => setToast({ msg, type }), []);
 
@@ -182,6 +208,7 @@ export default function AdminCourseCreatePage() {
     try {
       const scheduleDays = slotsToScheduleDaysArray(form.scheduleSlots || {});
       await createCourse({ ...form, price: Number(form.price), scheduleDays });
+      clearDraftForm();
       navigate('/admin/courses', {
         state: { toast: { msg: 'สร้างคอร์สสำเร็จ และส่งการแจ้งเตือนไปยังติวเตอร์แล้ว', type: 'success' } },
       });
@@ -190,6 +217,11 @@ export default function AdminCourseCreatePage() {
     } finally {
       setSaving(false);
     }
+  }
+
+  function handleCancel() {
+    clearDraftForm();
+    navigate('/admin/courses');
   }
 
   return (
@@ -315,7 +347,7 @@ export default function AdminCourseCreatePage() {
       </div>
 
       <div className="cc-action-bar">
-        <button type="button" className="cm-btn-cancel" onClick={() => navigate('/admin/courses')}>ยกเลิก</button>
+        <button type="button" className="cm-btn-cancel" onClick={handleCancel}>ยกเลิก</button>
         <button type="submit" form="cc-create-form" className="cm-btn-primary" disabled={saving}>
           {saving ? 'กำลังสร้าง...' : '✓ สร้างคอร์สและแจ้งติวเตอร์'}
         </button>

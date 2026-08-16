@@ -10,6 +10,7 @@ import {
 import { getMyCourses } from '../services/tutorCourseService';
 import RefreshButton from '../components/RefreshButton';
 import DateInput from '../../../shared/components/DateInput';
+import { useConfirm } from '../../../shared/components/ConfirmDialog';
 import './TutorSchedulesPage.css';
 import './TutorExamSchedulePage.css';
 
@@ -104,6 +105,7 @@ function DateTime24Input({ value, onChange }) {
 
 export default function TutorExamSchedulePage() {
   const navigate = useNavigate();
+  const { confirm, confirmDialog } = useConfirm();
   const [exams, setExams] = useState([]);
   const [courses, setCourses] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -228,7 +230,13 @@ export default function TutorExamSchedulePage() {
   }
 
   async function handleDelete(examId) {
-    if (!window.confirm('ยืนยันลบข้อสอบนี้? การกระทำนี้ย้อนกลับไม่ได้')) return;
+    const ok = await confirm({
+      title: 'ยืนยันการลบข้อสอบ',
+      message: 'ลบข้อสอบนี้? การกระทำนี้ย้อนกลับไม่ได้',
+      confirmText: 'ลบข้อสอบ',
+      danger: true,
+    });
+    if (!ok) return;
     setBusyId(examId);
     try {
       await deleteExam(examId);
@@ -242,6 +250,8 @@ export default function TutorExamSchedulePage() {
 
   return (
     <div className="tes-page">
+      {confirmDialog}
+
       <div className="tutor-schedule-header">
         <div>
           <h1>ตารางสอบ</h1>

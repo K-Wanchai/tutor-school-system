@@ -9,6 +9,7 @@ import {
 } from '../services/adminEnrollmentService';
 import { resolveFileUrl } from '../../../shared/services/api';
 import { getUsername } from '../../../shared/utils/tokenUtils';
+import { useConfirm } from '../../../shared/components/ConfirmDialog';
 import './AdminEnrollmentManagementPage.css';
 
 // ── Labels & Badge Maps ─────────────────────────────────────────────────────
@@ -189,6 +190,7 @@ export default function AdminEnrollmentManagementPage() {
   const [detailEnrollment, setDetailEnrollment] = useState(null);
   const [actionPending, setActionPending] = useState(false);
   const [toast, setToast] = useState({ type: '', msg: '' });
+  const { confirm, confirmDialog } = useConfirm();
 
   function showToast(type, msg) {
     setToast({ type, msg });
@@ -266,14 +268,26 @@ export default function AdminEnrollmentManagementPage() {
           setActionPending(false);
           return;
         }
-        if (!window.confirm(`ยืนยันการปฏิเสธการสมัครเรียนของ "${enrollment.studentName}" ? ที่นั่งจะถูกคืนกลับเข้าระบบ`)) {
+        const okReject = await confirm({
+          title: 'ยืนยันการปฏิเสธการสมัคร',
+          message: `ปฏิเสธการสมัครเรียนของ "${enrollment.studentName}" ? ที่นั่งจะถูกคืนกลับเข้าระบบ`,
+          confirmText: 'ปฏิเสธการสมัคร',
+          danger: true,
+        });
+        if (!okReject) {
           setActionPending(false);
           return;
         }
         await rejectEnrollment(enrollment.id, note.trim());
         showToast('success', 'ปฏิเสธการสมัครเรียนและคืนที่นั่งแล้ว');
       } else if (action === 'cancel') {
-        if (!window.confirm(`ยืนยันการยกเลิกการสมัครเรียนของ "${enrollment.studentName}" ?`)) {
+        const okCancel = await confirm({
+          title: 'ยืนยันการยกเลิกการสมัคร',
+          message: `ยกเลิกการสมัครเรียนของ "${enrollment.studentName}" ?`,
+          confirmText: 'ยกเลิกการสมัคร',
+          danger: true,
+        });
+        if (!okCancel) {
           setActionPending(false);
           return;
         }
@@ -294,6 +308,7 @@ export default function AdminEnrollmentManagementPage() {
 
   return (
     <div className="em-page">
+      {confirmDialog}
 
       {/* ── Header ── */}
       <div className="em-header">

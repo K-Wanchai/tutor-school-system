@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { startExam, submitExam } from '../services/studentExamService';
+import { useConfirm } from '../../../shared/components/ConfirmDialog';
 import './StudentExamTakePage.css';
 
 function formatClock(totalSeconds) {
@@ -13,6 +14,7 @@ function formatClock(totalSeconds) {
 export default function StudentExamTakePage() {
   const { examId } = useParams();
   const navigate = useNavigate();
+  const { confirm, confirmDialog } = useConfirm();
 
   const [exam, setExam] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -103,7 +105,12 @@ export default function StudentExamTakePage() {
     if (!isAutoSubmit) {
       const unanswered = questions.filter((q) => q.isRequired && !answers[q.id]);
       if (unanswered.length > 0) {
-        const ok = window.confirm(`คุณยังไม่ได้ตอบ ${unanswered.length} ข้อที่บังคับตอบ ต้องการส่งคำตอบเลยหรือไม่?`);
+        const ok = await confirm({
+          title: 'ยืนยันการส่งคำตอบ',
+          message: `คุณยังไม่ได้ตอบ ${unanswered.length} ข้อที่บังคับตอบ ต้องการส่งคำตอบเลยหรือไม่?`,
+          confirmText: 'ส่งคำตอบ',
+          danger: true,
+        });
         if (!ok) return;
       }
     }
@@ -183,6 +190,8 @@ export default function StudentExamTakePage() {
 
   return (
     <div className="set-page">
+      {confirmDialog}
+
       <div className="set-exam-header">
         <div>
           <p className="set-exam-course">{exam?.courseName}</p>
