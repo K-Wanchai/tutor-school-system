@@ -41,6 +41,7 @@ export async function updateInstitutionProfile(form) {
     bankQrCode: form.bankQrCode || null,
     promptPayId: form.promptPayId || null,
     enrollmentPaymentDeadlineMinutes: Number(form.enrollmentPaymentDeadlineMinutes) || 15,
+    slipRevisionDeadlineMinutes: Number(form.slipRevisionDeadlineMinutes) || 15,
     allowedTimeSlots: encodeDaySlots(form.allowedTimeSlots || {}),
   };
   try {

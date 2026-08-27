@@ -4,6 +4,7 @@ import { getTutors } from '../services/adminTutorService';
 import { createCourse, getTutorWeeklyAvailability } from '../services/adminCourseService';
 import { DAY_LABEL_TH, EMPTY_COURSE_FORM, slotsToScheduleDaysArray, parseDaySlots, validateCourseForm, getScheduleWeekdays } from '../utils/courseScheduleUtils';
 import { ScheduleSection, TutorSelectField } from '../components/CourseScheduleFields';
+import { specializationToChips } from '../utils/tutorSubjects';
 import useInstitutionProfile from '../../../shared/hooks/useInstitutionProfile';
 import CalendarDateInput from '../../../shared/components/CalendarDateInput';
 import { todayLocalISODate, addDaysISO } from '../../../shared/utils/dateUtils';
@@ -76,6 +77,13 @@ function SummarySidebar({ form, tutor, checklist, doneCount }) {
             ? (tutor.firstName ? `${tutor.firstName} ${tutor.lastName ?? ''}`.trim() : tutor.email)
             : 'ยังไม่ได้เลือกติวเตอร์'}
         </div>
+        {tutor && specializationToChips(tutor.specialization).length > 0 && (
+          <div className="cm-tutor-subjects">
+            {specializationToChips(tutor.specialization).map(chip => (
+              <span key={chip} className="cm-tutor-subject-chip">{chip}</span>
+            ))}
+          </div>
+        )}
 
         {dayKeys.length > 0 && (
           <div className="cc-preview-days">

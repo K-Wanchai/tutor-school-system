@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { getTutors } from '../services/adminTutorService';
+import { getEnrollmentsByCourse } from '../services/adminEnrollmentService';
+import { getInstitutionProfile, updateInstitutionProfile } from '../services/adminSettingsService';
 import {
   deleteCourse,
   getCourseStats,
@@ -37,6 +39,124 @@ const STATUS_LABEL = {
   ONGOING:               { label: 'กำลังเรียน',     cls: 'cm-badge-ongoing' },
   COMPLETED:             { label: 'สอนจบแล้ว',      cls: 'cm-badge-completed' },
 };
+
+const ENROLLMENT_STATUS_LABEL = {
+  PENDING:   { label: 'รอดำเนินการ', cls: 'cm-badge-draft' },
+  APPROVED:  { label: 'อนุมัติแล้ว', cls: 'cm-badge-open' },
+  REJECTED:  { label: 'ปฏิเสธ',      cls: 'cm-badge-closed' },
+  CANCELLED: { label: 'ยกเลิก',      cls: 'cm-badge-closed' },
+  COMPLETED: { label: 'เรียนจบ',     cls: 'cm-badge-completed' },
+};
+
+function EnrollmentStatusBadge({ status }) {
+  const s = ENROLLMENT_STATUS_LABEL[status] || { label: status, cls: '' };
+  return <span className={`cm-badge ${s.cls}`}>{s.label}</span>;
+}
+
+const PAYMENT_STATUS_LABEL_TH = {
+  UNPAID: 'ยังไม่ชำระ',
+  PENDING_VERIFICATION: 'รอการยืนยันชำระเงิน',
+  PAID: 'ชำระแล้ว',
+  FAILED: 'ไม่สำเร็จ',
+};
+
+// แปลงข้อมูลสถาบันทั้งชุดให้เป็น payload สำหรับ PUT /institution-profile (endpoint ต้องการฟิลด์ครบทุกตัว)
+// ใช้ตอนแก้ไขแค่บางฟิลด์จากหน้านี้ เพื่อไม่ให้ฟิลด์อื่นที่ตั้งค่าไว้ในหน้าอื่นถูกเขียนทับ
+function toInstitutionPayload(profile, overrides = {}) {
+  return {
+    institutionName: profile?.institutionName || '',
+    address: profile?.address || '',
+    phoneNumber: profile?.phoneNumber || '',
+    email: profile?.email || '',
+    logoUrl: profile?.logoUrl || '',
+    bankName: profile?.bankName || '',
+    bankAccountName: profile?.bankAccountName || '',
+    bankAccountNumber: profile?.bankAccountNumber || '',
+    bankQrCode: profile?.bankQrCode || '',
+    promptPayId: profile?.promptPayId || '',
+    enrollmentPaymentDeadlineMinutes: profile?.enrollmentPaymentDeadlineMinutes ?? 15,
+    slipRevisionDeadlineMinutes: profile?.slipRevisionDeadlineMinutes ?? 15,
+    allowedTimeSlots: parseDaySlots(profile?.allowedTimeSlots),
+    ...overrides,
+  };
+}
+
+// ── Settings Modal (ช่วงเวลาที่อนุญาตให้จัดตารางสอน) ────────────────────────────
+
+function AllowedTimeSlotsModal({ onClose, onSaved, notify }) {
+  const [profile, setProfile] = useState(null);
+  const [form, setForm] = useState({ allowedTimeSlots: {} });
+  const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState('');
+  const [saving, setSaving] = useState(false);
+  const [saveError, setSaveError] = useState('');
+
+  useEffect(() => {
+    getInstitutionProfile()
+      .then((data) => {
+        setProfile(data);
+        setForm({ allowedTimeSlots: parseDaySlots(data?.allowedTimeSlots) });
+      })
+      .catch((err) => setLoadError(err.message || 'ไม่สามารถโหลดข้อมูลได้'))
+      .finally(() => setLoading(false));
+  }, []);
+
+  function fld(name, value) {
+    setForm((prev) => ({ ...prev, [name]: value }));
+  }
+
+  async function handleSave() {
+    setSaving(true);
+    setSaveError('');
+    try {
+      await updateInstitutionProfile(toInstitutionPayload(profile, { allowedTimeSlots: form.allowedTimeSlots }));
+      notify('บันทึกการตั้งค่าสำเร็จ');
+      onSaved();
+    } catch (err) {
+      setSaveError(err.message || 'ไม่สามารถบันทึกข้อมูลได้');
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return (
+    <div className="cm-overlay" onClick={onClose}>
+      <div className="cm-modal cm-modal-lg" onClick={(e) => e.stopPropagation()}>
+        <div className="cm-modal-header">
+          <h2>ช่วงเวลาที่อนุญาตให้จัดตารางสอน</h2>
+          <button className="cm-modal-close" onClick={onClose}>✕</button>
+        </div>
+        <div className="cm-form">
+          {loading && <div className="cm-loading">กำลังโหลดข้อมูล...</div>}
+          {!loading && loadError && <div className="cm-err">{loadError}</div>}
+          {!loading && !loadError && (
+            <>
+              <p className="cm-field-hint">
+                กำหนดช่วงเวลาที่อนุญาตให้จัดตารางสอนในแต่ละวัน วันที่ไม่ได้ตั้งค่าไว้จะไม่จำกัดเวลา
+                หากแอดมินลงตารางสอนของคอร์สนอกช่วงเวลานี้ ระบบจะแจ้งเตือนใต้ช่องเวลานั้นทันที
+              </p>
+              <ScheduleSection
+                form={form}
+                fld={fld}
+                slotsField="allowedTimeSlots"
+                icon="✅"
+                title="เวลาที่อนุญาตรายวัน"
+                hint="(ว่างไว้ = ไม่จำกัดเวลาวันนั้น)"
+              />
+              {saveError && <div className="cm-err">{saveError}</div>}
+              <div className="cm-form-actions">
+                <button type="button" className="cm-btn-cancel" onClick={onClose} disabled={saving}>ยกเลิก</button>
+                <button type="button" className="cm-btn-primary" disabled={saving} onClick={handleSave}>
+                  {saving ? 'กำลังบันทึก...' : 'บันทึกการตั้งค่า'}
+                </button>
+              </div>
+            </>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
 
 function StatusBadge({ status }) {
   const s = STATUS_LABEL[status] || { label: status, cls: '' };
@@ -80,6 +200,9 @@ export default function AdminCourseManagementPage() {
 
   const [showEdit, setShowEdit]       = useState(false);
   const [showDetail, setShowDetail]   = useState(false);
+  const [courseEnrollments, setCourseEnrollments] = useState([]);
+  const [enrollmentsLoading, setEnrollmentsLoading] = useState(false);
+  const [showTimeSettings, setShowTimeSettings] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
   const [selected, setSelected]       = useState(null);
   const [form, setForm]               = useState(EMPTY_COURSE_FORM);
@@ -209,7 +332,16 @@ export default function AdminCourseManagementPage() {
   }
 
   // ── DETAIL
-  function openDetail(c) { setSelected(c); setShowDetail(true); }
+  function openDetail(c) {
+    setSelected(c);
+    setShowDetail(true);
+    setCourseEnrollments([]);
+    setEnrollmentsLoading(true);
+    getEnrollmentsByCourse(c.id)
+      .then(list => setCourseEnrollments((list || []).filter(e => e.status === 'APPROVED' || e.status === 'PENDING')))
+      .catch(ex => notify(ex.message, 'error'))
+      .finally(() => setEnrollmentsLoading(false));
+  }
 
   return (
     <div className="cm-page">
@@ -221,7 +353,12 @@ export default function AdminCourseManagementPage() {
           <h1>จัดการคอร์สเรียน</h1>
           <p>สร้างและจัดการคอร์สเรียนทั้งหมด พร้อมส่งการแจ้งเตือนไปยังติวเตอร์</p>
         </div>
-        <button className="cm-btn-primary" onClick={() => navigate('/admin/courses/create')}>+ เพิ่มคอร์ส</button>
+        <div className="cm-header-actions">
+          <button className="cm-btn-ghost" onClick={() => setShowTimeSettings(true)}>
+            ⚙️ ช่วงเวลาที่อนุญาตให้จัดตารางสอน
+          </button>
+          <button className="cm-btn-primary" onClick={() => navigate('/admin/courses/create')}>+ เพิ่มคอร์ส</button>
+        </div>
       </div>
 
       {/* Stats */}
@@ -489,6 +626,41 @@ export default function AdminCourseManagementPage() {
                 </div>
               )}
 
+              {/* นักเรียนที่สมัครคอร์สนี้ */}
+              <div className="cm-enrolled-students">
+                <h4>นักเรียนที่สมัครคอร์สนี้ ({selected.enrolledCount ?? courseEnrollments.length} คน)</h4>
+                {enrollmentsLoading ? (
+                  <div className="cm-enrolled-loading">กำลังโหลดรายชื่อนักเรียน...</div>
+                ) : courseEnrollments.length === 0 ? (
+                  <div className="cm-enrolled-empty">ยังไม่มีนักเรียนสมัครคอร์สนี้</div>
+                ) : (
+                  <div className="cm-enrolled-table-wrap">
+                    <table className="cm-enrolled-table">
+                      <thead>
+                        <tr>
+                          <th>รหัสสมัคร</th>
+                          <th>ชื่อนักเรียน</th>
+                          <th>วันที่สมัคร</th>
+                          <th>สถานะ</th>
+                          <th>สถานะชำระเงิน</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {courseEnrollments.map(en => (
+                          <tr key={en.id}>
+                            <td>{en.enrollmentCode || '—'}</td>
+                            <td>{en.studentName || '—'}</td>
+                            <td>{en.enrollmentDate ? formatDate(en.enrollmentDate) : '—'}</td>
+                            <td><EnrollmentStatusBadge status={en.status} /></td>
+                            <td>{PAYMENT_STATUS_LABEL_TH[en.paymentStatus] || en.paymentStatus || '—'}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </div>
+
               {selected.lessons?.length > 0 && (
                 <div className="cm-curriculum">
                   <h4>หลักสูตร ({selected.lessons.length} บท)</h4>
@@ -515,6 +687,14 @@ export default function AdminCourseManagementPage() {
             </div>
           </div>
         </div>
+      )}
+
+      {showTimeSettings && (
+        <AllowedTimeSlotsModal
+          onClose={() => setShowTimeSettings(false)}
+          onSaved={() => setShowTimeSettings(false)}
+          notify={notify}
+        />
       )}
     </div>
   );

@@ -40,8 +40,9 @@ const EMPTY_FILTERS = { keyword: '', type: '' };
 
 function validateForm(f, isCreate) {
   const e = {};
-  // รหัสสถาบันแก้ไขไม่ได้หลังสร้างแล้ว จึงบังคับตรวจรูปแบบเฉพาะตอนสร้างเท่านั้น
-  if (isCreate && !/^\d{4}$/.test((f.institutionCode || '').trim())) {
+  // ไม่บังคับกรอก — กรอกเฉพาะกรณีที่รู้รหัสจริงของสถาบัน แต่ถ้ากรอกแล้วต้องตรงรูปแบบ (เฉพาะตอนสร้างเท่านั้น เพราะแก้ไขไม่ได้หลังสร้างแล้ว)
+  const code = (f.institutionCode || '').trim();
+  if (isCreate && code && !/^\d{4}$/.test(code)) {
     e.institutionCode = 'กรุณากรอกรหัสสถาบันเป็นตัวเลข 4 หลัก';
   }
   if (!f.institutionName?.trim()) e.institutionName = 'กรุณากรอกชื่อสถาบัน';
@@ -331,7 +332,7 @@ export default function ExamInstitutionManagePage() {
                 {sortedInstitutions.map((inst, idx) => (
                   <tr key={inst.id} className="eim-table-row">
                     <td>{idx + 1}</td>
-                    <td><span className="eim-code-badge">{inst.institutionCode}</span></td>
+                    <td>{inst.institutionCode ? <span className="eim-code-badge">{inst.institutionCode}</span> : <span className="eim-text-muted">—</span>}</td>
                     <td className="eim-text-name">{inst.institutionName}</td>
                     <td>{inst.institutionTypeLabel || TYPE_LABEL[inst.institutionType] || '—'}</td>
                     <td>{inst.province || '—'}</td>
@@ -367,11 +368,11 @@ export default function ExamInstitutionManagePage() {
             <form className="eim-form" onSubmit={handleSubmit}>
               {formMode === 'create' ? (
                 <div className="eim-field">
-                  <label>รหัสสถาบัน * <span className="eim-field-hint">(รหัสจริง 4 หลัก)</span></label>
+                  <label>รหัสสถาบัน <span className="eim-field-hint">(ไม่บังคับ — กรอกเฉพาะถ้าทราบรหัสจริง 4 หลัก)</span></label>
                   <input
                     value={form.institutionCode}
                     onChange={(e) => fld('institutionCode', e.target.value.replace(/\D/g, '').slice(0, 4))}
-                    placeholder="เช่น 0004"
+                    placeholder="เช่น 0004 (เว้นว่างได้)"
                     inputMode="numeric"
                     maxLength={4}
                   />
@@ -433,7 +434,7 @@ export default function ExamInstitutionManagePage() {
               </div>
 
               <div className="eim-field">
-                <label>ที่อยู่</label>
+                <label>รายละเอียดที่อยู่</label>
                 <textarea
                   rows={2}
                   value={form.address}

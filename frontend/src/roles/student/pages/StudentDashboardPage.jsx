@@ -15,7 +15,7 @@ const ENROLLMENT_STATUS_LABELS = {
 
 const PAYMENT_STATUS_LABELS = {
   UNPAID: 'ยังไม่ชำระเงิน',
-  PENDING_VERIFICATION: 'รอการยืนยันชำระเงิน',
+  PENDING_VERIFICATION: 'รอตรวจสอบสลิป',
   PAID: 'ชำระเงินแล้ว',
   FAILED: 'ชำระเงินไม่สำเร็จ',
 };

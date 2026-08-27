@@ -20,6 +20,7 @@ export default function StudentEnrollmentsPage() {
   const [errorMessage, setErrorMessage] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
   const [paymentDeadlineMinutes, setPaymentDeadlineMinutes] = useState(15);
+  const [detailCourse, setDetailCourse] = useState(null);
 
   // enrollments ที่ active (PENDING/APPROVED, ไม่ใช่ CANCELLED)
   // ซ่อนคอร์สที่สมัครแล้ว (ไม่ว่าจะรอชำระ/รอตรวจสอบ/อนุมัติแล้ว) ออกจากหน้าสมัครเรียน
@@ -170,7 +171,7 @@ export default function StudentEnrollmentsPage() {
       <div className="student-enroll-header">
         <div>
           <h1>การสมัครเรียน</h1>
-          <p>เลือกคอร์สที่เปิดรับสมัครจากฐานข้อมูลจริง</p>
+          <p>เลือกคอร์สที่ต้องการสมัครเรียน</p>
         </div>
       </div>
 
@@ -184,8 +185,7 @@ export default function StudentEnrollmentsPage() {
 
       {visibleCourses.length === 0 ? (
         <div className="student-enroll-empty">
-          <h2>ยังไม่มีคอร์สในระบบ</h2>
-          <p>เมื่อมีคอร์สจากฐานข้อมูล ระบบจะแสดงรายการที่หน้านี้</p>
+          <h2>ยังไม่มีคอร์สที่เปิดรับสมัคร</h2>
         </div>
       ) : (
         <div className="student-course-grid">
@@ -220,88 +220,115 @@ export default function StudentEnrollmentsPage() {
                   {course.description || 'ไม่มีรายละเอียดคอร์ส'}
                 </p>
 
-                <div className="student-course-info">
-                  <div>
-                    <span>ผู้สอน</span>
-                    <strong>{course.teacherName || '-'}</strong>
-                  </div>
+                <div className="student-enroll-card-actions">
+                  <button
+                    className="student-detail-btn"
+                    onClick={() => setDetailCourse(course)}
+                  >
+                    ดูรายละเอียดคอร์ส
+                  </button>
 
-                  <div>
-                    <span>ราคา</span>
-                    <strong>{formatPrice(course.price)}</strong>
-                  </div>
-
-                  <div>
-                    <span>จำนวนชั่วโมง</span>
-                    <strong>
-                      {course.totalHours != null
-                        ? `${course.totalHours} ชั่วโมง`
-                        : '-'}
-                    </strong>
-                  </div>
-
-                  <div>
-                    <span>จำนวนที่นั่ง</span>
-                    <strong>
-                      {course.seatLimit != null
-                        ? `${course.enrolledCount || 0}/${course.seatLimit} คน`
-                        : '-'}
-                    </strong>
-                  </div>
-
-                  <div>
-                    <span>ช่วงรับสมัคร</span>
-                    <strong>
-                      {formatDate(course.registrationStartDate)} -{' '}
-                      {formatDate(course.registrationEndDate)}
-                    </strong>
-                  </div>
-
-                  <div>
-                    <span>วันเริ่มคอร์ส</span>
-                    <strong>{formatDate(course.courseStartDate)}</strong>
-                  </div>
-
-                  <div className="student-course-info-full">
-                    <span>ตารางเรียน</span>
-                    <strong className="schedule-multiline">{formatSchedule(course)}</strong>
-                  </div>
+                  <button
+                    className="student-enroll-btn"
+                    disabled={disabled}
+                    onClick={() => handleEnroll(course.id)}
+                  >
+                    {enrollingId === course.id
+                      ? 'กำลังสมัคร...'
+                      : isFull
+                        ? 'ที่นั่งเต็ม'
+                        : isOpen
+                          ? 'สมัครเรียน'
+                          : 'ยังไม่เปิดรับสมัคร'}
+                  </button>
                 </div>
-
-                {course.lessons && course.lessons.length > 0 && (
-                  <div className="student-course-lessons">
-                    <span className="student-course-lessons-title">
-                      บทเรียน ({course.lessons.length} บท)
-                    </span>
-                    <ul>
-                      {[...course.lessons]
-                        .sort((a, b) => (a.lessonOrder || 0) - (b.lessonOrder || 0))
-                        .map((lesson) => (
-                          <li key={lesson.id}>
-                            <strong>บทที่ {lesson.lessonOrder}: {lesson.lessonTitle}</strong>
-                            {lesson.lessonContent && <p>{lesson.lessonContent}</p>}
-                          </li>
-                        ))}
-                    </ul>
-                  </div>
-                )}
-
-                <button
-                  className="student-enroll-btn"
-                  disabled={disabled}
-                  onClick={() => handleEnroll(course.id)}
-                >
-                  {enrollingId === course.id
-                    ? 'กำลังสมัคร...'
-                    : isFull
-                      ? 'ที่นั่งเต็ม'
-                      : isOpen
-                        ? 'สมัครเรียน'
-                        : 'ยังไม่เปิดรับสมัคร'}
-                </button>
               </div>
             );
           })}
+        </div>
+      )}
+
+      {detailCourse && (
+        <div className="student-detail-overlay" onClick={() => setDetailCourse(null)}>
+          <div className="student-detail-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="student-detail-modal-header">
+              <div>
+                <span className="student-course-code">{detailCourse.courseCode || 'COURSE'}</span>
+                <h2>{detailCourse.courseName || '-'}</h2>
+              </div>
+              <button className="student-detail-close" onClick={() => setDetailCourse(null)} aria-label="ปิด">✕</button>
+            </div>
+
+            <p className="student-course-desc">
+              {detailCourse.description || 'ไม่มีรายละเอียดคอร์ส'}
+            </p>
+
+            <div className="student-course-info">
+              <div>
+                <span>ผู้สอน</span>
+                <strong>{detailCourse.teacherName || '-'}</strong>
+              </div>
+
+              <div>
+                <span>ราคา</span>
+                <strong>{formatPrice(detailCourse.price)}</strong>
+              </div>
+
+              <div>
+                <span>จำนวนชั่วโมง</span>
+                <strong>
+                  {detailCourse.totalHours != null
+                    ? `${detailCourse.totalHours} ชั่วโมง`
+                    : '-'}
+                </strong>
+              </div>
+
+              <div>
+                <span>จำนวนที่นั่ง</span>
+                <strong>
+                  {detailCourse.seatLimit != null
+                    ? `${detailCourse.enrolledCount || 0}/${detailCourse.seatLimit} คน`
+                    : '-'}
+                </strong>
+              </div>
+
+              <div>
+                <span>ช่วงรับสมัคร</span>
+                <strong>
+                  {formatDate(detailCourse.registrationStartDate)} -{' '}
+                  {formatDate(detailCourse.registrationEndDate)}
+                </strong>
+              </div>
+
+              <div>
+                <span>วันเริ่มคอร์ส</span>
+                <strong>{formatDate(detailCourse.courseStartDate)}</strong>
+              </div>
+
+              <div className="student-course-info-full">
+                <span>ตารางเรียน</span>
+                <strong className="schedule-multiline">{formatSchedule(detailCourse)}</strong>
+              </div>
+            </div>
+
+            {detailCourse.lessons && detailCourse.lessons.length > 0 && (
+              <div className="student-course-lessons">
+                <span className="student-course-lessons-title">
+                  บทเรียน ({detailCourse.lessons.length} บท)
+                </span>
+                <ul>
+                  {[...detailCourse.lessons]
+                    .sort((a, b) => (a.lessonOrder || 0) - (b.lessonOrder || 0))
+                    .map((lesson) => (
+                      <li key={lesson.id}>
+                        <strong>บทที่ {lesson.lessonOrder}: {lesson.lessonTitle}</strong>
+                        {lesson.lessonContent && <p>{lesson.lessonContent}</p>}
+                      </li>
+                    ))}
+                </ul>
+              </div>
+            )}
+          </div>
         </div>
       )}
     </div>

@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback, useMemo } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import generatePayload from 'promptpay-qr';
 import QRCode from 'qrcode';
@@ -27,9 +27,21 @@ function useCountdown(deadline) {
 }
 
 /* ── Countdown badge ── */
-function CountdownBadge({ deadline, onExpired }) {
+function CountdownBadge({ deadline, onExpired, label = 'ชำระภายใน' }) {
   const secs = useCountdown(deadline);
-  useEffect(() => { if (secs === 0 && onExpired) onExpired(); }, [secs, onExpired]);
+  // เก็บ onExpired ไว้ใน ref เพื่อไม่ให้ effect ยิงซ้ำทุกครั้งที่ parent re-render (parent ส่ง callback ใหม่ทุกครั้ง)
+  // และยิงแค่ครั้งเดียวต่อ 1 การหมดเวลา (ไม่ใช่ทุกครั้งที่ deps เปลี่ยนขณะ secs ยังเป็น 0 ค้างอยู่)
+  const onExpiredRef = useRef(onExpired);
+  useEffect(() => { onExpiredRef.current = onExpired; }, [onExpired]);
+  const firedRef = useRef(false);
+  useEffect(() => {
+    if (secs === 0 && !firedRef.current) {
+      firedRef.current = true;
+      onExpiredRef.current?.();
+    } else if (secs > 0) {
+      firedRef.current = false;
+    }
+  }, [secs]);
   if (secs === null || secs === undefined) return null;
   const m = String(Math.floor(secs / 60)).padStart(2, '0');
   const s = String(secs % 60).padStart(2, '0');
@@ -38,7 +50,7 @@ function CountdownBadge({ deadline, onExpired }) {
       <svg viewBox="0 0 20 20" fill="currentColor" width="13" height="13">
         <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clipRule="evenodd" />
       </svg>
-      {secs === 0 ? 'หมดเวลา...' : `ชำระภายใน ${m}:${s}`}
+      {secs === 0 ? 'หมดเวลา...' : `${label} ${m}:${s}`}
     </div>
   );
 }
@@ -60,7 +72,7 @@ export default function StudentPaymentsPage() {
   const [copied, setCopied] = useState('');
   const [message, setMessage] = useState({ type: '', text: '' });
 
-  useEffect(() => { loadAll(); }, []);
+  useEffect(() => { loadAll(true); }, []);
 
   useEffect(() => {
     function onKey(e) { if (e.key === 'Escape') { setDetailModal(null); setPayModal(null); setBulkModal(false); } }
@@ -68,9 +80,11 @@ export default function StudentPaymentsPage() {
     return () => window.removeEventListener('keydown', onKey);
   }, []);
 
-  async function loadAll() {
+  // showLoading: true เฉพาะตอนโหลดครั้งแรก — reload แบบเงียบๆ (เช่นหลังหมดเวลานับถอยหลัง) ไม่ต้องขึ้น
+  // สปินเนอร์เต็มหน้าจอทับ UI เดิม ไม่งั้นจะดูเหมือนหน้าเว็บกระพริบรีเฟรชซ้ำๆ
+  async function loadAll(showLoading = false) {
     try {
-      setLoading(true);
+      if (showLoading) setLoading(true);
       const [data, instData] = await Promise.all([
         getMyEnrollments().catch(() => []),
         api.get('/institution-profile').then((r) => r.data.data).catch(() => null),
@@ -226,7 +240,7 @@ export default function StudentPaymentsPage() {
       {message.text && <div className={`pay-alert ${message.type}`}>{message.text}</div>}
 
       {enrollments.length === 0 ? (
-        <div className="pay-empty"><h2>ไม่มีรายการรอชำระเงิน</h2><p>กดสมัครเรียนจากหน้าคอร์ส แล้วมาชำระเงินที่นี่ภายใน {institution?.enrollmentPaymentDeadlineMinutes ?? 15} นาที</p></div>
+        <div className="pay-empty"><h2>ไม่มีรายการรอชำระเงิน</h2><p>เลือกคอร์สที่ต้องการและมาชำระเงินที่หน้านี้ภายใน {institution?.enrollmentPaymentDeadlineMinutes ?? 15} นาที</p></div>
       ) : (
         <div className="pay-list">
           {enrollments.map((en) => (
@@ -235,11 +249,15 @@ export default function StudentPaymentsPage() {
                 <div className="pay-card-title">
                   <h2>{en.courseName}</h2>
                 </div>
-                {en.paymentStatus === 'UNPAID' && en.paymentDeadline ? (
-                  <CountdownBadge deadline={en.paymentDeadline} onExpired={handleExpired} />
+                {(en.paymentStatus === 'UNPAID' || en.paymentStatus === 'FAILED') && en.paymentDeadline ? (
+                  <CountdownBadge
+                    deadline={en.paymentDeadline}
+                    onExpired={handleExpired}
+                    label={en.paymentStatus === 'FAILED' ? 'แก้ไขสลิปภายใน' : 'ชำระภายใน'}
+                  />
                 ) : en.paymentStatus === 'PENDING_VERIFICATION' ? (
                   <span className="pay-countdown" style={{ background: '#f0fdf4', borderColor: '#bbf7d0', color: '#166534' }}>
-                    รอการยืนยันชำระเงิน
+                    รอตรวจสอบสลิป
                   </span>
                 ) : null}
               </div>
@@ -527,22 +545,6 @@ function CourseDetailBody({ detail, compact }) {
         <div><span>วันเริ่มเรียน</span><strong>{detail.courseStartDate ? new Date(detail.courseStartDate).toLocaleDateString('th-TH', { year: 'numeric', month: 'long', day: 'numeric' }) : '-'}</strong></div>
       </div>
       {!compact && detail.description && <div className="pay-modal-desc"><p>{detail.description}</p></div>}
-      <div className="pay-modal-section">
-        <h3 className="pay-modal-section-title">บทเรียน ({detail.lessons?.length || 0} บท)</h3>
-        {detail.lessons?.length > 0 ? (
-          <ul className="pay-modal-list">{detail.lessons.map((l) => (
-            <li key={l.id}><span className="pay-modal-order">บทที่ {l.lessonOrder}</span><div><strong>{l.lessonTitle}</strong>{l.lessonContent && <p>{l.lessonContent}</p>}</div></li>
-          ))}</ul>
-        ) : <p className="pay-modal-empty">ยังไม่มีบทเรียน</p>}
-      </div>
-      <div className="pay-modal-section">
-        <h3 className="pay-modal-section-title">การทดสอบ ({detail.tests?.length || 0} รายการ)</h3>
-        {detail.tests?.length > 0 ? (
-          <ul className="pay-modal-list">{detail.tests.map((t) => (
-            <li key={t.id}><span className="pay-modal-order">ครั้งที่ {t.testOrder}</span><div><strong>{t.testTitle}</strong>{t.testDescription && <p>{t.testDescription}</p>}</div></li>
-          ))}</ul>
-        ) : <p className="pay-modal-empty">ยังไม่มีการทดสอบ</p>}
-      </div>
     </div>
   );
 }

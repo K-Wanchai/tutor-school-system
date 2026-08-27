@@ -7,10 +7,143 @@ import {
   rejectEnrollment,
   cancelEnrollment,
 } from '../services/adminEnrollmentService';
+import { getInstitutionProfile, updateInstitutionProfile } from '../services/adminSettingsService';
+import { parseDaySlots } from '../utils/courseScheduleUtils';
 import { resolveFileUrl } from '../../../shared/services/api';
 import { getUsername } from '../../../shared/utils/tokenUtils';
 import { useConfirm } from '../../../shared/components/ConfirmDialog';
 import './AdminEnrollmentManagementPage.css';
+
+// แปลงข้อมูลสถาบันทั้งชุดให้เป็น payload สำหรับ PUT /institution-profile (endpoint ต้องการฟิลด์ครบทุกตัว)
+// ใช้ตอนแก้ไขแค่บางฟิลด์จากหน้านี้ เพื่อไม่ให้ฟิลด์อื่นที่ตั้งค่าไว้ในหน้าอื่นถูกเขียนทับ
+function toInstitutionPayload(profile, overrides = {}) {
+  return {
+    institutionName: profile?.institutionName || '',
+    address: profile?.address || '',
+    phoneNumber: profile?.phoneNumber || '',
+    email: profile?.email || '',
+    logoUrl: profile?.logoUrl || '',
+    bankName: profile?.bankName || '',
+    bankAccountName: profile?.bankAccountName || '',
+    bankAccountNumber: profile?.bankAccountNumber || '',
+    bankQrCode: profile?.bankQrCode || '',
+    promptPayId: profile?.promptPayId || '',
+    enrollmentPaymentDeadlineMinutes: profile?.enrollmentPaymentDeadlineMinutes ?? 15,
+    slipRevisionDeadlineMinutes: profile?.slipRevisionDeadlineMinutes ?? 15,
+    allowedTimeSlots: parseDaySlots(profile?.allowedTimeSlots),
+    ...overrides,
+  };
+}
+
+function validDeadline(n) {
+  return Number.isInteger(n) && n >= 1 && n <= 1440;
+}
+
+// ── Settings Modal (ระยะเวลาชำระเงินก่อนที่นั่งถูกปล่อยคืน + ระยะเวลาแก้ไขสลิป) ──
+
+function EnrollmentSettingsModal({ onClose, onSaved, notify }) {
+  const [profile, setProfile] = useState(null);
+  const [deadline, setDeadline] = useState('');
+  const [revisionDeadline, setRevisionDeadline] = useState('');
+  const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState('');
+  const [saving, setSaving] = useState(false);
+  const [saveError, setSaveError] = useState('');
+
+  useEffect(() => {
+    getInstitutionProfile()
+      .then((data) => {
+        setProfile(data);
+        setDeadline(String(data?.enrollmentPaymentDeadlineMinutes ?? 15));
+        setRevisionDeadline(String(data?.slipRevisionDeadlineMinutes ?? 15));
+      })
+      .catch((err) => setLoadError(err.message || 'ไม่สามารถโหลดข้อมูลได้'))
+      .finally(() => setLoading(false));
+  }, []);
+
+  async function handleSave() {
+    const n = Number(deadline);
+    const rn = Number(revisionDeadline);
+    if (!deadline || !validDeadline(n)) {
+      setSaveError('กรุณากรอกระยะเวลาชำระเงินเป็นจำนวนเต็มระหว่าง 1-1440 นาที');
+      return;
+    }
+    if (!revisionDeadline || !validDeadline(rn)) {
+      setSaveError('กรุณากรอกระยะเวลาแก้ไขสลิปเป็นจำนวนเต็มระหว่าง 1-1440 นาที');
+      return;
+    }
+    setSaving(true);
+    setSaveError('');
+    try {
+      await updateInstitutionProfile(toInstitutionPayload(profile, {
+        enrollmentPaymentDeadlineMinutes: n,
+        slipRevisionDeadlineMinutes: rn,
+      }));
+      notify('success', 'บันทึกการตั้งค่าสำเร็จ');
+      onSaved();
+    } catch (err) {
+      setSaveError(err.message || 'ไม่สามารถบันทึกข้อมูลได้');
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return (
+    <div className="em-modal-overlay" onClick={onClose}>
+      <div className="em-modal em-modal--sm" onClick={(e) => e.stopPropagation()}>
+        <div className="em-modal-header">
+          <div>
+            <h2 className="em-modal-title">การสมัครเรียนและการชำระเงิน</h2>
+          </div>
+          <button className="em-modal-close" onClick={onClose} aria-label="ปิด">
+            <svg viewBox="0 0 20 20" fill="currentColor" width="18" height="18">
+              <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
+            </svg>
+          </button>
+        </div>
+        <div className="em-modal-body">
+          {loading && <p className="em-empty-text">กำลังโหลดข้อมูล...</p>}
+          {!loading && loadError && <p className="em-form-error">{loadError}</p>}
+          {!loading && !loadError && (
+            <>
+              <div className="em-settings-field">
+                <label className="em-form-label">ระยะเวลาชำระเงิน (นาที)</label>
+                <input
+                  type="number"
+                  className="em-form-input"
+                  value={deadline}
+                  onChange={(e) => { setDeadline(e.target.value); setSaveError(''); }}
+                />
+                <p className="em-hint">
+                  นับตั้งแต่นักเรียนกดสมัครเรียน หากไม่ชำระเงินภายในเวลานี้ ที่นั่งจะถูกยกเลิกอัตโนมัติ
+                </p>
+              </div>
+              <div className="em-settings-field">
+                <label className="em-form-label">ระยะเวลาแก้ไขสลิป (นาที)</label>
+                <input
+                  type="number"
+                  className="em-form-input"
+                  value={revisionDeadline}
+                  onChange={(e) => { setRevisionDeadline(e.target.value); setSaveError(''); }}
+                />
+                <p className="em-hint">
+                  นับตั้งแต่แอดมินตีกลับให้นักเรียนแก้ไขสลิป หากไม่อัปโหลดสลิปใหม่ภายในเวลานี้ ใบสมัครจะถูกยกเลิกและคืนที่นั่งอัตโนมัติ
+                </p>
+              </div>
+              {saveError && <p className="em-form-error">{saveError}</p>}
+              <div className="em-settings-actions">
+                <button className="em-btn em-btn--ghost" onClick={onClose} disabled={saving}>ยกเลิก</button>
+                <button className="em-btn em-btn--info" onClick={handleSave} disabled={saving}>
+                  {saving ? 'กำลังบันทึก...' : 'บันทึกการตั้งค่า'}
+                </button>
+              </div>
+            </>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
 
 // ── Labels & Badge Maps ─────────────────────────────────────────────────────
 
@@ -190,6 +323,7 @@ export default function AdminEnrollmentManagementPage() {
   const [detailEnrollment, setDetailEnrollment] = useState(null);
   const [actionPending, setActionPending] = useState(false);
   const [toast, setToast] = useState({ type: '', msg: '' });
+  const [showSettings, setShowSettings] = useState(false);
   const { confirm, confirmDialog } = useConfirm();
 
   function showToast(type, msg) {
@@ -316,15 +450,20 @@ export default function AdminEnrollmentManagementPage() {
           <h1 className="em-title">การสมัครเรียน</h1>
           <p className="em-subtitle">ตรวจสอบใบสมัครที่ส่งสลิปการชำระเงินแล้ว — อนุมัติ ส่งกลับให้นักเรียนแก้ไขสลิปหากไม่ถูกต้อง หรือปฏิเสธการสมัคร (ที่นั่งจะถูกคืนกลับเข้าระบบอัตโนมัติ)</p>
         </div>
-        <div className="em-search-wrap">
-          <svg className="em-search-icon" viewBox="0 0 20 20" fill="currentColor" width="15" height="15">
-            <path fillRule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clipRule="evenodd" />
-          </svg>
-          <input
-            type="text" className="em-search-input"
-            placeholder="ค้นหาชื่อนักเรียน, คอร์ส, รหัสการสมัคร..."
-            value={searchTerm} onChange={handleSearchChange}
-          />
+        <div className="em-header-actions">
+          <button className="em-btn em-btn--ghost" onClick={() => setShowSettings(true)}>
+            ⚙️ ตั้งค่าการสมัครเรียนและการชำระเงิน
+          </button>
+          <div className="em-search-wrap">
+            <svg className="em-search-icon" viewBox="0 0 20 20" fill="currentColor" width="15" height="15">
+              <path fillRule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clipRule="evenodd" />
+            </svg>
+            <input
+              type="text" className="em-search-input"
+              placeholder="ค้นหาชื่อนักเรียน, คอร์ส, รหัสการสมัคร..."
+              value={searchTerm} onChange={handleSearchChange}
+            />
+          </div>
         </div>
       </div>
 
@@ -435,6 +574,14 @@ export default function AdminEnrollmentManagementPage() {
           onClose={() => setDetailEnrollment(null)}
           onAction={handleAction}
           actionPending={actionPending}
+        />
+      )}
+
+      {showSettings && (
+        <EnrollmentSettingsModal
+          onClose={() => setShowSettings(false)}
+          onSaved={() => setShowSettings(false)}
+          notify={showToast}
         />
       )}
     </div>

@@ -9,7 +9,7 @@ import {
 } from '../services/tutorExamService';
 import { getMyCourses } from '../services/tutorCourseService';
 import RefreshButton from '../components/RefreshButton';
-import DateInput from '../../../shared/components/DateInput';
+import CalendarDateInput from '../../../shared/components/CalendarDateInput';
 import { useConfirm } from '../../../shared/components/ConfirmDialog';
 import './TutorSchedulesPage.css';
 import './TutorExamSchedulePage.css';
@@ -28,17 +28,14 @@ const FILTERS = [
   { key: 'CLOSED', label: 'ปิดแล้ว' },
 ];
 
+const EXAM_TYPE_OPTIONS = ['ข้อสอบก่อนเรียน', 'ข้อสอบหลังเรียน'];
+
 const EMPTY_FORM = {
   courseId: '',
-  lessonId: '',
   title: '',
   description: '',
   passingScore: '',
   startTime: '',
-  endTime: '',
-  durationMinutes: '',
-  allowMultipleAttempts: false,
-  maxAttempts: '',
 };
 
 function safeText(value) {
@@ -72,7 +69,7 @@ const MINUTES_5 = Array.from({ length: 12 }, (_, i) => String(i * 5).padStart(2,
 
 // เลือกวัน-เวลาแบบ 24 ชม. เอง แทน <input type="datetime-local"> เพราะ picker ของเบราว์เซอร์
 // จะโชว์ AM/PM ตาม locale ของเครื่อง ควบคุมให้เป็น 24 ชม. เสมอไม่ได้ผ่าน HTML attribute
-function DateTime24Input({ value, onChange }) {
+function DateTime24Input({ value, onChange, minDate }) {
   const [datePart, timePart] = value ? value.split('T') : ['', ''];
   const [hour, minute] = timePart ? timePart.split(':') : ['', ''];
 
@@ -86,9 +83,10 @@ function DateTime24Input({ value, onChange }) {
 
   return (
     <div className="tes-datetime24">
-      <DateInput
+      <CalendarDateInput
         value={datePart}
         onChange={(v) => emit(v, hour || '00', minute || '00')}
+        minDate={minDate}
       />
       <select value={hour} onChange={(e) => emit(datePart, e.target.value, minute || '00')}>
         <option value="">ชม.</option>
@@ -157,7 +155,6 @@ export default function TutorExamSchedulePage() {
   }, [exams, filter]);
 
   const selectedCourse = courses.find((c) => String(c.id) === String(form.courseId));
-  const lessonsOfSelectedCourse = selectedCourse?.lessons || [];
 
   function openCreate() {
     setForm(EMPTY_FORM);
@@ -166,16 +163,23 @@ export default function TutorExamSchedulePage() {
   }
 
   function fld(key, value) {
-    setForm((f) => ({ ...f, [key]: value, ...(key === 'courseId' ? { lessonId: '' } : {}) }));
+    setForm((f) => ({ ...f, [key]: value }));
   }
 
   async function handleCreate(e) {
     e.preventDefault();
     if (!form.courseId) return setFormErr('กรุณาเลือกคอร์ส');
-    if (!form.lessonId) return setFormErr('กรุณาเลือกบทเรียน — ข้อสอบต้องผูกกับบทเรียนเสมอ');
-    if (!form.title.trim()) return setFormErr('กรุณากรอกชื่อข้อสอบ');
+    if (!form.title) return setFormErr('กรุณาเลือกประเภทข้อสอบ');
     if (form.passingScore === '' || Number.isNaN(Number(form.passingScore))) {
       return setFormErr('กรุณากรอกคะแนนผ่าน');
+    }
+    // กันไว้อีกชั้นนอกจากปฏิทินที่ปิดกั้นวันที่เลือกไม่ได้อยู่แล้ว (minDate) — เผื่อกรณีเลือกวันที่ไว้ก่อน
+    // ค่อยเปลี่ยนคอร์สทีหลัง ทำให้วันที่เดิมกลายเป็นก่อนวันเปิดเรียนของคอร์สใหม่
+    if (form.startTime && selectedCourse?.courseStartDate) {
+      const [startDatePart] = form.startTime.split('T');
+      if (startDatePart < selectedCourse.courseStartDate) {
+        return setFormErr('วันที่เปิดสอบต้องไม่ก่อนวันที่เปิดเรียนของคอร์ส');
+      }
     }
 
     setSaving(true);
@@ -183,15 +187,10 @@ export default function TutorExamSchedulePage() {
     try {
       const created = await createExam({
         courseId: Number(form.courseId),
-        lessonId: Number(form.lessonId),
-        title: form.title.trim(),
+        title: form.title,
         description: form.description.trim() || null,
         passingScore: Number(form.passingScore),
         startTime: toIsoOrNull(form.startTime),
-        endTime: toIsoOrNull(form.endTime),
-        durationMinutes: form.durationMinutes ? Number(form.durationMinutes) : null,
-        allowMultipleAttempts: form.allowMultipleAttempts,
-        maxAttempts: form.maxAttempts ? Number(form.maxAttempts) : null,
         shuffleQuestions: false,
         showScoreAfterSubmit: true,
         showCorrectAnswersAfterSubmit: false,
@@ -255,7 +254,7 @@ export default function TutorExamSchedulePage() {
       <div className="tutor-schedule-header">
         <div>
           <h1>ตารางสอบ</h1>
-          <p>สร้างและจัดการข้อสอบของทุกคอร์สที่คุณสอน — ข้อสอบทุกชุดผูกกับบทเรียนที่สอบหลังเรียนจบ</p>
+          <p>สร้างและจัดการข้อสอบของทุกคอร์สที่คุณสอน</p>
         </div>
         <div className="tes-header-actions">
           <button type="button" className="tes-btn-primary" onClick={openCreate}>+ สร้างข้อสอบ</button>
@@ -296,7 +295,7 @@ export default function TutorExamSchedulePage() {
         {!loading && !error && filtered.length === 0 && (
           <div className="tutor-schedule-empty">
             <h2>ยังไม่มีข้อสอบ</h2>
-            <p>กด "+ สร้างข้อสอบ" เพื่อสร้างข้อสอบชุดแรกให้บทเรียนของคุณ</p>
+            <p>กด "+ สร้างข้อสอบ" เพื่อสร้างข้อสอบชุดแรกของคุณ</p>
           </div>
         )}
 
@@ -385,7 +384,7 @@ export default function TutorExamSchedulePage() {
         <div className="tes-modal-backdrop" onClick={() => setShowCreate(false)}>
           <div className="tes-modal" onClick={(e) => e.stopPropagation()}>
             <div className="tes-modal-header">
-              <h2>สร้างข้อสอบใหม่</h2>
+              <h2>สร้างข้อสอบ</h2>
               <button type="button" onClick={() => setShowCreate(false)}>✕</button>
             </div>
 
@@ -401,25 +400,13 @@ export default function TutorExamSchedulePage() {
               </label>
 
               <label>
-                บทเรียน * <span className="tes-lbl-hint">(สอบหลังเรียนจบบทนี้)</span>
-                <select
-                  value={form.lessonId}
-                  onChange={(e) => fld('lessonId', e.target.value)}
-                  disabled={!form.courseId}
-                >
-                  <option value="">— เลือกบทเรียน —</option>
-                  {lessonsOfSelectedCourse.map((l) => (
-                    <option key={l.id} value={l.id}>บทที่ {l.lessonOrder}: {l.lessonTitle}</option>
+                ประเภทข้อสอบ *
+                <select value={form.title} onChange={(e) => fld('title', e.target.value)}>
+                  <option value="">— เลือกประเภทข้อสอบ —</option>
+                  {EXAM_TYPE_OPTIONS.map((t) => (
+                    <option key={t} value={t}>{t}</option>
                   ))}
                 </select>
-                {form.courseId && lessonsOfSelectedCourse.length === 0 && (
-                  <span className="tes-lbl-hint">คอร์สนี้ยังไม่มีบทเรียน กรุณาเพิ่มบทเรียนก่อน</span>
-                )}
-              </label>
-
-              <label>
-                ชื่อข้อสอบ *
-                <input value={form.title} onChange={(e) => fld('title', e.target.value)} placeholder="เช่น แบบทดสอบท้ายบทที่ 1" />
               </label>
 
               <label>
@@ -427,57 +414,26 @@ export default function TutorExamSchedulePage() {
                 <textarea value={form.description} onChange={(e) => fld('description', e.target.value)} />
               </label>
 
-              <div className="tes-form-row">
-                <label>
-                  คะแนนผ่าน *
-                  <input
-                    type="number" min="0" step="0.5"
-                    value={form.passingScore}
-                    onChange={(e) => fld('passingScore', e.target.value)}
-                  />
-                </label>
-
-                <label>
-                  ระยะเวลาทำข้อสอบ (นาที)
-                  <input
-                    type="number" min="1"
-                    value={form.durationMinutes}
-                    onChange={(e) => fld('durationMinutes', e.target.value)}
-                  />
-                </label>
-              </div>
-
-              <div className="tes-form-row">
-                <label>
-                  เวลาเปิดสอบ <span className="tes-lbl-hint">(24 ชม.)</span>
-                  <DateTime24Input value={form.startTime} onChange={(v) => fld('startTime', v)} />
-                </label>
-
-                <label>
-                  เวลาปิดสอบ <span className="tes-lbl-hint">(24 ชม.)</span>
-                  <DateTime24Input value={form.endTime} onChange={(v) => fld('endTime', v)} />
-                </label>
-              </div>
-
-              <label className="tes-checkbox-row">
+              <label>
+                คะแนนเต็ม *
                 <input
-                  type="checkbox"
-                  checked={form.allowMultipleAttempts}
-                  onChange={(e) => fld('allowMultipleAttempts', e.target.checked)}
+                  type="number" min="0" step="0.5"
+                  value={form.passingScore}
+                  onChange={(e) => fld('passingScore', e.target.value)}
                 />
-                อนุญาตให้ทำข้อสอบซ้ำได้หลายครั้ง
               </label>
 
-              {form.allowMultipleAttempts && (
-                <label>
-                  จำนวนครั้งสูงสุด
-                  <input
-                    type="number" min="1"
-                    value={form.maxAttempts}
-                    onChange={(e) => fld('maxAttempts', e.target.value)}
-                  />
-                </label>
-              )}
+              <label>
+                เวลาเปิดสอบ <span className="tes-lbl-hint">(24 ชม.)</span>
+                <DateTime24Input
+                  value={form.startTime}
+                  onChange={(v) => fld('startTime', v)}
+                  minDate={selectedCourse?.courseStartDate}
+                />
+                {selectedCourse?.courseStartDate && (
+                  <span className="tes-lbl-hint">เลือกได้ตั้งแต่วันที่เปิดเรียนของคอร์ส ({selectedCourse.courseStartDate}) เป็นต้นไป</span>
+                )}
+              </label>
 
               {formErr && <div className="tes-form-err">{formErr}</div>}
 

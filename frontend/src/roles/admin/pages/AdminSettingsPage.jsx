@@ -6,7 +6,6 @@ import {
   uploadInstitutionImage,
 } from '../services/adminSettingsService';
 import { parseDaySlots } from '../utils/courseScheduleUtils';
-import { ScheduleSection } from '../components/CourseScheduleFields';
 import './AdminCourseManagementPage.css';
 import './AdminSettingsPage.css';
 
@@ -29,6 +28,7 @@ function toForm(profile) {
     bankQrCode: profile?.bankQrCode || '',
     promptPayId: profile?.promptPayId || '',
     enrollmentPaymentDeadlineMinutes: profile?.enrollmentPaymentDeadlineMinutes ?? 15,
+    slipRevisionDeadlineMinutes: profile?.slipRevisionDeadlineMinutes ?? 15,
     allowedTimeSlots: parseDaySlots(profile?.allowedTimeSlots),
   };
 }
@@ -103,11 +103,6 @@ export default function AdminSettingsPage() {
 
   function handleChange(e) {
     const { name, value } = e.target;
-    setForm((prev) => ({ ...prev, [name]: value }));
-    if (errors[name]) setErrors((prev) => ({ ...prev, [name]: '' }));
-  }
-
-  function fld(name, value) {
     setForm((prev) => ({ ...prev, [name]: value }));
     if (errors[name]) setErrors((prev) => ({ ...prev, [name]: '' }));
   }
@@ -387,48 +382,6 @@ export default function AdminSettingsPage() {
               </div>
             </div>
 
-            {/* ── Enrollment Settings Card ── */}
-            <div className="is-card">
-              <div className="is-card-header">
-                <h2 className="is-card-title">การสมัครเรียนและการชำระเงิน</h2>
-                <p className="is-card-subtitle">กำหนดระยะเวลาที่นักเรียนมีสิทธิ์ชำระเงินก่อนที่ที่นั่งจะถูกปล่อยคืน</p>
-              </div>
-              <div className="is-card-body">
-                <div className="is-form-grid">
-                  <FormField
-                    label="ระยะเวลาชำระเงิน (นาที)" name="enrollmentPaymentDeadlineMinutes"
-                    type="number" required
-                    value={form.enrollmentPaymentDeadlineMinutes}
-                    onChange={handleChange}
-                    error={errors.enrollmentPaymentDeadlineMinutes}
-                  />
-                </div>
-                <p className="is-hint">
-                  นับตั้งแต่นักเรียนกดสมัครเรียน หากไม่ชำระเงินภายในเวลานี้ ที่นั่งจะถูกยกเลิกอัตโนมัติ
-                </p>
-              </div>
-            </div>
-
-            {/* ── Allowed Time Slots Card ── */}
-            <div className="is-card is-card--full">
-              <div className="is-card-header">
-                <h2 className="is-card-title">ช่วงเวลาที่อนุญาตให้จัดตารางสอน</h2>
-                <p className="is-card-subtitle">
-                  กำหนดช่วงเวลาที่อนุญาตให้จัดตารางสอนในแต่ละวัน วันที่ไม่ได้ตั้งค่าไว้จะไม่จำกัดเวลา
-                  หากแอดมินลงตารางสอนของคอร์สนอกช่วงเวลานี้ ระบบจะแจ้งเตือนใต้ช่องเวลานั้นทันที
-                </p>
-              </div>
-              <div className="is-card-body">
-                <ScheduleSection
-                  form={form}
-                  fld={fld}
-                  slotsField="allowedTimeSlots"
-                  icon="✅"
-                  title="เวลาที่อนุญาตรายวัน"
-                  hint="(ว่างไว้ = ไม่จำกัดเวลาวันนั้น)"
-                />
-              </div>
-            </div>
           </div>
 
           {/* ── Action Bar ── */}
