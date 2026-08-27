@@ -84,7 +84,10 @@ export function AchievementDetailBody({ achievement, enrollments }) {
       <div className="sad-card">
         <h2 className="sad-card-title">ผลสอบติด</h2>
         <div className="sad-detail-rows">
-          <DetailRow label="สถาบัน" value={`${achievement.institutionName} (${achievement.institutionCode})`} />
+          <DetailRow
+            label="สถาบัน"
+            value={`${achievement.institutionName}${achievement.institutionCode ? ` (${achievement.institutionCode})` : ''}`}
+          />
           <DetailRow
             label="ระดับที่สอบติด"
             value={achievement.educationLevelLabel || LEVEL_LABEL[achievement.educationLevel]}

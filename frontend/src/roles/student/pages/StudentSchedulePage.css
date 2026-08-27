@@ -1,87 +1,15 @@
 .ssp-page {
   display: flex;
   flex-direction: column;
-  gap: 24px;
+  height: calc(100vh - 220px);
   position: relative;
 }
 
-.ssp-hero-card {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 24px;
-  padding: 30px;
-  border-radius: 24px;
-  background:
-    radial-gradient(circle at top right, rgba(255, 255, 255, 0.18), transparent 30%),
-    linear-gradient(135deg, #4c1d95 0%, #6d28d9 48%, #7c3aed 100%);
-  color: #ffffff;
-  box-shadow: 0 22px 48px rgba(124, 58, 237, 0.24);
-}
-
-.ssp-eyebrow {
-  margin: 0 0 8px;
-  font-size: 13px;
-  font-weight: 700;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: #ddd6fe;
-}
-
-.ssp-hero-card h1 {
-  margin: 0;
-  font-size: 32px;
-  font-weight: 800;
-}
-
-.ssp-hero-card p {
-  max-width: 680px;
-  margin: 10px 0 0;
-  color: #ede9fe;
-  line-height: 1.7;
-}
-
-.ssp-hero-icon {
-  width: 82px;
-  height: 82px;
-  display: grid;
-  place-items: center;
-  flex: 0 0 auto;
-  border-radius: 24px;
-  background: rgba(255, 255, 255, 0.16);
-  font-size: 42px;
-  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.22);
-}
-
-.ssp-summary-grid {
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 16px;
-}
-
-.ssp-summary-card {
-  padding: 20px;
-  border: 1px solid #ede9fe;
-  border-radius: 20px;
-  background: #ffffff;
-  box-shadow: 0 12px 28px rgba(15, 23, 42, 0.06);
-}
-
-.ssp-summary-card span {
-  display: block;
-  margin-bottom: 10px;
-  color: #64748b;
-  font-size: 14px;
-  font-weight: 600;
-}
-
-.ssp-summary-card strong {
-  color: #4c1d95;
-  font-size: 34px;
-  font-weight: 800;
-}
-
 .ssp-content-card {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
   padding: 24px;
   border: 1px solid #e5e7eb;
   border-radius: 24px;
@@ -111,6 +39,7 @@
 
 .ssp-timetable-toolbar {
   display: flex;
+  flex-shrink: 0;
   justify-content: space-between;
   align-items: center;
   flex-wrap: wrap;
@@ -152,42 +81,47 @@
   font-weight: 800;
 }
 
+/* กล่องปฏิทินยืดเต็มพื้นที่ที่เหลือของการ์ด (ไม่ใช้ max-height ตายตัว) พร้อมสกรอลภายในตัวเอง
+   เพื่อให้พอดีกับหน้าต่างเสมอและไม่ต้องเลื่อนทั้งหน้าเว็บเพื่อดูตารางเรียน — เลื่อนแค่ในกล่องปฏิทินพอ */
 .ssp-timetable-scroll {
+  flex: 1;
+  min-height: 280px;
+  overflow: auto;
   border: 1px solid #ede9fe;
   border-radius: 18px;
 }
 
 .ssp-timetable-grid {
   display: grid;
-  grid-template-columns: 64px repeat(7, minmax(130px, 1fr));
-  min-width: 760px;
+  grid-auto-rows: auto;
+  align-items: stretch;
 }
 
-/* ลอยตามหน้าจอตอนเลื่อนลง — ชิดใต้ navbar แบบ fixed (สูง 64px) ของ StudentLayout
-   เพื่อให้เทียบวัน/เวลาได้ตลอดแม้เลื่อนผ่านชั่วโมงถัดๆ ไป
-   หมายเหตุ: ต้องไม่มี overflow-x บน .ssp-timetable-scroll ในจอกว้าง — การตั้ง overflow (แม้แค่แกน x)
-   จะทำให้ browser ใช้กล่องนั้นเป็นตัวอ้างอิงของ position:sticky แทนหน้าเว็บ ทำให้ลอยไม่ได้จริง
-   (จอแคบที่ต้องเลื่อนแนวนอน ใช้ fallback แบบลอยเฉพาะในกล่องแทน ดู media query ด้านล่าง) */
+/* ลอยชิดมุมบนซ้ายของกล่องปฏิทินเองตอนสกรอลภายใน (ไม่อ้างอิงหน้าเว็บ) เพื่อให้เทียบวัน/เวลาได้ตลอด */
 .ssp-tt-corner {
   position: sticky;
-  top: 64px;
-  z-index: 3;
+  top: 0;
+  left: 0;
+  z-index: 4;
   background: #ffffff;
-  border-bottom: 1px solid #ede9fe;
+  border-bottom: 2px solid #ddd6fe;
+  border-right: 2px solid #ddd6fe;
 }
 
-.ssp-tt-daycol-header {
+/* หัวคอลัมน์วัน (เดิม) ย้ายมาเป็นหัวแถวด้านซ้าย — ลอยชิดขอบซ้ายตอนสกรอลแนวนอน */
+.ssp-tt-dayrow-header {
   position: sticky;
-  top: 64px;
-  z-index: 2;
+  left: 0;
+  z-index: 3;
   display: flex;
   flex-direction: column;
+  justify-content: center;
   align-items: center;
   gap: 4px;
-  padding: 10px 6px;
+  padding: 10px 8px;
   background: #faf9ff;
-  border-bottom: 1px solid #ede9fe;
-  border-left: 1px solid #f1f5f9;
+  border-top: 1px solid #e2e8f0;
+  border-right: 2px solid #ddd6fe;
 }
 
 .ssp-tt-day-name {
@@ -202,61 +136,67 @@
   font-weight: 700;
 }
 
-.ssp-tt-daycol-header.ssp-tt-today {
+.ssp-tt-dayrow-header.ssp-tt-today {
   background: #ede9fe;
 }
 
-.ssp-tt-daycol-header.ssp-tt-today .ssp-tt-day-name,
-.ssp-tt-daycol-header.ssp-tt-today .ssp-tt-day-date {
+.ssp-tt-dayrow-header.ssp-tt-today .ssp-tt-day-name,
+.ssp-tt-dayrow-header.ssp-tt-today .ssp-tt-day-date {
   color: #6d28d9;
 }
 
+/* แถบเวลา (เดิมเป็นแนวตั้งด้านซ้าย) ย้ายมาเป็นหัวคอลัมน์ด้านบน — ลอยชิดขอบบนตอนสกรอลแนวตั้ง */
 .ssp-tt-timeaxis {
-  position: relative;
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  height: 40px;
   background: #ffffff;
+  border-bottom: 2px solid #ddd6fe;
 }
 
 .ssp-tt-hour-label {
   position: absolute;
-  left: 0;
-  right: 6px;
-  transform: translateY(-8px);
-  text-align: right;
+  top: 0;
+  bottom: 0;
+  display: flex;
+  align-items: center;
+  transform: translateX(6px);
   color: #94a3b8;
   font-size: 11px;
   font-weight: 700;
 }
 
-.ssp-tt-daycolumn {
+.ssp-tt-dayrow {
   position: relative;
-  border-left: 1px solid #f1f5f9;
+  border-top: 1px solid #e2e8f0;
   background: #ffffff;
 }
 
-.ssp-tt-daycolumn.ssp-tt-today-col {
+.ssp-tt-dayrow.ssp-tt-today-col {
   background: #fbfaff;
 }
 
 .ssp-tt-hourline {
   position: absolute;
-  left: 0;
-  right: 0;
-  border-top: 1px solid #f1f5f9;
+  top: 0;
+  bottom: 0;
+  border-left: 1px solid #e2e8f0;
 }
 
 .ssp-tt-now-line {
   position: absolute;
-  left: 0;
-  right: 0;
+  top: 0;
+  bottom: 0;
   z-index: 2;
-  border-top: 2px solid #dc2626;
+  border-left: 2px solid #dc2626;
 }
 
 .ssp-tt-now-line::before {
   content: '';
   position: absolute;
-  left: -4px;
   top: -4px;
+  left: -4px;
   width: 8px;
   height: 8px;
   border-radius: 50%;
@@ -417,6 +357,7 @@
 .ssp-empty-state,
 .ssp-error-box {
   display: flex;
+  flex: 1;
   flex-direction: column;
   align-items: center;
   justify-content: center;
@@ -626,47 +567,18 @@
 }
 
 @media (max-width: 1024px) {
-  .ssp-summary-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-
-  .ssp-hero-card {
-    align-items: flex-start;
+  .ssp-page {
+    height: calc(100vh - 212px);
   }
 }
 
 @media (max-width: 768px) {
-  .ssp-hero-card {
-    flex-direction: column;
-    padding: 24px;
+  .ssp-page {
+    height: calc(100vh - 204px);
   }
 
-  .ssp-hero-card h1 {
-    font-size: 26px;
-  }
-
-  .ssp-hero-icon {
-    width: 68px;
-    height: 68px;
-    font-size: 34px;
-  }
-
-  .ssp-summary-grid,
   .ssp-modal-body {
     grid-template-columns: 1fr;
-  }
-
-  /* จอแคบ: ตารางกว้าง 760px ไม่พอดี ต้องเลื่อนแนวนอน — จอเลื่อนแนวนอนทำให้ position:sticky
-     อ้างอิงกล่องนี้แทนหน้าเว็บ จึงลอยข้ามหน้าไม่ได้ ใช้ fallback ลอยเฉพาะในกล่อง (max-height + scroll ใน) แทน */
-  .ssp-timetable-scroll {
-    overflow-x: auto;
-    overflow-y: auto;
-    max-height: 640px;
-  }
-
-  .ssp-tt-corner,
-  .ssp-tt-daycol-header {
-    top: 0;
   }
 
   .ssp-content-card {

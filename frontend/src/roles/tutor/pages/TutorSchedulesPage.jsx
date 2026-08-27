@@ -82,23 +82,8 @@ function getScheduleDateKey(schedule) {
   return schedule.scheduleDate || '';
 }
 
-function isToday(schedule) {
-  return getScheduleDateKey(schedule) === getLocalDateKey();
-}
-
 function isCancelled(schedule) {
   return schedule.status === 'CANCELLED';
-}
-
-function isCompleted(schedule) {
-  if (schedule.status === 'COMPLETED') return true;
-  if (!schedule.scheduleDate || !schedule.endTime) return false;
-  const endDateTime = new Date(`${schedule.scheduleDate}T${schedule.endTime}`);
-  return !Number.isNaN(endDateTime.getTime()) && endDateTime < new Date();
-}
-
-function isUpcoming(schedule) {
-  return !isCancelled(schedule) && !isCompleted(schedule);
 }
 
 function normalizeSchedule(item) {
@@ -234,15 +219,6 @@ export default function TutorSchedulesPage() {
     return () => window.clearInterval(timer);
   }, []);
 
-  const summary = useMemo(() => {
-    return {
-      total: schedules.length,
-      today: schedules.filter(isToday).length,
-      upcoming: schedules.filter(isUpcoming).length,
-      cancelled: schedules.filter(isCancelled).length,
-    };
-  }, [schedules]);
-
   const weekDays = useMemo(() => {
     return Array.from({ length: 7 }, (_, i) => {
       const date = new Date(weekStart);
@@ -322,21 +298,6 @@ export default function TutorSchedulesPage() {
 
   return (
     <div className="tsp-page">
-      <div className="tutor-schedule-header">
-        <div>
-          <h1>ตารางสอน</h1>
-          <p>ดูตารางสอนของคุณ คำนวณจากวัน-เวลาของแต่ละคอร์สโดยตรง</p>
-        </div>
-        <RefreshButton onClick={loadSchedules} loading={loading} />
-      </div>
-
-      <div className="tutor-schedule-summary">
-        <div className="tutor-schedule-summary-card"><p>ตารางทั้งหมด</p><h2>{summary.total}</h2></div>
-        <div className="tutor-schedule-summary-card"><p>วันนี้</p><h2>{summary.today}</h2></div>
-        <div className="tutor-schedule-summary-card"><p>กำลังจะมาถึง</p><h2>{summary.upcoming}</h2></div>
-        <div className="tutor-schedule-summary-card"><p>ยกเลิกแล้ว</p><h2>{summary.cancelled}</h2></div>
-      </div>
-
       <div className="tsp-content-card">
         <div className="tsp-timetable-toolbar">
           <div className="tsp-timetable-nav">
@@ -345,6 +306,7 @@ export default function TutorSchedulesPage() {
             <button type="button" onClick={handleNextWeek} aria-label="สัปดาห์ถัดไป">›</button>
           </div>
           <div className="tsp-timetable-range">{formatWeekRangeLabel(weekStart)}</div>
+          <RefreshButton onClick={loadSchedules} loading={loading} />
         </div>
 
         {loading && <div className="tutor-schedule-loading">กำลังโหลดตารางสอน...</div>}

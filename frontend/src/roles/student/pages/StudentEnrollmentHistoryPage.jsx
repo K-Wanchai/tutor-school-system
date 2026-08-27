@@ -18,13 +18,17 @@ const STATUS_CLS = {
   NEEDS_REVISION:       'hist-badge--revision',
 };
 
+// ป้ายสถานะฝั่งนักเรียนใช้คำว่า "รอตรวจสอบสลิป" แทน "รอการยืนยันชำระเงิน" ของ ENROLLMENT_HISTORY_STATUS_LABEL
+// (label กลางใช้ร่วมกับหน้าแอดมินด้วย จึง override เฉพาะที่นี่แทนแก้ที่ shared util)
+const STUDENT_STATUS_LABEL = { ...ENROLLMENT_HISTORY_STATUS_LABEL, PENDING_VERIFICATION: 'รอตรวจสอบสลิป' };
+
 function statusBadge(key) {
-  return { label: ENROLLMENT_HISTORY_STATUS_LABEL[key], cls: STATUS_CLS[key] };
+  return { label: STUDENT_STATUS_LABEL[key], cls: STATUS_CLS[key] };
 }
 
 const FILTERS = [
   { key: 'ALL', label: 'ทั้งหมด' },
-  ...ENROLLMENT_HISTORY_STATUSES.map((key) => ({ key, label: ENROLLMENT_HISTORY_STATUS_LABEL[key] })),
+  ...ENROLLMENT_HISTORY_STATUSES.map((key) => ({ key, label: STUDENT_STATUS_LABEL[key] })),
 ];
 
 const getDisplayStatus = getEnrollmentHistoryStatus;
@@ -114,7 +118,7 @@ export default function StudentEnrollmentHistoryPage() {
       <div className="hist-header">
         <div>
           <h1>ประวัติการสมัครเรียน</h1>
-          <p>รายการคอร์สที่ยืนยันการชำระเงินแล้ว — สถานะอัพเดตอัตโนมัติ</p>
+          <p>ตรวจสอบสถานะการสมัครเรียนและการชำระเงินของคุณ</p>
         </div>
       </div>
 
@@ -267,33 +271,6 @@ export default function StudentEnrollmentHistoryPage() {
 
                     {detail.description && <div className="hist-modal-desc"><p>{detail.description}</p></div>}
 
-                    <div className="hist-modal-section">
-                      <h3>บทเรียน ({detail.lessons?.length || 0} บท)</h3>
-                      {detail.lessons?.length > 0 ? (
-                        <ul className="hist-modal-list">
-                          {detail.lessons.map((l) => (
-                            <li key={l.id}>
-                              <span className="hist-order">บทที่ {l.lessonOrder}</span>
-                              <div><strong>{l.lessonTitle}</strong>{l.lessonContent && <p>{l.lessonContent}</p>}</div>
-                            </li>
-                          ))}
-                        </ul>
-                      ) : <p className="hist-empty-text">ยังไม่มีบทเรียน</p>}
-                    </div>
-
-                    <div className="hist-modal-section">
-                      <h3>การทดสอบ ({detail.tests?.length || 0} รายการ)</h3>
-                      {detail.tests?.length > 0 ? (
-                        <ul className="hist-modal-list">
-                          {detail.tests.map((t) => (
-                            <li key={t.id}>
-                              <span className="hist-order">ครั้งที่ {t.testOrder}</span>
-                              <div><strong>{t.testTitle}</strong>{t.testDescription && <p>{t.testDescription}</p>}</div>
-                            </li>
-                          ))}
-                        </ul>
-                      ) : <p className="hist-empty-text">ยังไม่มีการทดสอบ</p>}
-                    </div>
                   </>
                 );
               })()}

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { Fragment, useEffect, useMemo, useState } from 'react';
 import { getMySchedule } from '../services/studentScheduleService';
 import './StudentSchedulePage.css';
 
@@ -15,7 +15,10 @@ const STATUS_LABELS = {
 
 const DEFAULT_RANGE_START = 8 * 60;
 const DEFAULT_RANGE_END = 20 * 60;
-const PX_PER_MIN = 1.2;
+const PX_PER_MIN = 2.2;
+const LANE_HEIGHT = 64;
+const LANE_GAP = 8;
+const MIN_EVENT_WIDTH = 108;
 
 function safeText(value) {
   return value === null || value === undefined || value === '' ? '-' : value;
@@ -96,16 +99,6 @@ function getStartOfWeek(date = new Date()) {
   return start;
 }
 
-function parseScheduleDate(dateValue) {
-  if (!dateValue) return null;
-
-  const date = new Date(dateValue);
-
-  if (Number.isNaN(date.getTime())) return null;
-
-  return date;
-}
-
 function parseTimeToMinutes(timeValue) {
   if (!timeValue || typeof timeValue !== 'string') return null;
 
@@ -122,52 +115,8 @@ function getScheduleDateKey(schedule) {
   return schedule.scheduleDate || '';
 }
 
-function getScheduleEndDateTime(schedule) {
-  if (!schedule.scheduleDate || !schedule.endTime) {
-    return parseScheduleDate(schedule.scheduleDate);
-  }
-
-  const dateTime = new Date(`${schedule.scheduleDate}T${schedule.endTime}`);
-
-  if (Number.isNaN(dateTime.getTime())) {
-    return parseScheduleDate(schedule.scheduleDate);
-  }
-
-  return dateTime;
-}
-
-function isToday(schedule) {
-  return getScheduleDateKey(schedule) === getLocalDateKey();
-}
-
 function isCancelled(schedule) {
   return schedule.status === 'CANCELLED';
-}
-
-function isCompleted(schedule) {
-  const status = schedule.status;
-
-  if (status === 'COMPLETED' || status === 'CLOSED') {
-    return true;
-  }
-
-  const endDateTime = getScheduleEndDateTime(schedule);
-
-  return endDateTime ? endDateTime < new Date() : false;
-}
-
-function isUpcoming(schedule) {
-  if (isCancelled(schedule) || isCompleted(schedule)) {
-    return false;
-  }
-
-  if (schedule.status === 'SCHEDULED' || schedule.status === 'UPCOMING' || schedule.status === 'ONGOING') {
-    return true;
-  }
-
-  const endDateTime = getScheduleEndDateTime(schedule);
-
-  return endDateTime ? endDateTime >= new Date() : false;
 }
 
 function canJoinClass(schedule) {
@@ -281,7 +230,7 @@ function assignLanes(cluster) {
   return { events: withLanes, laneCount: laneEnds.length };
 }
 
-function layoutDayEvents(dayEvents, rangeStart, pxPerMin) {
+function layoutDayEventsHorizontal(dayEvents, rangeStart, pxPerMin) {
   const withMinutes = dayEvents
     .map((ev) => {
       const startMin = parseTimeToMinutes(ev.startTime);
@@ -297,23 +246,24 @@ function layoutDayEvents(dayEvents, rangeStart, pxPerMin) {
 
   const clusters = clusterByOverlap(withMinutes);
   const positioned = [];
+  let maxLaneCount = 1;
 
   clusters.forEach((cluster) => {
     const { events, laneCount } = assignLanes(cluster);
-    const widthPercent = 100 / laneCount;
+    maxLaneCount = Math.max(maxLaneCount, laneCount);
 
     events.forEach((ev) => {
       positioned.push({
         ...ev,
-        top: (ev.startMin - rangeStart) * pxPerMin,
-        height: Math.max((ev.endMin - ev.startMin) * pxPerMin, 32),
-        left: `${ev.lane * widthPercent}%`,
-        width: `calc(${widthPercent}% - 4px)`,
+        left: (ev.startMin - rangeStart) * pxPerMin,
+        width: Math.max((ev.endMin - ev.startMin) * pxPerMin, MIN_EVENT_WIDTH),
+        top: ev.lane * (LANE_HEIGHT + LANE_GAP),
+        height: LANE_HEIGHT,
       });
     });
   });
 
-  return positioned;
+  return { events: positioned, laneCount: maxLaneCount };
 }
 
 export default function StudentSchedulePage() {
@@ -380,15 +330,6 @@ export default function StudentSchedulePage() {
     return () => window.clearInterval(timer);
   }, []);
 
-  const summary = useMemo(() => {
-    return {
-      total: schedules.length,
-      today: schedules.filter(isToday).length,
-      upcoming: schedules.filter(isUpcoming).length,
-      cancelled: schedules.filter(isCancelled).length,
-    };
-  }, [schedules]);
-
   const weekDays = useMemo(() => {
     return Array.from({ length: 7 }, (_, i) => {
       const date = new Date(weekStart);
@@ -421,7 +362,7 @@ export default function StudentSchedulePage() {
     return { start, end };
   }, [schedules]);
 
-  const totalHeightPx = (timeRange.end - timeRange.start) * PX_PER_MIN;
+  const totalWidthPx = (timeRange.end - timeRange.start) * PX_PER_MIN;
 
   const hourMarks = useMemo(() => {
     const marks = [];
@@ -429,7 +370,7 @@ export default function StudentSchedulePage() {
     for (let m = timeRange.start; m <= timeRange.end; m += 60) {
       marks.push({
         minutes: m,
-        top: (m - timeRange.start) * PX_PER_MIN,
+        left: (m - timeRange.start) * PX_PER_MIN,
         label: `${String(Math.floor(m / 60)).padStart(2, '0')}:00`,
       });
     }
@@ -442,7 +383,7 @@ export default function StudentSchedulePage() {
 
     weekDays.forEach((day) => {
       const dayEvents = schedules.filter((s) => getScheduleDateKey(s) === day.key);
-      map[day.key] = layoutDayEvents(dayEvents, timeRange.start, PX_PER_MIN);
+      map[day.key] = layoutDayEventsHorizontal(dayEvents, timeRange.start, PX_PER_MIN);
     });
 
     return map;
@@ -495,42 +436,6 @@ export default function StudentSchedulePage() {
         </div>
       )}
 
-      <section className="ssp-hero-card">
-        <div>
-          <p className="ssp-eyebrow">Student Schedule</p>
-          <h1>ตารางเรียนของฉัน</h1>
-          <p>
-            ดูวัน เวลา สถานที่เรียน และรายละเอียดห้องเรียนของคอร์สที่คุณลงทะเบียนไว้
-          </p>
-        </div>
-
-        <div className="ssp-hero-icon" aria-hidden="true">
-          📅
-        </div>
-      </section>
-
-      <section className="ssp-summary-grid">
-        <div className="ssp-summary-card">
-          <span>ตารางเรียนทั้งหมด</span>
-          <strong>{summary.total}</strong>
-        </div>
-
-        <div className="ssp-summary-card">
-          <span>วันนี้</span>
-          <strong>{summary.today}</strong>
-        </div>
-
-        <div className="ssp-summary-card">
-          <span>กำลังจะมาถึง</span>
-          <strong>{summary.upcoming}</strong>
-        </div>
-
-        <div className="ssp-summary-card">
-          <span>ยกเลิกแล้ว</span>
-          <strong>{summary.cancelled}</strong>
-        </div>
-      </section>
-
       <section className="ssp-content-card">
         <div className="ssp-timetable-toolbar">
           <div className="ssp-timetable-nav">
@@ -574,58 +479,65 @@ export default function StudentSchedulePage() {
 
         {!loading && !error && schedules.length > 0 && (
           <div className="ssp-timetable-scroll">
-            <div className="ssp-timetable-grid">
+            <div
+              className="ssp-timetable-grid"
+              style={{ gridTemplateColumns: `120px ${totalWidthPx}px` }}
+            >
               <div className="ssp-tt-corner" />
 
-              {weekDays.map((day) => (
-                <div
-                  key={day.key}
-                  className={`ssp-tt-daycol-header ${day.key === todayKey ? 'ssp-tt-today' : ''}`}
-                >
-                  <span className="ssp-tt-day-name">{day.label}</span>
-                  <span className="ssp-tt-day-date">{day.dateLabel}</span>
-                </div>
-              ))}
-
-              <div className="ssp-tt-timeaxis" style={{ height: totalHeightPx }}>
+              <div className="ssp-tt-timeaxis" style={{ width: totalWidthPx }}>
                 {hourMarks.map((mark) => (
-                  <div key={mark.minutes} className="ssp-tt-hour-label" style={{ top: mark.top }}>
+                  <div key={mark.minutes} className="ssp-tt-hour-label" style={{ left: mark.left }}>
                     {mark.label}
                   </div>
                 ))}
               </div>
 
-              {weekDays.map((day) => (
-                <div
-                  key={day.key}
-                  className={`ssp-tt-daycolumn ${day.key === todayKey ? 'ssp-tt-today-col' : ''}`}
-                  style={{ height: totalHeightPx }}
-                >
-                  {hourMarks.map((mark) => (
-                    <div key={mark.minutes} className="ssp-tt-hourline" style={{ top: mark.top }} />
-                  ))}
+              {weekDays.map((day) => {
+                const dayLayout = scheduleByDay[day.key] || { events: [], laneCount: 1 };
+                const rowHeight = dayLayout.laneCount * (LANE_HEIGHT + LANE_GAP) + LANE_GAP;
 
-                  {day.key === todayKey && nowOffset !== null && (
-                    <div className="ssp-tt-now-line" style={{ top: nowOffset }} />
-                  )}
-
-                  {(scheduleByDay[day.key] || []).map((ev) => (
-                    <button
-                      type="button"
-                      key={ev.id || ev.scheduleCode}
-                      className={getTimetableEventClass(ev.status)}
-                      style={{ top: ev.top, height: ev.height, left: ev.left, width: ev.width }}
-                      onClick={() => setSelectedSchedule(ev)}
+                return (
+                  <Fragment key={day.key}>
+                    <div
+                      className={`ssp-tt-dayrow-header ${day.key === todayKey ? 'ssp-tt-today' : ''}`}
+                      style={{ height: rowHeight }}
                     >
-                      <span className="ssp-tt-event-time">
-                        {formatTime(ev.startTime)}-{formatTime(ev.endTime)}
-                      </span>
-                      <span className="ssp-tt-event-title">{safeText(ev.courseName)}</span>
-                      <span className="ssp-tt-event-sub">{safeText(ev.tutorName)}</span>
-                    </button>
-                  ))}
-                </div>
-              ))}
+                      <span className="ssp-tt-day-name">{day.label}</span>
+                      <span className="ssp-tt-day-date">{day.dateLabel}</span>
+                    </div>
+
+                    <div
+                      className={`ssp-tt-dayrow ${day.key === todayKey ? 'ssp-tt-today-col' : ''}`}
+                      style={{ width: totalWidthPx, height: rowHeight }}
+                    >
+                      {hourMarks.map((mark) => (
+                        <div key={mark.minutes} className="ssp-tt-hourline" style={{ left: mark.left }} />
+                      ))}
+
+                      {day.key === todayKey && nowOffset !== null && (
+                        <div className="ssp-tt-now-line" style={{ left: nowOffset }} />
+                      )}
+
+                      {dayLayout.events.map((ev) => (
+                        <button
+                          type="button"
+                          key={ev.id || ev.scheduleCode}
+                          className={getTimetableEventClass(ev.status)}
+                          style={{ top: ev.top, height: ev.height, left: ev.left, width: ev.width }}
+                          onClick={() => setSelectedSchedule(ev)}
+                        >
+                          <span className="ssp-tt-event-time">
+                            {formatTime(ev.startTime)}-{formatTime(ev.endTime)}
+                          </span>
+                          <span className="ssp-tt-event-title">{safeText(ev.courseName)}</span>
+                          <span className="ssp-tt-event-sub">{safeText(ev.tutorName)}</span>
+                        </button>
+                      ))}
+                    </div>
+                  </Fragment>
+                );
+              })}
             </div>
           </div>
         )}

@@ -770,7 +770,7 @@ export default function ExamInstitutionDetailPage() {
         </div>
         <h1 className="eid-title">{institution.institutionName}</h1>
         <div className="eid-meta-row">
-          <span className="eid-code-badge">{institution.institutionCode}</span>
+          {institution.institutionCode && <span className="eid-code-badge">{institution.institutionCode}</span>}
           <span className="eid-meta-item">
             {institution.institutionTypeLabel || TYPE_LABEL[institution.institutionType] || '—'}
           </span>
@@ -917,7 +917,9 @@ export default function ExamInstitutionDetailPage() {
             <form className="eid-form" onSubmit={handleSubmit}>
               <div className="eid-field">
                 <label>สถาบันที่สอบติด</label>
-                <div className="eid-locked-field">{institution.institutionName} ({institution.institutionCode})</div>
+                <div className="eid-locked-field">
+                  {institution.institutionName}{institution.institutionCode ? ` (${institution.institutionCode})` : ''}
+                </div>
               </div>
 
               <div className="eid-field">

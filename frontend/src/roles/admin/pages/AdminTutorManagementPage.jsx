@@ -7,6 +7,7 @@ import {
   updateTutor,
   getTutorStats,
 } from '../services/adminTutorService';
+import { SUBJECT_OPTIONS, OTHER_SUBJECT, parseSpecialization, buildSpecialization, specializationToChips } from '../utils/tutorSubjects';
 import './AdminTutorManagementPage.css';
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -65,6 +66,54 @@ function DetailRow({ label, value }) {
   );
 }
 
+// ── SubjectChips ──────────────────────────────────────────────────────────────
+
+function SubjectChips({ specialization }) {
+  const chips = specializationToChips(specialization);
+  if (chips.length === 0) return <span className="tm-detail-row-value">—</span>;
+  return (
+    <div className="tm-subject-chips">
+      {chips.map(chip => (
+        <span key={chip} className="tm-subject-chip-ro">{chip}</span>
+      ))}
+    </div>
+  );
+}
+
+// ── SubjectMultiSelect ────────────────────────────────────────────────────────
+
+function SubjectMultiSelect({ subjects, otherEnabled, otherText, onToggleSubject, onToggleOther, onOtherTextChange }) {
+  return (
+    <div className="tm-form-field">
+      <label className="tm-form-label">รายวิชาที่ถนัด <span className="tm-form-label-hint">(เลือกได้มากกว่า 1)</span></label>
+      <div className="tm-subject-grid">
+        {SUBJECT_OPTIONS.map(subject => {
+          const on = subjects.includes(subject);
+          return (
+            <label key={subject} className={`tm-subject-chip${on ? ' tm-subject-chip--on' : ''}`}>
+              <input type="checkbox" checked={on} onChange={() => onToggleSubject(subject)} />
+              {subject}
+            </label>
+          );
+        })}
+        <label className={`tm-subject-chip${otherEnabled ? ' tm-subject-chip--on' : ''}`}>
+          <input type="checkbox" checked={otherEnabled} onChange={onToggleOther} />
+          {OTHER_SUBJECT}
+        </label>
+      </div>
+      {otherEnabled && (
+        <input
+          type="text"
+          className="tm-form-input"
+          placeholder="ระบุวิชาอื่นๆ..."
+          value={otherText}
+          onChange={e => onOtherTextChange(e.target.value)}
+        />
+      )}
+    </div>
+  );
+}
+
 // ── Detail Modal ──────────────────────────────────────────────────────────────
 
 function DetailModal({ tutor, onClose }) {
@@ -117,6 +166,16 @@ function DetailModal({ tutor, onClose }) {
                 <DetailRow label="Username" value={tutor.username} />
                 <DetailRow label="Email" value={tutor.email} />
               </div>
+            </div>
+
+            <div className="tm-detail-section tm-detail-section--full">
+              <h3 className="tm-detail-section-title">
+                <svg viewBox="0 0 20 20" fill="currentColor" width="15" height="15">
+                  <path fillRule="evenodd" d="M4.083 9h1.946c.089-1.546.383-2.97.837-4.118A6.004 6.004 0 004.083 9zM10 2a8 8 0 100 16 8 8 0 000-16zm0 2c-.076 0-.232.032-.465.262-.238.234-.497.623-.737 1.182-.389.907-.673 2.142-.766 3.556h3.936c-.093-1.414-.377-2.649-.766-3.556-.24-.56-.499-.948-.737-1.182C10.232 4.032 10.076 4 10 4zm3.971 5c-.089-1.546-.383-2.97-.837-4.118A6.004 6.004 0 0115.917 9h-1.946zm-2.003 2H8.032c.093 1.414.377 2.649.766 3.556.24.56.499.948.737 1.182.233.23.389.262.465.262.076 0 .232-.032.465-.262.238-.234.497-.623.737-1.182.389-.907.673-2.142.766-3.556zm1.166 4.118c.454-1.147.748-2.572.837-4.118h1.946a6.004 6.004 0 01-2.783 4.118zm-6.268 0A6.004 6.004 0 014.083 11h1.946c.089 1.546.383 2.97.837 4.118z" clipRule="evenodd" />
+                </svg>
+                รายวิชาที่ถนัด
+              </h3>
+              <SubjectChips specialization={tutor.specialization} />
             </div>
 
             <div className="tm-detail-section tm-detail-section--full">
@@ -187,11 +246,18 @@ const CREATE_INIT = {
 function CreateModal({ onClose, onSave, saving, saveError }) {
   const [form, setForm] = useState(CREATE_INIT);
   const [errors, setErrors] = useState({});
+  const [subjects, setSubjects] = useState([]);
+  const [otherEnabled, setOtherEnabled] = useState(false);
+  const [otherText, setOtherText] = useState('');
 
   function handleChange(e) {
     const { name, value } = e.target;
     setForm(prev => ({ ...prev, [name]: value }));
     if (errors[name]) setErrors(prev => ({ ...prev, [name]: '' }));
+  }
+
+  function toggleSubject(subject) {
+    setSubjects(prev => prev.includes(subject) ? prev.filter(s => s !== subject) : [...prev, subject]);
   }
 
   function validate() {
@@ -211,7 +277,8 @@ function CreateModal({ onClose, onSave, saving, saveError }) {
     e.preventDefault();
     const errs = validate();
     if (Object.keys(errs).length > 0) { setErrors(errs); return; }
-    onSave(form);
+    const specialization = buildSpecialization(subjects, otherEnabled ? otherText : '');
+    onSave({ ...form, specialization });
   }
 
   return (
@@ -271,6 +338,14 @@ function CreateModal({ onClose, onSave, saving, saveError }) {
               <FormField label="นามสกุล" name="lastName" value={form.lastName} onChange={handleChange} error={errors.lastName} required />
               <FormField label="เบอร์โทร" name="phoneNumber" value={form.phoneNumber} onChange={handleChange} error={errors.phoneNumber} required />
             </div>
+            <SubjectMultiSelect
+              subjects={subjects}
+              otherEnabled={otherEnabled}
+              otherText={otherText}
+              onToggleSubject={toggleSubject}
+              onToggleOther={() => setOtherEnabled(p => !p)}
+              onOtherTextChange={setOtherText}
+            />
           </div>
 
           <div className="tm-modal-footer">
@@ -301,11 +376,19 @@ function EditModal({ tutor, onClose, onSave, saving, saveError }) {
     phoneNumber: tutor?.phoneNumber || '',
   });
   const [errors, setErrors] = useState({});
+  const initialSpecialization = parseSpecialization(tutor?.specialization);
+  const [subjects, setSubjects] = useState(initialSpecialization.subjects);
+  const [otherEnabled, setOtherEnabled] = useState(initialSpecialization.otherText.length > 0);
+  const [otherText, setOtherText] = useState(initialSpecialization.otherText);
 
   function handleChange(e) {
     const { name, value } = e.target;
     setForm(prev => ({ ...prev, [name]: value }));
     if (errors[name]) setErrors(prev => ({ ...prev, [name]: '' }));
+  }
+
+  function toggleSubject(subject) {
+    setSubjects(prev => prev.includes(subject) ? prev.filter(s => s !== subject) : [...prev, subject]);
   }
 
   function handleSubmit(e) {
@@ -315,7 +398,8 @@ function EditModal({ tutor, onClose, onSave, saving, saveError }) {
     if (!form.lastName.trim())    errs.lastName    = 'กรุณากรอกนามสกุล';
     if (!form.phoneNumber.trim()) errs.phoneNumber = 'กรุณากรอกเบอร์โทร';
     if (Object.keys(errs).length > 0) { setErrors(errs); return; }
-    onSave(form);
+    const specialization = buildSpecialization(subjects, otherEnabled ? otherText : '');
+    onSave({ ...form, specialization });
   }
 
   if (!tutor) return null;
@@ -352,6 +436,14 @@ function EditModal({ tutor, onClose, onSave, saving, saveError }) {
             <FormField label="นามสกุล" name="lastName" value={form.lastName} onChange={handleChange} error={errors.lastName} required />
             <FormField label="เบอร์โทร" name="phoneNumber" value={form.phoneNumber} onChange={handleChange} error={errors.phoneNumber} required />
           </div>
+          <SubjectMultiSelect
+            subjects={subjects}
+            otherEnabled={otherEnabled}
+            otherText={otherText}
+            onToggleSubject={toggleSubject}
+            onToggleOther={() => setOtherEnabled(p => !p)}
+            onOtherTextChange={setOtherText}
+          />
 
           <div className="tm-modal-footer">
             <button type="button" className="tm-btn tm-btn--ghost" onClick={onClose} disabled={saving}>ยกเลิก</button>
@@ -649,6 +741,16 @@ export default function AdminTutorManagementPage() {
                             <svg viewBox="0 0 20 20" fill="currentColor" width="16" height="16">
                               <path d="M10 12a2 2 0 100-4 2 2 0 000 4z" />
                               <path fillRule="evenodd" d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.064 7-9.542 7S1.732 14.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z" clipRule="evenodd" />
+                            </svg>
+                          </button>
+                          <button
+                            className="tm-row-btn tm-row-btn--icon"
+                            onClick={() => { setSaveError(''); setEditTutor(tutor); }}
+                            data-tooltip="แก้ไข"
+                            aria-label="แก้ไข"
+                          >
+                            <svg viewBox="0 0 20 20" fill="currentColor" width="15" height="15">
+                              <path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z" />
                             </svg>
                           </button>
                         </div>

@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { DAYS, DAY_LABEL_TH, findConflictDays, findOutsideAllowedDays } from '../utils/courseScheduleUtils';
+import { specializationToChips } from '../utils/tutorSubjects';
 
 // เดิมอยู่ใน AdminCourseManagementPage.jsx — แยกออกมาเพื่อใช้ร่วมกันกับหน้าเพิ่มคอร์ส (AdminCourseCreatePage.jsx)
 
@@ -194,7 +195,7 @@ export function ScheduleSection({
                   )}
                   {outsideConflict && (
                     <span className="cm-per-day-forbidden-msg">
-                      ⛔ นอกเวลาที่สถาบันอนุญาต ({outsideConflict.start}–{outsideConflict.end})
+                      ⛔ วันเวลาที่สามารถเลือกได้คือ ({outsideConflict.start}–{outsideConflict.end})
                     </span>
                   )}
                   {!conflict && !outsideConflict && (!slot.start || !slot.end) && (
@@ -226,6 +227,9 @@ function TutorOption({ t }) {
 
 // เลือกติวเตอร์ + แสดงตารางว่างของติวเตอร์ที่เลือก
 export function TutorSelectField({ tutors, tutorLoading, tutorAvail, availLoading, value, onChange, err }) {
+  const selectedTutor = tutors.find(t => String(t.id) === String(value));
+  const subjectChips = selectedTutor ? specializationToChips(selectedTutor.specialization) : [];
+
   return (
     <>
       <div className="cm-field">
@@ -239,6 +243,18 @@ export function TutorSelectField({ tutors, tutorLoading, tutorAvail, availLoadin
         {err && <span className="cm-err">{err}</span>}
         {tutors.length > 0 && !tutorLoading && (
           <span className="cm-field-hint">มีติวเตอร์ในระบบ {tutors.length} คน</span>
+        )}
+        {selectedTutor && (
+          <div className="cm-tutor-subjects">
+            <span className="cm-tutor-subjects-label">วิชาที่ถนัด:</span>
+            {subjectChips.length > 0 ? (
+              subjectChips.map(chip => (
+                <span key={chip} className="cm-tutor-subject-chip">{chip}</span>
+              ))
+            ) : (
+              <span className="cm-tutor-subjects-empty">— ไม่ได้ระบุ —</span>
+            )}
+          </div>
         )}
       </div>
       {value && (

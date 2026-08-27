@@ -698,7 +698,7 @@ export default function StudentExamAchievementManagePage() {
                     <td>{idx + 1}</td>
                     <td className="eim-text-name">{a.studentName}</td>
                     <td>
-                      <span className="eim-code-badge">{a.institutionCode}</span> {a.institutionName}
+                      {a.institutionCode && <span className="eim-code-badge">{a.institutionCode}</span>} {a.institutionName}
                     </td>
                     <td>{a.educationLevelLabel || LEVEL_LABEL[a.educationLevel]}</td>
                     <td>{levelDetail(a)}</td>
@@ -738,14 +738,18 @@ export default function StudentExamAchievementManagePage() {
                 <label>สถาบันที่สอบติด *</label>
                 {institutionLocked ? (
                   <div className="eid-locked-field">
-                    {selectedInstitution ? `${selectedInstitution.institutionName} (${selectedInstitution.institutionCode})` : '—'}
+                    {selectedInstitution
+                      ? `${selectedInstitution.institutionName}${selectedInstitution.institutionCode ? ` (${selectedInstitution.institutionCode})` : ''}`
+                      : '—'}
                   </div>
                 ) : (
                   <>
                     <select value={form.examInstitutionId} onChange={(e) => fldInstitution(e.target.value)}>
                       <option value="">— เลือกสถาบัน —</option>
                       {institutions.filter((i) => i.active).map((i) => (
-                        <option key={i.id} value={i.id}>{i.institutionName} ({i.institutionCode})</option>
+                        <option key={i.id} value={i.id}>
+                          {i.institutionName}{i.institutionCode ? ` (${i.institutionCode})` : ''}
+                        </option>
                       ))}
                     </select>
                     {formErr.examInstitutionId && <span className="eid-err">{formErr.examInstitutionId}</span>}
