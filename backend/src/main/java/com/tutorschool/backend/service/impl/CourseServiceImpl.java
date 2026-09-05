@@ -494,6 +494,17 @@ public class CourseServiceImpl implements CourseService {
             courseRepository.saveAll(openDue);
             log.info("Auto-closed {} course(s) past their registration end date", openDue.size());
         }
+
+        // OPEN_FOR_REGISTRATION/CLOSED ที่ถึงวันเริ่มเรียนแล้ว → เปลี่ยนเป็น ONGOING อัตโนมัติ
+        // (เดิมพึ่งพาแค่ตอนแก้ไขคอร์สเท่านั้น ทำให้คอร์สที่ไม่มีใครแก้ไขหลังถึงวันเริ่มเรียนค้างสถานะเดิมตลอดไป
+        // และสร้างข้อสอบไม่ได้เพราะเงื่อนไขบังคับว่าต้อง ONGOING)
+        List<Course> startDue = courseRepository.findByStatusInAndCourseStartDateLessThanEqual(
+                List.of(CourseStatus.OPEN_FOR_REGISTRATION, CourseStatus.CLOSED), today);
+        if (!startDue.isEmpty()) {
+            startDue.forEach(course -> course.setStatus(CourseStatus.ONGOING));
+            courseRepository.saveAll(startDue);
+            log.info("Auto-transitioned {} course(s) to ONGOING past their start date", startDue.size());
+        }
     }
 
     private long countActiveEnrollments(Long courseId) {
