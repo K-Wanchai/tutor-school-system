@@ -19,6 +19,7 @@ public class StudentExamResponse {
     private Long submissionId;
     private Long courseId;
     private String courseName;
+    private String courseCode;
     private String title;
     private String description;
     private Double totalScore;

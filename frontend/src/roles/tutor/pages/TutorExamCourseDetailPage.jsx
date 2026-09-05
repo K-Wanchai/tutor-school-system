@@ -515,7 +515,9 @@ export default function TutorExamCourseDetailPage() {
               <article key={exam.id} className="tes-card">
                 <div className="tes-card-top">
                   <div>
-                    {exam.lessonTitle && <p className="tes-card-course">บท {safeText(exam.lessonTitle)}</p>}
+                    <p className="tes-card-course">
+                      {safeText(exam.examCode)}{exam.lessonTitle ? ` · บท ${safeText(exam.lessonTitle)}` : ''}
+                    </p>
                     <h3>{safeText(exam.title)}</h3>
                   </div>
                   <span className={getStatusClass(exam.status)}>

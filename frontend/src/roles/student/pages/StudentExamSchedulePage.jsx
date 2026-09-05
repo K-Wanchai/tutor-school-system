@@ -45,7 +45,13 @@ export default function StudentExamSchedulePage() {
     exams.forEach((e) => {
       const key = String(e.courseId);
       if (!map.has(key)) {
-        map.set(key, { courseId: e.courseId, courseName: e.courseName, exams: [] });
+        map.set(key, {
+          courseId: e.courseId,
+          courseName: e.courseName,
+          courseCode: e.courseCode,
+          tutorName: e.teacherName,
+          exams: [],
+        });
       }
       map.get(key).exams.push(e);
     });
@@ -117,13 +123,17 @@ export default function StudentExamSchedulePage() {
                 >
                   <div className="es-card-top">
                     <div>
-                      <p className="es-card-course">คอร์ส</p>
+                      <p className="es-card-course">{safeText(course.courseCode)}</p>
                       <h3>{safeText(course.courseName)}</h3>
                     </div>
                     {open > 0 && <span className="es-status es-status-open">เปิดสอบอยู่ {open}</span>}
                   </div>
 
                   <div className="es-info-list">
+                    <div>
+                      <span>ผู้สอน</span>
+                      <strong>{safeText(course.tutorName)}</strong>
+                    </div>
                     <div>
                       <span>จำนวนข้อสอบ</span>
                       <strong>{course.exams.length} ชุด</strong>

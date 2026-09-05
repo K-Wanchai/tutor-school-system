@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { getMyExamSchedule } from '../services/studentExamService';
+import { getMyExamResults, getMyExamSchedule } from '../services/studentExamService';
 import './StudentExamSchedulePage.css';
 
 const STATUS_LABELS = {
@@ -50,6 +50,7 @@ export default function StudentExamCourseDetailPage() {
   const { courseId } = useParams();
   const navigate = useNavigate();
   const [exams, setExams] = useState([]);
+  const [results, setResults] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [filter, setFilter] = useState('ALL');
@@ -58,20 +59,33 @@ export default function StudentExamCourseDetailPage() {
     try {
       setLoading(true);
       setError('');
-      const data = await getMyExamSchedule();
-      const list = Array.isArray(data) ? data : [];
+      const [examData, resultData] = await Promise.all([
+        getMyExamSchedule(),
+        getMyExamResults().catch(() => []),
+      ]);
+      const list = Array.isArray(examData) ? examData : [];
       list.sort((a, b) => {
         if (!a.startTime) return 1;
         if (!b.startTime) return -1;
         return new Date(a.startTime) - new Date(b.startTime);
       });
       setExams(list);
+      setResults(Array.isArray(resultData) ? resultData : []);
     } catch (err) {
       setError(getErrorMessage(err));
       setExams([]);
     } finally {
       setLoading(false);
     }
+  }
+
+  // คะแนนที่ได้มาจากการยื่นสอบในระบบ (ExamSubmission) — ข้อสอบใหม่ทำผ่านลิงก์ภายนอกจึงไม่มีข้อมูลนี้
+  // เลือกครั้งล่าสุดถ้ามีสอบซ้ำได้หลายครั้ง (allowMultipleAttempts)
+  function findObtainedScore(examId) {
+    const matches = results.filter((r) => String(r.examId) === String(examId));
+    if (matches.length === 0) return null;
+    matches.sort((a, b) => new Date(b.submittedAt || 0) - new Date(a.submittedAt || 0));
+    return matches[0].obtainedScore;
   }
 
   useEffect(() => {
@@ -84,6 +98,8 @@ export default function StudentExamCourseDetailPage() {
   );
 
   const courseName = courseExams[0]?.courseName;
+  const courseCode = courseExams[0]?.courseCode;
+  const tutorName = courseExams[0]?.teacherName;
 
   const summary = useMemo(() => {
     return {
@@ -120,7 +136,8 @@ export default function StudentExamCourseDetailPage() {
             ‹ กลับไปหน้าตารางสอบ
           </button>
           <p className="es-eyebrow">Student Exam Schedule</p>
-          <h1>{safeText(courseName)}</h1>
+          <h1>{safeText(courseCode)} — {safeText(courseName)}</h1>
+          <p>ผู้สอน: {safeText(tutorName)}</p>
           <p>ดูกำหนดการสอบของคอร์สนี้ ทั้งที่ยังไม่เปิด กำลังเปิดสอบ และปิดสอบแล้ว</p>
         </div>
         <div className="es-hero-icon" aria-hidden="true">📝</div>
@@ -174,6 +191,7 @@ export default function StudentExamCourseDetailPage() {
               <article key={exam.id} className="es-card">
                 <div className="es-card-top">
                   <div>
+                    <p className="es-card-course">{safeText(exam.examCode)}</p>
                     <h3>{safeText(exam.title)}</h3>
                   </div>
                   <span className={getStatusClass(exam.status)}>
@@ -197,9 +215,9 @@ export default function StudentExamCourseDetailPage() {
                     <strong>{exam.durationMinutes ? `${exam.durationMinutes} นาที` : '-'}</strong>
                   </div>
                   <div>
-                    <span>คะแนนเต็ม / ผ่าน</span>
+                    <span>คะแนนที่ได้ / คะแนนเต็ม</span>
                     <strong>
-                      {exam.totalScore ?? '-'} / {exam.passingScore ?? '-'}
+                      {findObtainedScore(exam.id) ?? '-'} / {exam.totalScore ?? '-'}
                     </strong>
                   </div>
                 </div>

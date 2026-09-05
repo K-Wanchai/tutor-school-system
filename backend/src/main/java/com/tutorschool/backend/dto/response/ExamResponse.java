@@ -17,6 +17,7 @@ public class ExamResponse {
     private String examCode;
     private Long courseId;
     private String courseName;
+    private String courseCode;
     private Long lessonId;
     private String lessonTitle;
     private Long tutorId;
