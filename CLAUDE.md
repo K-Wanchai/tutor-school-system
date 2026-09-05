@@ -33,7 +33,9 @@ Config lives in `backend/src/main/resources/application.properties`, overridable
 
 Server runs on `http://localhost:8080`. Swagger UI at `/swagger-ui/index.html`, OpenAPI spec at `/v3/api-docs`.
 
-Test accounts (after running seed data — see `backend/SEED_DATA_GUIDE.md`): `admin@school.com` / `tutor@school.com` / `student@school.com`, passwords `{role}123`.
+Test accounts — login accepts either username or email as the principal:
+- **Admin**: auto-seeded on every startup by `AdminSeeder` (no manual seed needed) — `admin@tutorschool.com` / `admin123`. (`backend/SEED_DATA_GUIDE.md`'s `admin@school.com` example is for the optional manual seed script, not this auto-seeder — it won't work against a fresh DB.)
+- **Tutor/Student**: not auto-seeded — created via `backend/SEED_DATA_GUIDE.md`'s manual insert script, the admin UI, or normal signup. Known-working accounts in this dev environment: tutor `tutor04` / `12345678`, student `wachi01` / `wachi0112345`.
 
 ### Frontend (run from `frontend/`)
 
