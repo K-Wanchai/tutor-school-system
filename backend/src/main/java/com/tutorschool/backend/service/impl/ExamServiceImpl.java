@@ -44,6 +44,7 @@ public class ExamServiceImpl implements ExamService {
                 .orElseThrow(() -> new ResourceNotFoundException("Course", request.getCourseId()));
 
         validateTeacherOwnsCourse(Tutor, course);
+        validateCourseIsOngoing(course);
         validateExamDates(request.getStartTime(), request.getEndTime());
 
         CourseLesson lesson = null;
@@ -419,6 +420,26 @@ public class ExamServiceImpl implements ExamService {
         if (!course.getTutor().getId().equals(Tutor.getId())) {
             throw new ExamAccessDeniedException("You are not the Tutor of this course");
         }
+    }
+
+    // สร้างข้อสอบได้เฉพาะคอร์สที่เปิดทำการเรียนการสอนแล้ว (ONGOING) เท่านั้น —
+    // กันไว้ที่ service layer เพราะ frontend กรองอย่างเดียวไม่พอ (bypass ผ่าน API ตรงได้)
+    private void validateCourseIsOngoing(Course course) {
+        if (course.getStatus() != CourseStatus.ONGOING) {
+            throw new CourseNotOngoingException(
+                    "ไม่สามารถสร้างข้อสอบได้ เนื่องจากคอร์สนี้ยังไม่เปิดการเรียนการสอน (สถานะปัจจุบัน: "
+                            + courseStatusLabel(course.getStatus()) + ")");
+        }
+    }
+
+    private String courseStatusLabel(CourseStatus status) {
+        return switch (status) {
+            case PENDING -> "รอเปิดเรียน";
+            case OPEN_FOR_REGISTRATION -> "เปิดรับสมัคร";
+            case CLOSED -> "ปิดรับสมัคร";
+            case ONGOING -> "กำลังเรียน";
+            case COMPLETED -> "เรียนจบแล้ว";
+        };
     }
 
     private void validateTeacherOwnsExam(Tutor Tutor, Exam exam) {
