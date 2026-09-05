@@ -360,6 +360,24 @@
   line-height: 1.6;
 }
 
+.tes-exam-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  align-self: flex-start;
+  padding: 6px 10px;
+  border-radius: 8px;
+  background: #ecfdf5;
+  color: #047857;
+  font-size: 12px;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.tes-exam-link:hover {
+  background: #d1fae5;
+}
+
 .tes-status {
   display: inline-flex;
   align-items: center;

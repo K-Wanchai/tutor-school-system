@@ -64,6 +64,7 @@ public class ExamServiceImpl implements ExamService {
                 .tutor(Tutor)
                 .title(request.getTitle())
                 .description(request.getDescription())
+                .examLink(request.getExamLink())
                 .passingScore(request.getPassingScore())
                 .startTime(request.getStartTime())
                 .endTime(request.getEndTime())
@@ -161,14 +162,12 @@ public class ExamServiceImpl implements ExamService {
     public void autoTransitionExams() {
         LocalDateTime now = LocalDateTime.now();
 
-        // DRAFT ที่ถึงเวลา startTime แล้ว และยังไม่พ้น endTime และมีคำถามอย่างน้อย 1 ข้อ → เปิดสอบให้อัตโนมัติ
+        // DRAFT ที่ถึงเวลา startTime แล้ว และยังไม่พ้น endTime → เปิดสอบให้อัตโนมัติ — ข้อสอบไม่ได้สร้างคำถาม
+        // ในระบบเองแล้ว (เนื้อหาอยู่ที่ลิงก์ข้อสอบภายนอก) จึงไม่ต้องเช็คว่ามีคำถามก่อนเปิดอีกต่อไป
         List<Exam> draftDue = examRepository.findByStatusAndStartTimeLessThanEqual(ExamStatus.DRAFT, now);
         for (Exam exam : draftDue) {
             if (exam.getEndTime() != null && !exam.getEndTime().isAfter(now)) {
                 continue; // พ้นช่วงเวลาไปแล้วโดยยังไม่เคยเปิด — ปล่อยให้ติวเตอร์จัดการเอง ไม่เปิดย้อนหลัง
-            }
-            if (exam.getQuestions() == null || exam.getQuestions().isEmpty()) {
-                continue; // ยังไม่มีคำถาม ยังไม่พร้อมเปิดสอบ
             }
             exam.setStatus(ExamStatus.OPEN);
             Exam saved = examRepository.save(exam);
@@ -198,6 +197,7 @@ public class ExamServiceImpl implements ExamService {
 
         if (request.getTitle() != null) exam.setTitle(request.getTitle());
         if (request.getDescription() != null) exam.setDescription(request.getDescription());
+        if (request.getExamLink() != null) exam.setExamLink(request.getExamLink());
         if (request.getPassingScore() != null) {
             if (exam.getTotalScore() != null && request.getPassingScore() > exam.getTotalScore()) {
                 throw new IllegalStateException("Passing score cannot exceed total score (" + exam.getTotalScore() + ")");

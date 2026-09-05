@@ -15,6 +15,7 @@ public class UpdateExamRequest {
 
     private String title;
     private String description;
+    private String examLink;
 
     @DecimalMin(value = "0", message = "Passing score must be 0 or greater")
     private Double passingScore;

@@ -25,6 +25,8 @@ public class CreateExamRequest {
 
     private String description;
 
+    private String examLink;
+
     @NotNull(message = "Passing score is required")
     @DecimalMin(value = "0", message = "Passing score must be 0 or greater")
     private Double passingScore;

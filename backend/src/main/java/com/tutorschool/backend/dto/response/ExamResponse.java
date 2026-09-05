@@ -23,6 +23,7 @@ public class ExamResponse {
     private String teacherName;
     private String title;
     private String description;
+    private String examLink;
     private Double totalScore;
     private Double passingScore;
     private LocalDateTime startTime;
