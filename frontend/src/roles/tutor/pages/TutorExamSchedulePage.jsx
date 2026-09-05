@@ -28,6 +28,22 @@ const FILTERS = [
   { key: 'CLOSED', label: 'ปิดแล้ว' },
 ];
 
+// สร้างข้อสอบได้เฉพาะคอร์สที่สถานะ ONGOING (เปิดทำการเรียนการสอนแล้ว) — ต้องตรงกับ
+// CourseStatus.java ฝั่ง backend และ validateCourseIsOngoing() ใน ExamServiceImpl
+const EXAM_ELIGIBLE_COURSE_STATUS = 'ONGOING';
+
+const COURSE_STATUS_LABELS = {
+  PENDING: 'รอเปิดเรียน',
+  OPEN_FOR_REGISTRATION: 'เปิดรับสมัคร',
+  CLOSED: 'ปิดรับสมัคร',
+  ONGOING: 'กำลังเรียน',
+  COMPLETED: 'เรียนจบแล้ว',
+};
+
+function getCourseStatusClass(status) {
+  return `tes-course-status tes-course-status-${String(status || 'unknown').toLowerCase()}`;
+}
+
 const EXAM_TYPE_OPTIONS = ['ข้อสอบก่อนเรียน', 'ข้อสอบหลังเรียน'];
 
 const EMPTY_FORM = {
@@ -154,7 +170,14 @@ export default function TutorExamSchedulePage() {
     return exams.filter((e) => e.status === filter);
   }, [exams, filter]);
 
-  const selectedCourse = courses.find((c) => String(c.id) === String(form.courseId));
+  // เฉพาะคอร์สที่เปิดทำการเรียนการสอนแล้ว (ONGOING) เท่านั้นที่สร้างข้อสอบได้ —
+  // คอร์สอื่น (รอเปิดเรียน/เปิดรับสมัคร/ปิดรับสมัคร/เรียนจบแล้ว) ไม่ให้เลือกตั้งแต่ใน dropdown
+  const eligibleCourses = useMemo(
+    () => courses.filter((c) => c.status === EXAM_ELIGIBLE_COURSE_STATUS),
+    [courses]
+  );
+
+  const selectedCourse = eligibleCourses.find((c) => String(c.id) === String(form.courseId));
 
   function openCreate() {
     setForm(EMPTY_FORM);
@@ -268,6 +291,25 @@ export default function TutorExamSchedulePage() {
         <div className="tutor-schedule-summary-card"><p>ยังไม่เปิด</p><h2>{summary.upcoming}</h2></div>
         <div className="tutor-schedule-summary-card"><p>ปิดแล้ว</p><h2>{summary.closed}</h2></div>
       </div>
+
+      {!loading && !error && courses.length > 0 && (
+        <div className="tes-content-card tes-course-eligibility">
+          <div className="tes-course-eligibility-header">
+            <h2>สถานะคอร์สของคุณ</h2>
+            <p>สร้างข้อสอบได้เฉพาะคอร์สที่ขึ้นสถานะ "กำลังเรียน" เท่านั้น</p>
+          </div>
+          <div className="tes-course-status-grid">
+            {courses.map((c) => (
+              <div key={c.id} className="tes-course-status-item">
+                <span className="tes-course-status-name">{safeText(c.courseName)}</span>
+                <span className={getCourseStatusClass(c.status)}>
+                  {COURSE_STATUS_LABELS[c.status] || c.status}
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       <div className="tes-content-card">
         <div className="tes-filter-tabs">
@@ -388,12 +430,22 @@ export default function TutorExamSchedulePage() {
               <button type="button" onClick={() => setShowCreate(false)}>✕</button>
             </div>
 
+            {eligibleCourses.length === 0 ? (
+              <div className="tes-modal-empty">
+                <p>คุณยังไม่มีคอร์สที่เปิดทำการเรียนการสอนอยู่ (สถานะ "กำลังเรียน")</p>
+                <p>ต้องรอให้คอร์สที่คุณสอนเปลี่ยนเป็นสถานะ "กำลังเรียน" ก่อน จึงจะสร้างข้อสอบได้ —
+                  คอร์สที่ยังไม่เปิดเรียน ปิดรับสมัคร หรือเรียนจบไปแล้ว ไม่สามารถสร้างข้อสอบใหม่ได้</p>
+                <div className="tes-form-actions">
+                  <button type="button" onClick={() => setShowCreate(false)}>ปิด</button>
+                </div>
+              </div>
+            ) : (
             <form className="tes-form" onSubmit={handleCreate}>
               <label>
                 คอร์ส *
                 <select value={form.courseId} onChange={(e) => fld('courseId', e.target.value)}>
                   <option value="">— เลือกคอร์ส —</option>
-                  {courses.map((c) => (
+                  {eligibleCourses.map((c) => (
                     <option key={c.id} value={c.id}>{c.courseName}</option>
                   ))}
                 </select>
@@ -444,6 +496,7 @@ export default function TutorExamSchedulePage() {
                 </button>
               </div>
             </form>
+            )}
           </div>
         </div>
       )}

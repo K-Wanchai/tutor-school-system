@@ -17,6 +17,7 @@ public class InstitutionProfileSeeder implements CommandLineRunner {
     private static final String DEFAULT_PHONE = "020000000";
     private static final String DEFAULT_EMAIL = "contact@tutorschool.com";
     private static final int DEFAULT_ENROLLMENT_PAYMENT_DEADLINE_MINUTES = 15;
+    private static final int DEFAULT_SLIP_REVISION_DEADLINE_MINUTES = 15;
 
     private final InstitutionProfileRepository institutionProfileRepository;
 
@@ -33,6 +34,7 @@ public class InstitutionProfileSeeder implements CommandLineRunner {
                 .phoneNumber(DEFAULT_PHONE)
                 .email(DEFAULT_EMAIL)
                 .enrollmentPaymentDeadlineMinutes(DEFAULT_ENROLLMENT_PAYMENT_DEADLINE_MINUTES)
+                .slipRevisionDeadlineMinutes(DEFAULT_SLIP_REVISION_DEADLINE_MINUTES)
                 .build();
 
         institutionProfileRepository.save(profile);

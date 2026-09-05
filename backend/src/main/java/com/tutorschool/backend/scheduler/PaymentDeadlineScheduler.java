@@ -19,13 +19,14 @@ public class PaymentDeadlineScheduler {
 
     private final EnrollmentRepository enrollmentRepository;
 
+    // ยกเลิกอัตโนมัติทั้งกรณี UNPAID (หมดเวลาชำระเงินรอบแรก) และ FAILED (หมดเวลาที่ให้แก้ไขสลิปหลังถูกตีกลับ)
     @Scheduled(fixedDelay = 30000)
     @Transactional
     public void cancelExpiredEnrollments() {
-        List<Enrollment> expired = enrollmentRepository.findExpiredUnpaidEnrollments(LocalDateTime.now());
+        List<Enrollment> expired = enrollmentRepository.findExpiredPaymentEnrollments(LocalDateTime.now());
         if (expired.isEmpty()) return;
         for (Enrollment e : expired) e.setStatus(EnrollmentStatus.CANCELLED);
         enrollmentRepository.saveAll(expired);
-        log.info("Auto-cancelled {} expired unpaid enrollments", expired.size());
+        log.info("Auto-cancelled {} expired enrollments (unpaid deadline or slip-revision deadline)", expired.size());
     }
 }

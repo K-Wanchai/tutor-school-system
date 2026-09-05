@@ -172,6 +172,12 @@ public class GlobalExceptionHandler {
                 .body(ApiResponse.error(ex.getMessage()));
     }
 
+    @ExceptionHandler(CourseNotOngoingException.class)
+    public ResponseEntity<ApiResponse<Void>> handleCourseNotOngoingException(CourseNotOngoingException ex) {
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(ApiResponse.error(ex.getMessage()));
+    }
+
     @ExceptionHandler(ExamAlreadySubmittedException.class)
     public ResponseEntity<ApiResponse<Void>> handleExamAlreadySubmittedException(ExamAlreadySubmittedException ex) {
         return ResponseEntity.status(HttpStatus.CONFLICT)

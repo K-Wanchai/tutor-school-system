@@ -35,6 +35,7 @@ import java.util.Map;
 public class EnrollmentServiceImpl implements EnrollmentService {
 
     private static final int DEFAULT_PAYMENT_DEADLINE_MINUTES = 15;
+    private static final int DEFAULT_SLIP_REVISION_DEADLINE_MINUTES = 15;
 
     private final EnrollmentRepository enrollmentRepository;
     private final StudentRepository studentRepository;
@@ -257,6 +258,9 @@ public class EnrollmentServiceImpl implements EnrollmentService {
     // ตีกลับให้นักเรียนแก้ไขสลิป — ไม่ใช่การปฏิเสธถาวร: status ยังคง PENDING ไว้ (ไม่แตะ APPROVED/REJECTED)
     // เปลี่ยนแค่ paymentStatus เป็น FAILED ซึ่งหน้าชำระเงินของนักเรียนรองรับการอัปโหลดสลิปใหม่อยู่แล้ว
     // และไม่ถูกนับที่นั่ง (countConfirmedPaymentsByCourseId นับเฉพาะ PENDING_VERIFICATION/PAID) จึงคืนที่นั่งให้อัตโนมัติ
+    //
+    // ตั้ง paymentDeadline ใหม่เป็นเส้นตายรอบแก้ไขสลิป (แยก config จากรอบสมัครแรก — slipRevisionDeadlineMinutes)
+    // เพื่อให้ PaymentDeadlineScheduler.cancelExpiredEnrollments ยกเลิกอัตโนมัติและคืนที่นั่งได้ ถ้านักเรียนไม่กลับมาแก้ไขภายในเวลา
     @Override
     @Transactional
     public EnrollmentResponse returnForSlipRevision(Long id, ReturnSlipRequest request) {
@@ -265,6 +269,7 @@ public class EnrollmentServiceImpl implements EnrollmentService {
 
         enrollment.setPaymentStatus(PaymentStatus.FAILED);
         enrollment.setNote(request.getNote());
+        enrollment.setPaymentDeadline(LocalDateTime.now().plusMinutes(getSlipRevisionDeadlineMinutes()));
 
         Enrollment saved = enrollmentRepository.save(enrollment);
         sendSlipReturnedNotification(saved);
@@ -350,6 +355,12 @@ public class EnrollmentServiceImpl implements EnrollmentService {
         return institutionProfileRepository.findFirstBy()
                 .map(InstitutionProfile::getEnrollmentPaymentDeadlineMinutes)
                 .orElse(DEFAULT_PAYMENT_DEADLINE_MINUTES);
+    }
+
+    private int getSlipRevisionDeadlineMinutes() {
+        return institutionProfileRepository.findFirstBy()
+                .map(InstitutionProfile::getSlipRevisionDeadlineMinutes)
+                .orElse(DEFAULT_SLIP_REVISION_DEADLINE_MINUTES);
     }
 
     private void validateEnrollmentEligibility(Long studentId, Long courseId, Course course) {
