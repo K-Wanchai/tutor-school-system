@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   addLesson,
   addTest,
@@ -59,6 +60,7 @@ function StatusBadge({ status }) {
 }
 
 export default function TutorCoursesPage() {
+  const navigate = useNavigate();
   const [courses, setCourses] = useState([]);
 
   const [keyword, setKeyword] = useState('');
@@ -255,6 +257,17 @@ export default function TutorCoursesPage() {
               <div className="tc-card-actions">
                 <button className="tc-btn-detail" onClick={() => openDetail(course)}>
                   ดูรายละเอียด
+                </button>
+
+                <button
+                  className="tc-btn-exam"
+                  onClick={() => navigate(
+                    course.status === 'ONGOING'
+                      ? `/tutor/exam-schedule?courseId=${course.id}&create=1`
+                      : `/tutor/exam-schedule?courseId=${course.id}`
+                  )}
+                >
+                  📝 ตารางสอบ
                 </button>
 
                 {/* {['PENDING', 'CLOSED', 'OPEN_FOR_REGISTRATION', 'ONGOING'].includes(course.status) && (

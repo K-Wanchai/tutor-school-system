@@ -4,10 +4,86 @@
   gap: 22px;
 }
 
+.tutor-schedule-header {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 16px;
+}
+
+.tutor-schedule-header h1 {
+  margin: 0 0 4px;
+  color: #111827;
+  font-size: 24px;
+  font-weight: 800;
+}
+
+.tutor-schedule-header p {
+  margin: 0;
+  color: #6b7280;
+  font-size: 13px;
+  max-width: 560px;
+  line-height: 1.6;
+}
+
 .tes-header-actions {
   display: flex;
   align-items: center;
   gap: 10px;
+}
+
+.tutor-schedule-summary {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.tutor-schedule-summary-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px 18px;
+  border: 1px solid #e5e7eb;
+  border-radius: 16px;
+  background: white;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.04);
+}
+
+.tes-summary-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  font-size: 18px;
+  flex: 0 0 auto;
+  background: #f3f4f6;
+}
+
+.tes-summary-open .tes-summary-icon { background: #dcfce7; }
+.tes-summary-upcoming .tes-summary-icon { background: #fef3c7; }
+.tes-summary-closed .tes-summary-icon { background: #e0f2fe; }
+
+.tutor-schedule-summary-card p {
+  margin: 0 0 2px;
+  color: #9ca3af;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.tutor-schedule-summary-card h2 {
+  margin: 0;
+  color: #111827;
+  font-size: 20px;
+  font-weight: 800;
+}
+
+@media (max-width: 900px) {
+  .tutor-schedule-summary {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
 }
 
 .tes-btn-primary {
@@ -388,6 +464,40 @@
   border: 1px solid #e5e7eb;
   border-radius: 12px;
   background: #f9fafb;
+}
+
+.tes-course-status-item--btn {
+  font-family: inherit;
+  cursor: pointer;
+  text-align: left;
+  transition: 0.15s ease;
+}
+
+.tes-course-status-item--btn:hover {
+  border-color: #a7f3d0;
+  background: #ecfdf5;
+}
+
+.tes-course-status-item--active {
+  border-color: #059669;
+  background: #ecfdf5;
+  box-shadow: 0 0 0 1px #059669 inset;
+}
+
+.tes-course-quick-create {
+  border: 1px solid #059669;
+  border-radius: 999px;
+  padding: 3px 8px;
+  font-size: 10px;
+  font-weight: 800;
+  color: #059669;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.tes-course-quick-create:hover {
+  background: #059669;
+  color: white;
 }
 
 .tes-course-status-name {

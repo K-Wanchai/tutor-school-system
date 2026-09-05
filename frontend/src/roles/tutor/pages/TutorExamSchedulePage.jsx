@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import {
   closeExam,
   createExam,
@@ -21,6 +21,13 @@ const STATUS_LABELS = {
   CANCELLED: 'ยกเลิก',
 };
 
+const STATUS_ICONS = {
+  DRAFT: '🕒',
+  OPEN: '🟢',
+  CLOSED: '🔒',
+  CANCELLED: '✕',
+};
+
 const FILTERS = [
   { key: 'ALL', label: 'ทั้งหมด' },
   { key: 'OPEN', label: 'เปิดสอบอยู่' },
@@ -29,7 +36,8 @@ const FILTERS = [
 ];
 
 // สร้างข้อสอบได้เฉพาะคอร์สที่สถานะ ONGOING (เปิดทำการเรียนการสอนแล้ว) — ต้องตรงกับ
-// CourseStatus.java ฝั่ง backend และ validateCourseIsOngoing() ใน ExamServiceImpl
+// CourseStatus.java ฝั่ง backend และ validateCourseIsOngoing()/validateExamStartNotBeforeCourseStart()
+// ใน ExamServiceImpl ห้ามผ่อนเงื่อนไขนี้ที่ฝั่ง frontend เด็ดขาดเพราะ backend เป็นคนบังคับจริง
 const EXAM_ELIGIBLE_COURSE_STATUS = 'ONGOING';
 
 const COURSE_STATUS_LABELS = {
@@ -69,6 +77,13 @@ function formatDateTime(value) {
     hour: '2-digit',
     minute: '2-digit',
   });
+}
+
+function formatDateShort(value) {
+  if (!value) return '-';
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return '-';
+  return date.toLocaleDateString('th-TH', { year: 'numeric', month: 'short', day: 'numeric' });
 }
 
 function getStatusClass(status) {
@@ -119,12 +134,14 @@ function DateTime24Input({ value, onChange, minDate }) {
 
 export default function TutorExamSchedulePage() {
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const { confirm, confirmDialog } = useConfirm();
   const [exams, setExams] = useState([]);
   const [courses, setCourses] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [filter, setFilter] = useState('ALL');
+  const [courseFilter, setCourseFilter] = useState('ALL');
   const [busyId, setBusyId] = useState(null);
 
   const [showCreate, setShowCreate] = useState(false);
@@ -156,6 +173,27 @@ export default function TutorExamSchedulePage() {
     load();
   }, []);
 
+  // มาจากปุ่ม "ตารางสอบ" ในหน้าคอร์สของฉัน — พาไปยังคอร์สนั้นและเปิดฟอร์มสร้างข้อสอบให้เลย
+  useEffect(() => {
+    const courseIdParam = searchParams.get('courseId');
+    if (!courseIdParam || courses.length === 0) return;
+    setCourseFilter(courseIdParam);
+    if (searchParams.get('create') === '1') {
+      const course = courses.find((c) => String(c.id) === courseIdParam);
+      if (course && course.status === EXAM_ELIGIBLE_COURSE_STATUS) {
+        setForm({ ...EMPTY_FORM, courseId: courseIdParam });
+        setFormErr('');
+        setShowCreate(true);
+      }
+      setSearchParams((prev) => {
+        const next = new URLSearchParams(prev);
+        next.delete('create');
+        return next;
+      }, { replace: true });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [courses]);
+
   const summary = useMemo(() => {
     return {
       total: exams.length,
@@ -166,9 +204,12 @@ export default function TutorExamSchedulePage() {
   }, [exams]);
 
   const filtered = useMemo(() => {
-    if (filter === 'ALL') return exams;
-    return exams.filter((e) => e.status === filter);
-  }, [exams, filter]);
+    return exams.filter((e) => {
+      const statusOk = filter === 'ALL' || e.status === filter;
+      const courseOk = courseFilter === 'ALL' || String(e.courseId) === String(courseFilter);
+      return statusOk && courseOk;
+    });
+  }, [exams, filter, courseFilter]);
 
   // เฉพาะคอร์สที่เปิดทำการเรียนการสอนแล้ว (ONGOING) เท่านั้นที่สร้างข้อสอบได้ —
   // คอร์สอื่น (รอเปิดเรียน/เปิดรับสมัคร/ปิดรับสมัคร/เรียนจบแล้ว) ไม่ให้เลือกตั้งแต่ใน dropdown
@@ -179,8 +220,8 @@ export default function TutorExamSchedulePage() {
 
   const selectedCourse = eligibleCourses.find((c) => String(c.id) === String(form.courseId));
 
-  function openCreate() {
-    setForm(EMPTY_FORM);
+  function openCreate(presetCourseId) {
+    setForm(presetCourseId ? { ...EMPTY_FORM, courseId: String(presetCourseId) } : EMPTY_FORM);
     setFormErr('');
     setShowCreate(true);
   }
@@ -277,35 +318,73 @@ export default function TutorExamSchedulePage() {
       <div className="tutor-schedule-header">
         <div>
           <h1>ตารางสอบ</h1>
-          <p>สร้างและจัดการข้อสอบของทุกคอร์สที่คุณสอน</p>
+          <p>สร้างและจัดการข้อสอบของทุกคอร์สที่คุณสอน — สร้างข้อสอบได้ตั้งแต่วันที่คอร์สเริ่มสอนเป็นต้นไปเท่านั้น</p>
         </div>
         <div className="tes-header-actions">
-          <button type="button" className="tes-btn-primary" onClick={openCreate}>+ สร้างข้อสอบ</button>
+          <button type="button" className="tes-btn-primary" onClick={() => openCreate()}>+ สร้างข้อสอบ</button>
           <RefreshButton onClick={load} loading={loading} />
         </div>
       </div>
 
       <div className="tutor-schedule-summary">
-        <div className="tutor-schedule-summary-card"><p>ข้อสอบทั้งหมด</p><h2>{summary.total}</h2></div>
-        <div className="tutor-schedule-summary-card"><p>เปิดสอบอยู่</p><h2>{summary.open}</h2></div>
-        <div className="tutor-schedule-summary-card"><p>ยังไม่เปิด</p><h2>{summary.upcoming}</h2></div>
-        <div className="tutor-schedule-summary-card"><p>ปิดแล้ว</p><h2>{summary.closed}</h2></div>
+        <div className="tutor-schedule-summary-card tes-summary-total">
+          <span className="tes-summary-icon">🗂️</span>
+          <div><p>ข้อสอบทั้งหมด</p><h2>{summary.total}</h2></div>
+        </div>
+        <div className="tutor-schedule-summary-card tes-summary-open">
+          <span className="tes-summary-icon">🟢</span>
+          <div><p>เปิดสอบอยู่</p><h2>{summary.open}</h2></div>
+        </div>
+        <div className="tutor-schedule-summary-card tes-summary-upcoming">
+          <span className="tes-summary-icon">🕒</span>
+          <div><p>ยังไม่เปิด</p><h2>{summary.upcoming}</h2></div>
+        </div>
+        <div className="tutor-schedule-summary-card tes-summary-closed">
+          <span className="tes-summary-icon">🔒</span>
+          <div><p>ปิดแล้ว</p><h2>{summary.closed}</h2></div>
+        </div>
       </div>
 
       {!loading && !error && courses.length > 0 && (
         <div className="tes-content-card tes-course-eligibility">
           <div className="tes-course-eligibility-header">
             <h2>สถานะคอร์สของคุณ</h2>
-            <p>สร้างข้อสอบได้เฉพาะคอร์สที่ขึ้นสถานะ "กำลังเรียน" เท่านั้น</p>
+            <p>สร้างข้อสอบได้เฉพาะคอร์สที่ขึ้นสถานะ "กำลังเรียน" เท่านั้น — คลิกที่คอร์สเพื่อกรองรายการด้านล่าง</p>
           </div>
           <div className="tes-course-status-grid">
+            <button
+              type="button"
+              className={`tes-course-status-item tes-course-status-item--btn ${courseFilter === 'ALL' ? 'tes-course-status-item--active' : ''}`}
+              onClick={() => setCourseFilter('ALL')}
+            >
+              <span className="tes-course-status-name">ทุกคอร์ส</span>
+            </button>
             {courses.map((c) => (
-              <div key={c.id} className="tes-course-status-item">
+              <button
+                key={c.id}
+                type="button"
+                className={`tes-course-status-item tes-course-status-item--btn ${String(courseFilter) === String(c.id) ? 'tes-course-status-item--active' : ''}`}
+                onClick={() => setCourseFilter(String(c.id))}
+              >
                 <span className="tes-course-status-name">{safeText(c.courseName)}</span>
                 <span className={getCourseStatusClass(c.status)}>
                   {COURSE_STATUS_LABELS[c.status] || c.status}
                 </span>
-              </div>
+                {c.status === EXAM_ELIGIBLE_COURSE_STATUS && (
+                  <span
+                    className="tes-course-quick-create"
+                    role="button"
+                    tabIndex={0}
+                    onClick={(e) => { e.stopPropagation(); openCreate(c.id); }}
+                    onKeyDown={(e) => { if (e.key === 'Enter') { e.stopPropagation(); openCreate(c.id); } }}
+                  >
+                    + สร้างข้อสอบ
+                  </span>
+                )}
+                {c.status !== EXAM_ELIGIBLE_COURSE_STATUS && c.courseStartDate && (
+                  <span className="tes-lbl-hint">เริ่มเรียน {formatDateShort(c.courseStartDate)}</span>
+                )}
+              </button>
             ))}
           </div>
         </div>
@@ -353,7 +432,7 @@ export default function TutorExamSchedulePage() {
                     <h3>{safeText(exam.title)}</h3>
                   </div>
                   <span className={getStatusClass(exam.status)}>
-                    {STATUS_LABELS[exam.status] || exam.status}
+                    {STATUS_ICONS[exam.status] || ''} {STATUS_LABELS[exam.status] || exam.status}
                   </span>
                 </div>
 
@@ -483,7 +562,7 @@ export default function TutorExamSchedulePage() {
                   minDate={selectedCourse?.courseStartDate}
                 />
                 {selectedCourse?.courseStartDate && (
-                  <span className="tes-lbl-hint">เลือกได้ตั้งแต่วันที่เปิดเรียนของคอร์ส ({selectedCourse.courseStartDate}) เป็นต้นไป</span>
+                  <span className="tes-lbl-hint">เลือกได้ตั้งแต่วันที่เปิดเรียนของคอร์ส ({formatDateShort(selectedCourse.courseStartDate)}) เป็นต้นไป — ย้อนหลังไม่ได้</span>
                 )}
               </label>
 
