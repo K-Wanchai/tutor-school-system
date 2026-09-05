@@ -40,21 +40,6 @@ const FILTERS = [
 // ใน ExamServiceImpl ห้ามผ่อนเงื่อนไขนี้ที่ฝั่ง frontend เด็ดขาดเพราะ backend เป็นคนบังคับจริง
 const EXAM_ELIGIBLE_COURSE_STATUS = 'ONGOING';
 
-const COURSE_STATUS_LABELS = {
-  PENDING: 'รอเปิดเรียน',
-  OPEN_FOR_REGISTRATION: 'เปิดรับสมัคร',
-  CLOSED: 'ปิดรับสมัคร',
-  ONGOING: 'กำลังเรียน',
-  COMPLETED: 'เรียนจบแล้ว',
-};
-
-function getCourseStatusClass(status) {
-  return `tes-course-status tes-course-status-${String(status || 'unknown').toLowerCase()}`;
-}
-
-// ประเภทข้อสอบ = ลำดับการสอบของคอร์สนั้น เช่น "การสอบครั้งที่ 1", "การสอบครั้งที่ 2", ...
-const EXAM_TYPE_OPTIONS = Array.from({ length: 15 }, (_, i) => `การสอบครั้งที่ ${i + 1}`);
-
 // แปลงรหัสวัน backend (MON/TUE/...) เป็นเลขวันของ Date.getDay() (0=อาทิตย์...6=เสาร์)
 // ให้ตรงกับ allowedWeekdays ของ CalendarDateInput
 const DAY_CODE_TO_WEEKDAY = { SUN: 0, MON: 1, TUE: 2, WED: 3, THU: 4, FRI: 5, SAT: 6 };
@@ -166,7 +151,6 @@ export default function TutorExamSchedulePage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [filter, setFilter] = useState('ALL');
-  const [courseFilter, setCourseFilter] = useState('ALL');
   const [busyId, setBusyId] = useState(null);
 
   const [showCreate, setShowCreate] = useState(false);
@@ -198,27 +182,6 @@ export default function TutorExamSchedulePage() {
     load();
   }, []);
 
-  // มาจากปุ่ม "ตารางสอบ" ในหน้าคอร์สของฉัน — พาไปยังคอร์สนั้นและเปิดฟอร์มสร้างข้อสอบให้เลย
-  useEffect(() => {
-    const courseIdParam = searchParams.get('courseId');
-    if (!courseIdParam || courses.length === 0) return;
-    setCourseFilter(courseIdParam);
-    if (searchParams.get('create') === '1') {
-      const course = courses.find((c) => String(c.id) === courseIdParam);
-      if (course && course.status === EXAM_ELIGIBLE_COURSE_STATUS) {
-        setForm({ ...EMPTY_FORM, courseId: courseIdParam });
-        setFormErr('');
-        setShowCreate(true);
-      }
-      setSearchParams((prev) => {
-        const next = new URLSearchParams(prev);
-        next.delete('create');
-        return next;
-      }, { replace: true });
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [courses]);
-
   const summary = useMemo(() => {
     return {
       total: exams.length,
@@ -228,20 +191,43 @@ export default function TutorExamSchedulePage() {
     };
   }, [exams]);
 
-  const filtered = useMemo(() => {
-    return exams.filter((e) => {
-      const statusOk = filter === 'ALL' || e.status === filter;
-      const courseOk = courseFilter === 'ALL' || String(e.courseId) === String(courseFilter);
-      return statusOk && courseOk;
-    });
-  }, [exams, filter, courseFilter]);
-
-  // เฉพาะคอร์สที่เปิดทำการเรียนการสอนแล้ว (ONGOING) เท่านั้นที่สร้างข้อสอบได้ —
-  // คอร์สอื่น (รอเปิดเรียน/เปิดรับสมัคร/ปิดรับสมัคร/เรียนจบแล้ว) ไม่ให้เลือกตั้งแต่ใน dropdown
+  // เฉพาะคอร์สที่เปิดทำการเรียนการสอนแล้ว (ONGOING) เท่านั้นที่สร้างข้อสอบได้ — หน้านี้จึงแสดง card
+  // เฉพาะคอร์สกลุ่มนี้เท่านั้น คอร์สอื่น (รอเปิดเรียน/เปิดรับสมัคร/ปิดรับสมัคร/เรียนจบแล้ว) ไม่แสดงเลย
   const eligibleCourses = useMemo(
     () => courses.filter((c) => c.status === EXAM_ELIGIBLE_COURSE_STATUS),
     [courses]
   );
+
+  // จัดกลุ่มข้อสอบตามคอร์ส (เฉพาะคอร์สที่กำลังเรียน) แล้วกรองตามแท็บสถานะที่เลือกในแต่ละคอร์ส
+  const examsByCourse = useMemo(() => {
+    const map = new Map();
+    eligibleCourses.forEach((c) => map.set(String(c.id), []));
+    exams.forEach((e) => {
+      const key = String(e.courseId);
+      if (map.has(key)) map.get(key).push(e);
+    });
+    return map;
+  }, [eligibleCourses, exams]);
+
+  // มาจากปุ่ม "ตารางสอบ" ในหน้าคอร์สของฉัน — เลื่อนไปหา card ของคอร์สนั้นและเปิดฟอร์มสร้างข้อสอบให้เลย
+  useEffect(() => {
+    const courseIdParam = searchParams.get('courseId');
+    if (!courseIdParam || courses.length === 0) return;
+    if (searchParams.get('create') === '1') {
+      const course = eligibleCourses.find((c) => String(c.id) === courseIdParam);
+      if (course) {
+        openCreate(courseIdParam);
+      }
+    }
+    document.getElementById(`tes-course-${courseIdParam}`)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    setSearchParams((prev) => {
+      const next = new URLSearchParams(prev);
+      next.delete('create');
+      next.delete('courseId');
+      return next;
+    }, { replace: true });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [courses]);
 
   const selectedCourse = eligibleCourses.find((c) => String(c.id) === String(form.courseId));
 
@@ -257,8 +243,11 @@ export default function TutorExamSchedulePage() {
     ? (selectedCourse.courseStartDate > todayIso() ? selectedCourse.courseStartDate : todayIso())
     : todayIso();
 
-  function openCreate(presetCourseId) {
-    setForm(presetCourseId ? { ...EMPTY_FORM, courseId: String(presetCourseId) } : EMPTY_FORM);
+  // ประเภทข้อสอบตั้งชื่ออัตโนมัติตามลำดับที่สร้างของคอร์สนั้น — เพิ่มครั้งแรกได้ "การสอบครั้งที่ 1"
+  // ครั้งต่อไปนับต่ออัตโนมัติ ไม่ต้องให้ติวเตอร์เลือกเอง
+  function openCreate(courseId) {
+    const examCount = (examsByCourse.get(String(courseId)) || []).length;
+    setForm({ ...EMPTY_FORM, courseId: String(courseId), title: `การสอบครั้งที่ ${examCount + 1}` });
     setFormErr('');
     setShowCreate(true);
   }
@@ -270,7 +259,7 @@ export default function TutorExamSchedulePage() {
   async function handleCreate(e) {
     e.preventDefault();
     if (!form.courseId) return setFormErr('กรุณาเลือกคอร์ส');
-    if (!form.title) return setFormErr('กรุณาเลือกประเภทข้อสอบ');
+    if (!form.title) return setFormErr('ไม่พบชื่อประเภทข้อสอบ กรุณาปิดแล้วลองใหม่');
     if (form.passingScore === '' || Number.isNaN(Number(form.passingScore))) {
       return setFormErr('กรุณากรอกคะแนนเต็ม');
     }
@@ -367,10 +356,9 @@ export default function TutorExamSchedulePage() {
       <div className="tutor-schedule-header">
         <div>
           <h1>ตารางสอบ</h1>
-          <p>สร้างและจัดการข้อสอบของทุกคอร์สที่คุณสอน — สร้างข้อสอบได้ตั้งแต่วันที่คอร์สเริ่มสอนเป็นต้นไปเท่านั้น</p>
+          <p>คอร์สที่กำลังเรียนอยู่แต่ละคอร์สจะมี card ของตัวเอง — กด "+ เพิ่มข้อสอบ" ในคอร์สนั้นเพื่อสร้างข้อสอบให้คอร์สนั้นได้เลย</p>
         </div>
         <div className="tes-header-actions">
-          <button type="button" className="tes-btn-primary" onClick={() => openCreate()}>+ สร้างข้อสอบ</button>
           <RefreshButton onClick={load} loading={loading} />
         </div>
       </div>
@@ -393,51 +381,6 @@ export default function TutorExamSchedulePage() {
           <div><p>ปิดแล้ว</p><h2>{summary.closed}</h2></div>
         </div>
       </div>
-
-      {!loading && !error && courses.length > 0 && (
-        <div className="tes-content-card tes-course-eligibility">
-          <div className="tes-course-eligibility-header">
-            <h2>สถานะคอร์สของคุณ</h2>
-            <p>สร้างข้อสอบได้เฉพาะคอร์สที่ขึ้นสถานะ "กำลังเรียน" เท่านั้น — คลิกที่คอร์สเพื่อกรองรายการด้านล่าง</p>
-          </div>
-          <div className="tes-course-status-grid">
-            <button
-              type="button"
-              className={`tes-course-status-item tes-course-status-item--btn ${courseFilter === 'ALL' ? 'tes-course-status-item--active' : ''}`}
-              onClick={() => setCourseFilter('ALL')}
-            >
-              <span className="tes-course-status-name">ทุกคอร์ส</span>
-            </button>
-            {courses.map((c) => (
-              <button
-                key={c.id}
-                type="button"
-                className={`tes-course-status-item tes-course-status-item--btn ${String(courseFilter) === String(c.id) ? 'tes-course-status-item--active' : ''}`}
-                onClick={() => setCourseFilter(String(c.id))}
-              >
-                <span className="tes-course-status-name">{safeText(c.courseName)}</span>
-                <span className={getCourseStatusClass(c.status)}>
-                  {COURSE_STATUS_LABELS[c.status] || c.status}
-                </span>
-                {c.status === EXAM_ELIGIBLE_COURSE_STATUS && (
-                  <span
-                    className="tes-course-quick-create"
-                    role="button"
-                    tabIndex={0}
-                    onClick={(e) => { e.stopPropagation(); openCreate(c.id); }}
-                    onKeyDown={(e) => { if (e.key === 'Enter') { e.stopPropagation(); openCreate(c.id); } }}
-                  >
-                    + สร้างข้อสอบ
-                  </span>
-                )}
-                {c.status !== EXAM_ELIGIBLE_COURSE_STATUS && c.courseStartDate && (
-                  <span className="tes-lbl-hint">เริ่มเรียน {formatDateShort(c.courseStartDate)}</span>
-                )}
-              </button>
-            ))}
-          </div>
-        </div>
-      )}
 
       <div className="tes-content-card">
         <div className="tes-filter-tabs">
@@ -462,90 +405,117 @@ export default function TutorExamSchedulePage() {
           </div>
         )}
 
-        {!loading && !error && filtered.length === 0 && (
+        {!loading && !error && eligibleCourses.length === 0 && (
           <div className="tutor-schedule-empty">
-            <h2>ยังไม่มีข้อสอบ</h2>
-            <p>กด "+ สร้างข้อสอบ" เพื่อสร้างข้อสอบชุดแรกของคุณ</p>
+            <h2>ยังไม่มีคอร์สที่กำลังเรียน</h2>
+            <p>สร้างข้อสอบได้เฉพาะคอร์สที่ขึ้นสถานะ "กำลังเรียน" เท่านั้น — รอให้คอร์สที่คุณสอนถึงวันเริ่มเรียนก่อน</p>
           </div>
         )}
 
-        {!loading && !error && filtered.length > 0 && (
-          <div className="tes-grid">
-            {filtered.map((exam) => (
-              <article key={exam.id} className="tes-card">
-                <div className="tes-card-top">
-                  <div>
-                    <p className="tes-card-course">
-                      {safeText(exam.courseName)}{exam.lessonTitle ? ` · บท ${safeText(exam.lessonTitle)}` : ''}
-                    </p>
-                    <h3>{safeText(exam.title)}</h3>
-                  </div>
-                  <span className={getStatusClass(exam.status)}>
-                    {STATUS_ICONS[exam.status] || ''} {STATUS_LABELS[exam.status] || exam.status}
-                  </span>
-                </div>
-
-                {exam.description && <p className="tes-card-desc">{exam.description}</p>}
-
-                <div className="tes-info-list">
-                  <div>
-                    <span>เวลาเปิดสอบ</span>
-                    <strong>{formatDateTime(exam.startTime)}</strong>
-                  </div>
-                  <div>
-                    <span>เวลาปิดสอบ</span>
-                    <strong>{formatDateTime(exam.endTime)}</strong>
-                  </div>
-                  <div>
-                    <span>ระยะเวลาทำข้อสอบ</span>
-                    <strong>{exam.durationMinutes ? `${exam.durationMinutes} นาที` : '-'}</strong>
-                  </div>
-                  <div>
-                    <span>คะแนนเต็ม</span>
-                    <strong>{exam.totalScore ?? '-'}</strong>
-                  </div>
-                </div>
-
-                {exam.status === 'DRAFT' && !exam.startTime && (
-                  <div className="tes-note">ยังไม่ได้กำหนดวัน-เวลาเปิดสอบ</div>
-                )}
-
-                <div className="tes-card-actions">
-                  <button type="button" onClick={() => navigate(`/tutor/exams/${exam.id}/build`)}>
-                    📝 จัดการคำถาม
-                  </button>
-
-                  {exam.status !== 'DRAFT' && (
-                    <button type="button" onClick={() => navigate(`/tutor/exams/${exam.id}/grading`)}>
-                      📊 ผลสอบ/ตรวจข้อสอบ
+        {!loading && !error && eligibleCourses.length > 0 && (
+          <div className="tes-course-list">
+            {eligibleCourses.map((course) => {
+              const courseExams = (examsByCourse.get(String(course.id)) || []).filter(
+                (e) => filter === 'ALL' || e.status === filter
+              );
+              return (
+                <section key={course.id} id={`tes-course-${course.id}`} className="tes-course-panel">
+                  <div className="tes-course-panel-header">
+                    <div>
+                      <span className="tes-course-panel-code">{safeText(course.courseCode)}</span>
+                      <h3>{safeText(course.courseName)}</h3>
+                    </div>
+                    <button type="button" className="tes-btn-primary" onClick={() => openCreate(course.id)}>
+                      + เพิ่มข้อสอบ
                     </button>
-                  )}
+                  </div>
 
-                  {exam.status === 'DRAFT' && (
-                    <button type="button" disabled={busyId === exam.id} onClick={() => handleOpen(exam.id)}>
-                      เปิดสอบ
-                    </button>
-                  )}
+                  {courseExams.length === 0 ? (
+                    <div className="tes-course-panel-empty">
+                      ยังไม่มีข้อสอบ{filter !== 'ALL' ? 'ในสถานะนี้' : ''}สำหรับคอร์สนี้ — กด "+ เพิ่มข้อสอบ" เพื่อสร้างข้อสอบชุดแรก
+                    </div>
+                  ) : (
+                    <div className="tes-grid">
+                      {courseExams.map((exam) => (
+                        <article key={exam.id} className="tes-card">
+                          <div className="tes-card-top">
+                            <div>
+                              {exam.lessonTitle && (
+                                <p className="tes-card-course">บท {safeText(exam.lessonTitle)}</p>
+                              )}
+                              <h3>{safeText(exam.title)}</h3>
+                            </div>
+                            <span className={getStatusClass(exam.status)}>
+                              {STATUS_ICONS[exam.status] || ''} {STATUS_LABELS[exam.status] || exam.status}
+                            </span>
+                          </div>
 
-                  {exam.status === 'OPEN' && (
-                    <button type="button" disabled={busyId === exam.id} onClick={() => handleClose(exam.id)}>
-                      ปิดสอบ
-                    </button>
-                  )}
+                          {exam.description && <p className="tes-card-desc">{exam.description}</p>}
 
-                  {exam.status !== 'OPEN' && (
-                    <button
-                      type="button"
-                      className="tes-btn-danger"
-                      disabled={busyId === exam.id}
-                      onClick={() => handleDelete(exam.id)}
-                    >
-                      ลบ
-                    </button>
+                          <div className="tes-info-list">
+                            <div>
+                              <span>เวลาเปิดสอบ</span>
+                              <strong>{formatDateTime(exam.startTime)}</strong>
+                            </div>
+                            <div>
+                              <span>เวลาปิดสอบ</span>
+                              <strong>{formatDateTime(exam.endTime)}</strong>
+                            </div>
+                            <div>
+                              <span>ระยะเวลาทำข้อสอบ</span>
+                              <strong>{exam.durationMinutes ? `${exam.durationMinutes} นาที` : '-'}</strong>
+                            </div>
+                            <div>
+                              <span>คะแนนเต็ม</span>
+                              <strong>{exam.totalScore ?? '-'}</strong>
+                            </div>
+                          </div>
+
+                          {exam.status === 'DRAFT' && !exam.startTime && (
+                            <div className="tes-note">ยังไม่ได้กำหนดวัน-เวลาเปิดสอบ</div>
+                          )}
+
+                          <div className="tes-card-actions">
+                            <button type="button" onClick={() => navigate(`/tutor/exams/${exam.id}/build`)}>
+                              📝 จัดการคำถาม
+                            </button>
+
+                            {exam.status !== 'DRAFT' && (
+                              <button type="button" onClick={() => navigate(`/tutor/exams/${exam.id}/grading`)}>
+                                📊 ผลสอบ/ตรวจข้อสอบ
+                              </button>
+                            )}
+
+                            {exam.status === 'DRAFT' && (
+                              <button type="button" disabled={busyId === exam.id} onClick={() => handleOpen(exam.id)}>
+                                เปิดสอบ
+                              </button>
+                            )}
+
+                            {exam.status === 'OPEN' && (
+                              <button type="button" disabled={busyId === exam.id} onClick={() => handleClose(exam.id)}>
+                                ปิดสอบ
+                              </button>
+                            )}
+
+                            {exam.status !== 'OPEN' && (
+                              <button
+                                type="button"
+                                className="tes-btn-danger"
+                                disabled={busyId === exam.id}
+                                onClick={() => handleDelete(exam.id)}
+                              >
+                                ลบ
+                              </button>
+                            )}
+                          </div>
+                        </article>
+                      ))}
+                    </div>
                   )}
-                </div>
-              </article>
-            ))}
+                </section>
+              );
+            })}
           </div>
         )}
       </div>
@@ -558,35 +528,24 @@ export default function TutorExamSchedulePage() {
               <button type="button" onClick={() => setShowCreate(false)}>✕</button>
             </div>
 
-            {eligibleCourses.length === 0 ? (
+            {!selectedCourse ? (
               <div className="tes-modal-empty">
-                <p>คุณยังไม่มีคอร์สที่เปิดทำการเรียนการสอนอยู่ (สถานะ "กำลังเรียน")</p>
-                <p>ต้องรอให้คอร์สที่คุณสอนเปลี่ยนเป็นสถานะ "กำลังเรียน" ก่อน จึงจะสร้างข้อสอบได้ —
-                  คอร์สที่ยังไม่เปิดเรียน ปิดรับสมัคร หรือเรียนจบไปแล้ว ไม่สามารถสร้างข้อสอบใหม่ได้</p>
+                <p>ไม่พบคอร์สนี้ หรือคอร์สนี้ไม่ได้อยู่ในสถานะ "กำลังเรียน" แล้ว</p>
+                <p>กรุณาปิดหน้าต่างนี้แล้วลองใหม่จาก card ของคอร์สนั้นอีกครั้ง</p>
                 <div className="tes-form-actions">
                   <button type="button" onClick={() => setShowCreate(false)}>ปิด</button>
                 </div>
               </div>
             ) : (
             <form className="tes-form" onSubmit={handleCreate}>
-              <label>
-                คอร์ส *
-                <select value={form.courseId} onChange={(e) => fld('courseId', e.target.value)}>
-                  <option value="">— เลือกคอร์ส —</option>
-                  {eligibleCourses.map((c) => (
-                    <option key={c.id} value={c.id}>{c.courseName}</option>
-                  ))}
-                </select>
-              </label>
+              <div className="tes-form-course-badge">
+                คอร์ส: <strong>{safeText(selectedCourse?.courseName)}</strong>
+              </div>
 
               <label>
-                ประเภทข้อสอบ *
-                <select value={form.title} onChange={(e) => fld('title', e.target.value)}>
-                  <option value="">— เลือกประเภทข้อสอบ —</option>
-                  {EXAM_TYPE_OPTIONS.map((t) => (
-                    <option key={t} value={t}>{t}</option>
-                  ))}
-                </select>
+                ประเภทข้อสอบ
+                <input type="text" value={form.title} readOnly disabled />
+                <span className="tes-lbl-hint">ตั้งชื่ออัตโนมัติตามลำดับการสอบของคอร์สนี้</span>
               </label>
 
               <label>

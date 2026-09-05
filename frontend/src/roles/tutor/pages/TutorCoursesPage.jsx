@@ -259,16 +259,14 @@ export default function TutorCoursesPage() {
                   ดูรายละเอียด
                 </button>
 
-                <button
-                  className="tc-btn-exam"
-                  onClick={() => navigate(
-                    course.status === 'ONGOING'
-                      ? `/tutor/exam-schedule?courseId=${course.id}&create=1`
-                      : `/tutor/exam-schedule?courseId=${course.id}`
-                  )}
-                >
-                  📝 ตารางสอบ
-                </button>
+                {course.status === 'ONGOING' && (
+                  <button
+                    className="tc-btn-exam"
+                    onClick={() => navigate(`/tutor/exam-schedule?courseId=${course.id}&create=1`)}
+                  >
+                    📝 ตารางสอบ
+                  </button>
+                )}
 
                 {/* {['PENDING', 'CLOSED', 'OPEN_FOR_REGISTRATION', 'ONGOING'].includes(course.status) && (
                   <button className="tc-btn-accept" onClick={() => openManage(course)}>

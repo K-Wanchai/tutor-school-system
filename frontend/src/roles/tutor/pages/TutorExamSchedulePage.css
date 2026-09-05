@@ -437,112 +437,60 @@
   text-align: center;
 }
 
-.tes-course-eligibility-header h2 {
-  margin: 0 0 4px;
-  font-size: 15px;
-  color: #111827;
-}
-
-.tes-course-eligibility-header p {
-  margin: 0 0 14px;
-  color: #6b7280;
-  font-size: 12px;
-}
-
-.tes-course-status-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-  gap: 10px;
-}
-
-.tes-course-status-item {
+.tes-course-list {
   display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 10px;
-  padding: 10px 12px;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.tes-course-panel {
+  padding: 18px;
   border: 1px solid #e5e7eb;
-  border-radius: 12px;
-  background: #f9fafb;
+  border-radius: 16px;
+  background: #fafafa;
 }
 
-.tes-course-status-item--btn {
-  font-family: inherit;
-  cursor: pointer;
-  text-align: left;
-  transition: 0.15s ease;
-}
-
-.tes-course-status-item--btn:hover {
-  border-color: #a7f3d0;
-  background: #ecfdf5;
-}
-
-.tes-course-status-item--active {
-  border-color: #059669;
-  background: #ecfdf5;
-  box-shadow: 0 0 0 1px #059669 inset;
-}
-
-.tes-course-quick-create {
-  border: 1px solid #059669;
-  border-radius: 999px;
-  padding: 3px 8px;
-  font-size: 10px;
-  font-weight: 800;
-  color: #059669;
-  white-space: nowrap;
-  cursor: pointer;
-}
-
-.tes-course-quick-create:hover {
-  background: #059669;
-  color: white;
-}
-
-.tes-course-status-name {
-  font-size: 13px;
-  font-weight: 700;
-  color: #374151;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.tes-course-status {
-  display: inline-flex;
+.tes-course-panel-header {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
   align-items: center;
-  justify-content: center;
-  min-width: max-content;
-  padding: 5px 10px;
-  border-radius: 999px;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.tes-course-panel-code {
+  display: block;
+  margin-bottom: 2px;
+  color: #059669;
   font-size: 11px;
   font-weight: 800;
 }
 
-.tes-course-status-pending {
-  background: #fef3c7;
-  color: #92400e;
+.tes-course-panel-header h3 {
+  margin: 0;
+  color: #111827;
+  font-size: 16px;
+  font-weight: 800;
 }
 
-.tes-course-status-open_for_registration {
-  background: #e0f2fe;
-  color: #075985;
+.tes-course-panel-empty {
+  padding: 18px;
+  border: 1px dashed #d1d5db;
+  border-radius: 12px;
+  background: white;
+  color: #6b7280;
+  font-size: 12px;
+  text-align: center;
 }
 
-.tes-course-status-closed {
-  background: #f3f4f6;
-  color: #4b5563;
-}
-
-.tes-course-status-ongoing {
-  background: #dcfce7;
-  color: #166534;
-}
-
-.tes-course-status-completed {
-  background: #ede9fe;
-  color: #5b21b6;
+.tes-form-course-badge {
+  padding: 8px 12px;
+  border-radius: 8px;
+  background: #ecfdf5;
+  color: #047857;
+  font-size: 13px;
+  font-weight: 700;
 }
 
 .tes-modal-empty {
