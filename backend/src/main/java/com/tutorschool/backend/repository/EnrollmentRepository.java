@@ -46,8 +46,10 @@ public interface EnrollmentRepository extends JpaRepository<Enrollment, Long> {
 
     List<Enrollment> findTop5ByOrderByCreatedAtDesc();
 
-    @Query("SELECT e FROM Enrollment e WHERE e.paymentStatus = 'UNPAID' AND e.paymentDeadline IS NOT NULL AND e.paymentDeadline < :now AND e.status != 'CANCELLED'")
-    List<Enrollment> findExpiredUnpaidEnrollments(@Param("now") LocalDateTime now);
+    // ครอบคลุมทั้ง UNPAID (ยังไม่เคยส่งสลิป) และ FAILED (ถูกตีกลับให้แก้ไขสลิปแล้วแต่ยังไม่ส่งใหม่) —
+    // ทั้งสองกรณีมี paymentDeadline เป็นตัวกำหนดเส้นตายเดียวกัน ดู EnrollmentServiceImpl.returnForSlipRevision
+    @Query("SELECT e FROM Enrollment e WHERE e.paymentStatus IN ('UNPAID', 'FAILED') AND e.paymentDeadline IS NOT NULL AND e.paymentDeadline < :now AND e.status != 'CANCELLED'")
+    List<Enrollment> findExpiredPaymentEnrollments(@Param("now") LocalDateTime now);
 
     void deleteByCourseId(Long courseId);
 }

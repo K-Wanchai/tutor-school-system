@@ -15,7 +15,7 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class ExamInstitutionRequest {
 
-    // ใช้เฉพาะตอนสร้าง (createExamInstitution) — บังคับกรอก ต้องเป็นตัวเลข 4 หลักและไม่ซ้ำ
+    // ใช้เฉพาะตอนสร้าง (createExamInstitution) — ไม่บังคับกรอก แต่ถ้ากรอกต้องเป็นตัวเลข 4 หลักและไม่ซ้ำ
     // updateExamInstitution ไม่แตะฟิลด์นี้เลย รหัสสถาบันแก้ไขไม่ได้หลังสร้างแล้ว (เหมือนรหัสคอร์ส)
     private String institutionCode;
 

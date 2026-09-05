@@ -40,12 +40,17 @@ public class ExamInstitutionServiceImpl implements ExamInstitutionService {
             throw new DuplicateResourceException("มีชื่อสถาบันนี้อยู่ในระบบแล้ว: " + name);
         }
 
+        // ไม่บังคับกรอก — กรอกเฉพาะกรณีที่รู้รหัสจริงของสถาบัน (เช่น รหัส TCAS) ถ้าไม่กรอกจะเก็บเป็น null
         String code = request.getInstitutionCode() == null ? "" : request.getInstitutionCode().trim();
-        if (!INSTITUTION_CODE_PATTERN.matcher(code).matches()) {
-            throw new IllegalArgumentException("กรุณากรอกรหัสสถาบันเป็นตัวเลข 4 หลัก");
-        }
-        if (examInstitutionRepository.existsByInstitutionCode(code)) {
-            throw new DuplicateResourceException("มีรหัสสถาบันนี้อยู่ในระบบแล้ว: " + code);
+        if (!code.isEmpty()) {
+            if (!INSTITUTION_CODE_PATTERN.matcher(code).matches()) {
+                throw new IllegalArgumentException("กรุณากรอกรหัสสถาบันเป็นตัวเลข 4 หลัก");
+            }
+            if (examInstitutionRepository.existsByInstitutionCode(code)) {
+                throw new DuplicateResourceException("มีรหัสสถาบันนี้อยู่ในระบบแล้ว: " + code);
+            }
+        } else {
+            code = null;
         }
 
         ExamInstitution institution = ExamInstitution.builder()

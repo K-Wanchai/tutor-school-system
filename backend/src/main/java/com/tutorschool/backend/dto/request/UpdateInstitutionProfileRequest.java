@@ -43,5 +43,10 @@ public class UpdateInstitutionProfileRequest {
     @Max(value = 1440, message = "Enrollment payment deadline must not exceed 1440 minutes")
     private Integer enrollmentPaymentDeadlineMinutes;
 
+    @NotNull(message = "Slip revision deadline must not be null")
+    @Min(value = 1, message = "Slip revision deadline must be at least 1 minute")
+    @Max(value = 1440, message = "Slip revision deadline must not exceed 1440 minutes")
+    private Integer slipRevisionDeadlineMinutes;
+
     private String allowedTimeSlots;
 }

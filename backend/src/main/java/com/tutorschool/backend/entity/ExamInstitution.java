@@ -18,7 +18,7 @@ public class ExamInstitution {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "institution_code", unique = true, nullable = false, length = 20)
+    @Column(name = "institution_code", unique = true, length = 20)
     private String institutionCode;
 
     @Column(name = "institution_name", nullable = false, length = 255)

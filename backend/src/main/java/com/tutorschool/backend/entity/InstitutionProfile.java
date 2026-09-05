@@ -54,6 +54,11 @@ public class InstitutionProfile {
     @Column(name = "enrollment_payment_deadline_minutes")
     private Integer enrollmentPaymentDeadlineMinutes;
 
+    // ระยะเวลาที่ให้นักเรียนอัปโหลดสลิปใหม่ หลังถูกแอดมินตีกลับให้แก้ไข (returnForSlipRevision) — แยกจาก
+    // enrollmentPaymentDeadlineMinutes ซึ่งเป็นระยะเวลารอบแรกก่อนส่งสลิปครั้งแรก
+    @Column(name = "slip_revision_deadline_minutes")
+    private Integer slipRevisionDeadlineMinutes;
+
     // ช่วงเวลาที่อนุญาตให้จัดตารางสอนต่อวัน รูปแบบเดียวกับ scheduleDays เช่น "MON:14:00-20:00,SAT:09:00-18:00"
     // วันที่ไม่ได้ตั้งค่าไว้ = ไม่จำกัดเวลาสำหรับวันนั้น
     @Column(name = "allowed_time_slots", columnDefinition = "TEXT")
