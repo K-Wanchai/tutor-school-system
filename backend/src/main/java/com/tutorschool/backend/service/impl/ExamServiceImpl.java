@@ -46,6 +46,7 @@ public class ExamServiceImpl implements ExamService {
         validateTeacherOwnsCourse(Tutor, course);
         validateCourseIsOngoing(course);
         validateExamDates(request.getStartTime(), request.getEndTime());
+        validateExamStartNotBeforeCourseStart(course, request.getStartTime());
 
         CourseLesson lesson = null;
         if (request.getLessonId() != null) {
@@ -202,7 +203,10 @@ public class ExamServiceImpl implements ExamService {
             }
             exam.setPassingScore(request.getPassingScore());
         }
-        if (request.getStartTime() != null) exam.setStartTime(request.getStartTime());
+        if (request.getStartTime() != null) {
+            validateExamStartNotBeforeCourseStart(exam.getCourse(), request.getStartTime());
+            exam.setStartTime(request.getStartTime());
+        }
         if (request.getEndTime() != null) exam.setEndTime(request.getEndTime());
         if (request.getDurationMinutes() != null) exam.setDurationMinutes(request.getDurationMinutes());
         if (request.getAllowMultipleAttempts() != null) exam.setAllowMultipleAttempts(request.getAllowMultipleAttempts());
@@ -451,6 +455,15 @@ public class ExamServiceImpl implements ExamService {
     private void validateExamDates(java.time.LocalDateTime start, java.time.LocalDateTime end) {
         if (start != null && end != null && !start.isBefore(end)) {
             throw new IllegalStateException("Start time must be before end time");
+        }
+    }
+
+    // วันที่เปิดสอบต้องไม่ก่อนวันที่เปิดเรียนของคอร์ส — กันไว้ที่ service layer คู่กับ minDate ฝั่ง frontend
+    // เพราะ frontend กันแค่ตอนเลือกวันที่เท่านั้น ไม่ได้กันการยิง API ตรง
+    private void validateExamStartNotBeforeCourseStart(Course course, java.time.LocalDateTime start) {
+        if (start != null && course.getCourseStartDate() != null
+                && start.toLocalDate().isBefore(course.getCourseStartDate())) {
+            throw new IllegalStateException("วันที่เปิดสอบต้องไม่ก่อนวันที่เปิดเรียนของคอร์ส");
         }
     }
 

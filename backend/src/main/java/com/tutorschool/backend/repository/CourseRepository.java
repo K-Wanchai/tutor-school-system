@@ -25,4 +25,6 @@ public interface CourseRepository extends JpaRepository<Course, Long> {
     List<Course> findByStatusAndRegistrationStartDateLessThanEqual(CourseStatus status, LocalDate date);
 
     List<Course> findByStatusAndRegistrationEndDateLessThan(CourseStatus status, LocalDate date);
+
+    List<Course> findByStatusInAndCourseStartDateLessThanEqual(List<CourseStatus> statuses, LocalDate date);
 }
