@@ -262,7 +262,7 @@ export default function TutorCoursesPage() {
                 {course.status === 'ONGOING' && (
                   <button
                     className="tc-btn-exam"
-                    onClick={() => navigate(`/tutor/exam-schedule?courseId=${course.id}&create=1`)}
+                    onClick={() => navigate(`/tutor/exam-schedule/${course.id}?create=1`)}
                   >
                     📝 ตารางสอบ
                   </button>
