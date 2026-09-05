@@ -22,7 +22,7 @@ export async function getMyProfile() {
     const res = await api.get('/tutors/me');
     return unwrap(res);
   } catch (error) {
-    throw new Error(getErrorMessage(error));
+    throw new Error(getErrorMessage(error), { cause: error });
   }
 }
 
@@ -31,7 +31,7 @@ export async function updateMyProfile(data) {
     const res = await api.put('/tutors/me', data);
     return unwrap(res);
   } catch (error) {
-    throw new Error(getErrorMessage(error));
+    throw new Error(getErrorMessage(error), { cause: error });
   }
 }
 
@@ -40,6 +40,6 @@ export async function changePassword(data) {
     const res = await api.post('/tutors/me/change-password', data);
     return unwrap(res);
   } catch (error) {
-    throw new Error(getErrorMessage(error));
+    throw new Error(getErrorMessage(error), { cause: error });
   }
 }

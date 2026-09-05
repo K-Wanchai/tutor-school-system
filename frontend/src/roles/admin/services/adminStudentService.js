@@ -24,7 +24,7 @@ export async function getStudents({ page = 0, size = 10, keyword = '' } = {}) {
     const res = await api.get('/students', { params });
     return unwrap(res);
   } catch (error) {
-    throw new Error(apiError(error, 'getStudents'));
+    throw new Error(apiError(error, 'getStudents'), { cause: error });
   }
 }
 
@@ -33,7 +33,7 @@ export async function getStudentById(id) {
     const res = await api.get(`/students/${id}`);
     return unwrap(res);
   } catch (error) {
-    throw new Error(apiError(error, 'getStudentById'));
+    throw new Error(apiError(error, 'getStudentById'), { cause: error });
   }
 }
 

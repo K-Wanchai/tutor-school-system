@@ -25,7 +25,7 @@ export async function getFaculties(institutionId) {
     const res = await api.get(`/admin/exam-institutions/${institutionId}/faculties`);
     return unwrap(res);
   } catch (error) {
-    throw new Error(apiError(error, 'getFaculties'));
+    throw new Error(apiError(error, 'getFaculties'), { cause: error });
   }
 }
 
@@ -35,7 +35,7 @@ export async function createFaculty(institutionId, payload) {
     const res = await api.post(`/admin/exam-institutions/${institutionId}/faculties`, payload);
     return unwrap(res);
   } catch (error) {
-    throw new Error(apiError(error, 'createFaculty'));
+    throw new Error(apiError(error, 'createFaculty'), { cause: error });
   }
 }
 
@@ -44,7 +44,7 @@ export async function updateFaculty(institutionId, facultyId, payload) {
     const res = await api.put(`/admin/exam-institutions/${institutionId}/faculties/${facultyId}`, payload);
     return unwrap(res);
   } catch (error) {
-    throw new Error(apiError(error, 'updateFaculty'));
+    throw new Error(apiError(error, 'updateFaculty'), { cause: error });
   }
 }
 
@@ -53,7 +53,7 @@ export async function deleteFaculty(institutionId, facultyId) {
     const res = await api.delete(`/admin/exam-institutions/${institutionId}/faculties/${facultyId}`);
     return unwrap(res);
   } catch (error) {
-    throw new Error(apiError(error, 'deleteFaculty'));
+    throw new Error(apiError(error, 'deleteFaculty'), { cause: error });
   }
 }
 
@@ -64,7 +64,7 @@ export async function getMajors(institutionId, facultyId) {
     const res = await api.get(`/admin/exam-institutions/${institutionId}/faculties/${facultyId}/majors`);
     return unwrap(res);
   } catch (error) {
-    throw new Error(apiError(error, 'getMajors'));
+    throw new Error(apiError(error, 'getMajors'), { cause: error });
   }
 }
 
@@ -74,7 +74,7 @@ export async function createMajor(institutionId, facultyId, payload) {
     const res = await api.post(`/admin/exam-institutions/${institutionId}/faculties/${facultyId}/majors`, payload);
     return unwrap(res);
   } catch (error) {
-    throw new Error(apiError(error, 'createMajor'));
+    throw new Error(apiError(error, 'createMajor'), { cause: error });
   }
 }
 
@@ -83,7 +83,7 @@ export async function updateMajor(institutionId, facultyId, majorId, payload) {
     const res = await api.put(`/admin/exam-institutions/${institutionId}/faculties/${facultyId}/majors/${majorId}`, payload);
     return unwrap(res);
   } catch (error) {
-    throw new Error(apiError(error, 'updateMajor'));
+    throw new Error(apiError(error, 'updateMajor'), { cause: error });
   }
 }
 
@@ -92,6 +92,6 @@ export async function deleteMajor(institutionId, facultyId, majorId) {
     const res = await api.delete(`/admin/exam-institutions/${institutionId}/faculties/${facultyId}/majors/${majorId}`);
     return unwrap(res);
   } catch (error) {
-    throw new Error(apiError(error, 'deleteMajor'));
+    throw new Error(apiError(error, 'deleteMajor'), { cause: error });
   }
 }

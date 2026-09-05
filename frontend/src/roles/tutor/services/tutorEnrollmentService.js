@@ -20,6 +20,6 @@ export async function getEnrollmentsByCourse(courseId) {
     const data = unwrap(res);
     return Array.isArray(data) ? data : [];
   } catch (error) {
-    throw new Error(apiError(error, 'getEnrollmentsByCourse'));
+    throw new Error(apiError(error, 'getEnrollmentsByCourse'), { cause: error });
   }
 }

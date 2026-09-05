@@ -23,7 +23,7 @@ export async function getVocationalMajors(institutionId) {
     const res = await api.get(`/admin/exam-institutions/${institutionId}/vocational-majors`);
     return unwrap(res);
   } catch (error) {
-    throw new Error(apiError(error, 'getVocationalMajors'));
+    throw new Error(apiError(error, 'getVocationalMajors'), { cause: error });
   }
 }
 
@@ -33,7 +33,7 @@ export async function createVocationalMajor(institutionId, payload) {
     const res = await api.post(`/admin/exam-institutions/${institutionId}/vocational-majors`, payload);
     return unwrap(res);
   } catch (error) {
-    throw new Error(apiError(error, 'createVocationalMajor'));
+    throw new Error(apiError(error, 'createVocationalMajor'), { cause: error });
   }
 }
 
@@ -42,7 +42,7 @@ export async function updateVocationalMajor(institutionId, majorId, payload) {
     const res = await api.put(`/admin/exam-institutions/${institutionId}/vocational-majors/${majorId}`, payload);
     return unwrap(res);
   } catch (error) {
-    throw new Error(apiError(error, 'updateVocationalMajor'));
+    throw new Error(apiError(error, 'updateVocationalMajor'), { cause: error });
   }
 }
 
@@ -51,6 +51,6 @@ export async function deleteVocationalMajor(institutionId, majorId) {
     const res = await api.delete(`/admin/exam-institutions/${institutionId}/vocational-majors/${majorId}`);
     return unwrap(res);
   } catch (error) {
-    throw new Error(apiError(error, 'deleteVocationalMajor'));
+    throw new Error(apiError(error, 'deleteVocationalMajor'), { cause: error });
   }
 }

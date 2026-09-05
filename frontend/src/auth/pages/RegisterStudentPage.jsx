@@ -76,7 +76,6 @@ export default function RegisterStudentPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [fieldErrors, setFieldErrors] = useState({});
-  const [success, setSuccess] = useState('');
 
   // สถานะเช็ค username/email/nationalId ซ้ำแบบ real-time (null = ยังไม่ได้เช็ค, true = ว่าง, false = ซ้ำ)
   const [availability, setAvailability] = useState({ username: null, email: null, nationalId: null });
@@ -200,6 +199,7 @@ export default function RegisterStudentPage() {
     setFieldErrors({});
     try {
       // ตัด confirmPassword ออก — ไม่ส่งไป backend
+      // eslint-disable-next-line no-unused-vars
       const { confirmPassword, ...rest } = form;
       const payload = {
         ...rest,
@@ -277,15 +277,6 @@ export default function RegisterStudentPage() {
                   </ul>
                 )}
               </div>
-            </div>
-          )}
-
-          {success && (
-            <div className="auth-success-alert">
-              <svg viewBox="0 0 20 20" fill="currentColor" width="16" height="16">
-                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-              </svg>
-              <span>{success}</span>
             </div>
           )}
 

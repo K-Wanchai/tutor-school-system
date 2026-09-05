@@ -108,10 +108,6 @@ export default function TutorCoursesPage() {
     });
   }, [courses, keyword, filter]);
 
-  function openManage(course) {
-    setManageCourse(course);
-  }
-
   function openDetail(course) {
     setDetailCourse(course);
   }
@@ -298,9 +294,6 @@ export default function TutorCoursesPage() {
 }
 
 function CourseDetailModal({ course, onClose }) {
-  const lessons = [...(course.lessons || [])].sort((a, b) => (a.lessonOrder || 0) - (b.lessonOrder || 0));
-  const tests = [...(course.tests || [])].sort((a, b) => (a.testOrder || 0) - (b.testOrder || 0));
-
   return (
     <div className="tc-modal-overlay" onClick={onClose}>
       <div className="tc-modal" onClick={(e) => e.stopPropagation()}>

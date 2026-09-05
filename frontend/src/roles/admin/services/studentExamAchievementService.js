@@ -24,7 +24,7 @@ export async function getStudentExamAchievements(params = {}) {
     const res = await api.get('/admin/student-exam-achievements', { params });
     return unwrap(res);
   } catch (error) {
-    throw new Error(apiError(error, 'getStudentExamAchievements'));
+    throw new Error(apiError(error, 'getStudentExamAchievements'), { cause: error });
   }
 }
 
@@ -33,7 +33,7 @@ export async function getStudentExamAchievementById(id) {
     const res = await api.get(`/admin/student-exam-achievements/${id}`);
     return unwrap(res);
   } catch (error) {
-    throw new Error(apiError(error, 'getStudentExamAchievementById'));
+    throw new Error(apiError(error, 'getStudentExamAchievementById'), { cause: error });
   }
 }
 
@@ -44,7 +44,7 @@ export async function createStudentExamAchievement(payload) {
     const res = await api.post('/admin/student-exam-achievements', payload);
     return unwrap(res);
   } catch (error) {
-    throw new Error(apiError(error, 'createStudentExamAchievement'));
+    throw new Error(apiError(error, 'createStudentExamAchievement'), { cause: error });
   }
 }
 
@@ -53,7 +53,7 @@ export async function updateStudentExamAchievement(id, payload) {
     const res = await api.put(`/admin/student-exam-achievements/${id}`, payload);
     return unwrap(res);
   } catch (error) {
-    throw new Error(apiError(error, 'updateStudentExamAchievement'));
+    throw new Error(apiError(error, 'updateStudentExamAchievement'), { cause: error });
   }
 }
 
@@ -62,7 +62,7 @@ export async function deleteStudentExamAchievement(id) {
     const res = await api.delete(`/admin/student-exam-achievements/${id}`);
     return unwrap(res);
   } catch (error) {
-    throw new Error(apiError(error, 'deleteStudentExamAchievement'));
+    throw new Error(apiError(error, 'deleteStudentExamAchievement'), { cause: error });
   }
 }
 
@@ -71,7 +71,7 @@ export async function getStudentExamAchievementsByStudent(studentId) {
     const res = await api.get(`/admin/students/${studentId}/exam-achievements`);
     return unwrap(res);
   } catch (error) {
-    throw new Error(apiError(error, 'getStudentExamAchievementsByStudent'));
+    throw new Error(apiError(error, 'getStudentExamAchievementsByStudent'), { cause: error });
   }
 }
 
@@ -81,6 +81,6 @@ export async function getStudentAchievementDetail(achievementId) {
     const res = await api.get(`/admin/student-exam-achievements/${achievementId}/detail`);
     return unwrap(res);
   } catch (error) {
-    throw new Error(apiError(error, 'getStudentAchievementDetail'));
+    throw new Error(apiError(error, 'getStudentAchievementDetail'), { cause: error });
   }
 }

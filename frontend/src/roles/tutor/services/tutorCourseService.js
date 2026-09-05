@@ -20,7 +20,7 @@ export async function getMyCourses() {
     const data = unwrap(res);
     return Array.isArray(data) ? data : [];
   } catch (error) {
-    throw new Error(apiError(error, 'getMyCourses'));
+    throw new Error(apiError(error, 'getMyCourses'), { cause: error });
   }
 }
 
@@ -29,7 +29,7 @@ export async function markCourseViewed(courseId) {
     const res = await api.patch(`/courses/${courseId}/mark-viewed`);
     return unwrap(res);
   } catch (error) {
-    throw new Error(apiError(error, 'markCourseViewed'));
+    throw new Error(apiError(error, 'markCourseViewed'), { cause: error });
   }
 }
 
@@ -42,7 +42,7 @@ export async function addLesson(courseId, { lessonTitle, lessonContent, lessonOr
     });
     return unwrap(res);
   } catch (error) {
-    throw new Error(apiError(error, 'addLesson'));
+    throw new Error(apiError(error, 'addLesson'), { cause: error });
   }
 }
 
@@ -55,7 +55,7 @@ export async function updateLesson(courseId, lessonId, { lessonTitle, lessonCont
     });
     return unwrap(res);
   } catch (error) {
-    throw new Error(apiError(error, 'updateLesson'));
+    throw new Error(apiError(error, 'updateLesson'), { cause: error });
   }
 }
 
@@ -63,7 +63,7 @@ export async function deleteLesson(courseId, lessonId) {
   try {
     await api.delete(`/courses/${courseId}/lessons/${lessonId}`);
   } catch (error) {
-    throw new Error(apiError(error, 'deleteLesson'));
+    throw new Error(apiError(error, 'deleteLesson'), { cause: error });
   }
 }
 
@@ -77,6 +77,6 @@ export async function addTest(courseId, { testTitle, testDescription, testOrder,
     });
     return unwrap(res);
   } catch (error) {
-    throw new Error(apiError(error, 'addTest'));
+    throw new Error(apiError(error, 'addTest'), { cause: error });
   }
 }

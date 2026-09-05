@@ -22,7 +22,7 @@ export async function getAllEnrollments() {
     const res = await api.get('/enrollments');
     return unwrap(res);
   } catch (error) {
-    throw new Error(apiError(error, 'getAllEnrollments'));
+    throw new Error(apiError(error, 'getAllEnrollments'), { cause: error });
   }
 }
 
@@ -31,7 +31,7 @@ export async function getEnrollmentById(id) {
     const res = await api.get(`/enrollments/${id}`);
     return unwrap(res);
   } catch (error) {
-    throw new Error(apiError(error, 'getEnrollmentById'));
+    throw new Error(apiError(error, 'getEnrollmentById'), { cause: error });
   }
 }
 
@@ -41,7 +41,7 @@ export async function getEnrollmentsByStudent(studentId) {
     const res = await api.get(`/enrollments/student/${studentId}`);
     return unwrap(res);
   } catch (error) {
-    throw new Error(apiError(error, 'getEnrollmentsByStudent'));
+    throw new Error(apiError(error, 'getEnrollmentsByStudent'), { cause: error });
   }
 }
 
@@ -51,7 +51,7 @@ export async function getEnrollmentsByCourse(courseId) {
     const res = await api.get(`/enrollments/course/${courseId}`);
     return unwrap(res);
   } catch (error) {
-    throw new Error(apiError(error, 'getEnrollmentsByCourse'));
+    throw new Error(apiError(error, 'getEnrollmentsByCourse'), { cause: error });
   }
 }
 
@@ -61,7 +61,7 @@ export async function updateEnrollmentStatus(id, status, note) {
     const res = await api.patch(`/enrollments/${id}/status`, { status, note: note || null });
     return unwrap(res);
   } catch (error) {
-    throw new Error(apiError(error, 'updateEnrollmentStatus'));
+    throw new Error(apiError(error, 'updateEnrollmentStatus'), { cause: error });
   }
 }
 
@@ -71,7 +71,7 @@ export async function updatePayment(id, payload) {
     const res = await api.patch(`/enrollments/${id}/payment`, payload);
     return unwrap(res);
   } catch (error) {
-    throw new Error(apiError(error, 'updatePayment'));
+    throw new Error(apiError(error, 'updatePayment'), { cause: error });
   }
 }
 
@@ -80,7 +80,7 @@ export async function approveEnrollment(id, approvedBy, note) {
     const res = await api.patch(`/enrollments/${id}/approve`, { approvedBy, note: note || null });
     return unwrap(res);
   } catch (error) {
-    throw new Error(apiError(error, 'approveEnrollment'));
+    throw new Error(apiError(error, 'approveEnrollment'), { cause: error });
   }
 }
 
@@ -91,7 +91,7 @@ export async function returnForSlipRevision(id, note) {
     const res = await api.patch(`/enrollments/${id}/return-for-revision`, { note });
     return unwrap(res);
   } catch (error) {
-    throw new Error(apiError(error, 'returnForSlipRevision'));
+    throw new Error(apiError(error, 'returnForSlipRevision'), { cause: error });
   }
 }
 
@@ -102,7 +102,7 @@ export async function rejectEnrollment(id, note) {
     const res = await api.patch(`/enrollments/${id}/reject`, { note });
     return unwrap(res);
   } catch (error) {
-    throw new Error(apiError(error, 'rejectEnrollment'));
+    throw new Error(apiError(error, 'rejectEnrollment'), { cause: error });
   }
 }
 
@@ -111,6 +111,6 @@ export async function cancelEnrollment(id) {
     const res = await api.delete(`/enrollments/${id}`);
     return unwrap(res);
   } catch (error) {
-    throw new Error(apiError(error, 'cancelEnrollment'));
+    throw new Error(apiError(error, 'cancelEnrollment'), { cause: error });
   }
 }

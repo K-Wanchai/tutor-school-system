@@ -24,7 +24,7 @@ export async function getExamInstitutions(params = {}) {
     const res = await api.get('/admin/exam-institutions', { params });
     return unwrap(res);
   } catch (error) {
-    throw new Error(apiError(error, 'getExamInstitutions'));
+    throw new Error(apiError(error, 'getExamInstitutions'), { cause: error });
   }
 }
 
@@ -33,7 +33,7 @@ export async function getExamInstitutionById(id) {
     const res = await api.get(`/admin/exam-institutions/${id}`);
     return unwrap(res);
   } catch (error) {
-    throw new Error(apiError(error, 'getExamInstitutionById'));
+    throw new Error(apiError(error, 'getExamInstitutionById'), { cause: error });
   }
 }
 
@@ -43,7 +43,7 @@ export async function createExamInstitution(payload) {
     const res = await api.post('/admin/exam-institutions', payload);
     return unwrap(res);
   } catch (error) {
-    throw new Error(apiError(error, 'createExamInstitution'));
+    throw new Error(apiError(error, 'createExamInstitution'), { cause: error });
   }
 }
 
@@ -52,7 +52,7 @@ export async function updateExamInstitution(id, payload) {
     const res = await api.put(`/admin/exam-institutions/${id}`, payload);
     return unwrap(res);
   } catch (error) {
-    throw new Error(apiError(error, 'updateExamInstitution'));
+    throw new Error(apiError(error, 'updateExamInstitution'), { cause: error });
   }
 }
 
@@ -61,7 +61,7 @@ export async function deleteExamInstitution(id) {
     const res = await api.delete(`/admin/exam-institutions/${id}`);
     return unwrap(res);
   } catch (error) {
-    throw new Error(apiError(error, 'deleteExamInstitution'));
+    throw new Error(apiError(error, 'deleteExamInstitution'), { cause: error });
   }
 }
 
@@ -71,6 +71,6 @@ export async function getInstitutionAchievements(institutionId) {
     const res = await api.get(`/admin/exam-institutions/${institutionId}/achievements`);
     return unwrap(res);
   } catch (error) {
-    throw new Error(apiError(error, 'getInstitutionAchievements'));
+    throw new Error(apiError(error, 'getInstitutionAchievements'), { cause: error });
   }
 }

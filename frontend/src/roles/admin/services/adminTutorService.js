@@ -33,7 +33,7 @@ export async function getTutors({ page = 0, size = 10, keyword = '' } = {}) {
     const res = await api.get('/tutors', { params });
     return unwrap(res);
   } catch (error) {
-    throw new Error(apiError(error, 'getTutors'));
+    throw new Error(apiError(error, 'getTutors'), { cause: error });
   }
 }
 
@@ -42,7 +42,7 @@ export async function getTutorById(id) {
     const res = await api.get(`/tutors/${id}`);
     return unwrap(res);
   } catch (error) {
-    throw new Error(apiError(error, 'getTutorById'));
+    throw new Error(apiError(error, 'getTutorById'), { cause: error });
   }
 }
 
@@ -60,7 +60,7 @@ export async function createTutor(form) {
     const res = await api.post('/tutors', payload);
     return unwrap(res);
   } catch (error) {
-    throw new Error(apiError(error, 'createTutor'));
+    throw new Error(apiError(error, 'createTutor'), { cause: error });
   }
 }
 
@@ -76,7 +76,7 @@ export async function updateTutor(id, form) {
     const res = await api.put(`/tutors/${id}`, payload);
     return unwrap(res);
   } catch (error) {
-    throw new Error(apiError(error, 'updateTutor'));
+    throw new Error(apiError(error, 'updateTutor'), { cause: error });
   }
 }
 

@@ -23,7 +23,7 @@ export async function getAdmissionRounds(institutionId) {
     const res = await api.get(`/admin/exam-institutions/${institutionId}/admission-rounds`);
     return unwrap(res);
   } catch (error) {
-    throw new Error(apiError(error, 'getAdmissionRounds'));
+    throw new Error(apiError(error, 'getAdmissionRounds'), { cause: error });
   }
 }
 
@@ -33,7 +33,7 @@ export async function createAdmissionRound(institutionId, payload) {
     const res = await api.post(`/admin/exam-institutions/${institutionId}/admission-rounds`, payload);
     return unwrap(res);
   } catch (error) {
-    throw new Error(apiError(error, 'createAdmissionRound'));
+    throw new Error(apiError(error, 'createAdmissionRound'), { cause: error });
   }
 }
 
@@ -42,7 +42,7 @@ export async function updateAdmissionRound(institutionId, roundId, payload) {
     const res = await api.put(`/admin/exam-institutions/${institutionId}/admission-rounds/${roundId}`, payload);
     return unwrap(res);
   } catch (error) {
-    throw new Error(apiError(error, 'updateAdmissionRound'));
+    throw new Error(apiError(error, 'updateAdmissionRound'), { cause: error });
   }
 }
 
@@ -51,6 +51,6 @@ export async function deleteAdmissionRound(institutionId, roundId) {
     const res = await api.delete(`/admin/exam-institutions/${institutionId}/admission-rounds/${roundId}`);
     return unwrap(res);
   } catch (error) {
-    throw new Error(apiError(error, 'deleteAdmissionRound'));
+    throw new Error(apiError(error, 'deleteAdmissionRound'), { cause: error });
   }
 }

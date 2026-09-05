@@ -76,7 +76,6 @@ function DetailRow({ label, value }) {
 function TransactionDetailModal({ enrollment, onClose }) {
   if (!enrollment) return null;
 
-  const hasDiscount = Number(enrollment.discountAmount) > 0;
   const historyStatus = getEnrollmentHistoryStatus(enrollment);
   const hasReasonBox = historyStatus === 'REJECTED' || historyStatus === 'NEEDS_REVISION';
 

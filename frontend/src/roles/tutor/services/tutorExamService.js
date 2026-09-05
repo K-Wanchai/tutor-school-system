@@ -20,7 +20,7 @@ export async function getMyExamSchedule() {
     const data = unwrap(res);
     return Array.isArray(data) ? data : [];
   } catch (error) {
-    throw new Error(apiError(error, 'getMyExamSchedule'));
+    throw new Error(apiError(error, 'getMyExamSchedule'), { cause: error });
   }
 }
 
@@ -29,7 +29,7 @@ export async function getExamById(examId) {
     const res = await api.get(`/exams/${examId}`);
     return unwrap(res);
   } catch (error) {
-    throw new Error(apiError(error, 'getExamById'));
+    throw new Error(apiError(error, 'getExamById'), { cause: error });
   }
 }
 
@@ -38,7 +38,7 @@ export async function createExam(payload) {
     const res = await api.post('/exams', payload);
     return unwrap(res);
   } catch (error) {
-    throw new Error(apiError(error, 'createExam'));
+    throw new Error(apiError(error, 'createExam'), { cause: error });
   }
 }
 
@@ -47,7 +47,7 @@ export async function updateExam(examId, payload) {
     const res = await api.put(`/exams/${examId}`, payload);
     return unwrap(res);
   } catch (error) {
-    throw new Error(apiError(error, 'updateExam'));
+    throw new Error(apiError(error, 'updateExam'), { cause: error });
   }
 }
 
@@ -56,7 +56,7 @@ export async function openExam(examId) {
     const res = await api.patch(`/exams/${examId}/open`);
     return unwrap(res);
   } catch (error) {
-    throw new Error(apiError(error, 'openExam'));
+    throw new Error(apiError(error, 'openExam'), { cause: error });
   }
 }
 
@@ -65,7 +65,7 @@ export async function closeExam(examId) {
     const res = await api.patch(`/exams/${examId}/close`);
     return unwrap(res);
   } catch (error) {
-    throw new Error(apiError(error, 'closeExam'));
+    throw new Error(apiError(error, 'closeExam'), { cause: error });
   }
 }
 
@@ -73,7 +73,7 @@ export async function deleteExam(examId) {
   try {
     await api.delete(`/exams/${examId}`);
   } catch (error) {
-    throw new Error(apiError(error, 'deleteExam'));
+    throw new Error(apiError(error, 'deleteExam'), { cause: error });
   }
 }
 
@@ -82,7 +82,7 @@ export async function addQuestion(examId, payload) {
     const res = await api.post(`/exams/${examId}/questions`, payload);
     return unwrap(res);
   } catch (error) {
-    throw new Error(apiError(error, 'addQuestion'));
+    throw new Error(apiError(error, 'addQuestion'), { cause: error });
   }
 }
 
@@ -91,7 +91,7 @@ export async function updateQuestion(questionId, payload) {
     const res = await api.put(`/exam-questions/${questionId}`, payload);
     return unwrap(res);
   } catch (error) {
-    throw new Error(apiError(error, 'updateQuestion'));
+    throw new Error(apiError(error, 'updateQuestion'), { cause: error });
   }
 }
 
@@ -99,7 +99,7 @@ export async function deleteQuestion(questionId) {
   try {
     await api.delete(`/exam-questions/${questionId}`);
   } catch (error) {
-    throw new Error(apiError(error, 'deleteQuestion'));
+    throw new Error(apiError(error, 'deleteQuestion'), { cause: error });
   }
 }
 
@@ -108,7 +108,7 @@ export async function addOption(questionId, payload) {
     const res = await api.post(`/questions/${questionId}/options`, payload);
     return unwrap(res);
   } catch (error) {
-    throw new Error(apiError(error, 'addOption'));
+    throw new Error(apiError(error, 'addOption'), { cause: error });
   }
 }
 
@@ -117,7 +117,7 @@ export async function updateOption(optionId, payload) {
     const res = await api.put(`/question-options/${optionId}`, payload);
     return unwrap(res);
   } catch (error) {
-    throw new Error(apiError(error, 'updateOption'));
+    throw new Error(apiError(error, 'updateOption'), { cause: error });
   }
 }
 
@@ -125,7 +125,7 @@ export async function deleteOption(optionId) {
   try {
     await api.delete(`/question-options/${optionId}`);
   } catch (error) {
-    throw new Error(apiError(error, 'deleteOption'));
+    throw new Error(apiError(error, 'deleteOption'), { cause: error });
   }
 }
 
@@ -134,7 +134,7 @@ export async function getSubmissionById(submissionId) {
     const res = await api.get(`/exam-submissions/${submissionId}`);
     return unwrap(res);
   } catch (error) {
-    throw new Error(apiError(error, 'getSubmissionById'));
+    throw new Error(apiError(error, 'getSubmissionById'), { cause: error });
   }
 }
 
@@ -143,7 +143,7 @@ export async function gradeAnswer(submissionId, payload) {
     const res = await api.post(`/exam-submissions/${submissionId}/grade`, payload);
     return unwrap(res);
   } catch (error) {
-    throw new Error(apiError(error, 'gradeAnswer'));
+    throw new Error(apiError(error, 'gradeAnswer'), { cause: error });
   }
 }
 
@@ -153,7 +153,7 @@ export async function getResultsByExam(examId) {
     const data = unwrap(res);
     return Array.isArray(data) ? data : [];
   } catch (error) {
-    throw new Error(apiError(error, 'getResultsByExam'));
+    throw new Error(apiError(error, 'getResultsByExam'), { cause: error });
   }
 }
 
@@ -163,7 +163,7 @@ export async function getExamsByCourse(courseId) {
     const data = unwrap(res);
     return Array.isArray(data) ? data : [];
   } catch (error) {
-    throw new Error(apiError(error, 'getExamsByCourse'));
+    throw new Error(apiError(error, 'getExamsByCourse'), { cause: error });
   }
 }
 
@@ -173,6 +173,6 @@ export async function getResultsByCourse(courseId) {
     const data = unwrap(res);
     return Array.isArray(data) ? data : [];
   } catch (error) {
-    throw new Error(apiError(error, 'getResultsByCourse'));
+    throw new Error(apiError(error, 'getResultsByCourse'), { cause: error });
   }
 }

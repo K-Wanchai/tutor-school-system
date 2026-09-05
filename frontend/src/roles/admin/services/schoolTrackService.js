@@ -25,7 +25,7 @@ export async function getSchoolTracks(institutionId, educationLevel) {
     const res = await api.get(`/admin/exam-institutions/${institutionId}/school-tracks`, { params });
     return unwrap(res);
   } catch (error) {
-    throw new Error(apiError(error, 'getSchoolTracks'));
+    throw new Error(apiError(error, 'getSchoolTracks'), { cause: error });
   }
 }
 
@@ -35,7 +35,7 @@ export async function createSchoolTrack(institutionId, payload) {
     const res = await api.post(`/admin/exam-institutions/${institutionId}/school-tracks`, payload);
     return unwrap(res);
   } catch (error) {
-    throw new Error(apiError(error, 'createSchoolTrack'));
+    throw new Error(apiError(error, 'createSchoolTrack'), { cause: error });
   }
 }
 
@@ -44,7 +44,7 @@ export async function updateSchoolTrack(institutionId, trackId, payload) {
     const res = await api.put(`/admin/exam-institutions/${institutionId}/school-tracks/${trackId}`, payload);
     return unwrap(res);
   } catch (error) {
-    throw new Error(apiError(error, 'updateSchoolTrack'));
+    throw new Error(apiError(error, 'updateSchoolTrack'), { cause: error });
   }
 }
 
@@ -53,6 +53,6 @@ export async function deleteSchoolTrack(institutionId, trackId) {
     const res = await api.delete(`/admin/exam-institutions/${institutionId}/school-tracks/${trackId}`);
     return unwrap(res);
   } catch (error) {
-    throw new Error(apiError(error, 'deleteSchoolTrack'));
+    throw new Error(apiError(error, 'deleteSchoolTrack'), { cause: error });
   }
 }

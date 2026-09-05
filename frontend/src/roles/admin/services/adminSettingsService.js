@@ -23,7 +23,7 @@ export async function getInstitutionProfile() {
     const res = await api.get('/institution-profile');
     return unwrap(res);
   } catch (error) {
-    throw new Error(apiError(error, 'getInstitutionProfile'));
+    throw new Error(apiError(error, 'getInstitutionProfile'), { cause: error });
   }
 }
 
@@ -48,7 +48,7 @@ export async function updateInstitutionProfile(form) {
     const res = await api.put('/institution-profile', payload);
     return unwrap(res);
   } catch (error) {
-    throw new Error(apiError(error, 'updateInstitutionProfile'));
+    throw new Error(apiError(error, 'updateInstitutionProfile'), { cause: error });
   }
 }
 
@@ -62,6 +62,6 @@ export async function uploadInstitutionImage(file) {
     });
     return unwrap(res);
   } catch (error) {
-    throw new Error(apiError(error, 'uploadInstitutionImage'));
+    throw new Error(apiError(error, 'uploadInstitutionImage'), { cause: error });
   }
 }
