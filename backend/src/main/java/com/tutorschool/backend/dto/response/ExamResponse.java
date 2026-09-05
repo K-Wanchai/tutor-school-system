@@ -26,7 +26,6 @@ public class ExamResponse {
     private String description;
     private String examLink;
     private Double totalScore;
-    private Double passingScore;
     private LocalDateTime startTime;
     private LocalDateTime endTime;
     private Integer durationMinutes;

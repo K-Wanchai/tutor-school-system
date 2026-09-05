@@ -27,9 +27,9 @@ public class CreateExamRequest {
 
     private String examLink;
 
-    @NotNull(message = "Passing score is required")
-    @DecimalMin(value = "0", message = "Passing score must be 0 or greater")
-    private Double passingScore;
+    @NotNull(message = "Total score is required")
+    @DecimalMin(value = "0", message = "Total score must be 0 or greater")
+    private Double totalScore;
 
     private LocalDateTime startTime;
     private LocalDateTime endTime;

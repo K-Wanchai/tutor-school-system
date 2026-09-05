@@ -50,7 +50,7 @@ const EMPTY_FORM = {
   title: '',
   description: '',
   examLink: '',
-  passingScore: '',
+  totalScore: '',
   durationMinutes: '',
   examDate: '',
   examTime: '',
@@ -322,7 +322,7 @@ export default function TutorExamCourseDetailPage() {
       title: exam.title || '',
       description: exam.description || '',
       examLink: exam.examLink || '',
-      passingScore: exam.passingScore != null ? String(exam.passingScore) : '',
+      totalScore: exam.totalScore != null ? String(exam.totalScore) : '',
       durationMinutes: exam.durationMinutes != null ? String(exam.durationMinutes) : '',
       examDate: exam.startTime ? exam.startTime.slice(0, 10) : '',
       examTime: exam.startTime ? exam.startTime.slice(11, 16) : '',
@@ -348,7 +348,7 @@ export default function TutorExamCourseDetailPage() {
     e.preventDefault();
     if (!form.title) return setFormErr('ไม่พบชื่อประเภทข้อสอบ กรุณาปิดแล้วลองใหม่');
     if (!form.examLink.trim()) return setFormErr('กรุณากรอกลิงก์ข้อสอบ');
-    if (form.passingScore === '' || Number.isNaN(Number(form.passingScore))) {
+    if (form.totalScore === '' || Number.isNaN(Number(form.totalScore))) {
       return setFormErr('กรุณากรอกคะแนนเต็ม');
     }
     if (form.durationMinutes === '' || Number(form.durationMinutes) <= 0) {
@@ -367,7 +367,7 @@ export default function TutorExamCourseDetailPage() {
         await updateExam(editingExamId, {
           description: form.description.trim() || null,
           examLink: form.examLink.trim(),
-          passingScore: Number(form.passingScore),
+          totalScore: Number(form.totalScore),
           startTime,
           endTime,
           durationMinutes: Number(form.durationMinutes),
@@ -378,7 +378,7 @@ export default function TutorExamCourseDetailPage() {
           title: form.title,
           description: form.description.trim() || null,
           examLink: form.examLink.trim(),
-          passingScore: Number(form.passingScore),
+          totalScore: Number(form.totalScore),
           startTime,
           endTime,
           durationMinutes: Number(form.durationMinutes),
@@ -622,8 +622,8 @@ export default function TutorExamCourseDetailPage() {
                 คะแนนเต็ม *
                 <input
                   type="number" min="0" step="0.5"
-                  value={form.passingScore}
-                  onChange={(e) => fld('passingScore', e.target.value)}
+                  value={form.totalScore}
+                  onChange={(e) => fld('totalScore', e.target.value)}
                 />
               </label>
 

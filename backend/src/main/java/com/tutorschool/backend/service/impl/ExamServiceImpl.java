@@ -65,7 +65,7 @@ public class ExamServiceImpl implements ExamService {
                 .title(request.getTitle())
                 .description(request.getDescription())
                 .examLink(request.getExamLink())
-                .passingScore(request.getPassingScore())
+                .totalScore(request.getTotalScore())
                 .startTime(request.getStartTime())
                 .endTime(request.getEndTime())
                 .durationMinutes(request.getDurationMinutes())
@@ -198,12 +198,7 @@ public class ExamServiceImpl implements ExamService {
         if (request.getTitle() != null) exam.setTitle(request.getTitle());
         if (request.getDescription() != null) exam.setDescription(request.getDescription());
         if (request.getExamLink() != null) exam.setExamLink(request.getExamLink());
-        if (request.getPassingScore() != null) {
-            if (exam.getTotalScore() != null && request.getPassingScore() > exam.getTotalScore()) {
-                throw new IllegalStateException("Passing score cannot exceed total score (" + exam.getTotalScore() + ")");
-            }
-            exam.setPassingScore(request.getPassingScore());
-        }
+        if (request.getTotalScore() != null) exam.setTotalScore(request.getTotalScore());
         // แก้ไขวัน-เวลาเปิดสอบต้องส่ง startTime คู่กับ endTime มาด้วยกันเสมอ (ระยะเวลาคำนวณเป็น endTime แล้วฝั่ง
         // frontend) กันไม่ให้ endTime เดิมของช่วงเวลาก่อนหน้าหลงเหลืออยู่ไม่ตรงกับ startTime ใหม่
         if (request.getStartTime() != null || request.getEndTime() != null) {
@@ -563,11 +558,6 @@ public class ExamServiceImpl implements ExamService {
                 .mapToDouble(ExamQuestion::getScore)
                 .sum();
         exam.setTotalScore(total);
-
-        if (exam.getPassingScore() != null && exam.getPassingScore() > total) {
-            exam.setPassingScore(total);
-        }
-
         examRepository.save(exam);
     }
 }

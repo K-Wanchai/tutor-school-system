@@ -153,10 +153,6 @@ public class ExamSubmissionServiceImpl implements ExamSubmissionService {
         submission.setTotalScore(exam.getTotalScore());
         submission.setStatus(ExamSubmissionStatus.SUBMITTED);
 
-        if (exam.getPassingScore() != null) {
-            submission.setIsPassed(obtainedScore >= exam.getPassingScore());
-        }
-
         submissionRepository.save(submission);
 
         // โหลด answers กลับมา
@@ -241,9 +237,6 @@ public class ExamSubmissionServiceImpl implements ExamSubmissionService {
         submission.setObtainedScore(submission.getObtainedScore() + scoreDiff);
         if (request.getIsCorrect() != null && Boolean.TRUE.equals(request.getIsCorrect())) {
             submission.setCorrectCount(submission.getCorrectCount() + 1);
-        }
-        if (submission.getExam().getPassingScore() != null) {
-            submission.setIsPassed(submission.getObtainedScore() >= submission.getExam().getPassingScore());
         }
         submission.setStatus(ExamSubmissionStatus.GRADED);
         submissionRepository.save(submission);

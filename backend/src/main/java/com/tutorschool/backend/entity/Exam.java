@@ -49,9 +49,6 @@ public class Exam {
     @Builder.Default
     private Double totalScore = 0.0;
 
-    @Column(name = "passing_score")
-    private Double passingScore;
-
     @Column(name = "start_time")
     private LocalDateTime startTime;
 

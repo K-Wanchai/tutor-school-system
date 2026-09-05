@@ -23,7 +23,6 @@ public class StudentExamResponse {
     private String title;
     private String description;
     private Double totalScore;
-    private Double passingScore;
     private LocalDateTime startTime;
     private LocalDateTime endTime;
     private Integer durationMinutes;

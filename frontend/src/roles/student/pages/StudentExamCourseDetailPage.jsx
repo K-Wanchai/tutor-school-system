@@ -203,6 +203,10 @@ export default function StudentExamCourseDetailPage() {
 
                 <div className="es-info-list">
                   <div>
+                    <span>รหัสคอร์ส</span>
+                    <strong>{safeText(exam.courseCode)}</strong>
+                  </div>
+                  <div>
                     <span>เวลาเปิดสอบ</span>
                     <strong>{formatDateTime(exam.startTime)}</strong>
                   </div>
