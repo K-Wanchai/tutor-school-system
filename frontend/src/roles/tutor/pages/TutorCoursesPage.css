@@ -193,6 +193,7 @@
 
 .tc-btn-detail,
 .tc-btn-accept,
+.tc-btn-exam,
 .tc-btn-reject {
   flex: 1;
 
@@ -233,6 +234,16 @@
 
 .tc-btn-reject:hover {
   background: #fee2e2;
+}
+
+.tc-btn-exam {
+  background: #ecfdf5;
+  color: #047857;
+  border: 1px solid #a7f3d0;
+}
+
+.tc-btn-exam:hover {
+  background: #d1fae5;
 }
 
 /* Badge */

@@ -47,6 +47,7 @@ public class ExamServiceImpl implements ExamService {
         validateCourseIsOngoing(course);
         validateExamDates(request.getStartTime(), request.getEndTime());
         validateExamStartNotBeforeCourseStart(course, request.getStartTime());
+        validateExamSchedule(course, request.getStartTime(), request.getEndTime(), null);
 
         CourseLesson lesson = null;
         if (request.getLessonId() != null) {
@@ -63,7 +64,8 @@ public class ExamServiceImpl implements ExamService {
                 .tutor(Tutor)
                 .title(request.getTitle())
                 .description(request.getDescription())
-                .passingScore(request.getPassingScore())
+                .examLink(request.getExamLink())
+                .totalScore(request.getTotalScore())
                 .startTime(request.getStartTime())
                 .endTime(request.getEndTime())
                 .durationMinutes(request.getDurationMinutes())
@@ -160,14 +162,12 @@ public class ExamServiceImpl implements ExamService {
     public void autoTransitionExams() {
         LocalDateTime now = LocalDateTime.now();
 
-        // DRAFT ที่ถึงเวลา startTime แล้ว และยังไม่พ้น endTime และมีคำถามอย่างน้อย 1 ข้อ → เปิดสอบให้อัตโนมัติ
+        // DRAFT ที่ถึงเวลา startTime แล้ว และยังไม่พ้น endTime → เปิดสอบให้อัตโนมัติ — ข้อสอบไม่ได้สร้างคำถาม
+        // ในระบบเองแล้ว (เนื้อหาอยู่ที่ลิงก์ข้อสอบภายนอก) จึงไม่ต้องเช็คว่ามีคำถามก่อนเปิดอีกต่อไป
         List<Exam> draftDue = examRepository.findByStatusAndStartTimeLessThanEqual(ExamStatus.DRAFT, now);
         for (Exam exam : draftDue) {
             if (exam.getEndTime() != null && !exam.getEndTime().isAfter(now)) {
                 continue; // พ้นช่วงเวลาไปแล้วโดยยังไม่เคยเปิด — ปล่อยให้ติวเตอร์จัดการเอง ไม่เปิดย้อนหลัง
-            }
-            if (exam.getQuestions() == null || exam.getQuestions().isEmpty()) {
-                continue; // ยังไม่มีคำถาม ยังไม่พร้อมเปิดสอบ
             }
             exam.setStatus(ExamStatus.OPEN);
             Exam saved = examRepository.save(exam);
@@ -197,17 +197,20 @@ public class ExamServiceImpl implements ExamService {
 
         if (request.getTitle() != null) exam.setTitle(request.getTitle());
         if (request.getDescription() != null) exam.setDescription(request.getDescription());
-        if (request.getPassingScore() != null) {
-            if (exam.getTotalScore() != null && request.getPassingScore() > exam.getTotalScore()) {
-                throw new IllegalStateException("Passing score cannot exceed total score (" + exam.getTotalScore() + ")");
+        if (request.getExamLink() != null) exam.setExamLink(request.getExamLink());
+        if (request.getTotalScore() != null) exam.setTotalScore(request.getTotalScore());
+        // แก้ไขวัน-เวลาเปิดสอบต้องส่ง startTime คู่กับ endTime มาด้วยกันเสมอ (ระยะเวลาคำนวณเป็น endTime แล้วฝั่ง
+        // frontend) กันไม่ให้ endTime เดิมของช่วงเวลาก่อนหน้าหลงเหลืออยู่ไม่ตรงกับ startTime ใหม่
+        if (request.getStartTime() != null || request.getEndTime() != null) {
+            if (request.getStartTime() == null || request.getEndTime() == null) {
+                throw new IllegalStateException("ต้องระบุเวลาเปิดสอบและเวลาปิดสอบมาด้วยกันเสมอเมื่อแก้ไขกำหนดการสอบ");
             }
-            exam.setPassingScore(request.getPassingScore());
-        }
-        if (request.getStartTime() != null) {
+            validateExamDates(request.getStartTime(), request.getEndTime());
             validateExamStartNotBeforeCourseStart(exam.getCourse(), request.getStartTime());
+            validateExamSchedule(exam.getCourse(), request.getStartTime(), request.getEndTime(), exam.getId());
             exam.setStartTime(request.getStartTime());
+            exam.setEndTime(request.getEndTime());
         }
-        if (request.getEndTime() != null) exam.setEndTime(request.getEndTime());
         if (request.getDurationMinutes() != null) exam.setDurationMinutes(request.getDurationMinutes());
         if (request.getAllowMultipleAttempts() != null) exam.setAllowMultipleAttempts(request.getAllowMultipleAttempts());
         if (request.getMaxAttempts() != null) exam.setMaxAttempts(request.getMaxAttempts());
@@ -467,6 +470,57 @@ public class ExamServiceImpl implements ExamService {
         }
     }
 
+    // ตรวจกำหนดการสอบทั้งชุด — เรียกทั้งตอนสร้างและแก้ไข (excludeExamId = id ของข้อสอบที่กำลังแก้ไข ไม่ต้อง
+    // เทียบชนกับตัวเอง, null ตอนสร้างใหม่):
+    //   1) ต้องเป็นเวลาในอนาคตเท่านั้น (ห้ามตั้งย้อนหลังหรือ ณ ขณะนี้)
+    //   2) ต้องเป็นวันที่คอร์สทำการเรียนการสอนจริง (ตรงกับ course_schedule_days)
+    //   3) ต้องอยู่ในช่วงเวลาเรียนของวันนั้น (ไม่เลยเวลาเริ่ม/เลิกเรียนของคอร์ส) กันไม่ให้ไปชนตารางสอนคอร์สอื่น
+    //      ของติวเตอร์คนเดียวกันที่อาจสอนวันเดียวกันแต่คนละช่วงเวลา
+    //   4) ต้องไม่ทับเวลากับข้อสอบอื่นของคอร์สเดียวกันที่มีกำหนดสอบในวันเดียวกันอยู่แล้ว
+    // ถ้าคอร์สยังไม่ได้ตั้งตารางสอนไว้เลยก็ข้ามเช็ค (2)-(3) เพราะไม่มีข้อมูลให้เทียบ
+    private void validateExamSchedule(Course course, java.time.LocalDateTime start, java.time.LocalDateTime end,
+                                       Long excludeExamId) {
+        if (start == null) {
+            return;
+        }
+        if (!start.isAfter(java.time.LocalDateTime.now())) {
+            throw new IllegalStateException("วันเวลาที่เปิดสอบต้องเป็นเวลาในอนาคตเท่านั้น");
+        }
+
+        List<CourseScheduleDay> patterns = course.getScheduleDayPatterns();
+        if (patterns != null && !patterns.isEmpty()) {
+            String dayCode = com.tutorschool.backend.util.ScheduleDaysParser.toDayCode(start.getDayOfWeek());
+            CourseScheduleDay slot = patterns.stream()
+                    .filter(p -> dayCode.equalsIgnoreCase(p.getDayOfWeek()))
+                    .findFirst()
+                    .orElse(null);
+            if (slot == null) {
+                throw new IllegalStateException("วันที่เปิดสอบต้องตรงกับวันที่คอร์สนี้ทำการเรียนการสอนเท่านั้น");
+            }
+            if (end != null) {
+                boolean withinWindow = end.toLocalDate().equals(start.toLocalDate())
+                        && !start.toLocalTime().isBefore(slot.getStartTime())
+                        && !end.toLocalTime().isAfter(slot.getEndTime());
+                if (!withinWindow) {
+                    throw new IllegalStateException("เวลาสอบต้องอยู่ในช่วงเวลาเรียนของคอร์สนี้ ("
+                            + slot.getStartTime() + " - " + slot.getEndTime() + ") เท่านั้น");
+                }
+            }
+        }
+
+        if (end != null) {
+            boolean overlaps = examRepository.findByCourseId(course.getId()).stream()
+                    .filter(e -> excludeExamId == null || !e.getId().equals(excludeExamId))
+                    .filter(e -> e.getStatus() != ExamStatus.CANCELLED)
+                    .filter(e -> e.getStartTime() != null && e.getEndTime() != null)
+                    .filter(e -> e.getStartTime().toLocalDate().equals(start.toLocalDate()))
+                    .anyMatch(e -> start.isBefore(e.getEndTime()) && e.getStartTime().isBefore(end));
+            if (overlaps) {
+                throw new IllegalStateException("มีข้อสอบอื่นของคอร์สนี้ในวันเดียวกันที่เวลาซ้อนทับกันอยู่แล้ว");
+            }
+        }
+    }
+
     // แจ้งเตือนนักเรียนที่ลงทะเบียน (APPROVED/COMPLETED) เมื่อข้อสอบเปิดสอบ — เรียกทั้งตอนเปิดเองและตอนระบบเปิดอัตโนมัติ
     private void notifyExamOpened(Exam exam) {
         List<Enrollment> enrollments = enrollmentRepository.findByCourseId(exam.getCourse().getId()).stream()
@@ -504,11 +558,6 @@ public class ExamServiceImpl implements ExamService {
                 .mapToDouble(ExamQuestion::getScore)
                 .sum();
         exam.setTotalScore(total);
-
-        if (exam.getPassingScore() != null && exam.getPassingScore() > total) {
-            exam.setPassingScore(total);
-        }
-
         examRepository.save(exam);
     }
 }

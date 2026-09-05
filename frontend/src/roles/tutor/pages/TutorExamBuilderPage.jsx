@@ -177,7 +177,7 @@ export default function TutorExamBuilderPage() {
         {exam && (
           <>
             <h1>{exam.title}</h1>
-            <p>{exam.courseName} {exam.lessonTitle ? `· บท ${exam.lessonTitle}` : ''} — คะแนนเต็ม {exam.totalScore ?? 0} / ผ่าน {exam.passingScore ?? '-'}</p>
+            <p>{exam.courseName} {exam.lessonTitle ? `· บท ${exam.lessonTitle}` : ''} — คะแนนเต็ม {exam.totalScore ?? 0}</p>
           </>
         )}
       </div>

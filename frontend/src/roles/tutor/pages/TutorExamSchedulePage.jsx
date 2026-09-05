@@ -1,503 +1,145 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import {
-  closeExam,
-  createExam,
-  deleteExam,
-  getMyExamSchedule,
-  openExam,
-} from '../services/tutorExamService';
 import { getMyCourses } from '../services/tutorCourseService';
+import { getMyExamSchedule } from '../services/tutorExamService';
 import RefreshButton from '../components/RefreshButton';
-import CalendarDateInput from '../../../shared/components/CalendarDateInput';
-import { useConfirm } from '../../../shared/components/ConfirmDialog';
-import './TutorSchedulesPage.css';
-import './TutorExamSchedulePage.css';
+import './TutorCoursesPage.css';
 
-const STATUS_LABELS = {
-  DRAFT: 'ยังไม่เปิดสอบ',
-  OPEN: 'เปิดสอบอยู่',
-  CLOSED: 'ปิดสอบแล้ว',
-  CANCELLED: 'ยกเลิก',
-};
-
-const FILTERS = [
-  { key: 'ALL', label: 'ทั้งหมด' },
-  { key: 'OPEN', label: 'เปิดสอบอยู่' },
-  { key: 'DRAFT', label: 'ยังไม่เปิด' },
-  { key: 'CLOSED', label: 'ปิดแล้ว' },
-];
-
-// สร้างข้อสอบได้เฉพาะคอร์สที่สถานะ ONGOING (เปิดทำการเรียนการสอนแล้ว) — ต้องตรงกับ
+// จัดตารางสอบได้เฉพาะคอร์สที่สถานะ ONGOING (เปิดทำการเรียนการสอนแล้ว) — ต้องตรงกับ
 // CourseStatus.java ฝั่ง backend และ validateCourseIsOngoing() ใน ExamServiceImpl
 const EXAM_ELIGIBLE_COURSE_STATUS = 'ONGOING';
 
-const COURSE_STATUS_LABELS = {
-  PENDING: 'รอเปิดเรียน',
-  OPEN_FOR_REGISTRATION: 'เปิดรับสมัคร',
-  CLOSED: 'ปิดรับสมัคร',
-  ONGOING: 'กำลังเรียน',
-  COMPLETED: 'เรียนจบแล้ว',
-};
-
-function getCourseStatusClass(status) {
-  return `tes-course-status tes-course-status-${String(status || 'unknown').toLowerCase()}`;
-}
-
-const EXAM_TYPE_OPTIONS = ['ข้อสอบก่อนเรียน', 'ข้อสอบหลังเรียน'];
-
-const EMPTY_FORM = {
-  courseId: '',
-  title: '',
-  description: '',
-  passingScore: '',
-  startTime: '',
-};
-
-function safeText(value) {
-  return value === null || value === undefined || value === '' ? '-' : value;
-}
-
-function formatDateTime(value) {
+function formatDate(value) {
   if (!value) return '-';
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return '-';
-  return date.toLocaleString('th-TH', {
-    year: 'numeric',
-    month: 'short',
-    day: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit',
-  });
-}
-
-function getStatusClass(status) {
-  return `tes-status tes-status-${String(status || 'unknown').toLowerCase()}`;
-}
-
-// input datetime-local ใช้ "YYYY-MM-DDTHH:mm" ไม่มี timezone/seconds — แปลงเป็น ISO ให้ backend
-function toIsoOrNull(localDateTimeValue) {
-  return localDateTimeValue ? `${localDateTimeValue}:00` : null;
-}
-
-const HOURS_24 = Array.from({ length: 24 }, (_, i) => String(i).padStart(2, '0'));
-const MINUTES_5 = Array.from({ length: 12 }, (_, i) => String(i * 5).padStart(2, '0'));
-
-// เลือกวัน-เวลาแบบ 24 ชม. เอง แทน <input type="datetime-local"> เพราะ picker ของเบราว์เซอร์
-// จะโชว์ AM/PM ตาม locale ของเครื่อง ควบคุมให้เป็น 24 ชม. เสมอไม่ได้ผ่าน HTML attribute
-function DateTime24Input({ value, onChange, minDate }) {
-  const [datePart, timePart] = value ? value.split('T') : ['', ''];
-  const [hour, minute] = timePart ? timePart.split(':') : ['', ''];
-
-  function emit(nextDate, nextHour, nextMinute) {
-    if (!nextDate || nextHour === '' || nextMinute === '') {
-      onChange('');
-      return;
-    }
-    onChange(`${nextDate}T${nextHour}:${nextMinute}`);
-  }
-
-  return (
-    <div className="tes-datetime24">
-      <CalendarDateInput
-        value={datePart}
-        onChange={(v) => emit(v, hour || '00', minute || '00')}
-        minDate={minDate}
-      />
-      <select value={hour} onChange={(e) => emit(datePart, e.target.value, minute || '00')}>
-        <option value="">ชม.</option>
-        {HOURS_24.map((h) => <option key={h} value={h}>{h}</option>)}
-      </select>
-      <span>:</span>
-      <select value={minute} onChange={(e) => emit(datePart, hour || '00', e.target.value)}>
-        <option value="">นาที</option>
-        {MINUTES_5.map((m) => <option key={m} value={m}>{m}</option>)}
-      </select>
-    </div>
-  );
+  return new Date(value).toLocaleDateString('th-TH', { year: 'numeric', month: 'short', day: 'numeric' });
 }
 
 export default function TutorExamSchedulePage() {
   const navigate = useNavigate();
-  const { confirm, confirmDialog } = useConfirm();
-  const [exams, setExams] = useState([]);
   const [courses, setCourses] = useState([]);
+  const [exams, setExams] = useState([]);
+  const [keyword, setKeyword] = useState('');
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
-  const [filter, setFilter] = useState('ALL');
-  const [busyId, setBusyId] = useState(null);
 
-  const [showCreate, setShowCreate] = useState(false);
-  const [form, setForm] = useState(EMPTY_FORM);
-  const [formErr, setFormErr] = useState('');
-  const [saving, setSaving] = useState(false);
-
-  async function load() {
+  const load = useCallback(async () => {
     try {
       setLoading(true);
-      setError('');
-      const [examData, courseData] = await Promise.all([getMyExamSchedule(), getMyCourses()]);
-      const list = [...examData].sort((a, b) => {
-        if (!a.startTime) return 1;
-        if (!b.startTime) return -1;
-        return new Date(a.startTime) - new Date(b.startTime);
-      });
-      setExams(list);
+      const [courseData, examData] = await Promise.all([getMyCourses(), getMyExamSchedule()]);
       setCourses(Array.isArray(courseData) ? courseData : []);
-    } catch (err) {
-      setError(err.message);
+      setExams(Array.isArray(examData) ? examData : []);
+    } catch (error) {
+      console.error(error);
+      setCourses([]);
       setExams([]);
     } finally {
       setLoading(false);
     }
-  }
+  }, []);
 
   useEffect(() => {
     load();
-  }, []);
+  }, [load]);
 
-  const summary = useMemo(() => {
-    return {
-      total: exams.length,
-      open: exams.filter((e) => e.status === 'OPEN').length,
-      upcoming: exams.filter((e) => e.status === 'DRAFT').length,
-      closed: exams.filter((e) => e.status === 'CLOSED').length,
-    };
-  }, [exams]);
-
-  const filtered = useMemo(() => {
-    if (filter === 'ALL') return exams;
-    return exams.filter((e) => e.status === filter);
-  }, [exams, filter]);
-
-  // เฉพาะคอร์สที่เปิดทำการเรียนการสอนแล้ว (ONGOING) เท่านั้นที่สร้างข้อสอบได้ —
-  // คอร์สอื่น (รอเปิดเรียน/เปิดรับสมัคร/ปิดรับสมัคร/เรียนจบแล้ว) ไม่ให้เลือกตั้งแต่ใน dropdown
+  // เฉพาะคอร์สที่กำลังเรียนเท่านั้นที่จัดตารางสอบได้ — คอร์สอื่นไม่แสดงในหน้านี้เลย
   const eligibleCourses = useMemo(
     () => courses.filter((c) => c.status === EXAM_ELIGIBLE_COURSE_STATUS),
     [courses]
   );
 
-  const selectedCourse = eligibleCourses.find((c) => String(c.id) === String(form.courseId));
-
-  function openCreate() {
-    setForm(EMPTY_FORM);
-    setFormErr('');
-    setShowCreate(true);
-  }
-
-  function fld(key, value) {
-    setForm((f) => ({ ...f, [key]: value }));
-  }
-
-  async function handleCreate(e) {
-    e.preventDefault();
-    if (!form.courseId) return setFormErr('กรุณาเลือกคอร์ส');
-    if (!form.title) return setFormErr('กรุณาเลือกประเภทข้อสอบ');
-    if (form.passingScore === '' || Number.isNaN(Number(form.passingScore))) {
-      return setFormErr('กรุณากรอกคะแนนผ่าน');
-    }
-    // กันไว้อีกชั้นนอกจากปฏิทินที่ปิดกั้นวันที่เลือกไม่ได้อยู่แล้ว (minDate) — เผื่อกรณีเลือกวันที่ไว้ก่อน
-    // ค่อยเปลี่ยนคอร์สทีหลัง ทำให้วันที่เดิมกลายเป็นก่อนวันเปิดเรียนของคอร์สใหม่
-    if (form.startTime && selectedCourse?.courseStartDate) {
-      const [startDatePart] = form.startTime.split('T');
-      if (startDatePart < selectedCourse.courseStartDate) {
-        return setFormErr('วันที่เปิดสอบต้องไม่ก่อนวันที่เปิดเรียนของคอร์ส');
-      }
-    }
-
-    setSaving(true);
-    setFormErr('');
-    try {
-      const created = await createExam({
-        courseId: Number(form.courseId),
-        title: form.title,
-        description: form.description.trim() || null,
-        passingScore: Number(form.passingScore),
-        startTime: toIsoOrNull(form.startTime),
-        shuffleQuestions: false,
-        showScoreAfterSubmit: true,
-        showCorrectAnswersAfterSubmit: false,
-      });
-      setShowCreate(false);
-      navigate(`/tutor/exams/${created.id}/build`);
-    } catch (err) {
-      setFormErr(err.message);
-    } finally {
-      setSaving(false);
-    }
-  }
-
-  async function handleOpen(examId) {
-    setBusyId(examId);
-    try {
-      await openExam(examId);
-      await load();
-    } catch (err) {
-      setError(err.message);
-    } finally {
-      setBusyId(null);
-    }
-  }
-
-  async function handleClose(examId) {
-    setBusyId(examId);
-    try {
-      await closeExam(examId);
-      await load();
-    } catch (err) {
-      setError(err.message);
-    } finally {
-      setBusyId(null);
-    }
-  }
-
-  async function handleDelete(examId) {
-    const ok = await confirm({
-      title: 'ยืนยันการลบข้อสอบ',
-      message: 'ลบข้อสอบนี้? การกระทำนี้ย้อนกลับไม่ได้',
-      confirmText: 'ลบข้อสอบ',
-      danger: true,
+  const examCountByCourse = useMemo(() => {
+    const map = new Map();
+    exams.forEach((e) => {
+      const key = String(e.courseId);
+      map.set(key, (map.get(key) || 0) + 1);
     });
-    if (!ok) return;
-    setBusyId(examId);
-    try {
-      await deleteExam(examId);
-      await load();
-    } catch (err) {
-      setError(err.message);
-    } finally {
-      setBusyId(null);
-    }
+    return map;
+  }, [exams]);
+
+  const filtered = useMemo(() => {
+    return eligibleCourses.filter((course) => {
+      const text = `${course.courseName || ''} ${course.courseCode || ''}`.toLowerCase();
+      return text.includes(keyword.toLowerCase());
+    });
+  }, [eligibleCourses, keyword]);
+
+  function goToCourse(courseId) {
+    navigate(`/tutor/exam-schedule/${courseId}`);
   }
 
   return (
-    <div className="tes-page">
-      {confirmDialog}
-
-      <div className="tutor-schedule-header">
+    <div className="tc-page">
+      <div className="tc-header">
         <div>
           <h1>ตารางสอบ</h1>
-          <p>สร้างและจัดการข้อสอบของทุกคอร์สที่คุณสอน</p>
+          <p>เลือกคอร์สที่กำลังเรียนเพื่อจัดตารางสอบของคอร์สนั้น</p>
         </div>
-        <div className="tes-header-actions">
-          <button type="button" className="tes-btn-primary" onClick={openCreate}>+ สร้างข้อสอบ</button>
+
+        <div className="tc-header-right">
           <RefreshButton onClick={load} loading={loading} />
         </div>
       </div>
 
-      <div className="tutor-schedule-summary">
-        <div className="tutor-schedule-summary-card"><p>ข้อสอบทั้งหมด</p><h2>{summary.total}</h2></div>
-        <div className="tutor-schedule-summary-card"><p>เปิดสอบอยู่</p><h2>{summary.open}</h2></div>
-        <div className="tutor-schedule-summary-card"><p>ยังไม่เปิด</p><h2>{summary.upcoming}</h2></div>
-        <div className="tutor-schedule-summary-card"><p>ปิดแล้ว</p><h2>{summary.closed}</h2></div>
+      <div className="tc-toolbar">
+        <input
+          type="text"
+          placeholder="ค้นหาชื่อคอร์ส หรือรหัสคอร์ส..."
+          value={keyword}
+          onChange={(e) => setKeyword(e.target.value)}
+        />
       </div>
 
-      {!loading && !error && courses.length > 0 && (
-        <div className="tes-content-card tes-course-eligibility">
-          <div className="tes-course-eligibility-header">
-            <h2>สถานะคอร์สของคุณ</h2>
-            <p>สร้างข้อสอบได้เฉพาะคอร์สที่ขึ้นสถานะ "กำลังเรียน" เท่านั้น</p>
-          </div>
-          <div className="tes-course-status-grid">
-            {courses.map((c) => (
-              <div key={c.id} className="tes-course-status-item">
-                <span className="tes-course-status-name">{safeText(c.courseName)}</span>
-                <span className={getCourseStatusClass(c.status)}>
-                  {COURSE_STATUS_LABELS[c.status] || c.status}
-                </span>
-              </div>
-            ))}
-          </div>
+      {loading ? (
+        <div className="tc-loading">กำลังโหลดข้อมูล...</div>
+      ) : filtered.length === 0 ? (
+        <div className="tc-empty">
+          <div className="tc-empty-icon">📝</div>
+          <h3>ยังไม่มีคอร์สที่กำลังเรียน</h3>
+          <p>จัดตารางสอบได้เฉพาะคอร์สที่ขึ้นสถานะ "กำลังเรียน" เท่านั้น — รอให้คอร์สที่คุณสอนถึงวันเริ่มเรียนก่อน</p>
         </div>
-      )}
-
-      <div className="tes-content-card">
-        <div className="tes-filter-tabs">
-          {FILTERS.map((f) => (
-            <button
-              key={f.key}
-              type="button"
-              className={filter === f.key ? 'tes-filter-active' : ''}
-              onClick={() => setFilter(f.key)}
+      ) : (
+        <div className="tc-grid">
+          {filtered.map((course) => (
+            <div
+              key={course.id}
+              className="tc-card tc-card-clickable"
+              role="button"
+              tabIndex={0}
+              onClick={() => goToCourse(course.id)}
+              onKeyDown={(e) => { if (e.key === 'Enter') goToCourse(course.id); }}
             >
-              {f.label}
-            </button>
-          ))}
-        </div>
+              <div className="tc-card-top">
+                <span className="tc-code">{course.courseCode}</span>
+                <span className="tc-badge tc-badge-ongoing">กำลังเรียน</span>
+              </div>
 
-        {loading && <div className="tutor-schedule-loading">กำลังโหลดตารางสอบ...</div>}
+              <h2 className="tc-card-title">{course.courseName}</h2>
 
-        {!loading && error && (
-          <div className="tes-error-box">
-            <strong>เกิดข้อผิดพลาด</strong>
-            <p>{error}</p>
-          </div>
-        )}
+              <p className="tc-card-desc">
+                {course.description || 'ไม่มีรายละเอียดคอร์ส'}
+              </p>
 
-        {!loading && !error && filtered.length === 0 && (
-          <div className="tutor-schedule-empty">
-            <h2>ยังไม่มีข้อสอบ</h2>
-            <p>กด "+ สร้างข้อสอบ" เพื่อสร้างข้อสอบชุดแรกของคุณ</p>
-          </div>
-        )}
-
-        {!loading && !error && filtered.length > 0 && (
-          <div className="tes-grid">
-            {filtered.map((exam) => (
-              <article key={exam.id} className="tes-card">
-                <div className="tes-card-top">
-                  <div>
-                    <p className="tes-card-course">
-                      {safeText(exam.courseName)}{exam.lessonTitle ? ` · บท ${safeText(exam.lessonTitle)}` : ''}
-                    </p>
-                    <h3>{safeText(exam.title)}</h3>
-                  </div>
-                  <span className={getStatusClass(exam.status)}>
-                    {STATUS_LABELS[exam.status] || exam.status}
-                  </span>
+              <div className="tc-card-info">
+                <div>
+                  <span>เริ่มเรียน</span>
+                  <strong>{formatDate(course.courseStartDate)}</strong>
                 </div>
-
-                {exam.description && <p className="tes-card-desc">{exam.description}</p>}
-
-                <div className="tes-info-list">
-                  <div>
-                    <span>เวลาเปิดสอบ</span>
-                    <strong>{formatDateTime(exam.startTime)}</strong>
-                  </div>
-                  <div>
-                    <span>เวลาปิดสอบ</span>
-                    <strong>{formatDateTime(exam.endTime)}</strong>
-                  </div>
-                  <div>
-                    <span>ระยะเวลาทำข้อสอบ</span>
-                    <strong>{exam.durationMinutes ? `${exam.durationMinutes} นาที` : '-'}</strong>
-                  </div>
-                  <div>
-                    <span>คะแนนเต็ม / ผ่าน</span>
-                    <strong>{exam.totalScore ?? '-'} / {exam.passingScore ?? '-'}</strong>
-                  </div>
-                </div>
-
-                {exam.status === 'DRAFT' && !exam.startTime && (
-                  <div className="tes-note">ยังไม่ได้กำหนดวัน-เวลาเปิดสอบ</div>
-                )}
-
-                <div className="tes-card-actions">
-                  <button type="button" onClick={() => navigate(`/tutor/exams/${exam.id}/build`)}>
-                    📝 จัดการคำถาม
-                  </button>
-
-                  {exam.status !== 'DRAFT' && (
-                    <button type="button" onClick={() => navigate(`/tutor/exams/${exam.id}/grading`)}>
-                      📊 ผลสอบ/ตรวจข้อสอบ
-                    </button>
-                  )}
-
-                  {exam.status === 'DRAFT' && (
-                    <button type="button" disabled={busyId === exam.id} onClick={() => handleOpen(exam.id)}>
-                      เปิดสอบ
-                    </button>
-                  )}
-
-                  {exam.status === 'OPEN' && (
-                    <button type="button" disabled={busyId === exam.id} onClick={() => handleClose(exam.id)}>
-                      ปิดสอบ
-                    </button>
-                  )}
-
-                  {exam.status !== 'OPEN' && (
-                    <button
-                      type="button"
-                      className="tes-btn-danger"
-                      disabled={busyId === exam.id}
-                      onClick={() => handleDelete(exam.id)}
-                    >
-                      ลบ
-                    </button>
-                  )}
-                </div>
-              </article>
-            ))}
-          </div>
-        )}
-      </div>
-
-      {showCreate && (
-        <div className="tes-modal-backdrop" onClick={() => setShowCreate(false)}>
-          <div className="tes-modal" onClick={(e) => e.stopPropagation()}>
-            <div className="tes-modal-header">
-              <h2>สร้างข้อสอบ</h2>
-              <button type="button" onClick={() => setShowCreate(false)}>✕</button>
-            </div>
-
-            {eligibleCourses.length === 0 ? (
-              <div className="tes-modal-empty">
-                <p>คุณยังไม่มีคอร์สที่เปิดทำการเรียนการสอนอยู่ (สถานะ "กำลังเรียน")</p>
-                <p>ต้องรอให้คอร์สที่คุณสอนเปลี่ยนเป็นสถานะ "กำลังเรียน" ก่อน จึงจะสร้างข้อสอบได้ —
-                  คอร์สที่ยังไม่เปิดเรียน ปิดรับสมัคร หรือเรียนจบไปแล้ว ไม่สามารถสร้างข้อสอบใหม่ได้</p>
-                <div className="tes-form-actions">
-                  <button type="button" onClick={() => setShowCreate(false)}>ปิด</button>
+                <div>
+                  <span>จำนวนข้อสอบ</span>
+                  <strong>{examCountByCourse.get(String(course.id)) || 0} ชุด</strong>
                 </div>
               </div>
-            ) : (
-            <form className="tes-form" onSubmit={handleCreate}>
-              <label>
-                คอร์ส *
-                <select value={form.courseId} onChange={(e) => fld('courseId', e.target.value)}>
-                  <option value="">— เลือกคอร์ส —</option>
-                  {eligibleCourses.map((c) => (
-                    <option key={c.id} value={c.id}>{c.courseName}</option>
-                  ))}
-                </select>
-              </label>
 
-              <label>
-                ประเภทข้อสอบ *
-                <select value={form.title} onChange={(e) => fld('title', e.target.value)}>
-                  <option value="">— เลือกประเภทข้อสอบ —</option>
-                  {EXAM_TYPE_OPTIONS.map((t) => (
-                    <option key={t} value={t}>{t}</option>
-                  ))}
-                </select>
-              </label>
-
-              <label>
-                รายละเอียด
-                <textarea value={form.description} onChange={(e) => fld('description', e.target.value)} />
-              </label>
-
-              <label>
-                คะแนนเต็ม *
-                <input
-                  type="number" min="0" step="0.5"
-                  value={form.passingScore}
-                  onChange={(e) => fld('passingScore', e.target.value)}
-                />
-              </label>
-
-              <label>
-                เวลาเปิดสอบ <span className="tes-lbl-hint">(24 ชม.)</span>
-                <DateTime24Input
-                  value={form.startTime}
-                  onChange={(v) => fld('startTime', v)}
-                  minDate={selectedCourse?.courseStartDate}
-                />
-                {selectedCourse?.courseStartDate && (
-                  <span className="tes-lbl-hint">เลือกได้ตั้งแต่วันที่เปิดเรียนของคอร์ส ({selectedCourse.courseStartDate}) เป็นต้นไป</span>
-                )}
-              </label>
-
-              {formErr && <div className="tes-form-err">{formErr}</div>}
-
-              <div className="tes-form-actions">
-                <button type="button" onClick={() => setShowCreate(false)}>ยกเลิก</button>
-                <button type="submit" className="tes-btn-primary" disabled={saving}>
-                  {saving ? 'กำลังสร้าง...' : 'สร้างและไปเพิ่มคำถาม'}
+              <div className="tc-card-actions">
+                <button
+                  type="button"
+                  className="tc-btn-detail"
+                  onClick={(e) => { e.stopPropagation(); goToCourse(course.id); }}
+                >
+                  📝 จัดตารางสอบ
                 </button>
               </div>
-            </form>
-            )}
-          </div>
+            </div>
+          ))}
         </div>
       )}
     </div>

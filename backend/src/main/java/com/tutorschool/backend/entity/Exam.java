@@ -41,12 +41,13 @@ public class Exam {
     @Column(columnDefinition = "TEXT")
     private String description;
 
+    // ลิงก์ข้อสอบภายนอก (เช่น Google Form) — ข้อสอบไม่ได้สร้างคำถามในระบบเองแล้ว เนื้อหาข้อสอบอยู่ที่ลิงก์นี้
+    @Column(name = "exam_link", length = 500)
+    private String examLink;
+
     @Column(name = "total_score")
     @Builder.Default
     private Double totalScore = 0.0;
-
-    @Column(name = "passing_score")
-    private Double passingScore;
 
     @Column(name = "start_time")
     private LocalDateTime startTime;

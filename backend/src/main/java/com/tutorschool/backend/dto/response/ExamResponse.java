@@ -17,14 +17,15 @@ public class ExamResponse {
     private String examCode;
     private Long courseId;
     private String courseName;
+    private String courseCode;
     private Long lessonId;
     private String lessonTitle;
     private Long tutorId;
     private String teacherName;
     private String title;
     private String description;
+    private String examLink;
     private Double totalScore;
-    private Double passingScore;
     private LocalDateTime startTime;
     private LocalDateTime endTime;
     private Integer durationMinutes;
