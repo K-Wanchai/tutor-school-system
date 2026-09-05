@@ -18,6 +18,6 @@ export const getDashboardStats = async () => {
     const response = await api.get('/admin/dashboard');
     return response.data.data;
   } catch (error) {
-    throw new Error(apiError(error));
+    throw new Error(apiError(error), { cause: error });
   }
 };

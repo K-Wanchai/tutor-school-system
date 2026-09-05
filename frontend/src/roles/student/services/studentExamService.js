@@ -39,7 +39,7 @@ export async function startExam(examId) {
     const res = await api.post(`/exams/${examId}/start`);
     return unwrapApiResponse(res);
   } catch (error) {
-    throw new Error(apiError(error));
+    throw new Error(apiError(error), { cause: error });
   }
 }
 
@@ -48,7 +48,7 @@ export async function submitExam(examId, answers) {
     const res = await api.post(`/exams/${examId}/submit`, { answers });
     return unwrapApiResponse(res);
   } catch (error) {
-    throw new Error(apiError(error));
+    throw new Error(apiError(error), { cause: error });
   }
 }
 
@@ -57,6 +57,6 @@ export async function getSubmissionById(submissionId) {
     const res = await api.get(`/exam-submissions/${submissionId}`);
     return unwrapApiResponse(res);
   } catch (error) {
-    throw new Error(apiError(error));
+    throw new Error(apiError(error), { cause: error });
   }
 }

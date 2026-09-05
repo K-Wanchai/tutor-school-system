@@ -35,7 +35,7 @@ export async function getCourses({ page = 0, size = 10 } = {}) {
     const res = await api.get('/courses', { params: { page, size } });
     return unwrap(res);
   } catch (error) {
-    throw new Error(apiError(error, 'getCourses'));
+    throw new Error(apiError(error, 'getCourses'), { cause: error });
   }
 }
 
@@ -44,7 +44,7 @@ export async function getCourseById(id) {
     const res = await api.get(`/courses/${id}`);
     return unwrap(res);
   } catch (error) {
-    throw new Error(apiError(error, 'getCourseById'));
+    throw new Error(apiError(error, 'getCourseById'), { cause: error });
   }
 }
 
@@ -65,7 +65,7 @@ export async function createCourse(form) {
     const res = await api.post('/courses', payload);
     return unwrap(res);
   } catch (error) {
-    throw new Error(apiError(error, 'createCourse'));
+    throw new Error(apiError(error, 'createCourse'), { cause: error });
   }
 }
 
@@ -88,7 +88,7 @@ export async function updateCourse(id, form) {
     const res = await api.put(`/courses/${id}`, payload);
     return unwrap(res);
   } catch (error) {
-    throw new Error(apiError(error, 'updateCourse'));
+    throw new Error(apiError(error, 'updateCourse'), { cause: error });
   }
 }
 
@@ -97,7 +97,7 @@ export async function updateCourseStatus(id, status) {
     const res = await api.patch(`/courses/${id}/status`, { status });
     return unwrap(res);
   } catch (error) {
-    throw new Error(apiError(error, 'updateCourseStatus'));
+    throw new Error(apiError(error, 'updateCourseStatus'), { cause: error });
   }
 }
 
@@ -105,7 +105,7 @@ export async function deleteCourse(id) {
   try {
     await api.delete(`/courses/${id}`);
   } catch (error) {
-    throw new Error(apiError(error, 'deleteCourse'));
+    throw new Error(apiError(error, 'deleteCourse'), { cause: error });
   }
 }
 

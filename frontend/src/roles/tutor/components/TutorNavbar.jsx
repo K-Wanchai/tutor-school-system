@@ -1,7 +1,5 @@
-import { useEffect, useState } from 'react';
-import { NavLink, useLocation, useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { logout } from '../../../auth/services/authService';
-import api from '../../../shared/services/api';
 import { getUsername } from '../../../shared/utils/tokenUtils';
 import './TutorNavbar.css';
 
@@ -32,95 +30,12 @@ function getPageTitle(pathname) {
   return match ? PAGE_TITLES[match] : 'TutorSchool';
 }
 
-function BellIcon() {
-  return (
-    <svg
-      viewBox="0 0 24 24"
-      width="20"
-      height="20"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      aria-hidden="true"
-    >
-      <path d="M18 8a6 6 0 00-12 0c0 7-3 8-3 8h18s-3-1-3-8" />
-      <path d="M13.73 21a2 2 0 01-3.46 0" />
-    </svg>
-  );
-}
-
-function countUnreadNotifications(data) {
-  if (typeof data === 'number') return data;
-  if (typeof data?.unreadCount === 'number') return data.unreadCount;
-  if (typeof data?.count === 'number') return data.count;
-  if (typeof data?.totalElements === 'number') return data.totalElements;
-  if (typeof data?.total === 'number') return data.total;
-
-  const list = Array.isArray(data)
-    ? data
-    : Array.isArray(data?.content)
-      ? data.content
-      : [];
-
-  const unreadList = list.filter((item) => {
-    if (typeof item?.read === 'boolean') return item.read === false;
-    if (typeof item?.isRead === 'boolean') return item.isRead === false;
-    if ('readAt' in item) return item.readAt === null || item.readAt === '';
-    if (item?.status) return item.status === 'UNREAD';
-    return false;
-  });
-
-  if (unreadList.length === 0 && list.length > 0) {
-    return list.length;
-  }
-
-  return unreadList.length;
-}
-
 export default function TutorNavbar({ onMenuToggle }) {
   const navigate = useNavigate();
   const location = useLocation();
 
   const username = getUsername() || 'ติวเตอร์';
   const pageTitle = getPageTitle(location.pathname);
-
-  const [unreadCount, setUnreadCount] = useState(0);
-
-  useEffect(() => {
-    let active = true;
-
-    const loadUnreadNotifications = async () => {
-      try {
-        const res = await api.get('/notifications/me');
-
-        if (res.data?.success === false) {
-          throw new Error(res.data?.message || 'โหลดการแจ้งเตือนไม่สำเร็จ');
-        }
-
-        const data = res.data?.data ?? res.data;
-        const count = countUnreadNotifications(data);
-
-        if (active) {
-          setUnreadCount(count);
-        }
-      } catch {
-        if (active) {
-          setUnreadCount(0);
-        }
-      }
-    };
-
-    loadUnreadNotifications();
-
-    const timer = setInterval(loadUnreadNotifications, 60000);
-
-    return () => {
-      active = false;
-      clearInterval(timer);
-    };
-  }, []);
 
   return (
     <header className="tutor-navbar">

@@ -6,20 +6,17 @@ import {
   CheckSquare,
   Star,
   BarChart3,
-  Activity,
 } from 'lucide-react';
 import {
   getClassroomSessions,
   getCourseExamResults,
   getTutorCourses,
   getTutorEvaluations,
-  getTutorSchedules,
 } from '../services/tutorReportService';
 import './TutorReportsPage.css';
 
 export default function TutorReportsPage() {
   const [courses, setCourses] = useState([]);
-  const [schedules, setSchedules] = useState([]);
   const [sessions, setSessions] = useState([]);
   const [evaluations, setEvaluations] = useState([]);
   const [examResults, setExamResults] = useState([]);
@@ -33,10 +30,9 @@ export default function TutorReportsPage() {
     try {
       setLoading(true);
 
-      const [courseData, scheduleData, sessionData, evaluationData] =
+      const [courseData, sessionData, evaluationData] =
         await Promise.all([
           getTutorCourses(),
-          getTutorSchedules().catch(() => []),
           getClassroomSessions().catch(() => []),
           getTutorEvaluations().catch(() => []),
         ]);
@@ -60,7 +56,6 @@ export default function TutorReportsPage() {
       }
 
       setCourses(courseList);
-      setSchedules(Array.isArray(scheduleData) ? scheduleData : []);
       setSessions(Array.isArray(sessionData) ? sessionData : []);
       setEvaluations(Array.isArray(evaluationData) ? evaluationData : []);
       setExamResults(allResults);
@@ -136,7 +131,7 @@ export default function TutorReportsPage() {
           <p>ภาพรวมผลการสอน และประสิทธิภาพการเรียนรู้ของนักเรียน</p>
         </div>
 
-        <button onClick={loadReports}>รีเฟรชข้อมูล</button>
+        <RefreshButton onClick={loadReports} loading={loading} />
       </div>
 
       <div className="tr-summary">
