@@ -76,7 +76,6 @@ function DetailRow({ label, value }) {
 function TransactionDetailModal({ enrollment, onClose }) {
   if (!enrollment) return null;
 
-  const hasDiscount = Number(enrollment.discountAmount) > 0;
   const historyStatus = getEnrollmentHistoryStatus(enrollment);
   const hasReasonBox = historyStatus === 'REJECTED' || historyStatus === 'NEEDS_REVISION';
 
@@ -132,7 +131,6 @@ function TransactionDetailModal({ enrollment, onClose }) {
               <div className="pm-detail-rows">
                 <DetailRow label="ช่องทางชำระ" value={PAYMENT_METHOD_LABEL[enrollment.paymentMethod]} />
                 <DetailRow label="ยอดเต็ม" value={formatCurrency(enrollment.amount)} />
-                {hasDiscount && <DetailRow label="ส่วนลด" value={formatCurrency(enrollment.discountAmount)} />}
                 <DetailRow label="ยอดสุทธิ" value={formatCurrency(enrollment.finalAmount)} />
                 {!hasReasonBox && <DetailRow label="หมายเหตุเดิม" value={enrollment.note} />}
               </div>

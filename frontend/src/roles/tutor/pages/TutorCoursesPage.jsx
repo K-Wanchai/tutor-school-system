@@ -283,9 +283,6 @@ export default function TutorCoursesPage() {
 }
 
 function CourseDetailModal({ course, onClose }) {
-  const lessons = [...(course.lessons || [])].sort((a, b) => (a.lessonOrder || 0) - (b.lessonOrder || 0));
-  const tests = [...(course.tests || [])].sort((a, b) => (a.testOrder || 0) - (b.testOrder || 0));
-
   return (
     <div className="tc-modal-overlay" onClick={onClose}>
       <div className="tc-modal" onClick={(e) => e.stopPropagation()}>
@@ -339,37 +336,6 @@ function CourseDetailModal({ course, onClose }) {
           {course.tutorRemark && (
             <p className="tc-modal-hint">หมายเหตุ: {course.tutorRemark}</p>
           )}
-        </div>
-
-        <div className="tc-modal-section">
-          <h3>บทเรียน ({lessons.length})</h3>
-
-          {lessons.length === 0 && <p className="tc-modal-hint">ยังไม่มีบทเรียน</p>}
-
-          {lessons.map((lesson) => {
-            const lessonTests = tests.filter((t) => t.lessonOrder === lesson.lessonOrder);
-            return (
-              <div key={lesson.id} className="tc-lesson-row tc-lesson-row--column">
-                <div className="tc-lesson-row-top">
-                  <div>
-                    <strong>บทที่ {lesson.lessonOrder}: {lesson.lessonTitle}</strong>
-                    {lesson.lessonContent && <p>{lesson.lessonContent}</p>}
-                  </div>
-                </div>
-
-                {lessonTests.length > 0 && (
-                  <ul className="tc-lesson-test-list">
-                    {lessonTests.map((test) => (
-                      <li key={test.id}>
-                        <strong>สอบ: {test.testTitle}</strong>
-                        {test.testDescription && <span> — {test.testDescription}</span>}
-                      </li>
-                    ))}
-                  </ul>
-                )}
-              </div>
-            );
-          })}
         </div>
 
         <div className="tc-modal-footer">
