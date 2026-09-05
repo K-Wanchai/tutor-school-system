@@ -52,7 +52,17 @@ function getCourseStatusClass(status) {
   return `tes-course-status tes-course-status-${String(status || 'unknown').toLowerCase()}`;
 }
 
-const EXAM_TYPE_OPTIONS = ['ข้อสอบก่อนเรียน', 'ข้อสอบหลังเรียน'];
+// ประเภทข้อสอบ = ลำดับการสอบของคอร์สนั้น เช่น "การสอบครั้งที่ 1", "การสอบครั้งที่ 2", ...
+const EXAM_TYPE_OPTIONS = Array.from({ length: 15 }, (_, i) => `การสอบครั้งที่ ${i + 1}`);
+
+// แปลงรหัสวัน backend (MON/TUE/...) เป็นเลขวันของ Date.getDay() (0=อาทิตย์...6=เสาร์)
+// ให้ตรงกับ allowedWeekdays ของ CalendarDateInput
+const DAY_CODE_TO_WEEKDAY = { SUN: 0, MON: 1, TUE: 2, WED: 3, THU: 4, FRI: 5, SAT: 6 };
+
+function todayIso() {
+  const now = new Date();
+  return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+}
 
 const EMPTY_FORM = {
   courseId: '',
@@ -60,6 +70,7 @@ const EMPTY_FORM = {
   description: '',
   passingScore: '',
   startTime: '',
+  durationMinutes: '',
 };
 
 function safeText(value) {
@@ -95,12 +106,25 @@ function toIsoOrNull(localDateTimeValue) {
   return localDateTimeValue ? `${localDateTimeValue}:00` : null;
 }
 
+// บวกจำนวนนาทีให้ "YYYY-MM-DDTHH:mm" (เวลาท้องถิ่นแบบ naive ไม่มี timezone) แล้วคืนค่ารูปแบบเดียวกัน —
+// ใช้ getFullYear/getMonth/... (เวลาท้องถิ่นของเบราว์เซอร์) แทน toISOString() เพราะ toISOString()
+// แปลงเป็น UTC ซึ่งจะเลื่อนเวลาไม่ตรงกับที่ผู้ใช้เลือกถ้า timezone ไม่ใช่ UTC+0
+function addMinutesToLocalDateTimeString(localDateTimeValue, minutes) {
+  const [datePart, timePart] = localDateTimeValue.split('T');
+  const [y, m, d] = datePart.split('-').map(Number);
+  const [h, min] = timePart.split(':').map(Number);
+  const dt = new Date(y, m - 1, d, h, min);
+  dt.setMinutes(dt.getMinutes() + minutes);
+  const pad = (n) => String(n).padStart(2, '0');
+  return `${dt.getFullYear()}-${pad(dt.getMonth() + 1)}-${pad(dt.getDate())}T${pad(dt.getHours())}:${pad(dt.getMinutes())}:00`;
+}
+
 const HOURS_24 = Array.from({ length: 24 }, (_, i) => String(i).padStart(2, '0'));
 const MINUTES_5 = Array.from({ length: 12 }, (_, i) => String(i * 5).padStart(2, '0'));
 
 // เลือกวัน-เวลาแบบ 24 ชม. เอง แทน <input type="datetime-local"> เพราะ picker ของเบราว์เซอร์
 // จะโชว์ AM/PM ตาม locale ของเครื่อง ควบคุมให้เป็น 24 ชม. เสมอไม่ได้ผ่าน HTML attribute
-function DateTime24Input({ value, onChange, minDate }) {
+function DateTime24Input({ value, onChange, minDate, allowedWeekdays }) {
   const [datePart, timePart] = value ? value.split('T') : ['', ''];
   const [hour, minute] = timePart ? timePart.split(':') : ['', ''];
 
@@ -118,6 +142,7 @@ function DateTime24Input({ value, onChange, minDate }) {
         value={datePart}
         onChange={(v) => emit(v, hour || '00', minute || '00')}
         minDate={minDate}
+        allowedWeekdays={allowedWeekdays}
       />
       <select value={hour} onChange={(e) => emit(datePart, e.target.value, minute || '00')}>
         <option value="">ชม.</option>
@@ -220,6 +245,18 @@ export default function TutorExamSchedulePage() {
 
   const selectedCourse = eligibleCourses.find((c) => String(c.id) === String(form.courseId));
 
+  // เลือกวันสอบได้เฉพาะวันที่คอร์สทำการเรียนการสอนจริง (ตาม scheduleDays ของคอร์ส) และต้องไม่ก่อนวันนี้ —
+  // ต้องตรงกับ validateExamStartOnTeachingDayAndFuture()/validateExamStartNotBeforeCourseStart() ฝั่ง backend
+  const allowedWeekdays = selectedCourse?.scheduleDays?.length
+    ? selectedCourse.scheduleDays
+        .map((s) => DAY_CODE_TO_WEEKDAY[s.dayOfWeek])
+        .filter((n) => n !== undefined)
+    : undefined;
+
+  const minCreateDate = selectedCourse?.courseStartDate
+    ? (selectedCourse.courseStartDate > todayIso() ? selectedCourse.courseStartDate : todayIso())
+    : todayIso();
+
   function openCreate(presetCourseId) {
     setForm(presetCourseId ? { ...EMPTY_FORM, courseId: String(presetCourseId) } : EMPTY_FORM);
     setFormErr('');
@@ -235,15 +272,25 @@ export default function TutorExamSchedulePage() {
     if (!form.courseId) return setFormErr('กรุณาเลือกคอร์ส');
     if (!form.title) return setFormErr('กรุณาเลือกประเภทข้อสอบ');
     if (form.passingScore === '' || Number.isNaN(Number(form.passingScore))) {
-      return setFormErr('กรุณากรอกคะแนนผ่าน');
+      return setFormErr('กรุณากรอกคะแนนเต็ม');
     }
-    // กันไว้อีกชั้นนอกจากปฏิทินที่ปิดกั้นวันที่เลือกไม่ได้อยู่แล้ว (minDate) — เผื่อกรณีเลือกวันที่ไว้ก่อน
-    // ค่อยเปลี่ยนคอร์สทีหลัง ทำให้วันที่เดิมกลายเป็นก่อนวันเปิดเรียนของคอร์สใหม่
-    if (form.startTime && selectedCourse?.courseStartDate) {
-      const [startDatePart] = form.startTime.split('T');
-      if (startDatePart < selectedCourse.courseStartDate) {
-        return setFormErr('วันที่เปิดสอบต้องไม่ก่อนวันที่เปิดเรียนของคอร์ส');
-      }
+    if (!form.startTime) return setFormErr('กรุณาเลือกวันที่และเวลาสอบ');
+    if (form.durationMinutes === '' || Number(form.durationMinutes) <= 0) {
+      return setFormErr('กรุณากรอกระยะเวลาทำข้อสอบ (นาที)');
+    }
+
+    // กันไว้อีกชั้นนอกจากปฏิทินที่ปิดกั้นวันที่เลือกไม่ได้อยู่แล้ว (minDate/allowedWeekdays) — เผื่อกรณีเลือก
+    // วันที่ไว้ก่อนค่อยเปลี่ยนคอร์สทีหลัง ทำให้วันที่เดิมใช้ไม่ได้กับคอร์สใหม่
+    const startInstant = new Date(form.startTime);
+    if (Number.isNaN(startInstant.getTime()) || startInstant <= new Date()) {
+      return setFormErr('วันเวลาที่เปิดสอบต้องเป็นเวลาในอนาคตเท่านั้น');
+    }
+    const [startDatePart] = form.startTime.split('T');
+    if (selectedCourse?.courseStartDate && startDatePart < selectedCourse.courseStartDate) {
+      return setFormErr('วันที่เปิดสอบต้องไม่ก่อนวันที่เปิดเรียนของคอร์ส');
+    }
+    if (allowedWeekdays && !allowedWeekdays.includes(startInstant.getDay())) {
+      return setFormErr('วันที่เปิดสอบต้องตรงกับวันที่คอร์สนี้ทำการเรียนการสอนเท่านั้น');
     }
 
     setSaving(true);
@@ -255,6 +302,8 @@ export default function TutorExamSchedulePage() {
         description: form.description.trim() || null,
         passingScore: Number(form.passingScore),
         startTime: toIsoOrNull(form.startTime),
+        endTime: addMinutesToLocalDateTimeString(form.startTime, Number(form.durationMinutes)),
+        durationMinutes: Number(form.durationMinutes),
         shuffleQuestions: false,
         showScoreAfterSubmit: true,
         showCorrectAnswersAfterSubmit: false,
@@ -452,8 +501,8 @@ export default function TutorExamSchedulePage() {
                     <strong>{exam.durationMinutes ? `${exam.durationMinutes} นาที` : '-'}</strong>
                   </div>
                   <div>
-                    <span>คะแนนเต็ม / ผ่าน</span>
-                    <strong>{exam.totalScore ?? '-'} / {exam.passingScore ?? '-'}</strong>
+                    <span>คะแนนเต็ม</span>
+                    <strong>{exam.totalScore ?? '-'}</strong>
                   </div>
                 </div>
 
@@ -555,15 +604,26 @@ export default function TutorExamSchedulePage() {
               </label>
 
               <label>
-                เวลาเปิดสอบ <span className="tes-lbl-hint">(24 ชม.)</span>
+                วันที่สอบ * <span className="tes-lbl-hint">(24 ชม.)</span>
                 <DateTime24Input
                   value={form.startTime}
                   onChange={(v) => fld('startTime', v)}
-                  minDate={selectedCourse?.courseStartDate}
+                  minDate={minCreateDate}
+                  allowedWeekdays={allowedWeekdays}
                 />
-                {selectedCourse?.courseStartDate && (
-                  <span className="tes-lbl-hint">เลือกได้ตั้งแต่วันที่เปิดเรียนของคอร์ส ({formatDateShort(selectedCourse.courseStartDate)}) เป็นต้นไป — ย้อนหลังไม่ได้</span>
-                )}
+                <span className="tes-lbl-hint">
+                  เลือกได้เฉพาะวันที่คอร์สทำการเรียนการสอน ตั้งแต่วันนี้เป็นต้นไป — ย้อนหลังไม่ได้
+                  {selectedCourse?.courseStartDate && ` (เริ่มเรียน ${formatDateShort(selectedCourse.courseStartDate)})`}
+                </span>
+              </label>
+
+              <label>
+                ระยะเวลาทำข้อสอบ (นาที) *
+                <input
+                  type="number" min="1" step="1"
+                  value={form.durationMinutes}
+                  onChange={(e) => fld('durationMinutes', e.target.value)}
+                />
               </label>
 
               {formErr && <div className="tes-form-err">{formErr}</div>}

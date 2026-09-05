@@ -47,6 +47,7 @@ public class ExamServiceImpl implements ExamService {
         validateCourseIsOngoing(course);
         validateExamDates(request.getStartTime(), request.getEndTime());
         validateExamStartNotBeforeCourseStart(course, request.getStartTime());
+        validateExamStartOnTeachingDayAndFuture(course, request.getStartTime());
 
         CourseLesson lesson = null;
         if (request.getLessonId() != null) {
@@ -205,6 +206,7 @@ public class ExamServiceImpl implements ExamService {
         }
         if (request.getStartTime() != null) {
             validateExamStartNotBeforeCourseStart(exam.getCourse(), request.getStartTime());
+            validateExamStartOnTeachingDayAndFuture(exam.getCourse(), request.getStartTime());
             exam.setStartTime(request.getStartTime());
         }
         if (request.getEndTime() != null) exam.setEndTime(request.getEndTime());
@@ -464,6 +466,27 @@ public class ExamServiceImpl implements ExamService {
         if (start != null && course.getCourseStartDate() != null
                 && start.toLocalDate().isBefore(course.getCourseStartDate())) {
             throw new IllegalStateException("วันที่เปิดสอบต้องไม่ก่อนวันที่เปิดเรียนของคอร์ส");
+        }
+    }
+
+    // วันเวลาเปิดสอบต้องเป็นวันที่คอร์สทำการเรียนการสอนจริง (ตรงกับ course_schedule_days) และต้องเป็นเวลา
+    // ในอนาคตเท่านั้น (ห้ามตั้งย้อนหลังหรือ ณ ขณะนี้) — ถ้าคอร์สยังไม่ได้ตั้งตารางสอนไว้เลยก็ข้ามการเช็ควันสอน
+    // เพราะไม่มีข้อมูลให้เทียบ
+    private void validateExamStartOnTeachingDayAndFuture(Course course, java.time.LocalDateTime start) {
+        if (start == null) {
+            return;
+        }
+        if (!start.isAfter(java.time.LocalDateTime.now())) {
+            throw new IllegalStateException("วันเวลาที่เปิดสอบต้องเป็นเวลาในอนาคตเท่านั้น");
+        }
+        List<CourseScheduleDay> patterns = course.getScheduleDayPatterns();
+        if (patterns != null && !patterns.isEmpty()) {
+            String dayCode = com.tutorschool.backend.util.ScheduleDaysParser.toDayCode(start.getDayOfWeek());
+            boolean isTeachingDay = patterns.stream()
+                    .anyMatch(p -> dayCode.equalsIgnoreCase(p.getDayOfWeek()));
+            if (!isTeachingDay) {
+                throw new IllegalStateException("วันที่เปิดสอบต้องตรงกับวันที่คอร์สนี้ทำการเรียนการสอนเท่านั้น");
+            }
         }
     }
 
