@@ -24,16 +24,6 @@ const FEATURES = [
     ),
   },
   {
-    title: 'สอบออนไลน์และเช็คชื่อ',
-    desc: 'ระบบข้อสอบออนไลน์ การเข้าเรียน และรายงานผลแบบเรียลไทม์',
-    icon: (
-      <svg viewBox="0 0 24 24" fill="none" width="24" height="24">
-        <path d="M9 12l2 2 4-4" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
-        <rect x="3" y="4" width="18" height="16" rx="2" stroke="currentColor" strokeWidth="1.8" />
-      </svg>
-    ),
-  },
-  {
     title: 'ชำระเงินและแจ้งเตือน',
     desc: 'ตรวจสอบสลิปการโอนเงิน ติดตามสถานะ และแจ้งเตือนอัตโนมัติ',
     icon: (
@@ -116,17 +106,36 @@ export default function LandingPage() {
       </section>
 
       {/* ── About / Contact ── */}
-      {(profile?.address || profile?.phoneNumber || profile?.email) && (
+      {(profile?.address || profile?.phoneNumber || profile?.email || profile?.googleMapUrl) && (
         <section className="lp-section lp-section--muted">
           <div className="lp-section-inner">
             <h2 className="lp-section-title">ติดต่อสถาบัน</h2>
             <p className="lp-section-subtitle">{institutionName}</p>
             <div className="lp-contact-grid">
-              {profile?.address && (
-                <div className="lp-contact-card">
-                  <span className="lp-contact-label">ที่อยู่</span>
-                  <span className="lp-contact-value">{profile.address}</span>
-                </div>
+              {(profile?.address || profile?.googleMapUrl) && (
+                profile?.googleMapUrl ? (
+                  <a
+                    className="lp-contact-card lp-contact-card--link"
+                    href={profile.googleMapUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    <span className="lp-contact-label">ที่อยู่</span>
+                    <span className="lp-contact-value">{profile.address || 'ดูตำแหน่งบนแผนที่'}</span>
+                    <span className="lp-contact-map">
+                      <svg viewBox="0 0 24 24" width="15" height="15" fill="none" aria-hidden="true">
+                        <path d="M12 21s7-6.3 7-11a7 7 0 10-14 0c0 4.7 7 11 7 11z" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" />
+                        <circle cx="12" cy="10" r="2.5" stroke="currentColor" strokeWidth="1.8" />
+                      </svg>
+                      นำทางด้วย Google Maps
+                    </span>
+                  </a>
+                ) : (
+                  <div className="lp-contact-card">
+                    <span className="lp-contact-label">ที่อยู่</span>
+                    <span className="lp-contact-value">{profile.address}</span>
+                  </div>
+                )
               )}
               {profile?.phoneNumber && (
                 <div className="lp-contact-card">

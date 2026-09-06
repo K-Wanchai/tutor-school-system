@@ -27,6 +27,10 @@ public class InstitutionProfile {
     @Column(name = "address", columnDefinition = "TEXT")
     private String address;
 
+    // ลิงก์ Google Maps ของที่ตั้งสถาบัน (แสดงในหน้า landing / ติดต่อเรา)
+    @Column(name = "google_map_url", columnDefinition = "TEXT")
+    private String googleMapUrl;
+
     @Column(name = "phone_number", nullable = false, length = 20)
     private String phoneNumber;
 
