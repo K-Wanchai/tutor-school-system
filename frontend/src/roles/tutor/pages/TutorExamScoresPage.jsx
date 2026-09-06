@@ -22,6 +22,13 @@ const COURSE_STATUS_LABEL = {
 
 const cellKey = (examId, studentId) => `${examId}-${studentId}`;
 
+// กรอกคะแนนได้เมื่อถึงกำหนดสอบแล้วเท่านั้น (เปิด/ปิดสอบแล้ว หรือเลยเวลาเริ่มสอบ)
+function isExamGradable(exam) {
+  if (exam.status === 'OPEN' || exam.status === 'CLOSED') return true;
+  if (exam.startTime && new Date(exam.startTime).getTime() <= Date.now()) return true;
+  return false;
+}
+
 function formatDate(value) {
   if (!value) return '-';
   const d = new Date(value);
@@ -54,7 +61,7 @@ export default function TutorExamScoresPage() {
       <div className="tes2-header">
         <div>
           <h1>คะแนนสอบ</h1>
-          <p>คะแนนสอบของนักเรียนแยกตามคอร์ส กรอกคะแนนที่ได้ในช่องตารางได้เลย</p>
+          <p>เลือกคอร์สเพื่อดูตารางคะแนนสอบของนักเรียน แล้วกรอกคะแนนที่ได้ในช่องได้เลย</p>
         </div>
         <RefreshButton onClick={() => setReloadKey((k) => k + 1)} loading={loading} />
       </div>
@@ -80,11 +87,14 @@ export default function TutorExamScoresPage() {
 }
 
 function CourseScoreCard({ course, onError }) {
+  const [expanded, setExpanded] = useState(false);
+  const [hasLoaded, setHasLoaded] = useState(false);
+  const [loading, setLoading] = useState(false);
+
   const [exams, setExams] = useState([]);
   const [results, setResults] = useState([]);
   const [manualScores, setManualScores] = useState([]);
   const [enrollments, setEnrollments] = useState([]);
-  const [loading, setLoading] = useState(true);
 
   const [edits, setEdits] = useState({});
   const [cellState, setCellState] = useState({});
@@ -109,6 +119,7 @@ function CourseScoreCard({ course, onError }) {
           ACTIVE_ENROLLMENT_STATUSES.has(e.status)
         )
       );
+      setHasLoaded(true);
     } catch (err) {
       onError?.(err.message);
     } finally {
@@ -116,7 +127,9 @@ function CourseScoreCard({ course, onError }) {
     }
   }, [course.id, onError]);
 
-  useEffect(() => { load(); }, [load]);
+  useEffect(() => {
+    if (expanded && !hasLoaded && !loading) load();
+  }, [expanded, hasLoaded, loading, load]);
 
   const lessonOrderByLessonId = useMemo(() => {
     const map = {};
@@ -157,18 +170,15 @@ function CourseScoreCard({ course, onError }) {
   const studentRows = useMemo(() => {
     const byId = {};
     enrollments.forEach((e) => {
-      byId[e.studentId] = { studentId: e.studentId, studentName: e.studentName, studentCode: null };
+      byId[e.studentId] = { studentId: e.studentId, studentName: e.studentName };
     });
     results.forEach((r) => {
-      if (!byId[r.studentId]) byId[r.studentId] = { studentId: r.studentId, studentName: r.studentName, studentCode: r.studentCode };
-      else if (r.studentCode) byId[r.studentId].studentCode = r.studentCode;
+      if (!byId[r.studentId]) byId[r.studentId] = { studentId: r.studentId, studentName: r.studentName };
     });
     manualScores.forEach((m) => {
-      if (!byId[m.studentId]) byId[m.studentId] = { studentId: m.studentId, studentName: m.studentName, studentCode: m.studentCode };
-      else if (m.studentCode) byId[m.studentId].studentCode = m.studentCode;
+      if (!byId[m.studentId]) byId[m.studentId] = { studentId: m.studentId, studentName: m.studentName };
     });
     return Object.values(byId).sort((a, b) =>
-      (a.studentCode || '').localeCompare(b.studentCode || '', 'th') ||
       (a.studentName || '').localeCompare(b.studentName || '', 'th')
     );
   }, [enrollments, results, manualScores]);
@@ -267,98 +277,116 @@ function CourseScoreCard({ course, onError }) {
   const totalMax = orderedExams.reduce((s, e) => s + (e.totalScore || 0), 0);
 
   return (
-    <article className="esc-card">
-      <header className="esc-card-head">
-        <div className="esc-card-title">
+    <article className={`esc-card${expanded ? ' esc-card-open' : ''}`}>
+      <button
+        type="button"
+        className="esc-card-head"
+        aria-expanded={expanded}
+        onClick={() => setExpanded((v) => !v)}
+      >
+        <span className="esc-chevron" aria-hidden="true">▸</span>
+        <span className="esc-card-title">
           <span className="esc-code">{course.courseCode || '-'}</span>
-          <h2>{course.courseName || 'ไม่ระบุชื่อคอร์ส'}</h2>
-        </div>
-        <div className="esc-card-meta">
+          <span className="esc-name">{course.courseName || 'ไม่ระบุชื่อคอร์ส'}</span>
+        </span>
+        <span className="esc-card-meta">
           <span>ผู้สอน: <b>{course.teacherName || '-'}</b></span>
-          <span>นักเรียน: <b>{studentRows.length || course.enrolledCount || 0} คน</b></span>
-          <span>การสอบ: <b>{orderedExams.length} ครั้ง</b></span>
+          <span>นักเรียน: <b>{course.enrolledCount ?? 0} คน</b></span>
           <span>สถานะ: <b>{COURSE_STATUS_LABEL[course.status] || course.status || '-'}</b></span>
           <span>เริ่มเรียน: <b>{formatDate(course.courseStartDate)}</b></span>
-        </div>
-      </header>
+        </span>
+      </button>
 
-      {loading ? (
-        <div className="esc-card-empty">กำลังโหลดคะแนน...</div>
-      ) : orderedExams.length === 0 ? (
-        <div className="esc-card-empty">คอร์สนี้ยังไม่มีการสอบ</div>
-      ) : studentRows.length === 0 ? (
-        <div className="esc-card-empty">คอร์สนี้ยังไม่มีนักเรียนที่ลงทะเบียนอนุมัติแล้ว</div>
-      ) : (
-        <div className="esc-grid-wrap">
-          <table className="esc-grid">
-            <thead>
-              <tr>
-                <th className="esc-col-code" rowSpan={2}>รหัสนักเรียน</th>
-                <th className="esc-col-name" rowSpan={2}>ชื่อนักเรียน</th>
-                {orderedExams.map((exam, i) => (
-                  <th key={exam.id} className="esc-exam-th">
-                    การสอบครั้งที่ {i + 1}
-                    <span className="esc-exam-title">{exam.title}</span>
-                  </th>
-                ))}
-                <th className="esc-col-avg" rowSpan={2}>เฉลี่ย</th>
-              </tr>
-              <tr>
-                {orderedExams.map((exam) => (
-                  <th key={exam.id} className="esc-sub-th">
-                    <span className="esc-sub-got">คะแนนที่ได้</span>
-                    <span className="esc-sub-max">เต็ม {exam.totalScore ?? '-'}</span>
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {studentRows.map((stu) => (
-                <tr key={stu.studentId}>
-                  <td className="esc-col-code">{stu.studentCode || '-'}</td>
-                  <td className="esc-col-name">{stu.studentName || '-'}</td>
-                  {orderedExams.map((exam) => {
-                    const key = cellKey(exam.id, stu.studentId);
-                    const saved = savedScoreFor(exam.id, stu.studentId);
-                    const fromSystem = !(key in manualScoreMap) && systemScoreMap[key];
-                    const value = key in edits ? edits[key] : (saved != null ? saved : '');
-                    const state = cellState[key];
-                    return (
-                      <td key={exam.id} className={`esc-cell${fromSystem ? ' esc-cell-system' : ''}`}>
-                        <input
-                          type="number"
-                          min="0"
-                          step="0.5"
-                          inputMode="decimal"
-                          value={value}
-                          onChange={(e) => setEdits((p) => ({ ...p, [key]: e.target.value }))}
-                          onBlur={() => commitCell(exam, stu.studentId)}
-                          onKeyDown={(e) => { if (e.key === 'Enter') e.currentTarget.blur(); }}
-                          title={fromSystem ? 'คะแนนจากการทำข้อสอบในระบบ (แก้ทับได้)' : undefined}
-                        />
-                        {state === 'saving' && <i className="esc-dot saving" title="กำลังบันทึก" />}
-                        {state === 'saved' && <i className="esc-dot saved" title="บันทึกแล้ว" />}
-                        {state === 'error' && <i className="esc-dot error" title="บันทึกไม่สำเร็จ" />}
-                      </td>
-                    );
-                  })}
-                  <td className="esc-col-avg">
-                    {averagePctFor(stu.studentId) != null ? `${averagePctFor(stu.studentId)}%` : '-'}
-                  </td>
+      {expanded && (
+        loading ? (
+          <div className="esc-card-empty">กำลังโหลดคะแนน...</div>
+        ) : orderedExams.length === 0 ? (
+          <div className="esc-card-empty">คอร์สนี้ยังไม่มีการสอบ</div>
+        ) : studentRows.length === 0 ? (
+          <div className="esc-card-empty">คอร์สนี้ยังไม่มีนักเรียนที่ลงทะเบียนอนุมัติแล้ว</div>
+        ) : (
+          <div className="esc-grid-wrap">
+            <table className="esc-grid">
+              <thead>
+                <tr>
+                  <th className="esc-col-no" rowSpan={2}>#</th>
+                  <th className="esc-col-name" rowSpan={2}>ชื่อนักเรียน</th>
+                  {orderedExams.map((exam, i) => (
+                    <th key={exam.id} className="esc-exam-th">
+                      การสอบครั้งที่ {i + 1}
+                      <span className="esc-exam-title">{exam.title}</span>
+                      {!isExamGradable(exam) && (
+                        <span className="esc-lock">🔒 ยังไม่ถึงกำหนดสอบ</span>
+                      )}
+                    </th>
+                  ))}
+                  <th className="esc-col-avg" rowSpan={2}>คะแนนเฉลี่ย</th>
                 </tr>
-              ))}
-            </tbody>
-            <tfoot>
-              <tr>
-                <td className="esc-col-code" colSpan={2}>คะแนนเต็มรวม</td>
-                {orderedExams.map((exam) => (
-                  <td key={exam.id} className="esc-foot-max">{exam.totalScore ?? '-'}</td>
+                <tr>
+                  {orderedExams.map((exam) => (
+                    <th key={exam.id} className="esc-sub-th">
+                      <span className="esc-sub-got">คะแนนที่ได้</span>
+                      <span className="esc-sub-max">คะแนนเต็ม {exam.totalScore ?? '-'}</span>
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {studentRows.map((stu, idx) => (
+                  <tr key={stu.studentId}>
+                    <td className="esc-col-no">{idx + 1}</td>
+                    <td className="esc-col-name">{stu.studentName || '-'}</td>
+                    {orderedExams.map((exam) => {
+                      const key = cellKey(exam.id, stu.studentId);
+                      const saved = savedScoreFor(exam.id, stu.studentId);
+                      const fromSystem = !(key in manualScoreMap) && systemScoreMap[key];
+                      const locked = !isExamGradable(exam);
+                      const value = key in edits ? edits[key] : (saved != null ? saved : '');
+                      const state = cellState[key];
+                      return (
+                        <td key={exam.id} className={`esc-cell${fromSystem ? ' esc-cell-system' : ''}${locked ? ' esc-cell-locked' : ''}`}>
+                          <input
+                            type="number"
+                            min="0"
+                            step="0.5"
+                            inputMode="decimal"
+                            value={value}
+                            disabled={locked}
+                            onChange={(e) => setEdits((p) => ({ ...p, [key]: e.target.value }))}
+                            onBlur={() => commitCell(exam, stu.studentId)}
+                            onKeyDown={(e) => { if (e.key === 'Enter') e.currentTarget.blur(); }}
+                            title={
+                              locked
+                                ? 'ยังไม่ถึงกำหนดสอบ — กรอกคะแนนได้เมื่อถึงเวลาสอบแล้ว'
+                                : fromSystem
+                                  ? 'คะแนนจากการทำข้อสอบในระบบ (แก้ทับได้)'
+                                  : undefined
+                            }
+                          />
+                          {state === 'saving' && <i className="esc-dot saving" title="กำลังบันทึก" />}
+                          {state === 'saved' && <i className="esc-dot saved" title="บันทึกแล้ว" />}
+                          {state === 'error' && <i className="esc-dot error" title="บันทึกไม่สำเร็จ" />}
+                        </td>
+                      );
+                    })}
+                    <td className="esc-col-avg">
+                      {averagePctFor(stu.studentId) != null ? `${averagePctFor(stu.studentId)}%` : '-'}
+                    </td>
+                  </tr>
                 ))}
-                <td className="esc-col-avg">{totalMax || '-'}</td>
-              </tr>
-            </tfoot>
-          </table>
-        </div>
+              </tbody>
+              <tfoot>
+                <tr>
+                  <td className="esc-foot-label" colSpan={2}>คะแนนเต็ม</td>
+                  {orderedExams.map((exam) => (
+                    <td key={exam.id} className="esc-foot-max">{exam.totalScore ?? '-'}</td>
+                  ))}
+                  <td className="esc-col-avg">{totalMax || '-'}</td>
+                </tr>
+              </tfoot>
+            </table>
+          </div>
+        )
       )}
     </article>
   );

@@ -4,6 +4,7 @@ import com.tutorschool.backend.dto.request.SaveExamScoreRequest;
 import com.tutorschool.backend.dto.response.ExamManualScoreResponse;
 import com.tutorschool.backend.entity.Exam;
 import com.tutorschool.backend.entity.ExamManualScore;
+import com.tutorschool.backend.entity.ExamStatus;
 import com.tutorschool.backend.entity.Student;
 import com.tutorschool.backend.entity.Tutor;
 import com.tutorschool.backend.exception.ExamAccessDeniedException;
@@ -18,6 +19,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Service
@@ -47,6 +49,7 @@ public class ExamScoreServiceImpl implements ExamScoreService {
         Exam exam = examRepository.findById(request.getExamId())
                 .orElseThrow(() -> new ExamNotFoundException(request.getExamId()));
         requireOwner(exam, tutor);
+        requireExamStarted(exam);
 
         Student student = studentRepository.findById(request.getStudentId())
                 .orElseThrow(() -> new ResourceNotFoundException("Student not found with id: " + request.getStudentId()));
@@ -86,6 +89,15 @@ public class ExamScoreServiceImpl implements ExamScoreService {
     private void requireOwner(Exam exam, Tutor tutor) {
         if (!exam.getTutor().getId().equals(tutor.getId())) {
             throw new ExamAccessDeniedException("You do not have permission to grade this exam");
+        }
+    }
+
+    // กรอกคะแนนได้ต่อเมื่อถึงกำหนดสอบแล้ว — ยังไม่เปิดสอบ (DRAFT) หรือเวลาเริ่มสอบยังไม่มาถึง = กรอกไม่ได้
+    private void requireExamStarted(Exam exam) {
+        boolean notStarted = exam.getStatus() == ExamStatus.DRAFT
+                || (exam.getStartTime() != null && exam.getStartTime().isAfter(LocalDateTime.now()));
+        if (notStarted) {
+            throw new IllegalArgumentException("ยังกรอกคะแนนไม่ได้ เนื่องจากยังไม่ถึงกำหนดสอบ");
         }
     }
 
