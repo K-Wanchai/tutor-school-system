@@ -12,7 +12,6 @@ const PAGE_TITLES = {
   '/tutor/exams':            'จัดการข้อสอบ',
   '/tutor/exam-scores':      'คะแนนสอบ',
   '/tutor/attendance':       'การเข้าเรียน',
-  '/tutor/classroom':        'ห้องเรียน',
   '/tutor/evaluations':      'การประเมิน',
   '/tutor/reports':          'รายงาน',
   '/tutor/students':         'นักเรียน',
