@@ -3,12 +3,14 @@ package com.tutorschool.backend.controller;
 import com.tutorschool.backend.dto.request.SaveClassAttendanceRequest;
 import com.tutorschool.backend.dto.response.ApiResponse;
 import com.tutorschool.backend.dto.response.ClassAttendanceResponse;
+import com.tutorschool.backend.entity.User;
 import com.tutorschool.backend.service.ClassAttendanceService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.security.Principal;
@@ -29,9 +31,9 @@ public class ClassAttendanceController {
     @PreAuthorize("hasRole('TUTOR') or hasRole('ADMIN')")
     public ResponseEntity<ApiResponse<List<ClassAttendanceResponse>>> getCourseAttendance(
             @PathVariable Long courseId,
-            Principal principal) {
+            @AuthenticationPrincipal User currentUser) {
         return ResponseEntity.ok(ApiResponse.success("Attendance retrieved",
-                classAttendanceService.getCourseAttendance(courseId, principal.getName())));
+                classAttendanceService.getCourseAttendance(courseId, currentUser)));
     }
 
     @PutMapping

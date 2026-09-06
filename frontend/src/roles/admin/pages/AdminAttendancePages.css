@@ -1,0 +1,41 @@
+/* ส่วนเสริมสำหรับตารางการเข้าเรียน (อ่านอย่างเดียว) — ใช้คู่กับ AdminExamPages.css */
+
+.aes-att-day-th {
+  min-width: 96px;
+  line-height: 1.35;
+  background: #eef2f5;
+  color: #374151;
+  font-weight: 700;
+  font-size: 11px;
+}
+
+.aes-att-day-date {
+  display: block;
+  font-weight: 700;
+  color: #111827;
+  font-size: 11.5px;
+}
+
+.aes-att-day-time {
+  display: block;
+  font-weight: 500;
+  color: #6b7280;
+  font-size: 10px;
+}
+
+.aes-att-cell {
+  font-size: 12px;
+  font-weight: 600;
+  color: #111827;
+}
+
+.aes-att-none { color: #9ca3af; }
+.aes-att-present { background: #ecfdf5; color: #047857; }
+.aes-att-late { background: #fef9c3; color: #92400e; }
+.aes-att-leave { background: #e0f2fe; color: #0369a1; }
+.aes-att-absent { background: #fee2e2; color: #b91c1c; }
+
+.aes-att-sw-present { background: #ecfdf5; border: 1px solid #a7f3d0; }
+.aes-att-sw-late { background: #fef9c3; border: 1px solid #fde68a; }
+.aes-att-sw-leave { background: #e0f2fe; border: 1px solid #bae6fd; }
+.aes-att-sw-absent { background: #fee2e2; border: 1px solid #fecaca; }

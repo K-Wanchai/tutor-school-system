@@ -16,6 +16,9 @@ import StudentAchievementDetailPage from '../roles/admin/pages/StudentAchievemen
 import AdminExamTutorListPage from '../roles/admin/pages/AdminExamTutorListPage';
 import AdminExamTutorCoursesPage from '../roles/admin/pages/AdminExamTutorCoursesPage';
 import AdminExamCourseScoresPage from '../roles/admin/pages/AdminExamCourseScoresPage';
+import AdminAttendanceTutorListPage from '../roles/admin/pages/AdminAttendanceTutorListPage';
+import AdminAttendanceTutorCoursesPage from '../roles/admin/pages/AdminAttendanceTutorCoursesPage';
+import AdminAttendanceCoursePage from '../roles/admin/pages/AdminAttendanceCoursePage';
 
 const adminRoutes = (
   <Route
@@ -38,6 +41,9 @@ const adminRoutes = (
     <Route path="exams" element={<AdminExamTutorListPage />} />
     <Route path="exams/tutors/:tutorId" element={<AdminExamTutorCoursesPage />} />
     <Route path="exams/tutors/:tutorId/courses/:courseId" element={<AdminExamCourseScoresPage />} />
+    <Route path="attendance" element={<AdminAttendanceTutorListPage />} />
+    <Route path="attendance/tutors/:tutorId" element={<AdminAttendanceTutorCoursesPage />} />
+    <Route path="attendance/tutors/:tutorId/courses/:courseId" element={<AdminAttendanceCoursePage />} />
     <Route path="student-exam-achievements" element={<StudentExamAchievementManagePage />} />
     <Route path="student-exam-achievements/:achievementId/detail" element={<StudentAchievementDetailPage />} />
     <Route path="settings" element={<AdminSettingsPage />} />

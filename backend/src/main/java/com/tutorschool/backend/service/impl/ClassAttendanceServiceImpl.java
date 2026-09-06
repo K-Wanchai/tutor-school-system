@@ -4,8 +4,10 @@ import com.tutorschool.backend.dto.request.SaveClassAttendanceRequest;
 import com.tutorschool.backend.dto.response.ClassAttendanceResponse;
 import com.tutorschool.backend.entity.ClassAttendance;
 import com.tutorschool.backend.entity.Course;
+import com.tutorschool.backend.entity.Role;
 import com.tutorschool.backend.entity.Student;
 import com.tutorschool.backend.entity.Tutor;
+import com.tutorschool.backend.entity.User;
 import com.tutorschool.backend.exception.ExamAccessDeniedException;
 import com.tutorschool.backend.exception.ResourceNotFoundException;
 import com.tutorschool.backend.repository.ClassAttendanceRepository;
@@ -31,10 +33,11 @@ public class ClassAttendanceServiceImpl implements ClassAttendanceService {
 
     @Override
     @Transactional(readOnly = true)
-    public List<ClassAttendanceResponse> getCourseAttendance(Long courseId, String tutorEmail) {
-        Tutor tutor = getTutor(tutorEmail);
+    public List<ClassAttendanceResponse> getCourseAttendance(Long courseId, User currentUser) {
         Course course = getCourse(courseId);
-        requireOwner(course, tutor);
+        if (currentUser.getRole() != Role.ADMIN) {
+            requireOwner(course, getTutor(currentUser.getEmail()));
+        }
         return attendanceRepository.findByCourseId(courseId).stream()
                 .map(this::toResponse)
                 .toList();

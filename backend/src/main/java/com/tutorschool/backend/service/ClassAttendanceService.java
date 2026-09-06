@@ -2,13 +2,15 @@ package com.tutorschool.backend.service;
 
 import com.tutorschool.backend.dto.request.SaveClassAttendanceRequest;
 import com.tutorschool.backend.dto.response.ClassAttendanceResponse;
+import com.tutorschool.backend.entity.User;
 
 import java.time.LocalDate;
 import java.util.List;
 
 public interface ClassAttendanceService {
 
-    List<ClassAttendanceResponse> getCourseAttendance(Long courseId, String tutorEmail);
+    // ADMIN ดูการเข้าเรียนของทุกคอร์ส (อ่านอย่างเดียว), TUTOR ดูได้เฉพาะคอร์สของตัวเอง
+    List<ClassAttendanceResponse> getCourseAttendance(Long courseId, User currentUser);
 
     ClassAttendanceResponse saveAttendance(SaveClassAttendanceRequest request, String tutorEmail);
 
