@@ -12,7 +12,6 @@ import TutorExamGradingPage from '../roles/tutor/pages/TutorExamGradingPage';
 import TutorCourseScoreMatrixPage from '../roles/tutor/pages/TutorCourseScoreMatrixPage';
 import TutorAttendanceScoresPage from '../roles/tutor/pages/TutorAttendanceScoresPage';
 import TutorAttendanceScoreDetailPage from '../roles/tutor/pages/TutorAttendanceScoreDetailPage';
-import TutorClassroomsPage from '../roles/tutor/pages/TutorClassroomsPage';
 import TutorEvaluationsPage from '../roles/tutor/pages/TutorEvaluationsPage';
 import TutorProfilePage from '../roles/tutor/pages/TutorProfilePage';
 
@@ -36,7 +35,6 @@ const tutorRoutes = (
     <Route path="course-scores" element={<TutorCourseScoreMatrixPage />} />
     <Route path="attendance-scores" element={<TutorAttendanceScoresPage />} />
     <Route path="attendance-scores/:courseId" element={<TutorAttendanceScoreDetailPage />} />
-    <Route path="classroom" element={<TutorClassroomsPage />} />
     <Route path="evaluations" element={<TutorEvaluationsPage />} />
     <Route path="profile" element={<TutorProfilePage />} />
   </Route>

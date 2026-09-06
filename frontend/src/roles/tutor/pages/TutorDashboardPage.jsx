@@ -17,7 +17,6 @@ export default function TutorDashboardPage() {
   const [loading, setLoading] = useState(true);
   const [courses, setCourses] = useState([]);
   const [schedules, setSchedules] = useState([]);
-  const [sessions, setSessions] = useState([]);
   const [evaluations, setEvaluations] = useState([]);
 
   const today = new Date().toLocaleDateString('th-TH', {
@@ -40,15 +39,13 @@ export default function TutorDashboardPage() {
       const requests = [
         api.get('/courses/my-courses').catch(() => ({ data: [] })),
         api.get('/course-schedules/tutor/me').catch(() => ({ data: [] })),
-        api.get('/classroom-sessions/tutor/me').catch(() => ({ data: [] })),
         api.get('/course-evaluations/tutor/me').catch(() => ({ data: [] })),
       ];
 
-      const [coursesRes, schedulesRes, sessionsRes, evaluationsRes] = await Promise.all(requests);
+      const [coursesRes, schedulesRes, evaluationsRes] = await Promise.all(requests);
 
       setCourses(getData(coursesRes));
       setSchedules(getData(schedulesRes));
-      setSessions(getData(sessionsRes));
       setEvaluations(getData(evaluationsRes));
     } finally {
       if (!silent) setLoading(false);
@@ -79,10 +76,6 @@ export default function TutorDashboardPage() {
       (s) => s.scheduleDate === todayText
     ).length;
 
-    const openSessions = sessions.filter((s) =>
-      ['OPEN', 'ACTIVE', 'IN_PROGRESS'].includes(s.status)
-    ).length;
-
     const avgRating =
       evaluations.length > 0
         ? (
@@ -95,11 +88,10 @@ export default function TutorDashboardPage() {
       totalCourses: courses.length,
       activeCourses,
       todaySchedules,
-      openSessions,
       totalEvaluations: evaluations.length,
       avgRating,
     };
-  }, [courses, schedules, sessions, evaluations]);
+  }, [courses, schedules, evaluations]);
 
   const recentSchedules = schedules.slice(0, 5);
   const recentCourses = courses.slice(0, 5);
@@ -125,7 +117,6 @@ export default function TutorDashboardPage() {
             <StatCard title="คอร์สทั้งหมด" value={summary.totalCourses} desc="คอร์สที่รับผิดชอบ" onClick={() => navigate('/tutor/courses')} />
             <StatCard title="คอร์สที่เปิดอยู่" value={summary.activeCourses} desc="คอร์สที่กำลังใช้งาน" onClick={() => navigate('/tutor/courses')} />
             <StatCard title="ตารางสอนวันนี้" value={summary.todaySchedules} desc="จำนวนคาบวันนี้" onClick={() => navigate('/tutor/schedule')} />
-            <StatCard title="ห้องเรียนเปิดอยู่" value={summary.openSessions} desc="ห้องเรียนที่ใช้งาน" onClick={() => navigate('/tutor/classroom')} />
             <StatCard title="คะแนนประเมินเฉลี่ย" value={summary.avgRating} desc={`${summary.totalEvaluations} รีวิว`} onClick={() => navigate('/tutor/evaluations')} />
           </div>
 
