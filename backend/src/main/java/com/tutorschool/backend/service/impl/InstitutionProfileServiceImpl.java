@@ -34,6 +34,7 @@ public class InstitutionProfileServiceImpl implements InstitutionProfileService 
 
         profile.setInstitutionName(request.getInstitutionName());
         profile.setAddress(request.getAddress());
+        profile.setGoogleMapUrl(request.getGoogleMapUrl());
         profile.setPhoneNumber(request.getPhoneNumber());
         profile.setEmail(request.getEmail());
         profile.setLogoUrl(request.getLogoUrl());

@@ -32,6 +32,7 @@ export async function updateInstitutionProfile(form) {
   const payload = {
     institutionName: form.institutionName || '',
     address: form.address || null,
+    googleMapUrl: form.googleMapUrl || null,
     phoneNumber: form.phoneNumber || '',
     email: form.email || '',
     logoUrl: form.logoUrl || null,

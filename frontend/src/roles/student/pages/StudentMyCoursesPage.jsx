@@ -196,10 +196,6 @@ function StudentMyCoursesPage() {
     return activeCourses.filter((item) => item.status === activeFilter);
   }, [activeCourses, activeFilter]);
 
-  function handleEnterClassroom(course) {
-    showToast('info', `ฟีเจอร์ห้องเรียนจะพัฒนาในขั้นตอนถัดไป — คอร์ส: ${course.courseName || '-'}`);
-  }
-
   return (
     <div className="smc-page">
       {toast.msg && (
@@ -347,16 +343,6 @@ function StudentMyCoursesPage() {
                   >
                     ดูรายละเอียด
                   </button>
-
-                  {course.status === 'APPROVED' && course.paymentStatus === 'PAID' && (
-                    <button
-                      type="button"
-                      className="smc-primary-btn"
-                      onClick={() => handleEnterClassroom(course)}
-                    >
-                      เข้าเรียน
-                    </button>
-                  )}
                 </div>
               </article>
             ))}

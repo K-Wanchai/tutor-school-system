@@ -19,6 +19,8 @@ public class UpdateInstitutionProfileRequest {
 
     private String address;
 
+    private String googleMapUrl;
+
     @NotBlank(message = "Phone number must not be blank")
     private String phoneNumber;
 

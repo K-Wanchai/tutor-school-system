@@ -17,6 +17,7 @@ public class InstitutionProfileResponse {
     private String institutionCode;
     private String institutionName;
     private String address;
+    private String googleMapUrl;
     private String phoneNumber;
     private String email;
     private String logoUrl;
