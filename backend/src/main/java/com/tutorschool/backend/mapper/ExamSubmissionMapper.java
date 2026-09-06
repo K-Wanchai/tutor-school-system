@@ -38,11 +38,21 @@ public class ExamSubmissionMapper {
     }
 
     public ExamResultResponse toResultResponse(ExamSubmission submission) {
+        var exam = submission.getExam();
+        var course = exam.getCourse();
+        var tutor = exam.getTutor();
         return ExamResultResponse.builder()
                 .submissionId(submission.getId())
                 .submissionCode(submission.getSubmissionCode())
-                .examId(submission.getExam().getId())
-                .examTitle(submission.getExam().getTitle())
+                .examId(exam.getId())
+                .examTitle(exam.getTitle())
+                .examCode(exam.getExamCode())
+                .examDescription(exam.getDescription())
+                .examStartTime(exam.getStartTime())
+                .courseId(course != null ? course.getId() : null)
+                .courseName(course != null ? course.getCourseName() : null)
+                .courseCode(course != null ? course.getCourseCode() : null)
+                .tutorName(tutor != null ? tutor.getFirstName() + " " + tutor.getLastName() : null)
                 .studentId(submission.getStudent().getId())
                 .studentName(submission.getStudent().getFullName())
                 .studentCode(submission.getStudent().getStudentCode())

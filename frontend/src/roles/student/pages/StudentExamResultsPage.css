@@ -129,6 +129,114 @@
   flex: 0 0 auto;
 }
 
+/* Course-grouped results */
+.ser-course-list {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.ser-course-card {
+  border: 1px solid #ede9fe;
+  border-radius: 20px;
+  background: #ffffff;
+  overflow: hidden;
+}
+
+.ser-course-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 18px 20px;
+  background: linear-gradient(135deg, #f5f3ff, #faf9ff);
+  border-bottom: 1px solid #ede9fe;
+}
+
+.ser-course-code {
+  margin: 0 0 4px;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  color: #7c3aed;
+}
+
+.ser-course-head h3 {
+  margin: 0;
+  font-size: 17px;
+  color: #1e1b4b;
+}
+
+.ser-course-tutor {
+  flex: 0 0 auto;
+  font-size: 13px;
+  font-weight: 600;
+  color: #64748b;
+}
+
+.ser-exam-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 14px;
+}
+
+.ser-exam-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 16px;
+  border-radius: 14px;
+  border: 1px solid #ede9fe;
+  background: #faf9ff;
+  cursor: pointer;
+  text-align: left;
+  font-family: inherit;
+}
+
+.ser-exam-item:hover {
+  background: #f5f3ff;
+}
+
+.ser-exam-main {
+  min-width: 0;
+}
+
+.ser-exam-title {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.ser-exam-title strong {
+  color: #111827;
+  font-size: 14px;
+}
+
+.ser-exam-badge {
+  flex: 0 0 auto;
+  padding: 2px 10px;
+  border-radius: 999px;
+  background: #ede9fe;
+  color: #5b21b6;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.ser-exam-meta {
+  margin: 6px 0 0;
+  color: #9ca3af;
+  font-size: 12px;
+}
+
+.ser-exam-desc {
+  margin: 4px 0 0;
+  color: #6b7280;
+  font-size: 12px;
+}
+
 .ser-row-score span:first-child {
   font-weight: 800;
   color: #4c1d95;
@@ -296,5 +404,14 @@
 
   .ser-summary-grid {
     grid-template-columns: 1fr;
+  }
+
+  .ser-course-head {
+    flex-direction: column;
+  }
+
+  .ser-exam-item {
+    flex-direction: column;
+    align-items: flex-start;
   }
 }
