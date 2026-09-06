@@ -12,7 +12,7 @@ import RefreshButton from '../components/RefreshButton';
 import './TutorAttendanceCoursePage.css';
 
 const ACTIVE_ENROLLMENT_STATUSES = new Set(['APPROVED', 'COMPLETED']);
-const cellKey = (scheduleId, studentId) => `${scheduleId}-${studentId}`;
+const cellKey = (sessionDate, studentId) => `${sessionDate}-${studentId}`;
 
 const STATUS_OPTIONS = [
   { value: '', label: '—' },
@@ -23,7 +23,6 @@ const STATUS_OPTIONS = [
 ];
 
 const ATTENDED_STATUSES = new Set(['PRESENT', 'LATE']);
-
 const WEEKDAY_TH = ['อา.', 'จ.', 'อ.', 'พ.', 'พฤ.', 'ศ.', 'ส.'];
 
 function formatDate(value) {
@@ -47,11 +46,13 @@ function timeRange(start, end) {
   return s && e ? `${s}–${e}` : s || e || '';
 }
 
-function isFuture(iso) {
+function isFutureDate(iso) {
   if (!iso) return false;
   const today = new Date();
   today.setHours(0, 0, 0, 0);
-  return new Date(iso).getTime() > today.getTime();
+  const d = new Date(iso);
+  d.setHours(0, 0, 0, 0);
+  return d.getTime() > today.getTime();
 }
 
 export default function TutorAttendanceCoursePage() {
@@ -75,7 +76,7 @@ export default function TutorAttendanceCoursePage() {
       setCellState({});
       const [courseList, scheduleList, recordList, enrollmentList] = await Promise.all([
         getMyCourses(),
-        getCourseSchedules(courseId),
+        getCourseSchedules(courseId).catch(() => []),
         getCourseAttendanceGrid(courseId).catch(() => []),
         getEnrollmentsByCourse(courseId).catch(() => []),
       ]);
@@ -96,19 +97,23 @@ export default function TutorAttendanceCoursePage() {
 
   useEffect(() => { load(); }, [load]);
 
-  const orderedSchedules = useMemo(() => {
-    return [...schedules]
-      .filter((s) => s.status !== 'CANCELLED')
-      .sort((a, b) => {
-        const d = String(a.scheduleDate || '').localeCompare(String(b.scheduleDate || ''));
-        if (d !== 0) return d;
-        return String(a.startTime || '').localeCompare(String(b.startTime || ''));
+  // 1 คอลัมน์ = 1 วันเรียน (รวมคาบซ้ำวันเดียวกัน) เรียงตามวันที่
+  const sessions = useMemo(() => {
+    const byDate = new Map();
+    schedules
+      .filter((s) => s.status !== 'CANCELLED' && s.scheduleDate)
+      .forEach((s) => {
+        const key = String(s.scheduleDate);
+        if (!byDate.has(key)) {
+          byDate.set(key, { date: key, startTime: s.startTime, endTime: s.endTime });
+        }
       });
+    return Array.from(byDate.values()).sort((a, b) => a.date.localeCompare(b.date));
   }, [schedules]);
 
   const recordMap = useMemo(() => {
     const map = {};
-    records.forEach((r) => { map[cellKey(r.scheduleId, r.studentId)] = r.status; });
+    records.forEach((r) => { map[cellKey(r.sessionDate, r.studentId)] = r.status; });
     return map;
   }, [records]);
 
@@ -139,23 +144,28 @@ export default function TutorAttendanceCoursePage() {
     }
   }
 
-  async function changeCell(schedule, studentId, nextStatus) {
-    const key = cellKey(schedule.id, studentId);
+  async function changeCell(session, studentId, nextStatus) {
+    const key = cellKey(session.date, studentId);
     const current = recordMap[key];
     if ((current || '') === nextStatus) return;
 
     flashCellState(key, 'saving');
     try {
       if (nextStatus === '') {
-        await deleteAttendanceCell(schedule.id, studentId);
+        await deleteAttendanceCell(courseId, studentId, session.date);
         setRecords((prev) => prev.filter(
-          (r) => !(String(r.scheduleId) === String(schedule.id) && String(r.studentId) === String(studentId))
+          (r) => !(String(r.sessionDate) === String(session.date) && String(r.studentId) === String(studentId))
         ));
       } else {
-        const saved = await saveAttendanceCell({ scheduleId: schedule.id, studentId, status: nextStatus });
+        const saved = await saveAttendanceCell({
+          courseId: Number(courseId),
+          studentId,
+          sessionDate: session.date,
+          status: nextStatus,
+        });
         setRecords((prev) => {
           const rest = prev.filter(
-            (r) => !(String(r.scheduleId) === String(schedule.id) && String(r.studentId) === String(studentId))
+            (r) => !(String(r.sessionDate) === String(session.date) && String(r.studentId) === String(studentId))
           );
           return [...rest, saved];
         });
@@ -170,14 +180,22 @@ export default function TutorAttendanceCoursePage() {
   function attendanceRateFor(studentId) {
     let attended = 0;
     let recorded = 0;
-    orderedSchedules.forEach((s) => {
-      const st = recordMap[cellKey(s.id, studentId)];
+    sessions.forEach((s) => {
+      const st = recordMap[cellKey(s.date, studentId)];
       if (st) {
         recorded += 1;
         if (ATTENDED_STATUSES.has(st)) attended += 1;
       }
     });
     return recorded > 0 ? Math.round((attended / recorded) * 100) : null;
+  }
+
+  function markAll(session, status) {
+    studentRows.forEach((stu) => {
+      if ((recordMap[cellKey(session.date, stu.studentId)] || '') !== status) {
+        changeCell(session, stu.studentId, status);
+      }
+    });
   }
 
   return (
@@ -195,7 +213,7 @@ export default function TutorAttendanceCoursePage() {
           <p className="tac-meta">
             ผู้สอน: <b>{course?.teacherName || '-'}</b> ·
             นักเรียน: <b>{studentRows.length} คน</b> ·
-            คาบเรียน: <b>{orderedSchedules.length} คาบ</b> ·
+            คาบเรียน: <b>{sessions.length} คาบ</b> ·
             เริ่มเรียน: <b>{formatDate(course?.courseStartDate)}</b>
           </p>
         </div>
@@ -211,8 +229,8 @@ export default function TutorAttendanceCoursePage() {
 
       {loading ? (
         <div className="tac-empty">กำลังโหลดข้อมูล...</div>
-      ) : orderedSchedules.length === 0 ? (
-        <div className="tac-empty">คอร์สนี้ยังไม่มีตารางสอน — สร้างได้ที่เมนู “ตารางสอน”</div>
+      ) : sessions.length === 0 ? (
+        <div className="tac-empty">คอร์สนี้ยังไม่มีวันเรียนในตารางสอน (ตรวจสอบวันเริ่มเรียนและตารางสอนของคอร์ส)</div>
       ) : studentRows.length === 0 ? (
         <div className="tac-empty">คอร์สนี้ยังไม่มีนักเรียนที่ลงทะเบียนอนุมัติแล้ว</div>
       ) : (
@@ -223,19 +241,32 @@ export default function TutorAttendanceCoursePage() {
                 <tr>
                   <th className="tac-col-no" rowSpan={2}>#</th>
                   <th className="tac-col-name" rowSpan={2}>ชื่อนักเรียน</th>
-                  {orderedSchedules.map((s, i) => (
-                    <th key={s.id} className="tac-day-th">
+                  {sessions.map((s, i) => (
+                    <th key={s.date} className="tac-day-th">
                       คาบที่ {i + 1}
-                      <span className="tac-day-date">{scheduleDateLabel(s.scheduleDate)}</span>
+                      <span className="tac-day-date">{scheduleDateLabel(s.date)}</span>
                       <span className="tac-day-time">{timeRange(s.startTime, s.endTime)}</span>
-                      {isFuture(s.scheduleDate) && <span className="tac-lock">🔒 ยังไม่ถึงวันเรียน</span>}
+                      {isFutureDate(s.date) && <span className="tac-lock">🔒 ยังไม่ถึงวันเรียน</span>}
                     </th>
                   ))}
                   <th className="tac-col-rate" rowSpan={2}>อัตราเข้าเรียน</th>
                 </tr>
                 <tr>
-                  {orderedSchedules.map((s) => (
-                    <th key={s.id} className="tac-sub-th">{formatDate(s.scheduleDate)}</th>
+                  {sessions.map((s) => (
+                    <th key={s.date} className="tac-sub-th">
+                      {isFutureDate(s.date) ? (
+                        formatDate(s.date)
+                      ) : (
+                        <button
+                          type="button"
+                          className="tac-markall"
+                          onClick={() => markAll(s, 'PRESENT')}
+                          title="ทำเครื่องหมายว่าทุกคนมาเรียนในคาบนี้"
+                        >
+                          มาทั้งหมด
+                        </button>
+                      )}
+                    </th>
                   ))}
                 </tr>
               </thead>
@@ -244,18 +275,18 @@ export default function TutorAttendanceCoursePage() {
                   <tr key={stu.studentId}>
                     <td className="tac-col-no">{idx + 1}</td>
                     <td className="tac-col-name">{stu.studentName || '-'}</td>
-                    {orderedSchedules.map((s) => {
-                      const key = cellKey(s.id, stu.studentId);
+                    {sessions.map((s) => {
+                      const key = cellKey(s.date, stu.studentId);
                       const status = recordMap[key] || '';
-                      const locked = isFuture(s.scheduleDate);
+                      const locked = isFutureDate(s.date);
                       const state = cellState[key];
                       return (
-                        <td key={s.id} className={`tac-cell tac-cell-${status.toLowerCase() || 'none'}${locked ? ' tac-cell-locked' : ''}`}>
+                        <td key={s.date} className={`tac-cell tac-cell-${status.toLowerCase() || 'none'}${locked ? ' tac-cell-locked' : ''}`}>
                           <select
                             value={status}
                             disabled={locked}
                             onChange={(e) => changeCell(s, stu.studentId, e.target.value)}
-                            title={locked ? 'ยังไม่ถึงวันเรียน — บันทึกได้เมื่อถึงวันเรียนแล้ว' : undefined}
+                            title={locked ? 'ยังไม่ถึงวันเรียน — เช็คชื่อได้เมื่อถึงวันเรียนแล้ว' : undefined}
                           >
                             {STATUS_OPTIONS.map((o) => (
                               <option key={o.value} value={o.value}>{o.label}</option>
@@ -281,7 +312,7 @@ export default function TutorAttendanceCoursePage() {
             <span><i className="tac-swatch late" /> มาสาย</span>
             <span><i className="tac-swatch leave" /> ลา</span>
             <span><i className="tac-swatch absent" /> ขาด</span>
-            <span>เลือกสถานะในช่องเพื่อบันทึกทันที · หัวคอลัมน์คือคาบเรียนจริงตามตารางสอน</span>
+            <span>เลือกสถานะในช่องเพื่อบันทึกทันที · หัวคอลัมน์คือวันเรียนจริงตามตารางสอน</span>
           </div>
         </div>
       )}

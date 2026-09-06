@@ -3,6 +3,7 @@ package com.tutorschool.backend.dto.response;
 import com.tutorschool.backend.entity.AttendanceStatus;
 import lombok.*;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 @Getter
@@ -10,13 +11,14 @@ import java.time.LocalDateTime;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class ScheduleAttendanceResponse {
+public class ClassAttendanceResponse {
 
     private Long id;
-    private Long scheduleId;
+    private Long courseId;
     private Long studentId;
     private String studentName;
     private String studentCode;
+    private LocalDate sessionDate;
     private AttendanceStatus status;
     private String note;
     private String recordedBy;
