@@ -13,6 +13,7 @@ public class InstitutionProfileMapper {
                 .institutionCode(entity.getInstitutionCode())
                 .institutionName(entity.getInstitutionName())
                 .address(entity.getAddress())
+                .googleMapUrl(entity.getGoogleMapUrl())
                 .phoneNumber(entity.getPhoneNumber())
                 .email(entity.getEmail())
                 .logoUrl(entity.getLogoUrl())

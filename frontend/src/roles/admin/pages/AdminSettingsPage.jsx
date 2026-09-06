@@ -19,6 +19,7 @@ function toForm(profile) {
   return {
     institutionName: profile?.institutionName || '',
     address: profile?.address || '',
+    googleMapUrl: profile?.googleMapUrl || '',
     phoneNumber: profile?.phoneNumber || '',
     email: profile?.email || '',
     logoUrl: profile?.logoUrl || '',
@@ -150,6 +151,9 @@ export default function AdminSettingsPage() {
     if (!form.phoneNumber.trim()) errs.phoneNumber = 'กรุณากรอกเบอร์โทรศัพท์';
     if (!form.email.trim()) errs.email = 'กรุณากรอกอีเมล';
     else if (!EMAIL_RE.test(form.email.trim())) errs.email = 'รูปแบบอีเมลไม่ถูกต้อง';
+    if (form.googleMapUrl.trim() && !/^https?:\/\//i.test(form.googleMapUrl.trim())) {
+      errs.googleMapUrl = 'ลิงก์ต้องขึ้นต้นด้วย http:// หรือ https://';
+    }
     const promptPayDigits = form.promptPayId.replace(/[^0-9]/g, '');
     if (promptPayDigits && ![10, 13].includes(promptPayDigits.length)) {
       errs.promptPayId = 'กรอกเบอร์โทร 10 หลัก หรือเลขบัตรประชาชน 13 หลัก';
@@ -304,6 +308,16 @@ export default function AdminSettingsPage() {
                       name="address" value={form.address} onChange={handleChange}
                       className="is-form-textarea" rows={3} placeholder="กรอกที่อยู่สถาบัน..."
                     />
+                  </div>
+                  <div className="is-form-field is-form-field--full">
+                    <label className="is-form-label">ลิงก์ Google Maps</label>
+                    <input
+                      type="url" name="googleMapUrl" value={form.googleMapUrl} onChange={handleChange}
+                      className={`is-form-input${errors.googleMapUrl ? ' is-form-input--error' : ''}`}
+                      placeholder="https://maps.google.com/... หรือ https://maps.app.goo.gl/..."
+                    />
+                    {errors.googleMapUrl && <span className="is-form-error">{errors.googleMapUrl}</span>}
+                    <span className="is-hint">วางลิงก์ที่ตั้งจาก Google Maps (ปุ่ม “แชร์” → “คัดลอกลิงก์”)</span>
                   </div>
                 </div>
               </div>
