@@ -1,14 +1,14 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { getTutorCourses } from '../services/tutorAttendanceScoreService';
-import './TutorAttendanceScoresPage.css';
+import './TutorAttendancePage.css';
 
 function formatDate(value) {
   if (!value) return '-';
   return new Date(value).toLocaleDateString('th-TH', { year: 'numeric', month: 'short', day: 'numeric' });
 }
 
-export default function TutorAttendanceScoresPage() {
+export default function TutorAttendancePage() {
   const navigate = useNavigate();
   const [courses, setCourses] = useState([]);
   const [keyword, setKeyword] = useState('');
@@ -42,8 +42,8 @@ export default function TutorAttendanceScoresPage() {
     <div className="tas-page">
       <div className="tas-header">
         <div>
-          <h1>การเข้าเรียน / คะแนนสอบ</h1>
-          <p>เลือกคอร์สเพื่อดูตารางการขาด ลา มาสาย และคะแนนสอบของนักเรียน</p>
+          <h1>การเข้าเรียน</h1>
+          <p>เลือกคอร์สเพื่อดูตารางการขาด ลา มาสาย และอัตราการเข้าเรียนของนักเรียน</p>
         </div>
 
         
@@ -92,9 +92,9 @@ export default function TutorAttendanceScoresPage() {
 
               <button
                 className="tas-detail-btn"
-                onClick={() => navigate(`/tutor/attendance-scores/${course.id}`)}
+                onClick={() => navigate(`/tutor/attendance/${course.id}`)}
               >
-                ดูคะแนน
+                ดูการเข้าเรียน
               </button>
             </div>
           ))}
