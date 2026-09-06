@@ -14,21 +14,22 @@ function apiError(error, label) {
   return serverMsg || `เกิดข้อผิดพลาด (${status})`;
 }
 
-// คาบเรียนจริงตามตารางสอนของคอร์ส (ใช้เป็นหัวคอลัมน์)
+// คาบเรียนจริงของคอร์ส (วัน/เวลาที่มีเรียนตามตารางสอน) — ดึงจากตารางสอนของติวเตอร์แล้วกรองเฉพาะคอร์สนี้
+// endpoint นี้คืนทั้งคาบที่แอดมินสร้างไว้จริง และคาบ "เสมือน" ที่คำนวณจาก scheduleDays + วันเริ่มเรียน
 export async function getCourseSchedules(courseId) {
   try {
-    const res = await api.get(`/course-schedules/course/${courseId}`);
+    const res = await api.get('/course-schedules/tutor/me');
     const data = unwrap(res);
-    return Array.isArray(data) ? data : [];
+    const list = Array.isArray(data) ? data : [];
+    return list.filter((s) => String(s.courseId) === String(courseId));
   } catch (error) {
     throw new Error(apiError(error, 'getCourseSchedules'), { cause: error });
   }
 }
 
-// การเข้าเรียนที่ติวเตอร์บันทึกเองรายคอร์ส
 export async function getCourseAttendanceGrid(courseId) {
   try {
-    const res = await api.get(`/schedule-attendance/course/${courseId}`);
+    const res = await api.get(`/class-attendance/course/${courseId}`);
     const data = unwrap(res);
     return Array.isArray(data) ? data : [];
   } catch (error) {
@@ -36,18 +37,20 @@ export async function getCourseAttendanceGrid(courseId) {
   }
 }
 
-export async function saveAttendanceCell({ scheduleId, studentId, status, note }) {
+export async function saveAttendanceCell({ courseId, studentId, sessionDate, status, note }) {
   try {
-    const res = await api.put('/schedule-attendance', { scheduleId, studentId, status, note });
+    const res = await api.put('/class-attendance', { courseId, studentId, sessionDate, status, note });
     return unwrap(res);
   } catch (error) {
     throw new Error(apiError(error, 'saveAttendanceCell'), { cause: error });
   }
 }
 
-export async function deleteAttendanceCell(scheduleId, studentId) {
+export async function deleteAttendanceCell(courseId, studentId, sessionDate) {
   try {
-    await api.delete(`/schedule-attendance/schedule/${scheduleId}/student/${studentId}`);
+    await api.delete(`/class-attendance/course/${courseId}/student/${studentId}`, {
+      params: { date: sessionDate },
+    });
   } catch (error) {
     throw new Error(apiError(error, 'deleteAttendanceCell'), { cause: error });
   }
