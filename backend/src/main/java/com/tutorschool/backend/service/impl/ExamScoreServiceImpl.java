@@ -5,8 +5,10 @@ import com.tutorschool.backend.dto.response.ExamManualScoreResponse;
 import com.tutorschool.backend.entity.Exam;
 import com.tutorschool.backend.entity.ExamManualScore;
 import com.tutorschool.backend.entity.ExamStatus;
+import com.tutorschool.backend.entity.Role;
 import com.tutorschool.backend.entity.Student;
 import com.tutorschool.backend.entity.Tutor;
+import com.tutorschool.backend.entity.User;
 import com.tutorschool.backend.exception.ExamAccessDeniedException;
 import com.tutorschool.backend.exception.ExamNotFoundException;
 import com.tutorschool.backend.exception.ResourceNotFoundException;
@@ -33,12 +35,13 @@ public class ExamScoreServiceImpl implements ExamScoreService {
 
     @Override
     @Transactional(readOnly = true)
-    public List<ExamManualScoreResponse> getCourseScores(Long courseId, String tutorEmail) {
-        Tutor tutor = getTutor(tutorEmail);
-        return manualScoreRepository.findByExamCourseId(courseId).stream()
-                .filter(s -> s.getExam().getTutor().getId().equals(tutor.getId()))
-                .map(this::toResponse)
-                .toList();
+    public List<ExamManualScoreResponse> getCourseScores(Long courseId, User currentUser) {
+        var scores = manualScoreRepository.findByExamCourseId(courseId).stream();
+        if (currentUser.getRole() != Role.ADMIN) {
+            Tutor tutor = getTutor(currentUser.getEmail());
+            scores = scores.filter(s -> s.getExam().getTutor().getId().equals(tutor.getId()));
+        }
+        return scores.map(this::toResponse).toList();
     }
 
     @Override

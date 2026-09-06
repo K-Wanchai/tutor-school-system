@@ -212,13 +212,27 @@ public class CourseScheduleServiceImpl implements CourseScheduleService {
     @Override
     @Transactional(readOnly = true)
     public List<CourseScheduleResponse> getSchedulesByCourseId(Long courseId) {
-        if (!courseRepository.existsById(courseId)) {
-            throw new ResourceNotFoundException("Course not found with id: " + courseId);
+        Course course = courseRepository.findById(courseId)
+                .orElseThrow(() -> new ResourceNotFoundException("Course not found with id: " + courseId));
+
+        List<CourseSchedule> realSchedules =
+                courseScheduleRepository.findByCourseIdOrderByScheduleDateAscStartTimeAsc(courseId);
+
+        // รวมคาบ "เสมือน" ที่คำนวณจาก scheduleDays + วันเริ่มเรียน เหมือนตารางสอนฝั่งติวเตอร์/นักเรียน
+        // เพื่อให้แอดมินเห็นคาบเรียนตรงกันแม้ยังไม่มีการสร้าง CourseSchedule จริง
+        Set<LocalDate> covered = new HashSet<>();
+        for (CourseSchedule cs : realSchedules) {
+            covered.add(cs.getScheduleDate());
         }
-        return courseScheduleRepository.findByCourseIdOrderByScheduleDateAscStartTimeAsc(courseId)
-                .stream()
-                .map(courseScheduleMapper::toResponse)
-                .toList();
+
+        List<CourseScheduleResponse> responses = new ArrayList<>(
+                realSchedules.stream().map(courseScheduleMapper::toResponse).toList());
+        responses.addAll(buildVirtualSchedulesFromCoursePattern(course, covered));
+
+        responses.sort(Comparator.comparing(CourseScheduleResponse::getScheduleDate)
+                .thenComparing(CourseScheduleResponse::getStartTime));
+
+        return responses;
     }
 
     @Override

@@ -24,5 +24,6 @@ public interface ExamSubmissionService {
     // Results
     List<ExamResultResponse> getMyResults(String studentEmail);
     List<ExamResultResponse> getResultsByExam(Long examId, String teacherEmail);
-    List<ExamResultResponse> getResultsByCourse(Long courseId, String teacherEmail);
+    // ADMIN ดูผลสอบของทุกคอร์ส (อ่านอย่างเดียว), TUTOR ดูได้เฉพาะคอร์สของตัวเอง
+    List<ExamResultResponse> getResultsByCourse(Long courseId, com.tutorschool.backend.entity.User currentUser);
 }
