@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { getTutors } from '../services/adminTutorService';
 import './AdminExamPages.css';
@@ -17,59 +17,56 @@ function initials(firstName = '', lastName = '') {
   return `${(firstName[0] || '')}${(lastName[0] || '')}`.toUpperCase() || '?';
 }
 
+function tutorFullName(t) {
+  return t.fullName || `${t.firstName || ''} ${t.lastName || ''}`.trim() || 'ไม่ระบุชื่อ';
+}
+
 const PAGE_SIZE = 12;
 
 export default function AdminAttendanceTutorListPage() {
   const navigate = useNavigate();
-  const [tutors, setTutors] = useState([]);
+  const [allTutors, setAllTutors] = useState([]);
   const [keyword, setKeyword] = useState('');
   const [page, setPage] = useState(0);
-  const [totalPages, setTotalPages] = useState(1);
-  const [totalElements, setTotalElements] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const debounce = useRef(null);
 
   useEffect(() => {
     let active = true;
     setLoading(true);
-    getTutors({ page, size: PAGE_SIZE, keyword })
+    getTutors({ page: 0, size: 1000 })
       .then((data) => {
         if (!active) return;
-        if (Array.isArray(data)) {
-          setTutors(data);
-          setTotalPages(1);
-          setTotalElements(data.length);
-        } else {
-          setTutors(data?.content ?? []);
-          setTotalPages(data?.totalPages ?? 1);
-          setTotalElements(data?.totalElements ?? 0);
-        }
+        setAllTutors(Array.isArray(data) ? data : (data?.content ?? []));
         setError('');
       })
       .catch((err) => { if (active) setError(err.message); })
       .finally(() => { if (active) setLoading(false); });
     return () => { active = false; };
-  }, [page, keyword]);
+  }, []);
 
-  function handleSearch(e) {
-    const val = e.target.value;
-    clearTimeout(debounce.current);
-    debounce.current = setTimeout(() => {
-      setPage(0);
-      setKeyword(val);
-    }, 400);
-  }
+  const filtered = useMemo(() => {
+    const kw = keyword.trim().toLowerCase();
+    if (!kw) return allTutors;
+    return allTutors.filter((t) =>
+      [tutorFullName(t), t.tutorCode, t.email, t.username, t.phoneNumber]
+        .some((v) => String(v || '').toLowerCase().includes(kw))
+    );
+  }, [allTutors, keyword]);
+
+  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+  const currentPage = Math.min(page, totalPages - 1);
+  const visible = filtered.slice(currentPage * PAGE_SIZE, currentPage * PAGE_SIZE + PAGE_SIZE);
 
   const pageNumbers = useMemo(() => {
     const nums = [];
     const MAX = 5;
-    let start = Math.max(0, page - 2);
+    let start = Math.max(0, currentPage - 2);
     const end = Math.min(totalPages - 1, start + MAX - 1);
     if (end - start < MAX - 1) start = Math.max(0, end - MAX + 1);
     for (let i = start; i <= end; i += 1) nums.push(i);
     return nums;
-  }, [page, totalPages]);
+  }, [currentPage, totalPages]);
 
   return (
     <div className="aes-page">
@@ -83,9 +80,9 @@ export default function AdminAttendanceTutorListPage() {
       <div className="aes-toolbar">
         <input
           type="text"
-          placeholder="ค้นหาชื่อ, รหัสติวเตอร์, email..."
-          defaultValue={keyword}
-          onChange={handleSearch}
+          placeholder="ค้นหาชื่อ, รหัสติวเตอร์, email, เบอร์โทร..."
+          value={keyword}
+          onChange={(e) => { setKeyword(e.target.value); setPage(0); }}
         />
       </div>
 
@@ -98,14 +95,14 @@ export default function AdminAttendanceTutorListPage() {
 
       {loading ? (
         <div className="aes-empty">กำลังโหลดติวเตอร์...</div>
-      ) : tutors.length === 0 ? (
+      ) : filtered.length === 0 ? (
         <div className="aes-empty">
           {keyword ? `ไม่พบติวเตอร์สำหรับ "${keyword}"` : 'ยังไม่มีติวเตอร์ในระบบ'}
         </div>
       ) : (
         <>
           <div className="aes-grid">
-            {tutors.map((tutor) => (
+            {visible.map((tutor) => (
               <button
                 key={tutor.id}
                 type="button"
@@ -119,7 +116,7 @@ export default function AdminAttendanceTutorListPage() {
                   {initials(tutor.firstName, tutor.lastName)}
                 </div>
                 <div className="aes-tutor-info">
-                  <h2>{tutor.fullName || `${tutor.firstName || ''} ${tutor.lastName || ''}`.trim() || 'ไม่ระบุชื่อ'}</h2>
+                  <h2>{tutorFullName(tutor)}</h2>
                   <span className="aes-tutor-code">{tutor.tutorCode || '—'}</span>
                   <span className="aes-tutor-email">{tutor.email || '—'}</span>
                 </div>
@@ -130,20 +127,20 @@ export default function AdminAttendanceTutorListPage() {
 
           {totalPages > 1 && (
             <div className="aes-pagination">
-              <span>หน้า {page + 1} จาก {totalPages} · ทั้งหมด {totalElements} คน</span>
+              <span>หน้า {currentPage + 1} จาก {totalPages} · ทั้งหมด {filtered.length} คน</span>
               <div className="aes-pagination-controls">
-                <button type="button" disabled={page === 0} onClick={() => setPage(page - 1)}>‹</button>
+                <button type="button" disabled={currentPage === 0} onClick={() => setPage(currentPage - 1)}>‹</button>
                 {pageNumbers.map((p) => (
                   <button
                     key={p}
                     type="button"
-                    className={p === page ? 'aes-page-active' : ''}
+                    className={p === currentPage ? 'aes-page-active' : ''}
                     onClick={() => setPage(p)}
                   >
                     {p + 1}
                   </button>
                 ))}
-                <button type="button" disabled={page >= totalPages - 1} onClick={() => setPage(page + 1)}>›</button>
+                <button type="button" disabled={currentPage >= totalPages - 1} onClick={() => setPage(currentPage + 1)}>›</button>
               </div>
             </div>
           )}
