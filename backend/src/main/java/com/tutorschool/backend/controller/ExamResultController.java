@@ -2,10 +2,12 @@ package com.tutorschool.backend.controller;
 
 import com.tutorschool.backend.dto.response.ApiResponse;
 import com.tutorschool.backend.dto.response.ExamResultResponse;
+import com.tutorschool.backend.entity.User;
 import com.tutorschool.backend.service.ExamSubmissionService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.security.Principal;
@@ -41,8 +43,8 @@ public class ExamResultController {
     @PreAuthorize("hasRole('TUTOR') or hasRole('ADMIN')")
     public ResponseEntity<ApiResponse<List<ExamResultResponse>>> getResultsByCourse(
             @PathVariable Long courseId,
-            Principal principal) {
+            @AuthenticationPrincipal User currentUser) {
         return ResponseEntity.ok(ApiResponse.success("Results retrieved",
-                submissionService.getResultsByCourse(courseId, principal.getName())));
+                submissionService.getResultsByCourse(courseId, currentUser)));
     }
 }

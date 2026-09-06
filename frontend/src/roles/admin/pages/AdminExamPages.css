@@ -1,0 +1,491 @@
+.aes-page {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.aes-back {
+  align-self: flex-start;
+  border: none;
+  background: transparent;
+  color: #2563eb;
+  font-weight: 600;
+  font-size: 13.5px;
+  cursor: pointer;
+  padding: 4px 0;
+}
+
+.aes-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.aes-header h1 {
+  margin: 0 0 6px;
+  font-size: 26px;
+  font-weight: 800;
+  color: #111827;
+}
+
+.aes-header p {
+  margin: 0;
+  color: #6b7280;
+  font-size: 14px;
+  max-width: 68ch;
+}
+
+.aes-detail-title {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.aes-detail-title h1 {
+  margin: 0;
+  font-size: 22px;
+}
+
+.aes-detail-meta {
+  margin: 6px 0 0;
+  font-size: 12.5px;
+  color: #6b7280;
+}
+
+.aes-detail-meta b {
+  color: #111827;
+  font-weight: 600;
+}
+
+.aes-readonly-badge {
+  flex-shrink: 0;
+  font-size: 12px;
+  font-weight: 700;
+  color: #92400e;
+  background: #fef3c7;
+  border: 1px solid #fde68a;
+  padding: 4px 10px;
+  border-radius: 999px;
+}
+
+.aes-toolbar input {
+  width: 100%;
+  max-width: 380px;
+  border: 1px solid #d1d5db;
+  border-radius: 10px;
+  padding: 9px 12px;
+  font-size: 13.5px;
+}
+
+.aes-error {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  color: #b91c1c;
+  border-radius: 12px;
+  padding: 10px 14px;
+  font-size: 13px;
+}
+
+.aes-error button {
+  border: none;
+  background: transparent;
+  color: #b91c1c;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.aes-empty {
+  background: #fff;
+  border: 1px dashed #d1d5db;
+  border-radius: 14px;
+  padding: 32px;
+  text-align: center;
+  color: #6b7280;
+  font-size: 14px;
+}
+
+/* ---- card grid ---- */
+.aes-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 16px;
+}
+
+.aes-card,
+.aes-tutor-card {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  text-align: left;
+  font: inherit;
+  cursor: pointer;
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 16px;
+  padding: 18px;
+  transition: border-color .15s ease, box-shadow .15s ease, transform .1s ease;
+}
+
+.aes-card:hover,
+.aes-tutor-card:hover {
+  border-color: #93c5fd;
+  box-shadow: 0 8px 22px rgba(37, 99, 235, .12);
+  transform: translateY(-2px);
+}
+
+.aes-card:focus-visible,
+.aes-tutor-card:focus-visible {
+  outline: 2px solid #2563eb;
+  outline-offset: 2px;
+}
+
+.aes-card-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.aes-code {
+  font-family: ui-monospace, "SFMono-Regular", Menlo, monospace;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: .04em;
+  color: #1d4ed8;
+  background: #dbeafe;
+  padding: 2px 8px;
+  border-radius: 6px;
+}
+
+.aes-status {
+  font-size: 11.5px;
+  font-weight: 600;
+  color: #6b7280;
+  background: #f3f4f6;
+  padding: 2px 9px;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+
+.aes-card-title {
+  margin: 2px 0 0;
+  font-size: 16.5px;
+  font-weight: 800;
+  color: #111827;
+}
+
+.aes-card-desc {
+  margin: 0;
+  font-size: 12.5px;
+  color: #9ca3af;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.aes-card-info {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 6px;
+  padding-top: 10px;
+  border-top: 1px solid #f0f2f4;
+}
+
+.aes-card-info > div {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  font-size: 12.5px;
+}
+
+.aes-card-info span {
+  color: #9ca3af;
+}
+
+.aes-card-info strong {
+  color: #111827;
+  font-weight: 600;
+}
+
+.aes-card-cta {
+  margin-top: 10px;
+  font-size: 13px;
+  font-weight: 700;
+  color: #1d4ed8;
+}
+
+/* ---- tutor card ---- */
+.aes-tutor-card {
+  align-items: stretch;
+}
+
+.aes-avatar {
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  color: #fff;
+  font-weight: 700;
+  font-size: 17px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.aes-tutor-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.aes-tutor-info h2 {
+  margin: 4px 0 0;
+  font-size: 16px;
+  font-weight: 800;
+  color: #111827;
+}
+
+.aes-tutor-code {
+  font-family: ui-monospace, "SFMono-Regular", Menlo, monospace;
+  font-size: 12px;
+  font-weight: 700;
+  color: #1d4ed8;
+}
+
+.aes-tutor-email {
+  font-size: 12.5px;
+  color: #9ca3af;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* ---- pagination ---- */
+.aes-pagination {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+  font-size: 12.5px;
+  color: #6b7280;
+}
+
+.aes-pagination-controls {
+  display: flex;
+  gap: 4px;
+}
+
+.aes-pagination-controls button {
+  min-width: 30px;
+  height: 30px;
+  border: 1px solid #d1d5db;
+  background: #fff;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 13px;
+  color: #374151;
+}
+
+.aes-pagination-controls button:disabled {
+  opacity: .4;
+  cursor: not-allowed;
+}
+
+.aes-pagination-controls .aes-page-active {
+  background: #2563eb;
+  border-color: #2563eb;
+  color: #fff;
+  font-weight: 700;
+}
+
+/* ---- read-only score grid ---- */
+.aes-table-card {
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 16px;
+  padding: 16px;
+}
+
+.aes-grid-wrap {
+  overflow-x: auto;
+}
+
+.aes-score-grid {
+  border-collapse: collapse;
+  width: 100%;
+  font-size: 12.5px;
+  font-variant-numeric: tabular-nums;
+}
+
+.aes-score-grid th,
+.aes-score-grid td {
+  border: 1px solid #d7dbe0;
+  padding: 6px 9px;
+  text-align: center;
+  white-space: nowrap;
+}
+
+.aes-score-grid thead th {
+  background: #eef2f5;
+  color: #374151;
+  font-weight: 700;
+  font-size: 11.5px;
+}
+
+.aes-exam-th {
+  min-width: 120px;
+}
+
+.aes-exam-title {
+  display: block;
+  font-weight: 500;
+  color: #6b7280;
+  font-size: 10.5px;
+  white-space: normal;
+  max-width: 160px;
+  margin: 2px auto 0;
+}
+
+.aes-lock {
+  display: block;
+  margin-top: 3px;
+  font-weight: 600;
+  font-size: 9.5px;
+  color: #b45309;
+}
+
+.aes-sub-th {
+  background: #f4f6f8;
+  font-weight: 600;
+}
+
+.aes-sub-got {
+  display: block;
+  color: #1d4ed8;
+  font-size: 10.5px;
+}
+
+.aes-sub-max {
+  display: block;
+  color: #9ca3af;
+  font-weight: 500;
+  font-size: 10px;
+}
+
+.aes-col-no {
+  width: 34px;
+  color: #9ca3af;
+  font-size: 11px;
+  position: sticky;
+  left: 0;
+  background: #fff;
+  z-index: 1;
+}
+
+.aes-col-name {
+  text-align: left;
+  color: #111827;
+  position: sticky;
+  left: 34px;
+  background: #fff;
+  z-index: 1;
+  min-width: 150px;
+}
+
+.aes-score-grid thead .aes-col-no,
+.aes-score-grid thead .aes-col-name {
+  background: #eef2f5;
+  z-index: 2;
+}
+
+.aes-score-grid tbody tr:nth-child(even) td {
+  background: #fafbfc;
+}
+
+.aes-score-grid tbody tr:nth-child(even) .aes-col-no,
+.aes-score-grid tbody tr:nth-child(even) .aes-col-name {
+  background: #fafbfc;
+}
+
+.aes-cell {
+  color: #111827;
+  font-weight: 600;
+}
+
+.aes-cell-system {
+  background: #f0f9ff;
+}
+
+.aes-col-avg {
+  font-weight: 800;
+  background: #f4f6f8;
+  color: #111827;
+}
+
+.aes-score-grid tfoot td {
+  background: #eef2f5;
+  font-weight: 700;
+  color: #374151;
+  font-size: 11.5px;
+}
+
+.aes-foot-label {
+  text-align: right;
+  position: sticky;
+  left: 0;
+  background: #eef2f5;
+  z-index: 1;
+}
+
+.aes-foot-max {
+  color: #6b7280;
+}
+
+.aes-legend {
+  margin-top: 12px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 20px;
+  font-size: 12px;
+  color: #6b7280;
+  align-items: center;
+}
+
+.aes-legend span {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.aes-swatch {
+  width: 14px;
+  height: 14px;
+  border-radius: 4px;
+  display: inline-block;
+}
+
+.aes-swatch.system {
+  background: #f0f9ff;
+  border: 1px solid #bae6fd;
+}
+
+@media (max-width: 640px) {
+  .aes-col-no,
+  .aes-col-name {
+    position: static;
+  }
+}
+
+@media (max-width: 520px) {
+  .aes-grid {
+    grid-template-columns: 1fr;
+  }
+}

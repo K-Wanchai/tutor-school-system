@@ -3,11 +3,13 @@ package com.tutorschool.backend.controller;
 import com.tutorschool.backend.dto.request.SaveExamScoreRequest;
 import com.tutorschool.backend.dto.response.ApiResponse;
 import com.tutorschool.backend.dto.response.ExamManualScoreResponse;
+import com.tutorschool.backend.entity.User;
 import com.tutorschool.backend.service.ExamScoreService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.security.Principal;
@@ -27,9 +29,9 @@ public class ExamScoreController {
     @PreAuthorize("hasRole('TUTOR') or hasRole('ADMIN')")
     public ResponseEntity<ApiResponse<List<ExamManualScoreResponse>>> getCourseScores(
             @PathVariable Long courseId,
-            Principal principal) {
+            @AuthenticationPrincipal User currentUser) {
         return ResponseEntity.ok(ApiResponse.success("Scores retrieved",
-                examScoreService.getCourseScores(courseId, principal.getName())));
+                examScoreService.getCourseScores(courseId, currentUser)));
     }
 
     @PutMapping

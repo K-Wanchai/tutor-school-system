@@ -274,14 +274,14 @@ public class ExamSubmissionServiceImpl implements ExamSubmissionService {
 
     @Override
     @Transactional(readOnly = true)
-    public List<ExamResultResponse> getResultsByCourse(Long courseId, String teacherEmail) {
-        Tutor Tutor = TutorRepository.findByUserEmail(teacherEmail)
-                .orElseThrow(() -> new ExamAccessDeniedException("Current user is not registered as a Tutor"));
-
-        return submissionRepository.findByExamCourseId(courseId).stream()
-                .filter(s -> s.getExam().getTutor().getId().equals(Tutor.getId()))
-                .map(submissionMapper::toResultResponse)
-                .toList();
+    public List<ExamResultResponse> getResultsByCourse(Long courseId, User currentUser) {
+        var submissions = submissionRepository.findByExamCourseId(courseId).stream();
+        if (currentUser.getRole() != Role.ADMIN) {
+            Tutor tutor = TutorRepository.findByUserEmail(currentUser.getEmail())
+                    .orElseThrow(() -> new ExamAccessDeniedException("Current user is not registered as a Tutor"));
+            submissions = submissions.filter(s -> s.getExam().getTutor().getId().equals(tutor.getId()));
+        }
+        return submissions.map(submissionMapper::toResultResponse).toList();
     }
 
     // ─── Auto grading ─────────────────────────────────────────────────────────
