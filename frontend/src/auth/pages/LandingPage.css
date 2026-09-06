@@ -297,6 +297,27 @@
   line-height: 1.5;
 }
 
+.lp-contact-card--link {
+  text-decoration: none;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease, transform 0.15s ease;
+}
+
+.lp-contact-card--link:hover {
+  border-color: #1d4ed8;
+  box-shadow: 0 6px 18px rgba(29, 78, 216, 0.12);
+  transform: translateY(-2px);
+}
+
+.lp-contact-map {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 4px;
+  font-size: 13px;
+  font-weight: 700;
+  color: #1d4ed8;
+}
+
 /* ── CTA ── */
 .lp-cta {
   background: linear-gradient(135deg, #1e40af 0%, #1d4ed8 100%);
