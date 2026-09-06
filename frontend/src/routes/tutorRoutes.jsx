@@ -9,9 +9,11 @@ import TutorExamSchedulePage from '../roles/tutor/pages/TutorExamSchedulePage';
 import TutorExamCourseDetailPage from '../roles/tutor/pages/TutorExamCourseDetailPage';
 import TutorExamBuilderPage from '../roles/tutor/pages/TutorExamBuilderPage';
 import TutorExamGradingPage from '../roles/tutor/pages/TutorExamGradingPage';
-import TutorCourseScoreMatrixPage from '../roles/tutor/pages/TutorCourseScoreMatrixPage';
-import TutorAttendanceScoresPage from '../roles/tutor/pages/TutorAttendanceScoresPage';
-import TutorAttendanceScoreDetailPage from '../roles/tutor/pages/TutorAttendanceScoreDetailPage';
+import TutorExamScoresPage from '../roles/tutor/pages/TutorExamScoresPage';
+import TutorExamScoreCoursePage from '../roles/tutor/pages/TutorExamScoreCoursePage';
+import TutorAttendancePage from '../roles/tutor/pages/TutorAttendancePage';
+import TutorAttendanceCoursePage from '../roles/tutor/pages/TutorAttendanceCoursePage';
+import TutorClassroomsPage from '../roles/tutor/pages/TutorClassroomsPage';
 import TutorEvaluationsPage from '../roles/tutor/pages/TutorEvaluationsPage';
 import TutorProfilePage from '../roles/tutor/pages/TutorProfilePage';
 
@@ -32,9 +34,11 @@ const tutorRoutes = (
     <Route path="exam-schedule/:courseId" element={<TutorExamCourseDetailPage />} />
     <Route path="exams/:examId/build" element={<TutorExamBuilderPage />} />
     <Route path="exams/:examId/grading" element={<TutorExamGradingPage />} />
-    <Route path="course-scores" element={<TutorCourseScoreMatrixPage />} />
-    <Route path="attendance-scores" element={<TutorAttendanceScoresPage />} />
-    <Route path="attendance-scores/:courseId" element={<TutorAttendanceScoreDetailPage />} />
+    <Route path="exam-scores" element={<TutorExamScoresPage />} />
+    <Route path="exam-scores/:courseId" element={<TutorExamScoreCoursePage />} />
+    <Route path="attendance" element={<TutorAttendancePage />} />
+    <Route path="attendance/:courseId" element={<TutorAttendanceCoursePage />} />
+    <Route path="classroom" element={<TutorClassroomsPage />} />
     <Route path="evaluations" element={<TutorEvaluationsPage />} />
     <Route path="profile" element={<TutorProfilePage />} />
   </Route>
