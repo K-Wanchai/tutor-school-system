@@ -16,6 +16,13 @@ public class ExamResultResponse {
     private String submissionCode;
     private Long examId;
     private String examTitle;
+    private String examCode;
+    private String examDescription;
+    private LocalDateTime examStartTime;
+    private Long courseId;
+    private String courseName;
+    private String courseCode;
+    private String tutorName;
     private Long studentId;
     private String studentName;
     private String studentCode;

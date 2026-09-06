@@ -2,12 +2,41 @@ import { useEffect, useMemo, useState } from 'react';
 import { getMyExamResults, getSubmissionById } from '../services/studentExamService';
 import './StudentExamResultsPage.css';
 
-function formatDateTime(value) {
+function formatDate(value) {
   if (!value) return '-';
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return '-';
-  return date.toLocaleString('th-TH', {
-    year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit',
+  return date.toLocaleDateString('th-TH', { year: 'numeric', month: 'short', day: 'numeric' });
+}
+
+// จัดกลุ่มผลสอบตามคอร์ส แล้วกำหนด "การสอบครั้งที่" ตามลำดับข้อสอบในคอร์ส (เรียงตามเวลาเริ่มสอบ)
+function groupByCourse(results) {
+  const map = new Map();
+  results.forEach((r) => {
+    const key = String(r.courseId ?? 'unknown');
+    if (!map.has(key)) {
+      map.set(key, {
+        courseId: r.courseId,
+        courseName: r.courseName,
+        courseCode: r.courseCode,
+        tutorName: r.tutorName,
+        results: [],
+      });
+    }
+    map.get(key).results.push(r);
+  });
+
+  return Array.from(map.values()).map((course) => {
+    const examOrder = [...new Set(
+      [...course.results]
+        .sort((a, b) => new Date(a.examStartTime || 0) - new Date(b.examStartTime || 0))
+        .map((r) => String(r.examId))
+    )];
+    const examNumber = new Map(examOrder.map((id, i) => [id, i + 1]));
+    const sorted = [...course.results].sort(
+      (a, b) => new Date(b.submittedAt || 0) - new Date(a.submittedAt || 0)
+    );
+    return { ...course, results: sorted, examNumber };
   });
 }
 
@@ -40,6 +69,8 @@ export default function StudentExamResultsPage() {
     const passed = graded.filter((r) => r.isPassed === true).length;
     return { total: graded.length, passed, failed: graded.filter((r) => r.isPassed === false).length };
   }, [results]);
+
+  const courses = useMemo(() => groupByCourse(results), [results]);
 
   return (
     <div className="ser-page">
@@ -74,27 +105,51 @@ export default function StudentExamResultsPage() {
         )}
 
         {!loading && !error && results.length > 0 && (
-          <div className="ser-list">
-            {results.map((r) => (
-              <button
-                key={r.submissionId}
-                type="button"
-                className="ser-row"
-                onClick={() => setSelectedId(r.submissionId)}
-              >
-                <div>
-                  <strong>{r.examTitle}</strong>
-                  <p>{formatDateTime(r.submittedAt)}</p>
+          <div className="ser-course-list">
+            {courses.map((course) => (
+              <article key={String(course.courseId ?? 'unknown')} className="ser-course-card">
+                <header className="ser-course-head">
+                  <div>
+                    <p className="ser-course-code">{course.courseCode || '-'}</p>
+                    <h3>{course.courseName || 'ไม่ระบุคอร์ส'}</h3>
+                  </div>
+                  <span className="ser-course-tutor">ผู้สอน: {course.tutorName || '-'}</span>
+                </header>
+
+                <div className="ser-exam-list">
+                  {course.results.map((r) => (
+                    <button
+                      key={r.submissionId}
+                      type="button"
+                      className="ser-exam-item"
+                      onClick={() => setSelectedId(r.submissionId)}
+                    >
+                      <div className="ser-exam-main">
+                        <div className="ser-exam-title">
+                          <span className="ser-exam-badge">
+                            การสอบครั้งที่ {course.examNumber.get(String(r.examId)) ?? '-'}
+                          </span>
+                          <strong>{r.examTitle}</strong>
+                        </div>
+                        <p className="ser-exam-meta">
+                          รหัสการสอบ: {r.examCode || '-'} · วันที่สอบ: {formatDate(r.examStartTime)}
+                        </p>
+                        {r.examDescription && (
+                          <p className="ser-exam-desc">{r.examDescription}</p>
+                        )}
+                      </div>
+                      <div className="ser-row-score">
+                        <span>{r.obtainedScore ?? '-'} / {r.totalScore ?? '-'}</span>
+                        {r.isPassed !== null && (
+                          <span className={r.isPassed ? 'ser-pass' : 'ser-fail'}>
+                            {r.isPassed ? 'ผ่าน' : 'ไม่ผ่าน'}
+                          </span>
+                        )}
+                      </div>
+                    </button>
+                  ))}
                 </div>
-                <div className="ser-row-score">
-                  <span>{r.obtainedScore ?? '-'} / {r.totalScore ?? '-'}</span>
-                  {r.isPassed !== null && (
-                    <span className={r.isPassed ? 'ser-pass' : 'ser-fail'}>
-                      {r.isPassed ? 'ผ่าน' : 'ไม่ผ่าน'}
-                    </span>
-                  )}
-                </div>
-              </button>
+              </article>
             ))}
           </div>
         )}

@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { getMyExamResults, getMyExamSchedule } from '../services/studentExamService';
+import { getMyExamSchedule } from '../services/studentExamService';
 import './StudentExamSchedulePage.css';
 
 const STATUS_LABELS = {
@@ -50,7 +50,6 @@ export default function StudentExamCourseDetailPage() {
   const { courseId } = useParams();
   const navigate = useNavigate();
   const [exams, setExams] = useState([]);
-  const [results, setResults] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [filter, setFilter] = useState('ALL');
@@ -59,10 +58,7 @@ export default function StudentExamCourseDetailPage() {
     try {
       setLoading(true);
       setError('');
-      const [examData, resultData] = await Promise.all([
-        getMyExamSchedule(),
-        getMyExamResults().catch(() => []),
-      ]);
+      const examData = await getMyExamSchedule();
       const list = Array.isArray(examData) ? examData : [];
       list.sort((a, b) => {
         if (!a.startTime) return 1;
@@ -70,22 +66,12 @@ export default function StudentExamCourseDetailPage() {
         return new Date(a.startTime) - new Date(b.startTime);
       });
       setExams(list);
-      setResults(Array.isArray(resultData) ? resultData : []);
     } catch (err) {
       setError(getErrorMessage(err));
       setExams([]);
     } finally {
       setLoading(false);
     }
-  }
-
-  // คะแนนที่ได้มาจากการยื่นสอบในระบบ (ExamSubmission) — ข้อสอบใหม่ทำผ่านลิงก์ภายนอกจึงไม่มีข้อมูลนี้
-  // เลือกครั้งล่าสุดถ้ามีสอบซ้ำได้หลายครั้ง (allowMultipleAttempts)
-  function findObtainedScore(examId) {
-    const matches = results.filter((r) => String(r.examId) === String(examId));
-    if (matches.length === 0) return null;
-    matches.sort((a, b) => new Date(b.submittedAt || 0) - new Date(a.submittedAt || 0));
-    return matches[0].obtainedScore;
   }
 
   useEffect(() => {
@@ -219,10 +205,8 @@ export default function StudentExamCourseDetailPage() {
                     <strong>{exam.durationMinutes ? `${exam.durationMinutes} นาที` : '-'}</strong>
                   </div>
                   <div>
-                    <span>คะแนนที่ได้ / คะแนนเต็ม</span>
-                    <strong>
-                      {findObtainedScore(exam.id) ?? '-'} / {exam.totalScore ?? '-'}
-                    </strong>
+                    <span>คะแนนเต็ม</span>
+                    <strong>{exam.totalScore ?? '-'}</strong>
                   </div>
                 </div>
 
