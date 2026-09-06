@@ -1,11 +1,23 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { getTutorCourses } from '../services/tutorAttendanceScoreService';
+import { getMyCourses } from '../services/tutorCourseService';
+import RefreshButton from '../components/RefreshButton';
 import './TutorAttendancePage.css';
+
+const COURSE_STATUS_LABEL = {
+  PENDING: 'รอเปิดรับสมัคร',
+  OPEN_FOR_REGISTRATION: 'เปิดรับสมัคร',
+  CLOSED: 'ปิดรับสมัคร',
+  ONGOING: 'กำลังเรียน',
+  COMPLETED: 'สอนจบแล้ว',
+  CANCELLED: 'ยกเลิก',
+};
 
 function formatDate(value) {
   if (!value) return '-';
-  return new Date(value).toLocaleDateString('th-TH', { year: 'numeric', month: 'short', day: 'numeric' });
+  const d = new Date(value);
+  if (Number.isNaN(d.getTime())) return '-';
+  return d.toLocaleDateString('th-TH', { year: 'numeric', month: 'short', day: 'numeric' });
 }
 
 export default function TutorAttendancePage() {
@@ -13,90 +25,95 @@ export default function TutorAttendancePage() {
   const [courses, setCourses] = useState([]);
   const [keyword, setKeyword] = useState('');
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+  const [reloadKey, setReloadKey] = useState(0);
 
   useEffect(() => {
-    loadCourses();
-  }, []);
+    let active = true;
+    setLoading(true);
+    getMyCourses()
+      .then((data) => {
+        if (!active) return;
+        setCourses(Array.isArray(data) ? data : []);
+        setError('');
+      })
+      .catch((err) => { if (active) setError(err.message); })
+      .finally(() => { if (active) setLoading(false); });
+    return () => { active = false; };
+  }, [reloadKey]);
 
-  async function loadCourses() {
-    try {
-      setLoading(true);
-      const data = await getTutorCourses();
-      setCourses(Array.isArray(data) ? data : []);
-    } catch (error) {
-      console.error(error);
-      setCourses([]);
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  const filteredCourses = useMemo(() => {
-    return courses.filter((course) => {
-      const text = `${course.courseName || ''} ${course.courseCode || ''}`.toLowerCase();
-      return text.includes(keyword.toLowerCase());
-    });
+  const filtered = useMemo(() => {
+    const kw = keyword.trim().toLowerCase();
+    if (!kw) return courses;
+    return courses.filter((c) =>
+      `${c.courseName || ''} ${c.courseCode || ''}`.toLowerCase().includes(kw)
+    );
   }, [courses, keyword]);
 
   return (
-    <div className="tas-page">
-      <div className="tas-header">
+    <div className="tan-page">
+      <div className="tan-header">
         <div>
           <h1>การเข้าเรียน</h1>
-          <p>เลือกคอร์สเพื่อดูตารางการขาด ลา มาสาย และอัตราการเข้าเรียนของนักเรียน</p>
+          <p>เลือกคอร์สเพื่อเข้าไปบันทึกและดูการเข้าเรียนของนักเรียนในแต่ละคาบ</p>
         </div>
-
-        
+        <RefreshButton onClick={() => setReloadKey((k) => k + 1)} loading={loading} />
       </div>
 
-      <div className="tas-toolbar">
+      <div className="tan-toolbar">
         <input
+          type="text"
+          placeholder="ค้นหาชื่อคอร์ส หรือรหัสคอร์ส..."
           value={keyword}
           onChange={(e) => setKeyword(e.target.value)}
-          placeholder="ค้นหารหัสคอร์สหรือชื่อคอร์ส..."
         />
       </div>
 
+      {error && (
+        <div className="tan-error" role="alert">
+          <span>{error}</span>
+          <button type="button" onClick={() => setError('')}>✕</button>
+        </div>
+      )}
+
       {loading ? (
-        <div className="tas-empty">กำลังโหลดข้อมูล...</div>
-      ) : filteredCourses.length === 0 ? (
-        <div className="tas-empty">ยังไม่มีคอร์สเรียน</div>
+        <div className="tan-empty">กำลังโหลดคอร์ส...</div>
+      ) : filtered.length === 0 ? (
+        <div className="tan-empty">ยังไม่มีคอร์สที่รับผิดชอบ</div>
       ) : (
-        <div className="tas-course-grid">
-          {filteredCourses.map((course) => (
-            <div className="tas-course-card" key={course.id}>
-              <div className="tas-course-top">
-                <span>{course.courseCode || '-'}</span>
-                <b>{course.status || 'UNKNOWN'}</b>
+        <div className="tan-grid">
+          {filtered.map((course) => (
+            <button
+              key={course.id}
+              type="button"
+              className="tan-card"
+              onClick={() => navigate(`/tutor/attendance/${course.id}`)}
+            >
+              <div className="tan-card-top">
+                <span className="tan-code">{course.courseCode || '-'}</span>
+                <span className="tan-status">{COURSE_STATUS_LABEL[course.status] || course.status || '-'}</span>
               </div>
 
-              <h2>{course.courseName || 'ไม่ระบุชื่อคอร์ส'}</h2>
-              <p>{course.description || 'ไม่มีรายละเอียดคอร์ส'}</p>
+              <h2 className="tan-card-title">{course.courseName || 'ไม่ระบุชื่อคอร์ส'}</h2>
+              <p className="tan-card-desc">{course.description || 'ไม่มีรายละเอียดคอร์ส'}</p>
 
-              <div className="tas-course-meta">
+              <div className="tan-card-info">
                 <div>
-                  <span>ราคา</span>
-                  <strong>{Number(course.price || 0).toLocaleString()} บาท</strong>
+                  <span>ผู้สอน</span>
+                  <strong>{course.teacherName || '-'}</strong>
                 </div>
-
                 <div>
-                  <span>ที่นั่ง</span>
-                  <strong>{course.maxSeats || 0} คน</strong>
+                  <span>จำนวนนักเรียน</span>
+                  <strong>{course.enrolledCount || 0}/{course.seatLimit || 0} คน</strong>
                 </div>
-
                 <div>
                   <span>เริ่มเรียน</span>
-                  <strong>{formatDate(course.startDate)}</strong>
+                  <strong>{formatDate(course.courseStartDate)}</strong>
                 </div>
               </div>
 
-              <button
-                className="tas-detail-btn"
-                onClick={() => navigate(`/tutor/attendance/${course.id}`)}
-              >
-                ดูการเข้าเรียน
-              </button>
-            </div>
+              <span className="tan-card-cta">บันทึกการเข้าเรียน →</span>
+            </button>
           ))}
         </div>
       )}
