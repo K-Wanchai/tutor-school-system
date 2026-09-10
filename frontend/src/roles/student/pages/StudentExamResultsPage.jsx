@@ -39,6 +39,10 @@ function mapEnrolledCourse(raw) {
   };
 }
 
+function rowKey(r) {
+  return r.submissionId != null ? `sub-${r.submissionId}` : `ms-${r.examId}`;
+}
+
 // เรียงผลสอบของคอร์ส + กำหนด "การสอบครั้งที่" ตามลำดับข้อสอบ (เรียงตามเวลาเริ่มสอบ)
 function decorateCourse(course) {
   const examOrder = [...new Set(
@@ -48,19 +52,59 @@ function decorateCourse(course) {
   )];
   const examNumber = new Map(examOrder.map((id, i) => [id, i + 1]));
   const rows = [...course.results].sort(
-    (a, b) => new Date(b.submittedAt || 0) - new Date(a.submittedAt || 0)
+    (a, b) => new Date(b.submittedAt || b.examStartTime || 0) - new Date(a.submittedAt || a.examStartTime || 0)
   );
 
   const graded = rows.filter((r) => r.status !== 'IN_PROGRESS');
-  const passed = graded.filter((r) => r.isPassed === true).length;
-  const failed = graded.filter((r) => r.isPassed === false).length;
+  const scored = graded.filter((r) => r.obtainedScore != null);
+  const sumObtained = scored.reduce((s, r) => s + Number(r.obtainedScore), 0);
+  const sumTotal = scored.reduce((s, r) => s + Number(r.totalScore || 0), 0);
 
-  const pcts = graded
-    .filter((r) => r.obtainedScore != null && r.totalScore)
+  const pcts = scored
+    .filter((r) => r.totalScore)
     .map((r) => (Number(r.obtainedScore) / Number(r.totalScore)) * 100);
   const avgPct = pcts.length ? Math.round(pcts.reduce((s, v) => s + v, 0) / pcts.length) : null;
 
-  return { ...course, rows, examNumber, taken: graded.length, passed, failed, avgPct };
+  return {
+    ...course,
+    rows,
+    examNumber,
+    taken: graded.length,
+    scoredCount: scored.length,
+    sumObtained,
+    sumTotal,
+    avgPct,
+  };
+}
+
+// แถบคะแนนรายข้อสอบบนการ์ด — หนึ่งช่องต่อหนึ่งข้อสอบ แสดงคะแนนจริง ระบายสีตามเปอร์เซ็นต์
+function ScoreStrip({ rows, examNumber }) {
+  const scored = [...rows]
+    .filter((r) => r.obtainedScore != null)
+    .sort((a, b) => (examNumber.get(String(a.examId)) ?? 0) - (examNumber.get(String(b.examId)) ?? 0));
+
+  if (scored.length === 0) {
+    return <div className="ser-strip ser-strip--empty">ยังไม่มีคะแนน</div>;
+  }
+  return (
+    <div className="ser-strip">
+      {scored.map((r) => {
+        const pct = r.totalScore ? (Number(r.obtainedScore) / Number(r.totalScore)) * 100 : null;
+        const tone =
+          pct == null ? 'none' : pct >= 80 ? 'high' : pct >= 50 ? 'mid' : 'low';
+        return (
+          <span
+            key={rowKey(r)}
+            className={`ser-strip-chip ser-strip-chip--${tone}`}
+            title={`${r.examTitle || 'ข้อสอบ'} · ${r.obtainedScore}/${r.totalScore ?? '-'}`}
+          >
+            {r.obtainedScore}
+            {r.totalScore ? `/${r.totalScore}` : ''}
+          </span>
+        );
+      })}
+    </div>
+  );
 }
 
 export default function StudentExamResultsPage() {
@@ -175,8 +219,7 @@ export default function StudentExamResultsPage() {
             <p className="aes-detail-meta">
               ผู้สอน: <b>{safeValue(selectedCourse.tutorName)}</b> ·
               สอบไปแล้ว: <b>{selectedCourse.taken} ครั้ง</b> ·
-              ผ่านเกณฑ์: <b>{selectedCourse.passed}</b> ·
-              ไม่ผ่านเกณฑ์: <b>{selectedCourse.failed}</b> ·
+              คะแนนรวม: <b>{selectedCourse.sumObtained} / {selectedCourse.sumTotal || '-'}</b> ·
               คะแนนเฉลี่ย: <b>{selectedCourse.avgPct != null ? `${selectedCourse.avgPct}%` : '-'}</b>
             </p>
           </div>
@@ -196,46 +239,45 @@ export default function StudentExamResultsPage() {
                     <th>รหัสข้อสอบ</th>
                     <th>วันที่สอบ</th>
                     <th>คะแนน</th>
+                    <th>คิดเป็น</th>
                     <th>สถานะ</th>
-                    <th>ผล</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {selectedCourse.rows.map((r, idx) => (
-                    <tr
-                      key={r.submissionId}
-                      className="ser-clickable-row"
-                      onClick={() => setSelectedId(r.submissionId)}
-                    >
-                      <td className="aes-col-no">{idx + 1}</td>
-                      <td className="aes-col-name">
-                        {safeValue(r.examTitle)}
-                        <span className="ser-row-sub">
-                          การสอบครั้งที่ {selectedCourse.examNumber.get(String(r.examId)) ?? '-'}
-                        </span>
-                      </td>
-                      <td>{safeValue(r.examCode)}</td>
-                      <td>{formatDate(r.examStartTime || r.submittedAt)}</td>
-                      <td>
-                        <b>{r.obtainedScore ?? '-'}</b> / {r.totalScore ?? '-'}
-                      </td>
-                      <td>{SUBMISSION_STATUS_LABEL[r.status] || safeValue(r.status)}</td>
-                      <td>
-                        {r.isPassed == null ? (
-                          <span className="ser-pending">รอผล</span>
-                        ) : (
-                          <span className={r.isPassed ? 'ser-pass' : 'ser-fail'}>
-                            {r.isPassed ? 'ผ่าน' : 'ไม่ผ่าน'}
+                  {selectedCourse.rows.map((r, idx) => {
+                    const clickable = r.submissionId != null;
+                    const pct =
+                      r.obtainedScore != null && r.totalScore
+                        ? Math.round((Number(r.obtainedScore) / Number(r.totalScore)) * 100)
+                        : null;
+                    return (
+                      <tr
+                        key={rowKey(r)}
+                        className={clickable ? 'ser-clickable-row' : undefined}
+                        onClick={clickable ? () => setSelectedId(r.submissionId) : undefined}
+                      >
+                        <td className="aes-col-no">{idx + 1}</td>
+                        <td className="aes-col-name">
+                          {safeValue(r.examTitle)}
+                          <span className="ser-row-sub">
+                            การสอบครั้งที่ {selectedCourse.examNumber.get(String(r.examId)) ?? '-'}
                           </span>
-                        )}
-                      </td>
-                    </tr>
-                  ))}
+                        </td>
+                        <td>{safeValue(r.examCode)}</td>
+                        <td>{formatDate(r.examStartTime || r.submittedAt)}</td>
+                        <td>
+                          <b>{r.obtainedScore ?? '-'}</b> / {r.totalScore ?? '-'}
+                        </td>
+                        <td>{pct != null ? `${pct}%` : '-'}</td>
+                        <td>{SUBMISSION_STATUS_LABEL[r.status] || safeValue(r.status)}</td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
             </div>
             <div className="aes-legend">
-              <span>แตะที่แถวเพื่อดูรายละเอียดคำตอบรายข้อ</span>
+              <span>แตะที่แถวข้อสอบที่ทำผ่านระบบ เพื่อดูรายละเอียดคำตอบรายข้อ</span>
             </div>
           </div>
         )}
@@ -300,18 +342,20 @@ export default function StudentExamResultsPage() {
 
               <div className="aes-card-info">
                 <div>
-                  <span>ผ่านเกณฑ์</span>
-                  <strong>{course.passed}</strong>
+                  <span>สอบไปแล้ว</span>
+                  <strong>{course.taken} ครั้ง</strong>
                 </div>
                 <div>
-                  <span>ไม่ผ่านเกณฑ์</span>
-                  <strong>{course.failed}</strong>
+                  <span>คะแนนรวม</span>
+                  <strong>{course.sumObtained}{course.sumTotal ? ` / ${course.sumTotal}` : ''}</strong>
                 </div>
                 <div>
                   <span>คะแนนเฉลี่ย</span>
                   <strong>{course.avgPct != null ? `${course.avgPct}%` : '-'}</strong>
                 </div>
               </div>
+
+              <ScoreStrip rows={course.rows} examNumber={course.examNumber} />
 
               <span className="aes-card-cta">ดูผลสอบ →</span>
             </button>
