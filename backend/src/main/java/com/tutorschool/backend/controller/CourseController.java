@@ -152,6 +152,15 @@ public class CourseController {
         return ResponseEntity.ok(ApiResponse.success("อัปเดตสถานะการเปิดดูคอร์สสำเร็จ"));
     }
 
+    @PatchMapping("/{courseId}/complete")
+    @PreAuthorize("hasRole('TUTOR')")
+    public ResponseEntity<ApiResponse<CourseResponse>> completeCourse(
+            @PathVariable Long courseId,
+            @AuthenticationPrincipal User currentUser) {
+        CourseResponse response = courseService.completeCourse(courseId, currentUser.getId());
+        return ResponseEntity.ok(ApiResponse.success("ปิดจบการสอนคอร์สเรียบร้อยแล้ว", response));
+    }
+
     @DeleteMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ApiResponse<Void>> deleteCourse(@PathVariable Long id) {

@@ -38,6 +38,8 @@ public interface CourseService {
 
     void markCourseViewed(Long courseId, Long tutorUserId);
 
+    CourseResponse completeCourse(Long courseId, Long tutorUserId);
+
     void deleteCourse(Long id);
 
     void autoTransitionCourses();

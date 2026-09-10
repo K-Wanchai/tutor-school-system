@@ -25,6 +25,7 @@ import com.tutorschool.backend.entity.CourseLesson;
 import com.tutorschool.backend.entity.CourseScheduleDay;
 import com.tutorschool.backend.entity.CourseStatus;
 import com.tutorschool.backend.entity.CourseTest;
+import com.tutorschool.backend.entity.Enrollment;
 import com.tutorschool.backend.entity.EnrollmentStatus;
 import com.tutorschool.backend.entity.NotificationType;
 import com.tutorschool.backend.entity.ReferenceType;
@@ -417,6 +418,58 @@ public class CourseServiceImpl implements CourseService {
         if (!course.isTutorViewed()) {
             course.setTutorViewed(true);
             courseRepository.save(course);
+        }
+    }
+
+    @Override
+    @Transactional
+    public CourseResponse completeCourse(Long courseId, Long tutorUserId) {
+        Course course = courseRepository.findById(courseId)
+                .orElseThrow(() -> new ResourceNotFoundException("Course", courseId));
+        verifyTutorOwnsCourse(course, tutorUserId);
+
+        if (course.getStatus() != CourseStatus.ONGOING) {
+            throw new IllegalStateException(
+                    "ปิดจบการสอนได้เฉพาะคอร์สที่กำลังเรียนอยู่เท่านั้น");
+        }
+
+        course.setStatus(CourseStatus.COMPLETED);
+        course = courseRepository.save(course);
+
+        // ปิดจบการสอน = นักเรียนที่ผ่านการอนุมัติถือว่าเรียนจบ ปลดล็อกให้ประเมินคอร์สได้
+        List<Enrollment> approved = enrollmentRepository.findByCourseIdAndStatus(
+                courseId, EnrollmentStatus.APPROVED);
+        for (Enrollment enrollment : approved) {
+            enrollment.setStatus(EnrollmentStatus.COMPLETED);
+        }
+        enrollmentRepository.saveAll(approved);
+
+        sendCourseCompletedNotifications(course, approved);
+
+        return courseMapper.toDetailResponse(course, countActiveEnrollments(courseId));
+    }
+
+    private void sendCourseCompletedNotifications(Course course, List<Enrollment> completedEnrollments) {
+        for (Enrollment enrollment : completedEnrollments) {
+            try {
+                var student = enrollment.getStudent();
+                CreateNotificationRequest notif = new CreateNotificationRequest();
+                notif.setUserId(student.getUser().getId());
+                notif.setRecipientEmail(student.getUser().getEmail());
+                notif.setSubject("คอร์ส \"" + course.getCourseName() + "\" ปิดจบการสอนแล้ว");
+                notif.setMessage(
+                    "เรียน " + student.getFullName() + "\n\n" +
+                    "ติวเตอร์ได้ปิดจบการสอนคอร์ส \"" + course.getCourseName() + "\" (" + course.getCourseCode() + ") แล้ว\n" +
+                    "คุณสามารถเข้าไปประเมินคอร์สนี้ได้ที่เมนู \"ประเมินคอร์ส\""
+                );
+                notif.setNotificationType(NotificationType.SYSTEM);
+                notif.setReferenceType(ReferenceType.COURSE);
+                notif.setReferenceId(course.getId());
+                notificationService.sendNotification(notif);
+            } catch (Exception e) {
+                log.warn("Failed to send course-completed notification for course {} to enrollment {}: {}",
+                        course.getId(), enrollment.getId(), e.getMessage());
+            }
         }
     }
 

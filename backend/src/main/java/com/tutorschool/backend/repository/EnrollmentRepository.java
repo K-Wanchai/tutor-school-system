@@ -44,6 +44,8 @@ public interface EnrollmentRepository extends JpaRepository<Enrollment, Long> {
 
     List<Enrollment> findByStudentIdAndStatus(Long studentId, EnrollmentStatus status);
 
+    List<Enrollment> findByCourseIdAndStatus(Long courseId, EnrollmentStatus status);
+
     List<Enrollment> findTop5ByOrderByCreatedAtDesc();
 
     // ครอบคลุมทั้ง UNPAID (ยังไม่เคยส่งสลิป) และ FAILED (ถูกตีกลับให้แก้ไขสลิปแล้วแต่ยังไม่ส่งใหม่) —
