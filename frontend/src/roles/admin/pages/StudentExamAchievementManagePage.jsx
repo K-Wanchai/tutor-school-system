@@ -27,6 +27,16 @@ const LEVEL_FILTER_OPTIONS = [
   { value: 'BACHELOR', label: 'มหาวิทยาลัย / ป.ตรี' },
 ];
 
+// ระดับที่สถาบันหนึ่ง ๆ เปิดสอบติดได้ อิงตามประเภทสถาบัน (ใช้กับช่องกรอง "ระดับ")
+function allowedLevelsForInstitution(inst) {
+  if (!inst) return ['LOWER_SECONDARY', 'UPPER_SECONDARY', 'VOCATIONAL_DIPLOMA', 'BACHELOR'];
+  if (inst.institutionType === 'UNIVERSITY') {
+    return inst.offersVocationalDiploma ? ['BACHELOR', 'VOCATIONAL_DIPLOMA'] : ['BACHELOR'];
+  }
+  if (inst.institutionType === 'VOCATIONAL_DIPLOMA') return ['VOCATIONAL_DIPLOMA'];
+  return ['LOWER_SECONDARY', 'UPPER_SECONDARY'];
+}
+
 const STATUS_FILTER_OPTIONS = [
   { value: '', label: 'ทั้งหมด' },
   { value: 'true', label: 'ใช้งาน' },
@@ -297,6 +307,21 @@ export default function StudentExamAchievementManagePage() {
     () => [...achievements].sort((a, b) => (b.id ?? 0) - (a.id ?? 0)),
     [achievements]
   );
+
+  // ช่องกรอง "ระดับ" ให้แสดงเฉพาะระดับที่สถาบันที่เลือกในช่องกรองเปิดสอบติดได้
+  const filterLevelOptions = useMemo(() => {
+    const inst = institutions.find((i) => String(i.id) === String(institutionDraft)) || null;
+    const allowed = allowedLevelsForInstitution(inst);
+    return LEVEL_FILTER_OPTIONS.filter((opt) => opt.value === '' || allowed.includes(opt.value));
+  }, [institutions, institutionDraft]);
+
+  function handleFilterInstitutionChange(id) {
+    setInstitutionDraft(id);
+    // ถ้าระดับที่เลือกไว้ไม่อยู่ในระดับที่สถาบันใหม่รองรับ ให้รีเซ็ตกลับเป็น "ทั้งหมด"
+    const inst = institutions.find((i) => String(i.id) === String(id)) || null;
+    const allowed = allowedLevelsForInstitution(inst);
+    setLevelDraft((prev) => (prev && !allowed.includes(prev) ? '' : prev));
+  }
 
   function handleSearch(e) {
     e.preventDefault();
@@ -613,7 +638,7 @@ export default function StudentExamAchievementManagePage() {
         <select
           className="eim-filter-select"
           value={institutionDraft}
-          onChange={(e) => setInstitutionDraft(e.target.value)}
+          onChange={(e) => handleFilterInstitutionChange(e.target.value)}
         >
           <option value="">— ทุกสถาบัน —</option>
           {institutions.map((i) => (
@@ -625,7 +650,7 @@ export default function StudentExamAchievementManagePage() {
           value={levelDraft}
           onChange={(e) => setLevelDraft(e.target.value)}
         >
-          {LEVEL_FILTER_OPTIONS.map((opt) => (
+          {filterLevelOptions.map((opt) => (
             <option key={opt.value} value={opt.value}>{opt.label}</option>
           ))}
         </select>
