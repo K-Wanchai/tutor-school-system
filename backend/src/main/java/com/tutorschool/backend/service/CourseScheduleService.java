@@ -25,6 +25,8 @@ public interface CourseScheduleService {
 
     List<CourseScheduleResponse> getMySchedulesAsStudent(Long studentUserId);
 
+    List<CourseScheduleResponse> getSchedulesByStudentId(Long studentId);
+
     List<CourseScheduleResponse> getMySchedulesAsTeacher(Long teacherUserId);
 
     CourseScheduleResponse updateSchedule(Long id, UpdateCourseScheduleRequest request, Long currentUserId);

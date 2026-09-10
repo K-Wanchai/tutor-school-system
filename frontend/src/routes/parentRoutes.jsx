@@ -1,7 +1,7 @@
-import { Route } from 'react-router-dom';
+import { Route, Navigate } from 'react-router-dom';
 import ProtectedRoute from './ProtectedRoute';
 import ParentLayout from '../roles/parent/layouts/ParentLayout';
-import ParentAttendancePage from '../roles/parent/pages/ParentAttendancePage';
+import ParentTrackingPage from '../roles/parent/pages/ParentTrackingPage';
 
 const parentRoutes = (
   <Route
@@ -12,7 +12,9 @@ const parentRoutes = (
       </ProtectedRoute>
     }
   >
-    <Route path="attendance" element={<ParentAttendancePage />} />
+    <Route index element={<ParentTrackingPage />} />
+    <Route path="tracking" element={<ParentTrackingPage />} />
+    <Route path="attendance" element={<Navigate to="/parent" replace />} />
   </Route>
 );
 

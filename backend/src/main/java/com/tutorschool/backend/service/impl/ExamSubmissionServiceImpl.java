@@ -258,6 +258,14 @@ public class ExamSubmissionServiceImpl implements ExamSubmissionService {
 
     @Override
     @Transactional(readOnly = true)
+    public List<ExamResultResponse> getResultsByStudentId(Long studentId) {
+        return submissionRepository.findByStudentId(studentId).stream()
+                .map(submissionMapper::toResultResponse)
+                .toList();
+    }
+
+    @Override
+    @Transactional(readOnly = true)
     public List<ExamResultResponse> getResultsByExam(Long examId, String teacherEmail) {
         Tutor Tutor = TutorRepository.findByUserEmail(teacherEmail)
                 .orElseThrow(() -> new ExamAccessDeniedException("Current user is not registered as a Tutor"));

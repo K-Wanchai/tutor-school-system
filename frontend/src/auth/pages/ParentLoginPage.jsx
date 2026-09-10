@@ -31,7 +31,7 @@ export default function ParentLoginPage() {
     setError('');
     try {
       await parentLogin(nationalId);
-      navigate('/parent/attendance');
+      navigate('/parent');
     } catch (err) {
       setError(
         err.response?.data?.message ||
