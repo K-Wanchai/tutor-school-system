@@ -21,6 +21,34 @@
 .ser-fail { color: #dc2626; font-weight: 800; }
 .ser-pending { color: #d97706; font-weight: 800; }
 
+/* แถบคะแนนรายข้อสอบบนการ์ด */
+.ser-strip {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.ser-strip--empty {
+  font-size: 11px;
+  color: #9ca3af;
+}
+
+.ser-strip-chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 7px;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1.6;
+  background: #eef2f5;
+  color: #374151;
+}
+
+.ser-strip-chip--high { background: #d1fae5; color: #065f46; }
+.ser-strip-chip--mid { background: #fef3c7; color: #92400e; }
+.ser-strip-chip--low { background: #fee2e2; color: #b91c1c; }
+
 .ser-loading,
 .ser-error-box {
   display: flex;

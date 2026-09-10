@@ -13,6 +13,8 @@ public interface ExamManualScoreRepository extends JpaRepository<ExamManualScore
     // traverse: ExamManualScore → exam → course
     List<ExamManualScore> findByExamCourseId(Long courseId);
 
+    List<ExamManualScore> findByStudentId(Long studentId);
+
     Optional<ExamManualScore> findByExamIdAndStudentId(Long examId, Long studentId);
 
     void deleteByExamIdAndStudentId(Long examId, Long studentId);

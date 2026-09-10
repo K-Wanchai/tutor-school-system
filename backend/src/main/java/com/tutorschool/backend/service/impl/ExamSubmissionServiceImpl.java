@@ -33,6 +33,7 @@ public class ExamSubmissionServiceImpl implements ExamSubmissionService {
     private final ExamQuestionOptionRepository optionRepository;
     private final ExamScoreAuditLogRepository auditLogRepository;
     private final EnrollmentRepository enrollmentRepository;
+    private final ExamManualScoreRepository examManualScoreRepository;
     private final StudentRepository studentRepository;
     private final TutorRepository TutorRepository;
     private final UserRepository userRepository;
@@ -251,17 +252,57 @@ public class ExamSubmissionServiceImpl implements ExamSubmissionService {
     @Transactional(readOnly = true)
     public List<ExamResultResponse> getMyResults(String studentEmail) {
         Student student = getStudentByEmail(studentEmail);
-        return submissionRepository.findByStudentId(student.getId()).stream()
-                .map(submissionMapper::toResultResponse)
-                .toList();
+        return mergeResultsWithManualScores(student, submissionRepository.findByStudentId(student.getId()));
+    }
+
+    // รวมผลสอบจากระบบ (ExamSubmission) กับคะแนนที่ติวเตอร์กรอกเอง (ExamManualScore)
+    // สำหรับข้อสอบที่มีทั้งสองอย่าง ให้ยึด submission; ข้อสอบที่มีแต่คะแนนกรอกเอง สร้างรายการเสมือนขึ้นมา
+    private List<ExamResultResponse> mergeResultsWithManualScores(Student student, List<ExamSubmission> submissions) {
+        List<ExamResultResponse> results = new ArrayList<>(
+                submissions.stream().map(submissionMapper::toResultResponse).toList());
+
+        java.util.Set<Long> examIdsWithSubmission = submissions.stream()
+                .map(s -> s.getExam().getId())
+                .collect(Collectors.toSet());
+
+        examManualScoreRepository.findByStudentId(student.getId()).stream()
+                .filter(ms -> !examIdsWithSubmission.contains(ms.getExam().getId()))
+                .map(ms -> toManualResult(ms, student))
+                .forEach(results::add);
+
+        return results;
+    }
+
+    private ExamResultResponse toManualResult(ExamManualScore ms, Student student) {
+        Exam exam = ms.getExam();
+        Course course = exam.getCourse();
+        Tutor tutor = exam.getTutor();
+        return ExamResultResponse.builder()
+                .examId(exam.getId())
+                .examTitle(exam.getTitle())
+                .examCode(exam.getExamCode())
+                .examDescription(exam.getDescription())
+                .examStartTime(exam.getStartTime())
+                .courseId(course != null ? course.getId() : null)
+                .courseName(course != null ? course.getCourseName() : null)
+                .courseCode(course != null ? course.getCourseCode() : null)
+                .tutorName(tutor != null ? tutor.getFirstName() + " " + tutor.getLastName() : null)
+                .studentId(student.getId())
+                .studentName(student.getFullName())
+                .studentCode(student.getStudentCode())
+                .totalScore(exam.getTotalScore())
+                .obtainedScore(ms.getScore())
+                .status(ExamSubmissionStatus.GRADED)
+                .submittedAt(ms.getUpdatedAt())
+                .build();
     }
 
     @Override
     @Transactional(readOnly = true)
     public List<ExamResultResponse> getResultsByStudentId(Long studentId) {
-        return submissionRepository.findByStudentId(studentId).stream()
-                .map(submissionMapper::toResultResponse)
-                .toList();
+        Student student = studentRepository.findById(studentId)
+                .orElseThrow(() -> new ResourceNotFoundException("Student not found with id: " + studentId));
+        return mergeResultsWithManualScores(student, submissionRepository.findByStudentId(studentId));
     }
 
     @Override
