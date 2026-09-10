@@ -466,16 +466,20 @@ export default function ExamInstitutionDetailPage() {
   const [error, setError] = useState('');
   const [toast, setToast] = useState(null);
 
-  // สถาบันที่เพิ่งสร้างใหม่ (มาจาก "เพิ่มสถาบัน") — พาไปตั้งค่าคณะ/สาขา/สายการเรียนก่อนเริ่มบันทึกนักเรียนที่สอบติด
-  const [mainTab, setMainTab] = useState(location.state?.openConfig ? 'config' : 'achievements');
+  // โหมด "ตั้งค่าข้อมูลพื้นฐาน" — เข้ามาจากปุ่ม ⚙️ ในคอลัมน์จัดการ หรือหลังเพิ่งสร้างสถาบันใหม่
+  const [configMode, setConfigMode] = useState(location.state?.openConfig === true);
 
+  // navigate ไปที่ path เดิมด้วย state ใหม่ไม่ทำให้คอมโพเนนต์ remount — จึงอ่าน location.state ผ่าน effect
+  // แล้วล้างทิ้ง เพื่อไม่ให้ค้างเมื่อผู้ใช้กดรีเฟรชหน้า
   useEffect(() => {
-    if (location.state?.openConfig) {
+    const st = location.state;
+    if (!st || !Object.keys(st).length) return;
+    if (st.openConfig) setConfigMode(true);
+    if (st.showCreatedToast) {
       setToast({ msg: 'สร้างสถาบันสำเร็จ — ตั้งค่าคณะ/สาขา หรือสายการเรียน/ห้องเรียน และรอบที่สอบติดของสถาบันนี้ก่อนเริ่มบันทึกนักเรียนที่สอบติด', type: 'success' });
-      navigate(location.pathname, { replace: true, state: {} });
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+    navigate(location.pathname, { replace: true, state: {} });
+  }, [location.state, location.pathname, navigate]);
 
   const [students, setStudents] = useState([]);
 
@@ -557,7 +561,7 @@ export default function ExamInstitutionDetailPage() {
     getFaculties(institutionId)
       .then((data) => setFacultyList((data || []).filter((f) => f.active)))
       .catch(() => setFacultyList([]));
-  }, [institutionId, overview, mainTab]);
+  }, [institutionId, overview]);
 
   // โหลดรายชื่อสาขาของสถาบันนี้ (สำหรับสถาบันประเภทอนุปริญญา หรือมหาวิทยาลัยที่เปิดหลักสูตรอนุปริญญาด้วย)
   useEffect(() => {
@@ -570,7 +574,7 @@ export default function ExamInstitutionDetailPage() {
       .then((data) => setVocationalMajorList((data || []).filter((m) => m.active)))
       .catch(() => setVocationalMajorList([]))
       .finally(() => setLoadingVocationalMajors(false));
-  }, [institutionId, overview, mainTab]);
+  }, [institutionId, overview]);
 
   // โหลดรอบที่สอบติดของสถาบันนี้ เมื่อเปิดฟอร์ม
   useEffect(() => {
@@ -746,6 +750,47 @@ export default function ExamInstitutionDetailPage() {
   const majorCount = facultyList.reduce((sum, f) => sum + (f.majorCount ?? 0), 0);
   const vocationalMajorCount = vocationalMajorList.length;
 
+  // ── โหมดตั้งค่าข้อมูลพื้นฐาน (คณะ/สาขา, สายการเรียน/ห้องเรียน, รอบที่สอบติด) ──
+  if (configMode) {
+    return (
+      <div className="eid-page">
+        {toast && <Toast msg={toast.msg} type={toast.type} onClose={() => setToast(null)} />}
+
+        <div className="eid-header">
+          <div className="eid-header-top">
+            <button className="eid-btn eid-btn--ghost" onClick={() => navigate('/admin/exam-institutions')}>
+              ← กลับไปหน้ารายการสถาบัน
+            </button>
+            <div className="eid-header-top-actions">
+              <button className="eid-btn eid-btn--ghost" onClick={() => setConfigMode(false)}>
+                ดูรายชื่อนักเรียนที่สอบติด
+              </button>
+            </div>
+          </div>
+          <h1 className="eid-title">ตั้งค่าข้อมูลพื้นฐาน — {institution.institutionName}</h1>
+          <div className="eid-meta-row">
+            {institution.institutionCode && <span className="eid-code-badge">{institution.institutionCode}</span>}
+            <span className="eid-meta-item">
+              {institution.institutionTypeLabel || TYPE_LABEL[institution.institutionType] || '—'}
+            </span>
+          </div>
+        </div>
+
+        {isUniversity ? (
+          <>
+            <FacultyMajorManager institutionId={institutionId} />
+            {hasVocationalDiploma && <VocationalMajorManager institutionId={institutionId} />}
+          </>
+        ) : isVocational ? (
+          <VocationalMajorManager institutionId={institutionId} />
+        ) : (
+          <SchoolTrackManager institutionId={institutionId} />
+        )}
+        <AdmissionRoundManager institutionId={institutionId} />
+      </div>
+    );
+  }
+
   return (
     <div className="eid-page">
       {toast && <Toast msg={toast.msg} type={toast.type} onClose={() => setToast(null)} />}
@@ -762,6 +807,12 @@ export default function ExamInstitutionDetailPage() {
               onClick={() => navigate('/admin/student-exam-achievements', { state: { presetInstitutionId: institutionId } })}
             >
               + เพิ่มนักเรียนที่สอบติด
+            </button>
+            <button
+              className="eid-btn eid-btn--ghost"
+              onClick={() => navigate(`/admin/exam-institutions/${institutionId}`, { state: { openConfig: true } })}
+            >
+              ⚙️ ตั้งค่าข้อมูลพื้นฐาน
             </button>
             <button className="eid-btn eid-btn--ghost" onClick={() => navigate('/admin/exam-institutions')}>
               แก้ไขสถาบัน
@@ -839,37 +890,7 @@ export default function ExamInstitutionDetailPage() {
         )}
       </div>
 
-      {/* ── สลับมุมมอง: นักเรียนที่สอบติด / จัดการข้อมูลพื้นฐาน ── */}
-      <div className="eid-maintabs">
-        <button
-          className={`eid-maintab${mainTab === 'achievements' ? ' eid-maintab--active' : ''}`}
-          onClick={() => setMainTab('achievements')}
-        >
-          นักเรียนที่สอบติด
-        </button>
-        <button
-          className={`eid-maintab${mainTab === 'config' ? ' eid-maintab--active' : ''}`}
-          onClick={() => setMainTab('config')}
-        >
-          จัดการข้อมูลพื้นฐาน
-        </button>
-      </div>
-
-      {mainTab === 'config' ? (
-        <>
-          {isUniversity ? (
-            <>
-              <FacultyMajorManager institutionId={institutionId} />
-              {hasVocationalDiploma && <VocationalMajorManager institutionId={institutionId} />}
-            </>
-          ) : isVocational ? (
-            <VocationalMajorManager institutionId={institutionId} />
-          ) : (
-            <SchoolTrackManager institutionId={institutionId} />
-          )}
-          <AdmissionRoundManager institutionId={institutionId} />
-        </>
-      ) : isUniversity ? (
+      {isUniversity ? (
         <>
           <UniversityAchievementView
             bachelor={bachelor}

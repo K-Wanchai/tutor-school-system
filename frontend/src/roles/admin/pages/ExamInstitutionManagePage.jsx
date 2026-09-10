@@ -212,7 +212,7 @@ export default function ExamInstitutionManagePage() {
         const created = await createExamInstitution({ ...payload, institutionCode: form.institutionCode.trim() || null });
         setShowForm(false);
         // พาไปตั้งค่าคณะ/สาขา (มหาวิทยาลัย) หรือสายการเรียน/ห้องเรียน (โรงเรียน) ทันที ก่อนเริ่มบันทึกนักเรียนที่สอบติด
-        navigate(`/admin/exam-institutions/${created.id}`, { state: { openConfig: true } });
+        navigate(`/admin/exam-institutions/${created.id}`, { state: { openConfig: true, showCreatedToast: true } });
         return;
       }
 
@@ -345,6 +345,13 @@ export default function ExamInstitutionManagePage() {
                           onClick={() => navigate(`/admin/exam-institutions/${inst.id}`)}
                         >
                           👁
+                        </button>
+                        <button
+                          className="eim-btn-icon"
+                          title="ตั้งค่าข้อมูลพื้นฐาน (คณะ/สาขา/สายการเรียน/รอบที่สอบติด)"
+                          onClick={() => navigate(`/admin/exam-institutions/${inst.id}`, { state: { openConfig: true } })}
+                        >
+                          ⚙️
                         </button>
                         <button className="eim-btn-icon" title="แก้ไข" onClick={() => openEdit(inst)}>✏️</button>
                       </div>
