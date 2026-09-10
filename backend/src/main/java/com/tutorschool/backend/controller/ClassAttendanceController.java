@@ -36,6 +36,13 @@ public class ClassAttendanceController {
                 classAttendanceService.getCourseAttendance(courseId, currentUser)));
     }
 
+    @GetMapping("/student/me")
+    @PreAuthorize("hasRole('STUDENT')")
+    public ResponseEntity<ApiResponse<List<ClassAttendanceResponse>>> getMyAttendance(Principal principal) {
+        return ResponseEntity.ok(ApiResponse.success("Attendance retrieved",
+                classAttendanceService.getMyAttendance(principal.getName())));
+    }
+
     @PutMapping
     @PreAuthorize("hasRole('TUTOR') or hasRole('ADMIN')")
     public ResponseEntity<ApiResponse<ClassAttendanceResponse>> saveAttendance(

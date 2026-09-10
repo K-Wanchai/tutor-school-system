@@ -14,6 +14,7 @@ import com.tutorschool.backend.repository.ClassAttendanceRepository;
 import com.tutorschool.backend.repository.CourseRepository;
 import com.tutorschool.backend.repository.StudentRepository;
 import com.tutorschool.backend.repository.TutorRepository;
+import com.tutorschool.backend.repository.UserRepository;
 import com.tutorschool.backend.service.ClassAttendanceService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -30,6 +31,7 @@ public class ClassAttendanceServiceImpl implements ClassAttendanceService {
     private final CourseRepository courseRepository;
     private final StudentRepository studentRepository;
     private final TutorRepository tutorRepository;
+    private final UserRepository userRepository;
 
     @Override
     @Transactional(readOnly = true)
@@ -39,6 +41,18 @@ public class ClassAttendanceServiceImpl implements ClassAttendanceService {
             requireOwner(course, getTutor(currentUser.getEmail()));
         }
         return attendanceRepository.findByCourseId(courseId).stream()
+                .map(this::toResponse)
+                .toList();
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<ClassAttendanceResponse> getMyAttendance(String studentEmail) {
+        User user = userRepository.findByEmail(studentEmail)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found: " + studentEmail));
+        Student student = studentRepository.findByUserId(user.getId())
+                .orElseThrow(() -> new ResourceNotFoundException("Student profile not found for current user"));
+        return attendanceRepository.findByStudentId(student.getId()).stream()
                 .map(this::toResponse)
                 .toList();
     }

@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import {
   getCourseSchedules,
   getMyAttendanceHistory,
+  getMyClassAttendance,
   getMyClassroomSessions,
   joinClassroomSession,
 } from '../services/studentAttendanceService';
@@ -134,6 +135,16 @@ function mapAttendance(raw) {
   };
 }
 
+// การเช็คชื่อ onsite ที่ติวเตอร์บันทึก (ClassAttendanceResponse) — ถือเป็นสถานะจริงของแต่ละคาบ
+function mapClassAttendance(raw) {
+  return {
+    courseId: raw?.courseId ?? null,
+    scheduleDate: raw?.sessionDate ?? raw?.scheduleDate ?? null,
+    status: raw?.status ?? null,
+    note: raw?.note ?? null,
+  };
+}
+
 function mapEnrolledCourse(raw) {
   return {
     courseId: raw?.courseId ?? raw?.course?.id ?? null,
@@ -153,7 +164,8 @@ function courseKey(item) {
 // รวมทุกแหล่งข้อมูลของคอร์สให้เหลือ "หนึ่งแถวต่อหนึ่งคาบเรียน (ต่อวัน)" ของนักเรียนคนนี้:
 //  1) ตารางคาบเรียนจริง (schedules) = รายการคาบที่แน่นอน รวมคาบที่ยังไม่ถึง
 //  2) classroom sessions ของฉัน = สถานะสด + ลิงก์เข้าเรียน
-//  3) attendance records = สถานะที่ติวเตอร์เช็คชื่อยืนยันแล้ว (ถือเป็นค่าจริงสุด)
+//  3) attendance records (ห้องเรียนออนไลน์) = สถานะการเข้าเรียนออนไลน์
+//  4) class-attendance (onsite) ที่ติวเตอร์เช็คชื่อ = สถานะจริงสุด ทับทุกอย่าง
 function buildCourseSessions(course, schedules) {
   const byDate = new Map();
 
@@ -206,12 +218,19 @@ function buildCourseSessions(course, schedules) {
     });
   });
 
+  (course.classAttendance || []).forEach((c) => {
+    const k = dateKey(c.scheduleDate);
+    if (!k) return;
+    const e = byDate.get(k) || { date: k };
+    byDate.set(k, { ...e, status: c.status, note: c.note ?? e.note });
+  });
+
   return [...byDate.values()].sort((a, b) => a.date.localeCompare(b.date));
 }
 
-// สรุปตัวเลขบนการ์ด (ไม่มี schedules — ใช้ session/ประวัติที่ dedupe ตามวันแล้ว)
-function summarizeCourse(course) {
-  const rows = buildCourseSessions(course, []);
+// สรุปตัวเลขบนการ์ด — รวมตารางคาบเรียนจริงเข้าไปด้วย เพื่อให้ "คาบเรียน" ตรงกับหน้ารายละเอียด
+function summarizeCourse(course, schedules) {
+  const rows = buildCourseSessions(course, schedules);
   const attended = rows.filter((r) => ATTENDED_STATUSES.includes(r.status)).length;
   const recorded = rows.filter((r) => isRealStatus(r.status)).length;
   return {
@@ -223,17 +242,41 @@ function summarizeCourse(course) {
   };
 }
 
+// แถบสถานะการเข้าเรียนรายคาบบนการ์ด — หนึ่งช่องต่อหนึ่งคาบ ระบายสีตามสถานะ
+function SessionStrip({ rows }) {
+  if (!rows.length) {
+    return <div className="sap-strip sap-strip--empty">ยังไม่มีตารางคาบเรียน</div>;
+  }
+  return (
+    <div className="sap-strip">
+      {rows.map((r) => {
+        const st = String(r.status || '').toLowerCase();
+        const label = isRealStatus(r.status)
+          ? getAttendanceStatusLabel(r.status)
+          : 'ยังไม่เช็คชื่อ';
+        return (
+          <span
+            key={r.date}
+            className={`sap-strip-cell aes-att-${st || 'none'}`}
+            title={`${formatDate(r.date)} · ${label}`}
+          />
+        );
+      })}
+    </div>
+  );
+}
+
 export default function StudentAttendancePage() {
   const [sessions, setSessions] = useState([]);
   const [attendanceHistory, setAttendanceHistory] = useState([]);
   const [enrolledCourses, setEnrolledCourses] = useState([]);
+  const [classAttendance, setClassAttendance] = useState([]);
   const [loading, setLoading] = useState(true);
   const [joining, setJoining] = useState(false);
   const [error, setError] = useState('');
   const [keyword, setKeyword] = useState('');
   const [selectedKey, setSelectedKey] = useState(null);
-  const [courseSchedules, setCourseSchedules] = useState([]);
-  const [schedulesLoading, setSchedulesLoading] = useState(false);
+  const [schedulesByCourse, setSchedulesByCourse] = useState({});
   const [toast, setToast] = useState({ type: '', msg: '' });
 
   const showToast = (type, msg) => {
@@ -246,20 +289,42 @@ export default function StudentAttendancePage() {
     try {
       setLoading(true);
       setError('');
-      const [sessionData, historyData, courseData] = await Promise.all([
-        getMyClassroomSessions(),
-        getMyAttendanceHistory(),
+      const [sessionData, historyData, classAttData, courseData] = await Promise.all([
+        getMyClassroomSessions().catch(() => []),
+        getMyAttendanceHistory().catch(() => []),
+        getMyClassAttendance().catch(() => []),
         getMyCourses().catch(() => []),
       ]);
 
-      setSessions(Array.isArray(sessionData) ? sessionData.map(mapSession) : []);
-      setAttendanceHistory(Array.isArray(historyData) ? historyData.map(mapAttendance) : []);
-      setEnrolledCourses(
-        (Array.isArray(courseData) ? courseData : [])
-          .filter((en) => !en.status || ATTENDING_ENROLLMENT_STATUSES.includes(en.status))
-          .map(mapEnrolledCourse)
-          .filter((c) => c.courseId || c.courseName !== '-')
+      const mappedSessions = Array.isArray(sessionData) ? sessionData.map(mapSession) : [];
+      const mappedHistory = Array.isArray(historyData) ? historyData.map(mapAttendance) : [];
+      const mappedClassAtt = Array.isArray(classAttData) ? classAttData.map(mapClassAttendance) : [];
+      const mappedCourses = (Array.isArray(courseData) ? courseData : [])
+        .filter((en) => !en.status || ATTENDING_ENROLLMENT_STATUSES.includes(en.status))
+        .map(mapEnrolledCourse)
+        .filter((c) => c.courseId || c.courseName !== '-');
+
+      setSessions(mappedSessions);
+      setAttendanceHistory(mappedHistory);
+      setClassAttendance(mappedClassAtt);
+      setEnrolledCourses(mappedCourses);
+
+      // ดึงตารางคาบเรียนจริงของทุกคอร์ส เพื่อให้ "คาบเรียน" บนการ์ดตรงกับจำนวนคาบจริง
+      const courseIds = [
+        ...new Set(
+          [...mappedCourses, ...mappedSessions, ...mappedHistory, ...mappedClassAtt]
+            .map((c) => c.courseId)
+            .filter(Boolean)
+        ),
+      ];
+      const scheduleEntries = await Promise.all(
+        courseIds.map((id) =>
+          getCourseSchedules(id)
+            .then((s) => [id, Array.isArray(s) ? s : []])
+            .catch(() => [id, []])
+        )
       );
+      setSchedulesByCourse(Object.fromEntries(scheduleEntries));
     } catch (err) {
       setError(getErrorMessage(err));
     } finally {
@@ -274,51 +339,44 @@ export default function StudentAttendancePage() {
   const courses = useMemo(() => {
     const map = new Map();
 
-    // เริ่มจาก "คอร์สของฉัน" (ที่ลงทะเบียนไว้) — แสดงเป็นการ์ดเสมอ แม้ยังไม่มีคาบเรียน/ประวัติ
-    enrolledCourses.forEach((c) => {
-      const key = courseKey(c);
+    const ensure = (key, seed) => {
       if (!map.has(key)) {
         map.set(key, {
-          key,
-          courseId: c.courseId,
-          courseName: c.courseName,
-          courseCode: c.courseCode,
-          tutorName: c.tutorName,
-          studentName: c.studentName,
-          sessions: [],
-          history: [],
+          key, courseId: null, courseName: '-', courseCode: null, tutorName: '-',
+          studentName: null, sessions: [], history: [], classAttendance: [], ...seed,
         });
       }
+      return map.get(key);
+    };
+
+    // เริ่มจาก "คอร์สของฉัน" (ที่ลงทะเบียนไว้) — แสดงเป็นการ์ดเสมอ แม้ยังไม่มีคาบเรียน/ประวัติ
+    enrolledCourses.forEach((c) => {
+      ensure(courseKey(c), {
+        courseId: c.courseId, courseName: c.courseName, courseCode: c.courseCode,
+        tutorName: c.tutorName, studentName: c.studentName,
+      });
     });
 
     sessions.forEach((s) => {
-      const key = courseKey(s);
-      if (!map.has(key)) {
-        map.set(key, {
-          key, courseId: s.courseId, courseName: s.courseName, courseCode: null,
-          tutorName: s.tutorName, studentName: null, sessions: [], history: [],
-        });
-      }
-      map.get(key).sessions.push(s);
+      ensure(courseKey(s), { courseId: s.courseId, courseName: s.courseName, tutorName: s.tutorName })
+        .sessions.push(s);
     });
 
     attendanceHistory.forEach((h) => {
-      const key = courseKey(h);
-      if (!map.has(key)) {
-        map.set(key, {
-          key, courseId: h.courseId, courseName: h.courseName, courseCode: null,
-          tutorName: '-', studentName: null, sessions: [], history: [],
-        });
-      }
-      map.get(key).history.push(h);
+      ensure(courseKey(h), { courseId: h.courseId, courseName: h.courseName }).history.push(h);
+    });
+
+    classAttendance.forEach((c) => {
+      ensure(courseKey(c), { courseId: c.courseId }).classAttendance.push(c);
     });
 
     return Array.from(map.values()).map((course) => ({
       ...course,
-      ...summarizeCourse(course),
+      ...summarizeCourse(course, schedulesByCourse[course.courseId] || []),
+      timeline: buildCourseSessions(course, schedulesByCourse[course.courseId] || []),
       availableCount: course.sessions.filter(canJoinSession).length,
     }));
-  }, [enrolledCourses, sessions, attendanceHistory]);
+  }, [enrolledCourses, sessions, attendanceHistory, classAttendance, schedulesByCourse]);
 
   const filteredCourses = useMemo(() => {
     const kw = keyword.trim().toLowerCase();
@@ -332,22 +390,6 @@ export default function StudentAttendancePage() {
     () => courses.find((c) => c.key === selectedKey) || null,
     [courses, selectedKey]
   );
-
-  // โหลดตารางคาบเรียนจริงของคอร์สที่เลือก (เพื่อให้เห็นคาบที่ยังไม่ถึงด้วย)
-  useEffect(() => {
-    const courseId = selectedCourse?.courseId;
-    if (!courseId) {
-      setCourseSchedules([]);
-      return;
-    }
-    let cancelled = false;
-    setSchedulesLoading(true);
-    getCourseSchedules(courseId)
-      .then((data) => { if (!cancelled) setCourseSchedules(Array.isArray(data) ? data : []); })
-      .catch(() => { if (!cancelled) setCourseSchedules([]); })
-      .finally(() => { if (!cancelled) setSchedulesLoading(false); });
-    return () => { cancelled = true; };
-  }, [selectedCourse?.courseId]);
 
   const handleJoinSession = async (session) => {
     if (!session?.id) {
@@ -378,7 +420,7 @@ export default function StudentAttendancePage() {
 
   // ── มุมมองรายละเอียดคอร์ส: ตารางการเช็คชื่อรายคาบ เฉพาะของนักเรียนคนนี้ ──
   if (selectedCourse) {
-    const rows = buildCourseSessions(selectedCourse, courseSchedules);
+    const rows = selectedCourse.timeline || [];
     const attended = rows.filter((r) => ATTENDED_STATUSES.includes(r.status)).length;
     const recorded = rows.filter((r) => isRealStatus(r.status)).length;
     const rate = recorded > 0 ? Math.round((attended / recorded) * 100) : null;
@@ -438,9 +480,7 @@ export default function StudentAttendancePage() {
           </div>
         )}
 
-        {schedulesLoading && rows.length === 0 ? (
-          <div className="aes-empty">กำลังโหลดตารางคาบเรียน...</div>
-        ) : rows.length === 0 ? (
+        {rows.length === 0 ? (
           <div className="aes-empty">คอร์สนี้ยังไม่มีคาบเรียนหรือประวัติการเช็คชื่อ</div>
         ) : (
           <div className="aes-table-card">
@@ -560,6 +600,8 @@ export default function StudentAttendancePage() {
                   <strong>{course.attendanceRate != null ? `${course.attendanceRate}%` : '-'}</strong>
                 </div>
               </div>
+
+              <SessionStrip rows={course.timeline || []} />
 
               <span className="aes-card-cta">
                 {course.availableCount > 0
