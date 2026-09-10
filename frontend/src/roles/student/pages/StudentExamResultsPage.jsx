@@ -1,6 +1,18 @@
 import { useEffect, useMemo, useState } from 'react';
 import { getMyExamResults, getSubmissionById } from '../services/studentExamService';
+import { getMyCourses } from '../services/studentMyCoursesService.js';
+import '../../admin/pages/AdminExamPages.css';
 import './StudentExamResultsPage.css';
+
+// เฉพาะคอร์สที่ชำระเงิน/อนุมัติแล้ว หรือเรียนจบแล้ว
+const ATTENDING_ENROLLMENT_STATUSES = ['APPROVED', 'COMPLETED'];
+
+const SUBMISSION_STATUS_LABEL = {
+  IN_PROGRESS: 'กำลังทำข้อสอบ',
+  SUBMITTED: 'ส่งแล้ว รอตรวจ',
+  GRADED: 'ตรวจแล้ว',
+  CANCELLED: 'ยกเลิก',
+};
 
 function formatDate(value) {
   if (!value) return '-';
@@ -9,41 +21,55 @@ function formatDate(value) {
   return date.toLocaleDateString('th-TH', { year: 'numeric', month: 'short', day: 'numeric' });
 }
 
-// จัดกลุ่มผลสอบตามคอร์ส แล้วกำหนด "การสอบครั้งที่" ตามลำดับข้อสอบในคอร์ส (เรียงตามเวลาเริ่มสอบ)
-function groupByCourse(results) {
-  const map = new Map();
-  results.forEach((r) => {
-    const key = String(r.courseId ?? 'unknown');
-    if (!map.has(key)) {
-      map.set(key, {
-        courseId: r.courseId,
-        courseName: r.courseName,
-        courseCode: r.courseCode,
-        tutorName: r.tutorName,
-        results: [],
-      });
-    }
-    map.get(key).results.push(r);
-  });
+function safeValue(value) {
+  return value === null || value === undefined || value === '' ? '-' : value;
+}
 
-  return Array.from(map.values()).map((course) => {
-    const examOrder = [...new Set(
-      [...course.results]
-        .sort((a, b) => new Date(a.examStartTime || 0) - new Date(b.examStartTime || 0))
-        .map((r) => String(r.examId))
-    )];
-    const examNumber = new Map(examOrder.map((id, i) => [id, i + 1]));
-    const sorted = [...course.results].sort(
-      (a, b) => new Date(b.submittedAt || 0) - new Date(a.submittedAt || 0)
-    );
-    return { ...course, results: sorted, examNumber };
-  });
+function courseKey(item) {
+  return item.courseId ? `course-${item.courseId}` : `course-name-${item.courseName}`;
+}
+
+function mapEnrolledCourse(raw) {
+  return {
+    courseId: raw?.courseId ?? raw?.course?.id ?? null,
+    courseName: raw?.courseName ?? raw?.course?.courseName ?? '-',
+    courseCode: raw?.courseCode ?? raw?.course?.courseCode ?? null,
+    tutorName: raw?.tutorName ?? raw?.teacherName ?? raw?.tutor?.fullName ?? '-',
+    status: raw?.status ?? null,
+  };
+}
+
+// เรียงผลสอบของคอร์ส + กำหนด "การสอบครั้งที่" ตามลำดับข้อสอบ (เรียงตามเวลาเริ่มสอบ)
+function decorateCourse(course) {
+  const examOrder = [...new Set(
+    [...course.results]
+      .sort((a, b) => new Date(a.examStartTime || 0) - new Date(b.examStartTime || 0))
+      .map((r) => String(r.examId))
+  )];
+  const examNumber = new Map(examOrder.map((id, i) => [id, i + 1]));
+  const rows = [...course.results].sort(
+    (a, b) => new Date(b.submittedAt || 0) - new Date(a.submittedAt || 0)
+  );
+
+  const graded = rows.filter((r) => r.status !== 'IN_PROGRESS');
+  const passed = graded.filter((r) => r.isPassed === true).length;
+  const failed = graded.filter((r) => r.isPassed === false).length;
+
+  const pcts = graded
+    .filter((r) => r.obtainedScore != null && r.totalScore)
+    .map((r) => (Number(r.obtainedScore) / Number(r.totalScore)) * 100);
+  const avgPct = pcts.length ? Math.round(pcts.reduce((s, v) => s + v, 0) / pcts.length) : null;
+
+  return { ...course, rows, examNumber, taken: graded.length, passed, failed, avgPct };
 }
 
 export default function StudentExamResultsPage() {
   const [results, setResults] = useState([]);
+  const [enrolledCourses, setEnrolledCourses] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [keyword, setKeyword] = useState('');
+  const [selectedKey, setSelectedKey] = useState(null);
   const [selectedId, setSelectedId] = useState(null);
 
   useEffect(() => {
@@ -54,109 +80,243 @@ export default function StudentExamResultsPage() {
     try {
       setLoading(true);
       setError('');
-      const data = await getMyExamResults();
-      setResults(Array.isArray(data) ? data : []);
+      const [resultData, courseData] = await Promise.all([
+        getMyExamResults(),
+        getMyCourses().catch(() => []),
+      ]);
+      setResults(Array.isArray(resultData) ? resultData : []);
+      setEnrolledCourses(
+        (Array.isArray(courseData) ? courseData : [])
+          .filter((en) => !en.status || ATTENDING_ENROLLMENT_STATUSES.includes(en.status))
+          .map(mapEnrolledCourse)
+          .filter((c) => c.courseId || c.courseName !== '-')
+      );
     } catch (err) {
-      setError(err.message);
+      setError(err.message || 'ไม่สามารถโหลดผลสอบได้');
       setResults([]);
     } finally {
       setLoading(false);
     }
   }
 
-  const summary = useMemo(() => {
-    const graded = results.filter((r) => r.status !== 'IN_PROGRESS');
-    const passed = graded.filter((r) => r.isPassed === true).length;
-    return { total: graded.length, passed, failed: graded.filter((r) => r.isPassed === false).length };
-  }, [results]);
+  const courses = useMemo(() => {
+    const map = new Map();
 
-  const courses = useMemo(() => groupByCourse(results), [results]);
+    enrolledCourses.forEach((c) => {
+      const key = courseKey(c);
+      if (!map.has(key)) {
+        map.set(key, {
+          key,
+          courseId: c.courseId,
+          courseName: c.courseName,
+          courseCode: c.courseCode,
+          tutorName: c.tutorName,
+          results: [],
+        });
+      }
+    });
 
-  return (
-    <div className="ser-page">
-      <section className="ser-hero-card">
-        <div>
-          <p className="ser-eyebrow">Student Exam Results</p>
-          <h1>ผลสอบของฉัน</h1>
-          <p>ดูคะแนนและผลสอบของทุกข้อสอบที่คุณทำไปแล้ว</p>
-        </div>
-        <div className="ser-hero-icon" aria-hidden="true">🏆</div>
-      </section>
+    results.forEach((r) => {
+      const key = courseKey(r);
+      if (!map.has(key)) {
+        map.set(key, {
+          key,
+          courseId: r.courseId,
+          courseName: r.courseName,
+          courseCode: r.courseCode,
+          tutorName: r.tutorName,
+          results: [],
+        });
+      }
+      const course = map.get(key);
+      if (!course.courseCode && r.courseCode) course.courseCode = r.courseCode;
+      if ((!course.tutorName || course.tutorName === '-') && r.tutorName) course.tutorName = r.tutorName;
+      course.results.push(r);
+    });
 
-      <section className="ser-summary-grid">
-        <div className="ser-summary-card"><span>สอบไปแล้ว</span><strong>{summary.total}</strong></div>
-        <div className="ser-summary-card"><span>ผ่านเกณฑ์</span><strong>{summary.passed}</strong></div>
-        <div className="ser-summary-card"><span>ไม่ผ่านเกณฑ์</span><strong>{summary.failed}</strong></div>
-      </section>
+    return Array.from(map.values()).map(decorateCourse);
+  }, [enrolledCourses, results]);
 
-      <section className="ser-content-card">
-        {loading && <div className="ser-loading">กำลังโหลดผลสอบ...</div>}
+  const filteredCourses = useMemo(() => {
+    const kw = keyword.trim().toLowerCase();
+    if (!kw) return courses;
+    return courses.filter((c) =>
+      `${c.courseName || ''} ${c.courseCode || ''}`.toLowerCase().includes(kw)
+    );
+  }, [courses, keyword]);
 
-        {!loading && error && (
-          <div className="ser-error-box"><strong>เกิดข้อผิดพลาด</strong><p>{error}</p></div>
-        )}
+  const selectedCourse = useMemo(
+    () => courses.find((c) => c.key === selectedKey) || null,
+    [courses, selectedKey]
+  );
 
-        {!loading && !error && results.length === 0 && (
-          <div className="ser-empty-state">
-            <div className="ser-empty-icon">📄</div>
-            <h3>ยังไม่มีผลสอบ</h3>
-            <p>เมื่อคุณทำข้อสอบเสร็จแล้ว ผลคะแนนจะแสดงที่นี่</p>
+  if (loading) {
+    return (
+      <div className="aes-page">
+        <div className="aes-empty">กำลังโหลดผลสอบ...</div>
+      </div>
+    );
+  }
+
+  // ── มุมมองรายละเอียดคอร์ส: ผลสอบเฉพาะของนักเรียนคนนี้ ──
+  if (selectedCourse) {
+    return (
+      <div className="aes-page">
+        <button type="button" className="aes-back" onClick={() => setSelectedKey(null)}>
+          ← กลับไปหน้ารายการคอร์ส
+        </button>
+
+        <div className="aes-header">
+          <div>
+            <div className="aes-detail-title">
+              <span className="aes-code">{selectedCourse.courseCode || '-'}</span>
+              <h1>{safeValue(selectedCourse.courseName)}</h1>
+            </div>
+            <p className="aes-detail-meta">
+              ผู้สอน: <b>{safeValue(selectedCourse.tutorName)}</b> ·
+              สอบไปแล้ว: <b>{selectedCourse.taken} ครั้ง</b> ·
+              ผ่านเกณฑ์: <b>{selectedCourse.passed}</b> ·
+              ไม่ผ่านเกณฑ์: <b>{selectedCourse.failed}</b> ·
+              คะแนนเฉลี่ย: <b>{selectedCourse.avgPct != null ? `${selectedCourse.avgPct}%` : '-'}</b>
+            </p>
           </div>
-        )}
+          <span className="aes-readonly-badge">ผลสอบของฉัน</span>
+        </div>
 
-        {!loading && !error && results.length > 0 && (
-          <div className="ser-course-list">
-            {courses.map((course) => (
-              <article key={String(course.courseId ?? 'unknown')} className="ser-course-card">
-                <header className="ser-course-head">
-                  <div>
-                    <p className="ser-course-code">{course.courseCode || '-'}</p>
-                    <h3>{course.courseName || 'ไม่ระบุคอร์ส'}</h3>
-                  </div>
-                  <span className="ser-course-tutor">ผู้สอน: {course.tutorName || '-'}</span>
-                </header>
-
-                <div className="ser-exam-list">
-                  {course.results.map((r) => (
-                    <button
+        {selectedCourse.rows.length === 0 ? (
+          <div className="aes-empty">คอร์สนี้ยังไม่มีผลสอบของคุณ</div>
+        ) : (
+          <div className="aes-table-card">
+            <div className="aes-grid-wrap">
+              <table className="aes-score-grid">
+                <thead>
+                  <tr>
+                    <th className="aes-col-no">#</th>
+                    <th className="aes-col-name">ข้อสอบ</th>
+                    <th>รหัสข้อสอบ</th>
+                    <th>วันที่สอบ</th>
+                    <th>คะแนน</th>
+                    <th>สถานะ</th>
+                    <th>ผล</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {selectedCourse.rows.map((r, idx) => (
+                    <tr
                       key={r.submissionId}
-                      type="button"
-                      className="ser-exam-item"
+                      className="ser-clickable-row"
                       onClick={() => setSelectedId(r.submissionId)}
                     >
-                      <div className="ser-exam-main">
-                        <div className="ser-exam-title">
-                          <span className="ser-exam-badge">
-                            การสอบครั้งที่ {course.examNumber.get(String(r.examId)) ?? '-'}
-                          </span>
-                          <strong>{r.examTitle}</strong>
-                        </div>
-                        <p className="ser-exam-meta">
-                          รหัสการสอบ: {r.examCode || '-'} · วันที่สอบ: {formatDate(r.examStartTime)}
-                        </p>
-                        {r.examDescription && (
-                          <p className="ser-exam-desc">{r.examDescription}</p>
-                        )}
-                      </div>
-                      <div className="ser-row-score">
-                        <span>{r.obtainedScore ?? '-'} / {r.totalScore ?? '-'}</span>
-                        {r.isPassed !== null && (
+                      <td className="aes-col-no">{idx + 1}</td>
+                      <td className="aes-col-name">
+                        {safeValue(r.examTitle)}
+                        <span className="ser-row-sub">
+                          การสอบครั้งที่ {selectedCourse.examNumber.get(String(r.examId)) ?? '-'}
+                        </span>
+                      </td>
+                      <td>{safeValue(r.examCode)}</td>
+                      <td>{formatDate(r.examStartTime || r.submittedAt)}</td>
+                      <td>
+                        <b>{r.obtainedScore ?? '-'}</b> / {r.totalScore ?? '-'}
+                      </td>
+                      <td>{SUBMISSION_STATUS_LABEL[r.status] || safeValue(r.status)}</td>
+                      <td>
+                        {r.isPassed == null ? (
+                          <span className="ser-pending">รอผล</span>
+                        ) : (
                           <span className={r.isPassed ? 'ser-pass' : 'ser-fail'}>
                             {r.isPassed ? 'ผ่าน' : 'ไม่ผ่าน'}
                           </span>
                         )}
-                      </div>
-                    </button>
+                      </td>
+                    </tr>
                   ))}
-                </div>
-              </article>
-            ))}
+                </tbody>
+              </table>
+            </div>
+            <div className="aes-legend">
+              <span>แตะที่แถวเพื่อดูรายละเอียดคำตอบรายข้อ</span>
+            </div>
           </div>
         )}
-      </section>
 
-      {selectedId && (
-        <ResultDetailModal submissionId={selectedId} onClose={() => setSelectedId(null)} />
+        {selectedId && (
+          <ResultDetailModal submissionId={selectedId} onClose={() => setSelectedId(null)} />
+        )}
+      </div>
+    );
+  }
+
+  // ── มุมมองรายการคอร์ส (การ์ด) ──
+  return (
+    <div className="aes-page">
+      <div className="aes-header">
+        <div>
+          <h1>ผลสอบของฉัน</h1>
+          <p>เลือกคอร์สเพื่อดูคะแนนและผลสอบของคุณในคอร์สนั้น</p>
+        </div>
+      </div>
+
+      <div className="aes-toolbar">
+        <input
+          type="text"
+          placeholder="ค้นหาชื่อคอร์ส หรือรหัสคอร์ส..."
+          value={keyword}
+          onChange={(e) => setKeyword(e.target.value)}
+        />
+      </div>
+
+      {error && (
+        <div className="aes-error" role="alert">
+          <span>{error}</span>
+          <button type="button" onClick={load}>ลองใหม่</button>
+        </div>
+      )}
+
+      {filteredCourses.length === 0 ? (
+        <div className="aes-empty">
+          {keyword
+            ? `ไม่พบคอร์สสำหรับ "${keyword}"`
+            : 'ยังไม่มีคอร์สของฉัน — เมื่อสมัครเรียนและได้รับการอนุมัติแล้ว คอร์สจะแสดงที่นี่'}
+        </div>
+      ) : (
+        <div className="aes-grid">
+          {filteredCourses.map((course) => (
+            <button
+              key={course.key}
+              type="button"
+              className="aes-card"
+              onClick={() => setSelectedKey(course.key)}
+            >
+              <div className="aes-card-top">
+                <span className="aes-code">{course.courseCode || '-'}</span>
+                <span className="aes-status">
+                  {course.taken > 0 ? `สอบแล้ว ${course.taken}` : 'ยังไม่มีผลสอบ'}
+                </span>
+              </div>
+
+              <h2 className="aes-card-title">{safeValue(course.courseName)}</h2>
+              <p className="aes-card-desc">ผู้สอน: {safeValue(course.tutorName)}</p>
+
+              <div className="aes-card-info">
+                <div>
+                  <span>ผ่านเกณฑ์</span>
+                  <strong>{course.passed}</strong>
+                </div>
+                <div>
+                  <span>ไม่ผ่านเกณฑ์</span>
+                  <strong>{course.failed}</strong>
+                </div>
+                <div>
+                  <span>คะแนนเฉลี่ย</span>
+                  <strong>{course.avgPct != null ? `${course.avgPct}%` : '-'}</strong>
+                </div>
+              </div>
+
+              <span className="aes-card-cta">ดูผลสอบ →</span>
+            </button>
+          ))}
+        </div>
       )}
     </div>
   );
