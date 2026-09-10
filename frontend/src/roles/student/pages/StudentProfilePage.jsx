@@ -251,6 +251,7 @@ function StudentProfilePage() {
         <InfoCard title="ข้อมูลส่วนตัว" subtitle="ข้อมูลพื้นฐานของนักเรียน">
           <InfoRow label="ชื่อ" value={profile.firstName} />
           <InfoRow label="นามสกุล" value={profile.lastName} />
+          <InfoRow label="เลขบัตรประชาชน" value={profile.nationalId} />
           <InfoRow label="วันเกิด" value={formatDate(profile.birthDate)} />
           <InfoRow label="ที่อยู่" value={profile.address} full />
         </InfoCard>
@@ -345,6 +346,13 @@ function StudentProfilePage() {
                   label="ชื่อผู้ใช้"
                   name="username"
                   value={profile.username || ''}
+                  disabled
+                />
+
+                <Field
+                  label="เลขบัตรประชาชน"
+                  name="nationalId"
+                  value={profile.nationalId || ''}
                   disabled
                 />
 

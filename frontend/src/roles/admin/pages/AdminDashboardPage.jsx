@@ -2,29 +2,25 @@ import { useState, useEffect } from 'react';
 import DashboardCard from '../components/DashboardCard';
 import RecentTable from '../components/RecentTable';
 import { getDashboardStats } from '../services/adminDashboardService';
+import { statusLabelTH } from '../../../shared/utils/statusLabels';
 import './AdminDashboardPage.css';
 
 function StatusBadge({ status }) {
   const MAP = {
     APPROVED:  'success',
+    COMPLETED: 'success',
     PENDING:   'warning',
+    PENDING_VERIFICATION: 'warning',
+    UNPAID:    'warning',
     REJECTED:  'error',
     VERIFIED:  'success',
     CANCELLED: 'error',
+    FAILED:    'error',
     PAID:      'success',
     OVERDUE:   'error',
   };
-  const LABEL_TH = {
-    APPROVED:  'ชำระเงินเรียบร้อยแล้ว',
-    PENDING:   'รอดำเนินการ',
-    REJECTED:  'ปฏิเสธ',
-    VERIFIED:  'ยืนยันแล้ว',
-    CANCELLED: 'ยกเลิก',
-    PAID:      'ชำระแล้ว',
-    OVERDUE:   'เกินกำหนด',
-  };
   const color = MAP[status] || 'default';
-  const label = LABEL_TH[status] || status;
+  const label = statusLabelTH(status);
   return <span className={`dashboard-status-badge dashboard-status-badge--${color}`}>{label}</span>;
 }
 

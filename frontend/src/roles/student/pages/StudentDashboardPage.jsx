@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { getStudentDashboard } from '../services/studentDashboardService';
 import { getMyCourses } from '../services/studentMyCoursesService.js';
 import { getUsername } from '../../../shared/utils/tokenUtils';
+import { statusLabelTH, EXAM_STATUS_TH } from '../../../shared/utils/statusLabels';
 import './StudentDashboardPage.css';
 
 const ENROLLMENT_STATUS_LABELS = {
@@ -278,7 +279,7 @@ export default function StudentDashboardPage() {
                       {exam.score != null ? `${exam.score}/${exam.totalScore}` : '-'}
                     </span>
                   </div>
-                  <p>{exam.status || '-'}</p>
+                  <p>{exam.status ? statusLabelTH(exam.status, EXAM_STATUS_TH) : '-'}</p>
                 </div>
               ))}
             </div>

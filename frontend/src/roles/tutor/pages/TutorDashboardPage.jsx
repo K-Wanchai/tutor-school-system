@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import api from '../../../shared/services/api';
 import { toLocalISODate } from '../../../shared/utils/dateUtils';
 import { getUsername } from '../../../shared/utils/tokenUtils';
+import { statusLabelTH } from '../../../shared/utils/statusLabels';
 import './TutorDashboardPage.css';
 
 function formatDate(value) {
@@ -220,7 +221,7 @@ function StatCard({ title, value, desc, onClick }) {
 }
 
 function StatusBadge({ status }) {
-  return <span className="tutor-status-badge">{status || 'UNKNOWN'}</span>;
+  return <span className="tutor-status-badge">{status ? statusLabelTH(status) : 'ไม่ระบุ'}</span>;
 }
 
 function EmptyText({ text }) {
