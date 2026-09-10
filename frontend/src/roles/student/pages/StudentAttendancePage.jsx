@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import {
+  getCourseSchedules,
   getMyAttendanceHistory,
   getMyClassroomSessions,
   joinClassroomSession,
@@ -33,6 +34,15 @@ const ATTENDANCE_STATUS_LABELS = {
 
 const ATTENDED_STATUSES = ['PRESENT', 'LATE', 'LEFT'];
 
+function isRealStatus(status) {
+  return !!status && status !== 'NOT_JOINED' && status !== '-';
+}
+
+// key เป็นวันที่ล้วน (ตัดเวลา) ใช้จับคู่คาบเรียนข้ามแหล่งข้อมูล
+function dateKey(value) {
+  return value ? String(value).slice(0, 10) : '';
+}
+
 function getErrorMessage(error) {
   const status = error?.response?.status;
   if (status === 401) return 'กรุณาเข้าสู่ระบบใหม่อีกครั้ง';
@@ -57,15 +67,6 @@ function formatDate(dateValue) {
 function formatTime(timeValue) {
   if (!timeValue || typeof timeValue !== 'string') return '-';
   return timeValue.slice(0, 5);
-}
-
-function formatDateTime(dateTimeValue) {
-  if (!dateTimeValue) return '-';
-  const date = new Date(dateTimeValue);
-  if (Number.isNaN(date.getTime())) return '-';
-  return date.toLocaleString('th-TH', {
-    year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit',
-  });
 }
 
 function getSessionStatusLabel(status) {
@@ -139,6 +140,7 @@ function mapEnrolledCourse(raw) {
     courseName: raw?.courseName ?? raw?.course?.courseName ?? '-',
     courseCode: raw?.courseCode ?? raw?.course?.courseCode ?? null,
     tutorName: raw?.tutorName ?? raw?.teacherName ?? raw?.tutor?.fullName ?? '-',
+    studentName: raw?.studentName ?? raw?.student?.fullName ?? null,
     status: raw?.status ?? null,
     courseStartDate: raw?.courseStartDate ?? null,
   };
@@ -148,48 +150,77 @@ function courseKey(item) {
   return item.courseId ? `course-${item.courseId}` : `course-name-${item.courseName}`;
 }
 
-// รวมคาบเรียน (session ปัจจุบัน) + ประวัติการเข้าเรียน เป็นรายการเดียว เรียงตามวันที่ล่าสุดก่อน
-function buildTimeline(course) {
-  const rows = [];
+// รวมทุกแหล่งข้อมูลของคอร์สให้เหลือ "หนึ่งแถวต่อหนึ่งคาบเรียน (ต่อวัน)" ของนักเรียนคนนี้:
+//  1) ตารางคาบเรียนจริง (schedules) = รายการคาบที่แน่นอน รวมคาบที่ยังไม่ถึง
+//  2) classroom sessions ของฉัน = สถานะสด + ลิงก์เข้าเรียน
+//  3) attendance records = สถานะที่ติวเตอร์เช็คชื่อยืนยันแล้ว (ถือเป็นค่าจริงสุด)
+function buildCourseSessions(course, schedules) {
+  const byDate = new Map();
+
+  (schedules || [])
+    .filter((s) => s.status !== 'CANCELLED' && s.scheduleDate)
+    .forEach((s) => {
+      const k = dateKey(s.scheduleDate);
+      if (!byDate.has(k)) {
+        byDate.set(k, {
+          date: k,
+          startTime: s.startTime ?? null,
+          endTime: s.endTime ?? null,
+          lessonTitle: s.lessonTitle || s.title || null,
+          status: null,
+        });
+      }
+    });
+
   course.sessions.forEach((s) => {
-    rows.push({
-      key: `s-${s.id ?? s.sessionCode}`,
-      lessonTitle: s.lessonTitle,
+    const k = dateKey(s.scheduleDate);
+    const e = byDate.get(k) || { date: k, status: null };
+    byDate.set(k, {
+      ...e,
+      startTime: e.startTime ?? s.startTime,
+      endTime: e.endTime ?? s.endTime,
+      lessonTitle: e.lessonTitle && e.lessonTitle !== '-' ? e.lessonTitle : s.lessonTitle,
       sessionCode: s.sessionCode,
-      scheduleDate: s.scheduleDate,
-      startTime: s.startTime,
-      endTime: s.endTime,
-      status: s.attendanceStatus,
-      sessionStatus: s.status,
       joinedAt: s.joinedAt,
       leftAt: s.leftAt,
       lateMinutes: s.lateMinutes,
       session: s,
+      sessionStatus: s.status,
+      status: isRealStatus(s.attendanceStatus) ? s.attendanceStatus : e.status,
     });
   });
+
   course.history.forEach((h) => {
-    // กันซ้ำกับ session ที่มี sessionCode เดียวกัน
-    if (rows.some((r) => r.sessionCode && r.sessionCode === h.sessionCode)) return;
-    rows.push({
-      key: `h-${h.id ?? h.sessionCode}`,
-      lessonTitle: h.lessonTitle,
-      sessionCode: h.sessionCode,
-      scheduleDate: h.scheduleDate,
-      startTime: h.startTime,
-      endTime: h.endTime,
+    const k = dateKey(h.scheduleDate);
+    const e = byDate.get(k) || { date: k };
+    byDate.set(k, {
+      ...e,
+      startTime: e.startTime ?? h.startTime,
+      endTime: e.endTime ?? h.endTime,
+      lessonTitle: e.lessonTitle && e.lessonTitle !== '-' ? e.lessonTitle : h.lessonTitle,
+      sessionCode: e.sessionCode || h.sessionCode,
+      joinedAt: e.joinedAt ?? h.joinedAt,
+      leftAt: e.leftAt ?? h.leftAt,
+      lateMinutes: h.lateMinutes || e.lateMinutes,
       status: h.status,
-      sessionStatus: null,
-      joinedAt: h.joinedAt,
-      leftAt: h.leftAt,
-      lateMinutes: h.lateMinutes,
-      session: null,
     });
   });
-  return rows.sort((a, b) => {
-    const first = `${b.scheduleDate || ''} ${b.startTime || ''}`;
-    const second = `${a.scheduleDate || ''} ${a.startTime || ''}`;
-    return first.localeCompare(second);
-  });
+
+  return [...byDate.values()].sort((a, b) => a.date.localeCompare(b.date));
+}
+
+// สรุปตัวเลขบนการ์ด (ไม่มี schedules — ใช้ session/ประวัติที่ dedupe ตามวันแล้ว)
+function summarizeCourse(course) {
+  const rows = buildCourseSessions(course, []);
+  const attended = rows.filter((r) => ATTENDED_STATUSES.includes(r.status)).length;
+  const recorded = rows.filter((r) => isRealStatus(r.status)).length;
+  return {
+    totalUnits: rows.length,
+    attended,
+    late: rows.filter((r) => r.status === 'LATE').length,
+    recorded,
+    attendanceRate: recorded > 0 ? Math.round((attended / recorded) * 100) : null,
+  };
 }
 
 export default function StudentAttendancePage() {
@@ -201,6 +232,8 @@ export default function StudentAttendancePage() {
   const [error, setError] = useState('');
   const [keyword, setKeyword] = useState('');
   const [selectedKey, setSelectedKey] = useState(null);
+  const [courseSchedules, setCourseSchedules] = useState([]);
+  const [schedulesLoading, setSchedulesLoading] = useState(false);
   const [toast, setToast] = useState({ type: '', msg: '' });
 
   const showToast = (type, msg) => {
@@ -251,7 +284,7 @@ export default function StudentAttendancePage() {
           courseName: c.courseName,
           courseCode: c.courseCode,
           tutorName: c.tutorName,
-          courseStatus: c.status,
+          studentName: c.studentName,
           sessions: [],
           history: [],
         });
@@ -263,7 +296,7 @@ export default function StudentAttendancePage() {
       if (!map.has(key)) {
         map.set(key, {
           key, courseId: s.courseId, courseName: s.courseName, courseCode: null,
-          tutorName: s.tutorName, courseStatus: null, sessions: [], history: [],
+          tutorName: s.tutorName, studentName: null, sessions: [], history: [],
         });
       }
       map.get(key).sessions.push(s);
@@ -274,34 +307,17 @@ export default function StudentAttendancePage() {
       if (!map.has(key)) {
         map.set(key, {
           key, courseId: h.courseId, courseName: h.courseName, courseCode: null,
-          tutorName: '-', courseStatus: null, sessions: [], history: [],
+          tutorName: '-', studentName: null, sessions: [], history: [],
         });
       }
       map.get(key).history.push(h);
     });
 
-    return Array.from(map.values()).map((course) => {
-      const attended =
-        course.sessions.filter((i) => ATTENDED_STATUSES.includes(i.attendanceStatus)).length +
-        course.history.filter((i) => ATTENDED_STATUSES.includes(i.status)).length;
-      const late =
-        course.sessions.filter((i) => i.attendanceStatus === 'LATE').length +
-        course.history.filter((i) => i.status === 'LATE').length;
-      const recorded =
-        course.sessions.filter((i) => i.attendanceStatus && i.attendanceStatus !== 'NOT_JOINED' && i.attendanceStatus !== '-').length +
-        course.history.length;
-      const totalUnits = course.sessions.length + course.history.length;
-      const availableCount = course.sessions.filter(canJoinSession).length;
-      return {
-        ...course,
-        attended,
-        late,
-        recorded,
-        totalUnits,
-        availableCount,
-        attendanceRate: recorded > 0 ? Math.round((attended / recorded) * 100) : null,
-      };
-    });
+    return Array.from(map.values()).map((course) => ({
+      ...course,
+      ...summarizeCourse(course),
+      availableCount: course.sessions.filter(canJoinSession).length,
+    }));
   }, [enrolledCourses, sessions, attendanceHistory]);
 
   const filteredCourses = useMemo(() => {
@@ -316,6 +332,22 @@ export default function StudentAttendancePage() {
     () => courses.find((c) => c.key === selectedKey) || null,
     [courses, selectedKey]
   );
+
+  // โหลดตารางคาบเรียนจริงของคอร์สที่เลือก (เพื่อให้เห็นคาบที่ยังไม่ถึงด้วย)
+  useEffect(() => {
+    const courseId = selectedCourse?.courseId;
+    if (!courseId) {
+      setCourseSchedules([]);
+      return;
+    }
+    let cancelled = false;
+    setSchedulesLoading(true);
+    getCourseSchedules(courseId)
+      .then((data) => { if (!cancelled) setCourseSchedules(Array.isArray(data) ? data : []); })
+      .catch(() => { if (!cancelled) setCourseSchedules([]); })
+      .finally(() => { if (!cancelled) setSchedulesLoading(false); });
+    return () => { cancelled = true; };
+  }, [selectedCourse?.courseId]);
 
   const handleJoinSession = async (session) => {
     if (!session?.id) {
@@ -344,9 +376,15 @@ export default function StudentAttendancePage() {
     );
   }
 
-  // ── มุมมองรายละเอียดคอร์ส: การเข้าเรียนเฉพาะของนักเรียนคนนี้ ──
+  // ── มุมมองรายละเอียดคอร์ส: ตารางการเช็คชื่อรายคาบ เฉพาะของนักเรียนคนนี้ ──
   if (selectedCourse) {
-    const timeline = buildTimeline(selectedCourse);
+    const rows = buildCourseSessions(selectedCourse, courseSchedules);
+    const attended = rows.filter((r) => ATTENDED_STATUSES.includes(r.status)).length;
+    const recorded = rows.filter((r) => isRealStatus(r.status)).length;
+    const rate = recorded > 0 ? Math.round((attended / recorded) * 100) : null;
+    const studentName = selectedCourse.studentName || 'ฉัน';
+    const openSessions = rows.filter((r) => r.session && canJoinSession(r.session));
+
     return (
       <div className="aes-page">
         {toast.msg && <div className={`sap-toast sap-toast-${toast.type}`}>{toast.msg}</div>}
@@ -363,13 +401,13 @@ export default function StudentAttendancePage() {
             </div>
             <p className="aes-detail-meta">
               ผู้สอน: <b>{safeValue(selectedCourse.tutorName)}</b> ·
-              คาบเรียน: <b>{timeline.length} คาบ</b> ·
-              เข้าเรียนแล้ว: <b>{selectedCourse.attended}</b> ·
-              มาสาย: <b>{selectedCourse.late}</b> ·
-              อัตราเข้าเรียน: <b>{selectedCourse.attendanceRate != null ? `${selectedCourse.attendanceRate}%` : '-'}</b>
+              คาบเรียน: <b>{rows.length} คาบ</b> ·
+              เข้าเรียนแล้ว: <b>{attended}</b> ·
+              มาสาย: <b>{rows.filter((r) => r.status === 'LATE').length}</b> ·
+              อัตราเข้าเรียน: <b>{rate != null ? `${rate}%` : '-'}</b>
             </p>
           </div>
-          <span className="aes-readonly-badge">การเข้าเรียนของฉัน</span>
+          <span className="aes-readonly-badge">การเช็คชื่อของฉัน</span>
         </div>
 
         {error && (
@@ -379,67 +417,66 @@ export default function StudentAttendancePage() {
           </div>
         )}
 
-        {timeline.length === 0 ? (
-          <div className="aes-empty">คอร์สนี้ยังไม่มีคาบเรียนหรือประวัติการเข้าเรียน</div>
+        {openSessions.length > 0 && (
+          <div className="sap-open-sessions">
+            {openSessions.map((r) => (
+              <div key={r.date} className="sap-open-row">
+                <span>
+                  <b>ห้องเรียนเปิดอยู่</b> — {safeValue(r.lessonTitle)} · {formatDate(r.date)}{' '}
+                  {formatTime(r.startTime)}-{formatTime(r.endTime)}
+                </span>
+                <button
+                  type="button"
+                  className="sap-join-btn"
+                  disabled={joining}
+                  onClick={() => handleJoinSession(r.session)}
+                >
+                  {joining ? 'กำลังบันทึก...' : 'กดเพื่อเข้าเรียน'}
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {schedulesLoading && rows.length === 0 ? (
+          <div className="aes-empty">กำลังโหลดตารางคาบเรียน...</div>
+        ) : rows.length === 0 ? (
+          <div className="aes-empty">คอร์สนี้ยังไม่มีคาบเรียนหรือประวัติการเช็คชื่อ</div>
         ) : (
           <div className="aes-table-card">
             <div className="aes-grid-wrap">
               <table className="aes-score-grid">
                 <thead>
                   <tr>
-                    <th className="aes-col-no">#</th>
-                    <th className="aes-col-name">บทเรียน / คาบเรียน</th>
-                    <th>วันที่</th>
-                    <th>เวลา</th>
-                    <th>เวลาเข้า</th>
-                    <th>เวลาออก</th>
-                    <th>สถานะการเข้าเรียน</th>
-                    <th>การเข้าเรียน</th>
+                    <th className="aes-col-no">คาบที่</th>
+                    <th className="aes-col-name">นักเรียน</th>
+                    {rows.map((r, i) => (
+                      <th key={r.date} className="aes-att-day-th">
+                        คาบที่ {i + 1}
+                        <span className="aes-att-day-date">{formatDate(r.date)}</span>
+                        <span className="aes-att-day-time">{formatTime(r.startTime)}-{formatTime(r.endTime)}</span>
+                      </th>
+                    ))}
+                    <th className="aes-col-avg">อัตราเข้าเรียน</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {timeline.map((row, idx) => {
-                    const st = String(row.status || '').toLowerCase();
-                    return (
-                      <tr key={row.key}>
-                        <td className="aes-col-no">{idx + 1}</td>
-                        <td className="aes-col-name">
-                          {safeValue(row.lessonTitle)}
-                          <span className="sap-row-sub">{safeValue(row.sessionCode)}</span>
+                  <tr>
+                    <td className="aes-col-no">1</td>
+                    <td className="aes-col-name">{studentName}</td>
+                    {rows.map((r) => {
+                      const st = String(r.status || '').toLowerCase();
+                      return (
+                        <td key={r.date} className={`aes-att-cell aes-att-${st || 'none'}`}>
+                          {isRealStatus(r.status)
+                            ? getAttendanceStatusLabel(r.status)
+                            : (r.sessionStatus ? getSessionStatusLabel(r.sessionStatus) : '—')}
+                          {r.status === 'LATE' && r.lateMinutes ? ` (${r.lateMinutes} นาที)` : ''}
                         </td>
-                        <td>{formatDate(row.scheduleDate)}</td>
-                        <td>{formatTime(row.startTime)} - {formatTime(row.endTime)}</td>
-                        <td>{formatDateTime(row.joinedAt)}</td>
-                        <td>{formatDateTime(row.leftAt)}</td>
-                        <td className={`aes-att-cell aes-att-${st || 'none'}`}>
-                          {getAttendanceStatusLabel(row.status)}
-                          {row.status === 'LATE' && row.lateMinutes ? ` (${row.lateMinutes} นาที)` : ''}
-                        </td>
-                        <td>
-                          {row.session && canJoinSession(row.session) ? (
-                            <button
-                              type="button"
-                              className="aes-back sap-join-btn"
-                              disabled={joining}
-                              onClick={() => handleJoinSession(row.session)}
-                            >
-                              {joining ? 'กำลังบันทึก...' : 'กดเพื่อเข้าเรียน'}
-                            </button>
-                          ) : row.session?.meetingUrl ? (
-                            <button
-                              type="button"
-                              className="aes-back sap-join-btn"
-                              onClick={() => window.open(row.session.meetingUrl, '_blank', 'noopener,noreferrer')}
-                            >
-                              เปิดลิงก์เรียน
-                            </button>
-                          ) : row.sessionStatus ? (
-                            <span className="sap-row-sub">{getSessionStatusLabel(row.sessionStatus)}</span>
-                          ) : '—'}
-                        </td>
-                      </tr>
-                    );
-                  })}
+                      );
+                    })}
+                    <td className="aes-col-avg">{rate != null ? `${rate}%` : '-'}</td>
+                  </tr>
                 </tbody>
               </table>
             </div>
