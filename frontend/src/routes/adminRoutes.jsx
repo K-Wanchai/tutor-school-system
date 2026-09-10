@@ -19,6 +19,7 @@ import AdminExamCourseScoresPage from '../roles/admin/pages/AdminExamCourseScore
 import AdminAttendanceTutorListPage from '../roles/admin/pages/AdminAttendanceTutorListPage';
 import AdminAttendanceTutorCoursesPage from '../roles/admin/pages/AdminAttendanceTutorCoursesPage';
 import AdminAttendanceCoursePage from '../roles/admin/pages/AdminAttendanceCoursePage';
+import AdminReportsPage from '../roles/admin/pages/AdminReportsPage';
 
 const adminRoutes = (
   <Route
@@ -46,6 +47,7 @@ const adminRoutes = (
     <Route path="attendance/tutors/:tutorId/courses/:courseId" element={<AdminAttendanceCoursePage />} />
     <Route path="student-exam-achievements" element={<StudentExamAchievementManagePage />} />
     <Route path="student-exam-achievements/:achievementId/detail" element={<StudentAchievementDetailPage />} />
+    <Route path="reports" element={<AdminReportsPage />} />
     <Route path="settings" element={<AdminSettingsPage />} />
   </Route>
 );
