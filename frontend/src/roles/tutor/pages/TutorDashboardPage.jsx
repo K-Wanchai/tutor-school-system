@@ -4,6 +4,7 @@ import api from '../../../shared/services/api';
 import { toLocalISODate } from '../../../shared/utils/dateUtils';
 import { getUsername } from '../../../shared/utils/tokenUtils';
 import { statusLabelTH } from '../../../shared/utils/statusLabels';
+import { replaceIfChanged } from '../../../shared/utils/replaceIfChanged';
 import './TutorDashboardPage.css';
 
 function formatDate(value) {
@@ -45,9 +46,10 @@ export default function TutorDashboardPage() {
 
       const [coursesRes, schedulesRes, evaluationsRes] = await Promise.all(requests);
 
-      setCourses(getData(coursesRes));
-      setSchedules(getData(schedulesRes));
-      setEvaluations(getData(evaluationsRes));
+      // อัปเดตเฉพาะเมื่อข้อมูลเปลี่ยนจริง — poll ทุก 10 วิ ไม่ให้ re-render ทั้งหน้าถ้าข้อมูลเท่าเดิม
+      replaceIfChanged(setCourses, getData(coursesRes));
+      replaceIfChanged(setSchedules, getData(schedulesRes));
+      replaceIfChanged(setEvaluations, getData(evaluationsRes));
     } finally {
       if (!silent) setLoading(false);
     }

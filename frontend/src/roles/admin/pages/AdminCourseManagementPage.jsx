@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
+import { replaceIfChanged } from '../../../shared/utils/replaceIfChanged';
 import { getTutors } from '../services/adminTutorService';
 import { getEnrollmentsByCourse } from '../services/adminEnrollmentService';
 import { getInstitutionProfile, updateInstitutionProfile } from '../services/adminSettingsService';
@@ -231,11 +232,21 @@ export default function AdminCourseManagementPage() {
         getCourseStats(),
       ]);
       const list = Array.isArray(data) ? data : (data?.content ?? []);
-      setCourses(list);
+      // อัปเดตเฉพาะเมื่อข้อมูลเปลี่ยนจริง — กัน re-render ทั้งตาราง/การ์ดทุกครั้งที่ poll (อาการกระตุก)
+      replaceIfChanged(setCourses, list);
       setTotalPages(data?.totalPages ?? 1);
-      setStats(s);
+      replaceIfChanged(setStats, s);
       // มี detail modal เปิดอยู่ — อัปเดตข้อมูลที่แสดง (เช่นจำนวนที่นั่ง) ให้ตรงกับรายการล่าสุดไปด้วย
-      setSelected(prev => (prev ? (list.find(c => c.id === prev.id) || prev) : prev));
+      setSelected(prev => {
+        if (!prev) return prev;
+        const found = list.find(c => c.id === prev.id);
+        if (!found) return prev;
+        try {
+          return JSON.stringify(found) === JSON.stringify(prev) ? prev : found;
+        } catch {
+          return found;
+        }
+      });
     } catch (e) {
       if (!silent) notify(e.message, 'error');
     } finally {

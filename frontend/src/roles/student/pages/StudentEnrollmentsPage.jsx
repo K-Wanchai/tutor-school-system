@@ -7,6 +7,7 @@ import {
 } from '../services/studentEnrollmentService';
 import api from '../../../shared/services/api';
 import { formatScheduleDaysTH } from '../../../shared/utils/dateUtils';
+import { replaceIfChanged } from '../../../shared/utils/replaceIfChanged';
 import { useConfirm } from '../../../shared/components/ConfirmDialog';
 import './StudentEnrollmentsPage.css';
 
@@ -71,8 +72,9 @@ export default function StudentEnrollmentsPage() {
       api.get('/institution-profile').then((r) => r.data?.data).catch(() => null),
     ]);
 
-    setCourses(courseData?.content || []);
-    setMyEnrollments(Array.isArray(enrollmentData) ? enrollmentData : []);
+    // อัปเดตเฉพาะเมื่อข้อมูลเปลี่ยนจริง — poll ทุก 10 วิ ไม่ให้การ์ดคอร์สทั้งหน้า re-render ถ้าข้อมูลเท่าเดิม
+    replaceIfChanged(setCourses, courseData?.content || []);
+    replaceIfChanged(setMyEnrollments, Array.isArray(enrollmentData) ? enrollmentData : []);
     if (institutionData?.enrollmentPaymentDeadlineMinutes) {
       setPaymentDeadlineMinutes(institutionData.enrollmentPaymentDeadlineMinutes);
     }

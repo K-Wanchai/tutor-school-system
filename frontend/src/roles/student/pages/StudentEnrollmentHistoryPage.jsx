@@ -8,6 +8,7 @@ import {
   isReenrollment,
 } from '../../../shared/utils/enrollmentHistoryStatus';
 import { formatScheduleDaysTH } from '../../../shared/utils/dateUtils';
+import { replaceIfChanged } from '../../../shared/utils/replaceIfChanged';
 import './StudentEnrollmentHistoryPage.css';
 
 const STATUS_CLS = {
@@ -66,11 +67,18 @@ export default function StudentEnrollmentHistoryPage() {
       const submitted = (Array.isArray(data) ? data : []).filter(
         (e) => !(e.status === 'PENDING' && e.paymentStatus === 'UNPAID' && !isReenrollment(e))
       );
-      setEnrollments(submitted);
-      // ถ้า modal เปิดอยู่ อัพเดตข้อมูลใน modal ด้วย
+      // อัปเดตเฉพาะเมื่อข้อมูลเปลี่ยนจริง — poll ทุก 30 วิ ไม่ให้รายการทั้งหน้า re-render ถ้าเท่าเดิม
+      replaceIfChanged(setEnrollments, submitted);
+      // ถ้า modal เปิดอยู่ อัพเดตข้อมูลใน modal ด้วย (เฉพาะเมื่อเปลี่ยนจริง)
       setModal((prev) => {
         if (!prev) return null;
-        return submitted.find((e) => e.id === prev.id) || null;
+        const found = submitted.find((e) => e.id === prev.id);
+        if (!found) return null;
+        try {
+          return JSON.stringify(found) === JSON.stringify(prev) ? prev : found;
+        } catch {
+          return found;
+        }
       });
     } finally {
       if (showLoading) setLoading(false);
