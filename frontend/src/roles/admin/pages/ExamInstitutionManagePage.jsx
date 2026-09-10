@@ -209,7 +209,7 @@ export default function ExamInstitutionManagePage() {
       };
 
       if (isCreate) {
-        const created = await createExamInstitution({ ...payload, institutionCode: form.institutionCode.trim() });
+        const created = await createExamInstitution({ ...payload, institutionCode: form.institutionCode.trim() || null });
         setShowForm(false);
         // พาไปตั้งค่าคณะ/สาขา (มหาวิทยาลัย) หรือสายการเรียน/ห้องเรียน (โรงเรียน) ทันที ก่อนเริ่มบันทึกนักเรียนที่สอบติด
         navigate(`/admin/exam-institutions/${created.id}`, { state: { openConfig: true } });
