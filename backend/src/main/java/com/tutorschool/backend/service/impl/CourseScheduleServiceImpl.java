@@ -240,7 +240,18 @@ public class CourseScheduleServiceImpl implements CourseScheduleService {
     public List<CourseScheduleResponse> getMySchedulesAsStudent(Long studentUserId) {
         Student student = studentRepository.findByUserId(studentUserId)
                 .orElseThrow(() -> new ResourceNotFoundException("Student profile not found"));
+        return buildStudentSchedules(student);
+    }
 
+    @Override
+    @Transactional(readOnly = true)
+    public List<CourseScheduleResponse> getSchedulesByStudentId(Long studentId) {
+        Student student = studentRepository.findById(studentId)
+                .orElseThrow(() -> new ResourceNotFoundException("Student", studentId));
+        return buildStudentSchedules(student);
+    }
+
+    private List<CourseScheduleResponse> buildStudentSchedules(Student student) {
         List<CourseSchedule> realSchedules = courseScheduleRepository.findByStudentEnrollment(student.getId());
 
         Map<Long, Set<LocalDate>> coveredDatesByCourse = new HashMap<>();

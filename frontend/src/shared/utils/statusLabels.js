@@ -38,11 +38,12 @@ export const PAYMENT_STATUS_TH = {
 export const EXAM_STATUS_TH = {
   NOT_STARTED: 'ยังไม่เริ่มสอบ',
   IN_PROGRESS: 'กำลังสอบ',
-  SUBMITTED: 'ส่งแล้ว',
+  SUBMITTED: 'ส่งแล้ว รอตรวจ',
   GRADED: 'ตรวจแล้ว',
   COMPLETED: 'เสร็จสิ้น',
   EXPIRED: 'หมดเวลา',
   ABSENT: 'ขาดสอบ',
+  CANCELLED: 'ยกเลิก',
 };
 
 export const ATTENDANCE_STATUS_TH = {

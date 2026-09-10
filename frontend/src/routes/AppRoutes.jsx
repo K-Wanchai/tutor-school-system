@@ -21,7 +21,7 @@ function RootRedirect() {
   if (role === 'ADMIN')   return <Navigate to="/admin/dashboard"   replace />;
   if (role === 'TUTOR')   return <Navigate to="/tutor/dashboard"   replace />;
   if (role === 'STUDENT') return <Navigate to="/student/dashboard" replace />;
-  if (role === 'PARENT')  return <Navigate to="/parent/attendance"  replace />;
+  if (role === 'PARENT')  return <Navigate to="/parent"             replace />;
   return <Navigate to="/login" replace />;
 }
 
