@@ -26,6 +26,34 @@
   color: #9ca3af;
 }
 
+/* แถบสถานะรายคาบบนการ์ด */
+.sap-strip {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 3px;
+}
+
+.sap-strip--empty {
+  font-size: 11px;
+  color: #9ca3af;
+}
+
+.sap-strip-cell {
+  width: 14px;
+  height: 14px;
+  border-radius: 3px;
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  background: #e5e7eb;
+}
+
+.sap-strip-cell.aes-att-none { background: #eef2f5; }
+.sap-strip-cell.aes-att-present { background: #34d399; }
+.sap-strip-cell.aes-att-late { background: #fbbf24; }
+.sap-strip-cell.aes-att-leave,
+.sap-strip-cell.aes-att-excused { background: #60a5fa; }
+.sap-strip-cell.aes-att-absent { background: #f87171; }
+.sap-strip-cell.aes-att-left { background: #34d399; }
+
 /* แถบ "ห้องเรียนเปิดอยู่" เหนือตารางเช็คชื่อ */
 .sap-open-sessions {
   display: flex;

@@ -26,6 +26,12 @@ export async function getCourseSchedules(courseId) {
   return unwrapApiResponse(res);
 }
 
+// การเช็คชื่อ (onsite) ที่ติวเตอร์บันทึกให้นักเรียนคนนี้ ทุกคอร์ส
+export async function getMyClassAttendance() {
+  const res = await api.get('/class-attendance/student/me');
+  return unwrapApiResponse(res);
+}
+
 export async function joinClassroomSession(sessionId, joinCode) {
   if (!sessionId) {
     throw new Error('ไม่พบรหัสห้องเรียน');
