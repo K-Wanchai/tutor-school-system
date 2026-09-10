@@ -20,6 +20,12 @@ export async function getMyAttendanceHistory() {
   return unwrapApiResponse(res);
 }
 
+// ตารางคาบเรียนจริงของคอร์ส (นักเรียนเรียกได้) — ใช้เป็นรายการ "คาบ" ที่แน่นอนในหน้ารายละเอียด
+export async function getCourseSchedules(courseId) {
+  const res = await api.get(`/course-schedules/course/${courseId}`);
+  return unwrapApiResponse(res);
+}
+
 export async function joinClassroomSession(sessionId, joinCode) {
   if (!sessionId) {
     throw new Error('ไม่พบรหัสห้องเรียน');
