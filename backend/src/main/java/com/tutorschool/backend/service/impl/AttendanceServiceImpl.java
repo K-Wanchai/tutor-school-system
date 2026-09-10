@@ -103,6 +103,23 @@ public class AttendanceServiceImpl implements AttendanceService {
     }
 
     @Override
+    @Transactional(readOnly = true)
+    public List<AttendanceRecordResponse> getChildAttendanceRecords(Authentication auth) {
+        Student student = getChildFromParentAuth(auth);
+        return attendanceRecordRepository.findByStudentId(student.getId()).stream()
+                .map(attendanceRecordMapper::toResponse)
+                .toList();
+    }
+
+    private Student getChildFromParentAuth(Authentication auth) {
+        String email = auth.getName();
+        User parentUser = userRepository.findByEmail(email)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+        return studentRepository.findByParentUserId(parentUser.getId())
+                .orElseThrow(() -> new ResourceNotFoundException("ไม่พบข้อมูลนักเรียนที่ผูกกับบัญชีผู้ปกครองนี้"));
+    }
+
+    @Override
     @Transactional
     public AttendanceRecordResponse updateAttendanceStatus(Long id, UpdateAttendanceStatusRequest request, Authentication auth) {
         AttendanceRecord record = attendanceRecordRepository.findById(id)

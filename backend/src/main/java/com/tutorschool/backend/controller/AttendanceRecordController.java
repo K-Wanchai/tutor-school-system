@@ -61,6 +61,13 @@ public class AttendanceRecordController {
         return ResponseEntity.ok(ApiResponse.success("Your attendance records retrieved successfully", response));
     }
 
+    @GetMapping("/parent/me")
+    @PreAuthorize("hasRole('PARENT')")
+    public ResponseEntity<ApiResponse<List<AttendanceRecordResponse>>> getChildAttendanceRecords(Authentication auth) {
+        List<AttendanceRecordResponse> response = attendanceService.getChildAttendanceRecords(auth);
+        return ResponseEntity.ok(ApiResponse.success("Child attendance records retrieved successfully", response));
+    }
+
     @PatchMapping("/{id}/status")
     @PreAuthorize("hasRole('TUTOR')")
     public ResponseEntity<ApiResponse<AttendanceRecordResponse>> updateAttendanceStatus(

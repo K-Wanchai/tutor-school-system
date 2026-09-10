@@ -1,7 +1,7 @@
 import api from '../../shared/services/api';
 import {
   setToken, setRole, setRefreshToken, setUsername, setUserId, setEmail,
-  setRememberMe, clearAuth,
+  setRememberMe, clearAuth, setStudentId, setStudentName,
 } from '../../shared/utils/tokenUtils';
 
 // rememberMe: true = เก็บ session ไว้ที่ localStorage (คงอยู่แม้ปิดเบราว์เซอร์)
@@ -17,6 +17,23 @@ export const login = async (payload, rememberMe = false) => {
   setUsername(data.username);
   setUserId(data.userId);
   setEmail(data.email);
+  if (data.refreshToken) setRefreshToken(data.refreshToken);
+  return data;
+};
+
+// ล็อกอินผู้ปกครอง — ยืนยันตัวตนด้วยเลขบัตรประชาชนของนักเรียน
+export const parentLogin = async (nationalId) => {
+  const response = await api.post('/auth/parent-login', { nationalId });
+  const data = response.data.data;
+  clearAuth();
+  setRememberMe(false);
+  setToken(data.accessToken);
+  setRole(data.role);
+  setUsername(data.username);
+  setUserId(data.userId);
+  setEmail(data.email);
+  setStudentId(data.studentId);
+  setStudentName(data.studentName);
   if (data.refreshToken) setRefreshToken(data.refreshToken);
   return data;
 };

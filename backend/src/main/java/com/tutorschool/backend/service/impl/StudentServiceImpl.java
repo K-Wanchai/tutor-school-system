@@ -72,6 +72,14 @@ public class StudentServiceImpl implements StudentService {
 
     @Override
     @Transactional(readOnly = true)
+    public StudentResponse getStudentByParentUserId(Long parentUserId) {
+        Student student = studentRepository.findByParentUserId(parentUserId)
+                .orElseThrow(() -> new ResourceNotFoundException("ไม่พบข้อมูลนักเรียนที่ผูกกับบัญชีผู้ปกครองนี้"));
+        return studentMapper.toResponse(student);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
     public StudentResponse getStudentByCode(String studentCode) {
         Student student = studentRepository.findByStudentCode(studentCode)
                 .orElseThrow(() -> new ResourceNotFoundException("Student not found with code: " + studentCode));

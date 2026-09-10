@@ -1,0 +1,80 @@
+.parent-layout {
+  min-height: 100vh;
+  background: #f1f5f9;
+}
+
+.parent-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+  padding: 14px 24px;
+  background: #fff;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.parent-header-brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.parent-header-logo {
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  overflow: hidden;
+  display: flex;
+}
+
+.parent-header-logo img,
+.parent-header-logo svg {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.parent-header-text {
+  display: flex;
+  flex-direction: column;
+}
+
+.parent-header-title {
+  font-weight: 800;
+  color: #0f172a;
+}
+
+.parent-header-sub {
+  font-size: 12px;
+  color: #64748b;
+}
+
+.parent-header-right {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.parent-header-child {
+  font-size: 14px;
+  color: #334155;
+}
+
+.parent-logout-btn {
+  padding: 8px 16px;
+  border: 1px solid #cbd5e1;
+  border-radius: 10px;
+  background: #fff;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  color: #b91c1c;
+  cursor: pointer;
+}
+
+.parent-layout-content {
+  max-width: 1000px;
+  margin: 0 auto;
+  padding: 24px 16px 48px;
+}

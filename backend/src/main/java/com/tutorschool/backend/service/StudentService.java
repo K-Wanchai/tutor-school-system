@@ -20,6 +20,8 @@ public interface StudentService {
 
     StudentResponse getStudentByUserId(Long userId);
 
+    StudentResponse getStudentByParentUserId(Long parentUserId);
+
     StudentResponse updateMyProfile(Long userId, UpdateStudentRequest request);
 
     void changePassword(Long userId, ChangePasswordRequest request);

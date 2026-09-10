@@ -41,6 +41,14 @@ public class StudentController {
         return ResponseEntity.ok(ApiResponse.success("Student profile retrieved successfully", response));
     }
 
+    @GetMapping("/parent/me")
+    @PreAuthorize("hasRole('PARENT')")
+    public ResponseEntity<ApiResponse<StudentResponse>> getMyChildProfile(
+            @AuthenticationPrincipal User currentUser) {
+        StudentResponse response = studentService.getStudentByParentUserId(currentUser.getId());
+        return ResponseEntity.ok(ApiResponse.success("Child profile retrieved successfully", response));
+    }
+
     @GetMapping("/{id}")
     @PreAuthorize("hasAnyRole('ADMIN', 'TUTOR', 'STUDENT')")
     public ResponseEntity<ApiResponse<StudentResponse>> getStudentById(@PathVariable Long id) {

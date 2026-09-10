@@ -30,7 +30,13 @@ export const setUsername = (v) => setStoredItem('username', v);
 export const setUserId   = (v) => setStoredItem('userId', v);
 export const setEmail    = (v) => setStoredItem('email', v);
 
-const AUTH_KEYS = ['token', 'refreshToken', 'role', 'userId', 'username', 'email', 'tutorId'];
+// เฉพาะ session ผู้ปกครอง — ข้อมูลบุตรหลานที่ผูกกับบัญชี
+export const getStudentId   = ()  => getStoredItem('studentId');
+export const getStudentName = ()  => getStoredItem('studentName');
+export const setStudentId   = (v) => setStoredItem('studentId', v);
+export const setStudentName = (v) => setStoredItem('studentName', v);
+
+const AUTH_KEYS = ['token', 'refreshToken', 'role', 'userId', 'username', 'email', 'tutorId', 'studentId', 'studentName'];
 
 export const clearAuth = () => {
   // ล้างทั้งสอง storage เผื่อมีของค้างจากการสลับติ๊ก/ไม่ติ๊ก "จดจำฉันไว้" ระหว่าง session ก่อนหน้า

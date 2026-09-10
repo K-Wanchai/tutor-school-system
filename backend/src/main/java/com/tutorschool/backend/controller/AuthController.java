@@ -2,6 +2,7 @@ package com.tutorschool.backend.controller;
 
 import com.tutorschool.backend.dto.request.ForgotPasswordRequest;
 import com.tutorschool.backend.dto.request.LoginRequest;
+import com.tutorschool.backend.dto.request.ParentLoginRequest;
 import com.tutorschool.backend.dto.request.RegisterRequest;
 import com.tutorschool.backend.dto.request.ResetPasswordRequest;
 import com.tutorschool.backend.dto.response.ApiResponse;
@@ -31,6 +32,12 @@ public class AuthController {
     public ResponseEntity<ApiResponse<AuthResponse>> login(@Valid @RequestBody LoginRequest request) {
         AuthResponse response = authService.login(request);
         return ResponseEntity.ok(ApiResponse.success("Login successful", response));
+    }
+
+    @PostMapping("/parent-login")
+    public ResponseEntity<ApiResponse<AuthResponse>> parentLogin(@Valid @RequestBody ParentLoginRequest request) {
+        AuthResponse response = authService.parentLogin(request);
+        return ResponseEntity.ok(ApiResponse.success("Parent login successful", response));
     }
 
     @PostMapping("/refresh")
