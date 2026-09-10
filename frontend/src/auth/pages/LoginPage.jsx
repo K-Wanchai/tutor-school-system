@@ -200,6 +200,12 @@ export default function LoginPage() {
                 สมัครสมาชิก
               </Link>
             </p>
+            <p>
+              เป็นผู้ปกครอง?{' '}
+              <Link to="/parent-login" className="auth-link">
+                เข้าสู่ระบบสำหรับผู้ปกครอง
+              </Link>
+            </p>
           </div>
         </div>
       </div>

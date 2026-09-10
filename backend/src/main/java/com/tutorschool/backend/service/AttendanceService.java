@@ -18,5 +18,8 @@ public interface AttendanceService {
 
     List<AttendanceRecordResponse> getMyAttendanceRecords(Authentication auth);
 
+    // ผู้ปกครองดูการเข้าเรียนของบุตรหลาน (นักเรียนที่ผูกกับบัญชี PARENT นี้)
+    List<AttendanceRecordResponse> getChildAttendanceRecords(Authentication auth);
+
     AttendanceRecordResponse updateAttendanceStatus(Long id, UpdateAttendanceStatusRequest request, Authentication auth);
 }

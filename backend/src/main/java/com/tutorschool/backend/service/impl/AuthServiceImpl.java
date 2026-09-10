@@ -3,6 +3,7 @@ package com.tutorschool.backend.service.impl;
 import com.tutorschool.backend.dto.request.CreateNotificationRequest;
 import com.tutorschool.backend.dto.request.ForgotPasswordRequest;
 import com.tutorschool.backend.dto.request.LoginRequest;
+import com.tutorschool.backend.dto.request.ParentLoginRequest;
 import com.tutorschool.backend.dto.request.RegisterRequest;
 import com.tutorschool.backend.dto.request.ResetPasswordRequest;
 import com.tutorschool.backend.dto.response.AuthResponse;
@@ -77,6 +78,53 @@ public class AuthServiceImpl implements AuthService {
                 .email(user.getEmail())
                 .role(user.getRole().name())
                 .build();
+    }
+
+    @Override
+    @Transactional
+    public AuthResponse parentLogin(ParentLoginRequest request) {
+        String nationalId = request.getNationalId().trim();
+
+        Student student = studentRepository.findByNationalId(nationalId)
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        "ไม่พบนักเรียนที่มีเลขบัตรประชาชนนี้ในระบบ"));
+
+        User parentUser = student.getParentUser();
+        if (parentUser == null) {
+            parentUser = createParentUserFor(student);
+            student.setParentUser(parentUser);
+            studentRepository.save(student);
+        }
+
+        String accessToken = jwtService.generateAccessToken(parentUser);
+        String refreshToken = jwtService.generateRefreshToken(parentUser);
+
+        return AuthResponse.builder()
+                .accessToken(accessToken)
+                .refreshToken(refreshToken)
+                .tokenType("Bearer")
+                .userId(parentUser.getId())
+                .username(parentUser.getUsername())
+                .email(parentUser.getEmail())
+                .role(parentUser.getRole().name())
+                .studentId(student.getId())
+                .studentName(student.getFullName())
+                .studentCode(student.getStudentCode())
+                .build();
+    }
+
+    // บัญชีผู้ปกครองไม่มีการตั้งรหัสผ่านให้ใช้จริง — ล็อกอินผ่านเลขบัตรประชาชนของนักเรียนเท่านั้น
+    // จึงสุ่มรหัสผ่านที่เดาไม่ได้ไว้เพื่อให้ผ่าน constraint NOT NULL ของตาราง users
+    private User createParentUserFor(Student student) {
+        String code = student.getStudentCode().toLowerCase().replaceAll("[^a-z0-9]", "");
+        User parentUser = User.builder()
+                .username("parent_" + code)
+                .email("parent." + code + "@parent.tutorschool.local")
+                .password(passwordEncoder.encode(UUID.randomUUID().toString()))
+                .role(Role.PARENT)
+                .enabled(true)
+                .build();
+        return userRepository.save(parentUser);
     }
 
     @Override

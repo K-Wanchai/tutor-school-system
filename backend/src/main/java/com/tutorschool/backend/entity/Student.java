@@ -23,6 +23,11 @@ public class Student {
     @JoinColumn(name = "user_id", nullable = false, unique = true)
     private User user;
 
+    // บัญชีผู้ปกครองของนักเรียนคนนี้ (role = PARENT) — สร้างอัตโนมัติครั้งแรกที่ผู้ปกครองล็อกอินด้วยเลขบัตรประชาชน
+    @OneToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "parent_user_id", unique = true)
+    private User parentUser;
+
     @Column(name = "student_code", nullable = false, unique = true, length = 50)
     private String studentCode;
 
