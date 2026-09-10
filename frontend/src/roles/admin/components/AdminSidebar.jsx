@@ -92,7 +92,7 @@ const NAV_GROUPS = [
         ),
       },
       {
-        label: 'ข้อสอบ',
+        label: 'การสอบ',
         path: '/admin/exams',
         icon: (
           <svg viewBox="0 0 20 20" fill="currentColor" width="18" height="18">
