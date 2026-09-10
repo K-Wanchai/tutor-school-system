@@ -5,7 +5,11 @@ import {
   joinClassroomByCode,
   joinClassroomSession,
 } from '../services/studentAttendanceService';
+import { getMyCourses } from '../services/studentMyCoursesService.js';
 import './StudentAttendancePage.css';
+
+// เฉพาะคอร์สที่ชำระเงิน/อนุมัติแล้ว หรือเรียนจบแล้ว ที่นักเรียนมีสิทธิ์เข้าเรียนจริง
+const ATTENDING_ENROLLMENT_STATUSES = ['APPROVED', 'COMPLETED'];
 
 const SESSION_STATUS_LABELS = {
   OPEN: 'เปิดห้องเรียน',
@@ -170,9 +174,21 @@ function buildCourseKey(item) {
   return `course-name-${item.courseName}`;
 }
 
+function mapEnrolledCourse(raw) {
+  return {
+    courseId: raw?.courseId ?? raw?.course?.id ?? null,
+    courseName: raw?.courseName ?? raw?.course?.courseName ?? '-',
+    courseCode: raw?.courseCode ?? raw?.course?.courseCode ?? null,
+    tutorName: raw?.tutorName ?? raw?.teacherName ?? raw?.tutor?.fullName ?? '-',
+    status: raw?.status ?? null,
+    courseStartDate: raw?.courseStartDate ?? null,
+  };
+}
+
 function StudentAttendancePage() {
   const [sessions, setSessions] = useState([]);
   const [attendanceHistory, setAttendanceHistory] = useState([]);
+  const [enrolledCourses, setEnrolledCourses] = useState([]);
   const [loading, setLoading] = useState(true);
   const [joining, setJoining] = useState(false);
   const [error, setError] = useState('');
@@ -194,9 +210,10 @@ function StudentAttendancePage() {
       setLoading(true);
       setError('');
 
-      const [sessionData, historyData] = await Promise.all([
+      const [sessionData, historyData, courseData] = await Promise.all([
         getMyClassroomSessions(),
         getMyAttendanceHistory(),
+        getMyCourses().catch(() => []),
       ]);
 
       const mappedSessions = Array.isArray(sessionData)
@@ -207,8 +224,14 @@ function StudentAttendancePage() {
         ? historyData.map(mapAttendance)
         : [];
 
+      const mappedCourses = (Array.isArray(courseData) ? courseData : [])
+        .filter((en) => !en.status || ATTENDING_ENROLLMENT_STATUSES.includes(en.status))
+        .map(mapEnrolledCourse)
+        .filter((c) => c.courseId || c.courseName !== '-');
+
       setSessions(mappedSessions);
       setAttendanceHistory(mappedHistory);
+      setEnrolledCourses(mappedCourses);
     } catch (err) {
       setError(getErrorMessage(err));
     } finally {
@@ -222,6 +245,23 @@ function StudentAttendancePage() {
 
   const courses = useMemo(() => {
     const courseMap = new Map();
+
+    // เริ่มจาก "คอร์สของฉัน" (ที่ลงทะเบียนไว้) — คอร์สจะแสดงเป็นการ์ดเสมอ แม้ยังไม่มีคาบเรียน/ประวัติ
+    enrolledCourses.forEach((course) => {
+      const key = buildCourseKey(course);
+      if (!courseMap.has(key)) {
+        courseMap.set(key, {
+          key,
+          courseId: course.courseId,
+          courseName: course.courseName,
+          courseCode: course.courseCode,
+          tutorName: course.tutorName,
+          enrolled: true,
+          sessions: [],
+          history: [],
+        });
+      }
+    });
 
     sessions.forEach((session) => {
       const key = buildCourseKey(session);
@@ -298,7 +338,7 @@ function StudentAttendancePage() {
         nextSession,
       };
     });
-  }, [sessions, attendanceHistory]);
+  }, [enrolledCourses, sessions, attendanceHistory]);
 
   const summary = useMemo(() => {
     return {
@@ -476,7 +516,10 @@ function StudentAttendancePage() {
 
                   <div>
                     <h3>{safeValue(course.courseName)}</h3>
-                    <p>ติวเตอร์: {safeValue(course.tutorName)}</p>
+                    <p>
+                      {course.courseCode ? `${course.courseCode} · ` : ''}
+                      ติวเตอร์: {safeValue(course.tutorName)}
+                    </p>
                   </div>
                 </div>
 
@@ -555,8 +598,8 @@ function StudentAttendancePage() {
 function EmptyState() {
   return (
     <div className="sap-empty-state">
-      <h3>ยังไม่มีข้อมูลการเข้าเรียน</h3>
-      <p>เมื่อมีห้องเรียนหรือมีการบันทึกเข้าเรียน รายการจะแสดงที่หน้านี้</p>
+      <h3>ยังไม่มีคอร์สของฉัน</h3>
+      <p>เมื่อสมัครเรียนและได้รับการอนุมัติแล้ว คอร์สจะแสดงเป็นการ์ดที่หน้านี้</p>
     </div>
   );
 }
