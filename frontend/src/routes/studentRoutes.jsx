@@ -15,6 +15,7 @@ import StudentExamCourseDetailPage from '../roles/student/pages/StudentExamCours
 import StudentExamTakePage from '../roles/student/pages/StudentExamTakePage';
 import StudentExamResultsPage from '../roles/student/pages/StudentExamResultsPage';
 import StudentAttendancePage from '../roles/student/pages/StudentAttendancePage';
+import StudentCourseEvaluationPage from '../roles/student/pages/StudentCourseEvaluationPage';
 
 const studentRoutes = (
   <Route
@@ -37,6 +38,7 @@ const studentRoutes = (
   <Route path="exams/:examId/take" element={<StudentExamTakePage />} />
   <Route path="exam-results" element={<StudentExamResultsPage />} />
   <Route path="attendance" element={<StudentAttendancePage />} />
+  <Route path="course-evaluations" element={<StudentCourseEvaluationPage />} />
 </Route>
 );
 

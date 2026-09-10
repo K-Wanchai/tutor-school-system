@@ -11,8 +11,10 @@ import com.tutorschool.backend.dto.request.UpdateCourseEvaluationRequest;
 import com.tutorschool.backend.dto.request.UpdateEvaluationStatusRequest;
 import com.tutorschool.backend.dto.response.CourseEvaluationResponse;
 import com.tutorschool.backend.dto.response.CourseEvaluationSummaryResponse;
+import com.tutorschool.backend.dto.response.PendingEvaluationResponse;
 import com.tutorschool.backend.entity.Course;
 import com.tutorschool.backend.entity.CourseEvaluation;
+import com.tutorschool.backend.entity.CourseStatus;
 import com.tutorschool.backend.entity.Enrollment;
 import com.tutorschool.backend.entity.EnrollmentStatus;
 import com.tutorschool.backend.entity.EvaluationStatus;
@@ -64,9 +66,11 @@ public class CourseEvaluationServiceImpl implements CourseEvaluationService {
             throw new UnauthorizedEvaluationAccessException("This enrollment does not belong to you");
         }
 
-        // 3. ตรวจสอบว่า enrollment status เป็น COMPLETED
-        if (enrollment.getStatus() != EnrollmentStatus.COMPLETED) {
-            throw new EnrollmentNotCompletedException();
+        // 3. ตรวจสอบว่าติวเตอร์ปิดจบการสอนคอร์สแล้ว (enrollment ถูกเลื่อนเป็น COMPLETED ตอนติวเตอร์กดปิดจบ)
+        if (enrollment.getStatus() != EnrollmentStatus.COMPLETED
+                || enrollment.getCourse().getStatus() != CourseStatus.COMPLETED) {
+            throw new EnrollmentNotCompletedException(
+                    "ติวเตอร์ยังไม่ได้ปิดจบการสอนคอร์สนี้ จึงยังประเมินไม่ได้");
         }
 
         // 4. ตรวจสอบว่ายังไม่เคยรีวิวคอร์สนี้
@@ -100,6 +104,30 @@ public class CourseEvaluationServiceImpl implements CourseEvaluationService {
         saved = evaluationRepository.save(saved);
 
         return evaluationMapper.toResponseForAdmin(saved);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<PendingEvaluationResponse> getPendingEvaluations(String username) {
+        Student student = findStudentByUsername(username);
+
+        return enrollmentRepository.findByStudentIdAndStatus(student.getId(), EnrollmentStatus.COMPLETED).stream()
+                .filter(e -> e.getCourse().getStatus() == CourseStatus.COMPLETED)
+                .filter(e -> !evaluationRepository.existsByStudentIdAndCourseId(student.getId(), e.getCourse().getId()))
+                .map(e -> {
+                    Course course = e.getCourse();
+                    Tutor tutor = course.getTutor();
+                    return PendingEvaluationResponse.builder()
+                            .enrollmentId(e.getId())
+                            .courseId(course.getId())
+                            .courseCode(course.getCourseCode())
+                            .courseName(course.getCourseName())
+                            .tutorId(tutor.getId())
+                            .tutorName(tutor.getFirstName() + " " + tutor.getLastName())
+                            .courseStartDate(course.getCourseStartDate())
+                            .build();
+                })
+                .toList();
     }
 
     @Override

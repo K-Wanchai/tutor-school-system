@@ -194,6 +194,7 @@
 .tc-btn-detail,
 .tc-btn-accept,
 .tc-btn-exam,
+.tc-btn-complete,
 .tc-btn-reject {
   flex: 1;
 
@@ -244,6 +245,39 @@
 
 .tc-btn-exam:hover {
   background: #d1fae5;
+}
+
+.tc-btn-complete {
+  background: #7c3aed;
+  color: #fff;
+}
+
+.tc-btn-complete:hover:not(:disabled) {
+  background: #6d28d9;
+}
+
+.tc-btn-complete:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.tc-toast {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  z-index: 80;
+  max-width: 360px;
+  padding: 14px 18px;
+  border-radius: 12px;
+  background: #7c3aed;
+  color: #fff;
+  font-size: 13px;
+  font-weight: 700;
+  box-shadow: 0 16px 36px rgba(124, 58, 237, 0.3);
+}
+
+.tc-modal--sm {
+  max-width: 440px;
 }
 
 /* Badge */

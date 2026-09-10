@@ -33,6 +33,15 @@ export async function markCourseViewed(courseId) {
   }
 }
 
+export async function completeCourse(courseId) {
+  try {
+    const res = await api.patch(`/courses/${courseId}/complete`);
+    return unwrap(res);
+  } catch (error) {
+    throw new Error(apiError(error, 'completeCourse'), { cause: error });
+  }
+}
+
 export async function addLesson(courseId, { lessonTitle, lessonContent, lessonOrder }) {
   try {
     const res = await api.post(`/courses/${courseId}/lessons`, {

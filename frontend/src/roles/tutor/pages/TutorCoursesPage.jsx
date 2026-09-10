@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import {
   addLesson,
   addTest,
+  completeCourse,
   deleteLesson,
   getMyCourses,
   markCourseViewed,
@@ -69,6 +70,10 @@ export default function TutorCoursesPage() {
   const [loading, setLoading] = useState(true);
   const [manageCourse, setManageCourse] = useState(null);
   const [detailCourse, setDetailCourse] = useState(null);
+  const [completeTarget, setCompleteTarget] = useState(null);
+  const [completing, setCompleting] = useState(false);
+  const [completeError, setCompleteError] = useState('');
+  const [toast, setToast] = useState('');
 
   const load = useCallback(async () => {
     try {
@@ -112,6 +117,23 @@ export default function TutorCoursesPage() {
     setDetailCourse(course);
   }
 
+  async function confirmCompleteCourse() {
+    if (!completeTarget) return;
+    setCompleting(true);
+    setCompleteError('');
+    try {
+      await completeCourse(completeTarget.id);
+      setCompleteTarget(null);
+      setToast('ปิดจบการสอนคอร์สเรียบร้อยแล้ว นักเรียนสามารถประเมินคอร์สได้แล้ว');
+      window.setTimeout(() => setToast(''), 4000);
+      await load();
+    } catch (error) {
+      setCompleteError(error.message);
+    } finally {
+      setCompleting(false);
+    }
+  }
+
   async function refreshManageCourse() {
     const data = await getMyCourses();
     const list = Array.isArray(data) ? data : [];
@@ -121,6 +143,8 @@ export default function TutorCoursesPage() {
 
   return (
     <div className="tc-page">
+      {toast && <div className="tc-toast">{toast}</div>}
+
       {/* Header */}
       <div className="tc-header">
         <div>
@@ -264,6 +288,18 @@ export default function TutorCoursesPage() {
                   </button>
                 )}
 
+                {course.status === 'ONGOING' && (
+                  <button
+                    className="tc-btn-complete"
+                    onClick={() => {
+                      setCompleteError('');
+                      setCompleteTarget(course);
+                    }}
+                  >
+                    ✅ ปิดจบการสอน
+                  </button>
+                )}
+
                 {/* {['PENDING', 'CLOSED', 'OPEN_FOR_REGISTRATION', 'ONGOING'].includes(course.status) && (
                   <button className="tc-btn-accept" onClick={() => openManage(course)}>
                     📚 จัดการบทเรียน
@@ -288,6 +324,47 @@ export default function TutorCoursesPage() {
           course={detailCourse}
           onClose={() => setDetailCourse(null)}
         />
+      )}
+
+      {completeTarget && (
+        <div className="tc-modal-overlay" onClick={() => !completing && setCompleteTarget(null)}>
+          <div className="tc-modal tc-modal--sm" onClick={(e) => e.stopPropagation()}>
+            <div className="tc-modal-header">
+              <h2>ปิดจบการสอนคอร์ส</h2>
+              <button
+                className="tc-modal-close"
+                onClick={() => !completing && setCompleteTarget(null)}
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="tc-modal-section">
+              <p>
+                ยืนยันปิดจบการสอนคอร์ส <strong>{completeTarget.courseName}</strong> หรือไม่?
+              </p>
+              <p className="tc-modal-hint">
+                เมื่อปิดจบแล้ว สถานะคอร์สจะเปลี่ยนเป็น "สอนจบแล้ว"
+                นักเรียนที่ชำระเงินเรียบร้อยจะถือว่าเรียนจบและสามารถประเมินคอร์สนี้ได้
+                การดำเนินการนี้ไม่สามารถย้อนกลับได้
+              </p>
+              {completeError && <div className="tc-modal-error">{completeError}</div>}
+            </div>
+
+            <div className="tc-modal-footer">
+              <button onClick={() => setCompleteTarget(null)} disabled={completing}>
+                ยกเลิก
+              </button>
+              <button
+                className="tc-btn-complete"
+                onClick={confirmCompleteCourse}
+                disabled={completing}
+              >
+                {completing ? 'กำลังดำเนินการ...' : 'ยืนยันปิดจบการสอน'}
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

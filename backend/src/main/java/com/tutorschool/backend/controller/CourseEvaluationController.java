@@ -22,6 +22,7 @@ import com.tutorschool.backend.dto.request.UpdateEvaluationStatusRequest;
 import com.tutorschool.backend.dto.response.ApiResponse;
 import com.tutorschool.backend.dto.response.CourseEvaluationResponse;
 import com.tutorschool.backend.dto.response.CourseEvaluationSummaryResponse;
+import com.tutorschool.backend.dto.response.PendingEvaluationResponse;
 import com.tutorschool.backend.service.CourseEvaluationService;
 
 import jakarta.validation.Valid;
@@ -92,7 +93,15 @@ public class CourseEvaluationController {
         return ResponseEntity.ok(ApiResponse.success("Evaluations retrieved successfully", response));
     }
 
-    // GET /api/v1/course-evaluations/student/me â€” à¸™à¸±à¸à¹€à¸£à¸µà¸¢à¸™à¸”à¸¹à¸£à¸µà¸§à¸´à¸§à¸•à¸±à¸§à¹€à¸­à¸‡
+    // GET /api/v1/course-evaluations/student/pending — course finished, tutor closed teaching, not evaluated yet
+    @GetMapping("/student/pending")
+    @PreAuthorize("hasRole('STUDENT')")
+    public ResponseEntity<ApiResponse<List<PendingEvaluationResponse>>> getPendingEvaluations(
+            Authentication authentication) {
+        List<PendingEvaluationResponse> response = evaluationService.getPendingEvaluations(authentication.getName());
+        return ResponseEntity.ok(ApiResponse.success("Pending evaluations retrieved successfully", response));
+    }
+
     @GetMapping("/student/me")
     @PreAuthorize("hasRole('STUDENT')")
     public ResponseEntity<ApiResponse<List<CourseEvaluationResponse>>> getMyEvaluations(

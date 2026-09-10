@@ -7,10 +7,13 @@ import com.tutorschool.backend.dto.request.UpdateCourseEvaluationRequest;
 import com.tutorschool.backend.dto.request.UpdateEvaluationStatusRequest;
 import com.tutorschool.backend.dto.response.CourseEvaluationResponse;
 import com.tutorschool.backend.dto.response.CourseEvaluationSummaryResponse;
+import com.tutorschool.backend.dto.response.PendingEvaluationResponse;
 
 public interface CourseEvaluationService {
 
     CourseEvaluationResponse createEvaluation(CreateCourseEvaluationRequest request, String username);
+
+    List<PendingEvaluationResponse> getPendingEvaluations(String username);
 
     List<CourseEvaluationResponse> getAllEvaluations();
 
