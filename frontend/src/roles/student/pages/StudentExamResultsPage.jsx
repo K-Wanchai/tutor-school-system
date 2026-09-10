@@ -26,10 +26,6 @@ function mapEnrolledCourse(raw) {
   };
 }
 
-function rowKey(r) {
-  return r.submissionId != null ? `sub-${r.submissionId}` : `ms-${r.examId}`;
-}
-
 // เรียงผลสอบของคอร์ส + กำหนด "การสอบครั้งที่" ตามลำดับข้อสอบ (เรียงตามเวลาเริ่มสอบ)
 function decorateCourse(course) {
   const examOrder = [...new Set(
@@ -75,36 +71,6 @@ function decorateCourse(course) {
     sumTotal,
     avgPct,
   };
-}
-
-// แถบคะแนนรายข้อสอบบนการ์ด — หนึ่งช่องต่อหนึ่งข้อสอบ แสดงคะแนนจริง ระบายสีตามเปอร์เซ็นต์
-function ScoreStrip({ rows, examNumber }) {
-  const scored = [...rows]
-    .filter((r) => r.obtainedScore != null)
-    .sort((a, b) => (examNumber.get(String(a.examId)) ?? 0) - (examNumber.get(String(b.examId)) ?? 0));
-
-  if (scored.length === 0) {
-    return <div className="ser-strip ser-strip--empty">ยังไม่มีคะแนน</div>;
-  }
-  return (
-    <div className="ser-strip">
-      {scored.map((r) => {
-        const pct = r.totalScore ? (Number(r.obtainedScore) / Number(r.totalScore)) * 100 : null;
-        const tone =
-          pct == null ? 'none' : pct >= 80 ? 'high' : pct >= 50 ? 'mid' : 'low';
-        return (
-          <span
-            key={rowKey(r)}
-            className={`ser-strip-chip ser-strip-chip--${tone}`}
-            title={`${r.examTitle || 'ข้อสอบ'} · ${r.obtainedScore}/${r.totalScore ?? '-'}`}
-          >
-            {r.obtainedScore}
-            {r.totalScore ? `/${r.totalScore}` : ''}
-          </span>
-        );
-      })}
-    </div>
-  );
 }
 
 export default function StudentExamResultsPage() {
@@ -369,8 +335,6 @@ export default function StudentExamResultsPage() {
                   <strong>{course.avgPct != null ? `${course.avgPct}%` : '-'}</strong>
                 </div>
               </div>
-
-              <ScoreStrip rows={course.rows} examNumber={course.examNumber} />
 
               <span className="aes-card-cta">ดูผลสอบ →</span>
             </button>
