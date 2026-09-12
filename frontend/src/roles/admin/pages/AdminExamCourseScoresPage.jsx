@@ -5,7 +5,6 @@ import {
   getEnrollmentsByCourse,
   getExamsByCourse,
   getManualScoresByCourse,
-  getResultsByCourse,
 } from '../services/adminExamService';
 import './AdminExamPages.css';
 
@@ -31,7 +30,6 @@ export default function AdminExamCourseScoresPage() {
 
   const [course, setCourse] = useState(null);
   const [exams, setExams] = useState([]);
-  const [results, setResults] = useState([]);
   const [manualScores, setManualScores] = useState([]);
   const [enrollments, setEnrollments] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -40,10 +38,9 @@ export default function AdminExamCourseScoresPage() {
   const load = useCallback(async () => {
     setLoading(true);
     setError('');
-    const [courseR, examR, resultR, manualR, enrollR] = await Promise.allSettled([
+    const [courseR, examR, manualR, enrollR] = await Promise.allSettled([
       getCoursesByTutorId(tutorId),
       getExamsByCourse(courseId),
-      getResultsByCourse(courseId),
       getManualScoresByCourse(courseId),
       getEnrollmentsByCourse(courseId),
     ]);
@@ -56,7 +53,6 @@ export default function AdminExamCourseScoresPage() {
     const courseList = take(courseR, 'คอร์ส');
     setCourse(courseList.find((c) => String(c.id) === String(courseId)) || null);
     setExams(take(examR, 'ข้อสอบ'));
-    setResults(take(resultR, 'ผลสอบจากระบบ'));
     setManualScores(take(manualR, 'คะแนนที่กรอกเอง'));
     setEnrollments(take(enrollR, 'รายชื่อนักเรียน').filter((e) => ACTIVE_ENROLLMENT_STATUSES.has(e.status)));
     setError(errs.join(' · '));
@@ -65,35 +61,13 @@ export default function AdminExamCourseScoresPage() {
 
   useEffect(() => { load(); }, [load]);
 
-  const lessonOrderByLessonId = useMemo(() => {
-    const map = {};
-    (course?.lessons || []).forEach((l) => { map[l.id] = l.lessonOrder; });
-    return map;
-  }, [course]);
-
   const orderedExams = useMemo(() => {
     return [...exams]
       .filter((e) => e.status !== 'CANCELLED')
-      .sort((a, b) => {
-        const oa = lessonOrderByLessonId[a.lessonId] ?? 999;
-        const ob = lessonOrderByLessonId[b.lessonId] ?? 999;
-        if (oa !== ob) return oa - ob;
-        return (a.startTime ? new Date(a.startTime).getTime() : 0) -
-          (b.startTime ? new Date(b.startTime).getTime() : 0);
-      });
-  }, [exams, lessonOrderByLessonId]);
-
-  const systemScoreMap = useMemo(() => {
-    const map = {};
-    results.forEach((r) => {
-      const key = cellKey(r.examId, r.studentId);
-      const cur = map[key];
-      if (!cur || (r.attemptNumber || 1) >= (cur.attemptNumber || 1)) {
-        map[key] = { score: r.obtainedScore, attemptNumber: r.attemptNumber || 1 };
-      }
-    });
-    return map;
-  }, [results]);
+      .sort((a, b) =>
+        (a.startTime ? new Date(a.startTime).getTime() : 0) -
+        (b.startTime ? new Date(b.startTime).getTime() : 0));
+  }, [exams]);
 
   const manualScoreMap = useMemo(() => {
     const map = {};
@@ -106,23 +80,17 @@ export default function AdminExamCourseScoresPage() {
     enrollments.forEach((e) => {
       byId[e.studentId] = { studentId: e.studentId, studentName: e.studentName };
     });
-    results.forEach((r) => {
-      if (!byId[r.studentId]) byId[r.studentId] = { studentId: r.studentId, studentName: r.studentName };
-    });
     manualScores.forEach((m) => {
       if (!byId[m.studentId]) byId[m.studentId] = { studentId: m.studentId, studentName: m.studentName };
     });
     return Object.values(byId).sort((a, b) =>
       (a.studentName || '').localeCompare(b.studentName || '', 'th')
     );
-  }, [enrollments, results, manualScores]);
+  }, [enrollments, manualScores]);
 
   const savedScoreFor = useCallback((examId, studentId) => {
-    const key = cellKey(examId, studentId);
-    if (key in manualScoreMap) return manualScoreMap[key];
-    const sys = systemScoreMap[key];
-    return sys ? sys.score : undefined;
-  }, [manualScoreMap, systemScoreMap]);
+    return manualScoreMap[cellKey(examId, studentId)];
+  }, [manualScoreMap]);
 
   function averagePctFor(studentId) {
     let sum = 0;
@@ -210,15 +178,9 @@ export default function AdminExamCourseScoresPage() {
                     <td className="aes-col-no">{idx + 1}</td>
                     <td className="aes-col-name">{stu.studentName || '-'}</td>
                     {orderedExams.map((exam) => {
-                      const key = cellKey(exam.id, stu.studentId);
                       const saved = savedScoreFor(exam.id, stu.studentId);
-                      const fromSystem = !(key in manualScoreMap) && systemScoreMap[key];
                       return (
-                        <td
-                          key={exam.id}
-                          className={`aes-cell${fromSystem ? ' aes-cell-system' : ''}`}
-                          title={fromSystem ? 'คะแนนจากการทำข้อสอบในระบบ' : undefined}
-                        >
+                        <td key={exam.id} className="aes-cell">
                           {saved != null && saved !== '' ? saved : '—'}
                         </td>
                       );
@@ -242,7 +204,6 @@ export default function AdminExamCourseScoresPage() {
           </div>
 
           <div className="aes-legend">
-            <span><i className="aes-swatch system" /> คะแนนจากการทำข้อสอบในระบบ</span>
             <span>แอดมินสามารถดูคะแนนได้เท่านั้น ไม่สามารถแก้ไขได้ — การแก้ไขทำได้ที่บัญชีติวเตอร์</span>
           </div>
         </div>

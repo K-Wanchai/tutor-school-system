@@ -10,7 +10,6 @@ import com.tutorschool.backend.exception.ResourceNotFoundException;
 import com.tutorschool.backend.mapper.EnrollmentMapper;
 import com.tutorschool.backend.repository.CourseRepository;
 import com.tutorschool.backend.repository.CourseScheduleDayRepository;
-import com.tutorschool.backend.repository.CourseScheduleRepository;
 import com.tutorschool.backend.repository.EnrollmentRepository;
 import com.tutorschool.backend.repository.InstitutionProfileRepository;
 import com.tutorschool.backend.repository.StudentRepository;
@@ -40,7 +39,6 @@ public class EnrollmentServiceImpl implements EnrollmentService {
     private final EnrollmentRepository enrollmentRepository;
     private final StudentRepository studentRepository;
     private final CourseRepository courseRepository;
-    private final CourseScheduleRepository courseScheduleRepository;
     private final CourseScheduleDayRepository courseScheduleDayRepository;
     private final EnrollmentMapper enrollmentMapper;
     private final InstitutionProfileRepository institutionProfileRepository;
@@ -464,18 +462,12 @@ public class EnrollmentServiceImpl implements EnrollmentService {
     }
 
     /**
-     * The date of the course's last session. Prefers the actual generated CourseSchedule rows
-     * (ground truth, e.g. from generateSchedulesFromCoursePattern) when they exist; otherwise
-     * estimates it by walking the weekly pattern (course_schedule_days) forward from
-     * courseStartDate, accumulating each matched day's session length until totalHours is
-     * covered. Returns null when there isn't enough data to determine an end date.
+     * The date of the course's last session — estimated by walking the weekly pattern
+     * (course_schedule_days) forward from courseStartDate, accumulating each matched day's
+     * session length until totalHours is covered. Returns null when there isn't enough data
+     * to determine an end date.
      */
     private LocalDate resolveCourseEndDate(Course course) {
-        List<CourseSchedule> schedules =
-                courseScheduleRepository.findByCourseIdOrderByScheduleDateAscStartTimeAsc(course.getId());
-        if (!schedules.isEmpty()) {
-            return schedules.get(schedules.size() - 1).getScheduleDate();
-        }
         return estimateCourseEndDateFromPattern(course);
     }
 

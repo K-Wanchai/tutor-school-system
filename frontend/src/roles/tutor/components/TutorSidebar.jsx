@@ -25,19 +25,6 @@ const NAV_ITEMS = [
     ),
   },
   {
-    label: 'ตารางสอน',
-    path: '/tutor/schedule',
-    icon: (
-      <svg viewBox="0 0 20 20" fill="currentColor" width="18" height="18">
-        <path
-          fillRule="evenodd"
-          d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z"
-          clipRule="evenodd"
-        />
-      </svg>
-    ),
-  },
-  {
     label: 'ตารางสอบ',
     path: '/tutor/exam-schedule',
     icon: (
@@ -45,19 +32,6 @@ const NAV_ITEMS = [
         <path
           fillRule="evenodd"
           d="M4 4a2 2 0 012-2h5.586a1 1 0 01.707.293l3.414 3.414a1 1 0 01.293.707V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm7 8a1 1 0 10-2 0v.01a1 1 0 102 0V12zm-1-4a1 1 0 011 1v1a1 1 0 11-2 0V9a1 1 0 011-1z"
-          clipRule="evenodd"
-        />
-      </svg>
-    ),
-  },
-  {
-    label: 'การเข้าเรียน',
-    path: '/tutor/attendance',
-    icon: (
-      <svg viewBox="0 0 20 20" fill="currentColor" width="18" height="18">
-        <path
-          fillRule="evenodd"
-          d="M6 2a2 2 0 00-2 2v12a2 2 0 002 2h8a2 2 0 002-2V4a2 2 0 00-2-2H6zm1 5a1 1 0 011-1h4a1 1 0 110 2H8a1 1 0 01-1-1zm0 4a1 1 0 011-1h4a1 1 0 110 2H8a1 1 0 01-1-1z"
           clipRule="evenodd"
         />
       </svg>

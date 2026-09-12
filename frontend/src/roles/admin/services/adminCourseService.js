@@ -124,7 +124,7 @@ export async function getTutorWeeklyAvailability(tutorId, excludeCourseId) {
       d.setDate(monday.getDate() + i);
       const dateStr = toLocalISODate(d);
       try {
-        const res = await api.get(`/course-schedules/tutor/${tutorId}/availability`, {
+        const res = await api.get(`/courses/tutor/${tutorId}/availability`, {
           params: { date: dateStr, excludeCourseId: excludeCourseId || undefined },
         });
         return { key, data: res.data?.data };

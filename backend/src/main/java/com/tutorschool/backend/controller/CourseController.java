@@ -17,19 +17,21 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.tutorschool.backend.dto.request.CourseLessonRequest;
-import com.tutorschool.backend.dto.request.CourseTestRequest;
 import com.tutorschool.backend.dto.request.CreateCourseRequest;
 import com.tutorschool.backend.dto.request.UpdateCourseRequest;
 import com.tutorschool.backend.dto.request.UpdateCourseStatusRequest;
 import com.tutorschool.backend.dto.response.ApiResponse;
 import com.tutorschool.backend.dto.response.CourseResponse;
 import com.tutorschool.backend.dto.response.PageResponse;
+import com.tutorschool.backend.dto.response.TutorAvailabilityResponse;
 import com.tutorschool.backend.entity.User;
 import com.tutorschool.backend.service.CourseService;
 
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.format.annotation.DateTimeFormat;
+
+import java.time.LocalDate;
 
 @RestController
 @RequestMapping("/api/v1/courses")
@@ -100,49 +102,6 @@ public class CourseController {
         return ResponseEntity.ok(ApiResponse.success("Course status updated successfully", response));
     }
 
-    @PostMapping("/{courseId}/lessons")
-    @PreAuthorize("hasRole('TUTOR')")
-    public ResponseEntity<ApiResponse<CourseResponse>> addLesson(
-            @PathVariable Long courseId,
-            @Valid @RequestBody CourseLessonRequest request,
-            @AuthenticationPrincipal User currentUser) {
-        CourseResponse response = courseService.addLesson(courseId, request, currentUser.getId());
-        return ResponseEntity.status(HttpStatus.CREATED)
-                .body(ApiResponse.success("เพิ่มบทเรียนสำเร็จ", response));
-    }
-
-    @PutMapping("/{courseId}/lessons/{lessonId}")
-    @PreAuthorize("hasRole('TUTOR')")
-    public ResponseEntity<ApiResponse<CourseResponse>> updateLesson(
-            @PathVariable Long courseId,
-            @PathVariable Long lessonId,
-            @Valid @RequestBody CourseLessonRequest request,
-            @AuthenticationPrincipal User currentUser) {
-        CourseResponse response = courseService.updateLesson(courseId, lessonId, request, currentUser.getId());
-        return ResponseEntity.ok(ApiResponse.success("แก้ไขบทเรียนสำเร็จ", response));
-    }
-
-    @DeleteMapping("/{courseId}/lessons/{lessonId}")
-    @PreAuthorize("hasRole('TUTOR')")
-    public ResponseEntity<ApiResponse<Void>> deleteLesson(
-            @PathVariable Long courseId,
-            @PathVariable Long lessonId,
-            @AuthenticationPrincipal User currentUser) {
-        courseService.deleteLesson(courseId, lessonId, currentUser.getId());
-        return ResponseEntity.ok(ApiResponse.success("ลบบทเรียนสำเร็จ"));
-    }
-
-    @PostMapping("/{courseId}/tests")
-    @PreAuthorize("hasRole('TUTOR')")
-    public ResponseEntity<ApiResponse<CourseResponse>> addTest(
-            @PathVariable Long courseId,
-            @Valid @RequestBody CourseTestRequest request,
-            @AuthenticationPrincipal User currentUser) {
-        CourseResponse response = courseService.addTest(courseId, request, currentUser.getId());
-        return ResponseEntity.status(HttpStatus.CREATED)
-                .body(ApiResponse.success("เพิ่มหัวข้อสอบสำเร็จ", response));
-    }
-
     @PatchMapping("/{courseId}/mark-viewed")
     @PreAuthorize("hasRole('TUTOR')")
     public ResponseEntity<ApiResponse<Void>> markCourseViewed(
@@ -166,5 +125,16 @@ public class CourseController {
     public ResponseEntity<ApiResponse<Void>> deleteCourse(@PathVariable Long id) {
         courseService.deleteCourse(id);
         return ResponseEntity.ok(ApiResponse.success("Course deleted successfully"));
+    }
+
+    // ตารางว่าง/ไม่ว่างของติวเตอร์ในวันที่ระบุ — ใช้ตอนแอดมินสร้าง/แก้ไขคอร์สเพื่อดูตารางสอนที่มีอยู่แล้ว
+    @GetMapping("/tutor/{tutorId}/availability")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<ApiResponse<TutorAvailabilityResponse>> getTutorAvailability(
+            @PathVariable Long tutorId,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date,
+            @RequestParam(required = false) Long excludeCourseId) {
+        TutorAvailabilityResponse response = courseService.getTutorAvailability(tutorId, date, excludeCourseId);
+        return ResponseEntity.ok(ApiResponse.success("Tutor availability retrieved successfully", response));
     }
 }

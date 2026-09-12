@@ -1,7 +1,6 @@
 package com.tutorschool.backend.service.impl;
 
 import com.tutorschool.backend.dto.request.StudentExamAchievementRequest;
-import com.tutorschool.backend.dto.response.CourseLessonSummaryResponse;
 import com.tutorschool.backend.dto.response.StudentAchievementDetailResponse;
 import com.tutorschool.backend.dto.response.StudentCourseDetailResponse;
 import com.tutorschool.backend.dto.response.StudentExamAchievementResponse;
@@ -181,15 +180,6 @@ public class StudentExamAchievementServiceImpl implements StudentExamAchievement
         Course course = enrollment.getCourse();
         Tutor tutor = course.getTutor();
 
-        List<CourseLessonSummaryResponse> lessons = course.getLessons().stream()
-                .map(lesson -> CourseLessonSummaryResponse.builder()
-                        .lessonId(lesson.getId())
-                        .lessonTitle(lesson.getLessonTitle())
-                        .lessonDescription(lesson.getLessonContent())
-                        .lessonOrder(lesson.getLessonOrder())
-                        .build())
-                .toList();
-
         TutorSummaryResponse tutorSummary = tutor == null ? null : TutorSummaryResponse.builder()
                 .tutorId(tutor.getId())
                 .tutorName(tutor.getFirstName() + " " + tutor.getLastName())
@@ -203,7 +193,6 @@ public class StudentExamAchievementServiceImpl implements StudentExamAchievement
                 .enrollmentStatus(enrollment.getStatus())
                 .enrolledAt(enrollment.getEnrollmentDate())
                 .tutor(tutorSummary)
-                .lessons(lessons)
                 .build();
     }
 

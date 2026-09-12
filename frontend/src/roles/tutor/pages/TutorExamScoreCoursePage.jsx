@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { getMyCourses } from '../services/tutorCourseService';
-import { getExamsByCourse, getResultsByCourse } from '../services/tutorExamService';
+import { getExamsByCourse } from '../services/tutorExamService';
 import { getEnrollmentsByCourse } from '../services/tutorEnrollmentService';
 import {
   deleteManualScore,
@@ -34,7 +34,6 @@ export default function TutorExamScoreCoursePage() {
 
   const [course, setCourse] = useState(null);
   const [exams, setExams] = useState([]);
-  const [results, setResults] = useState([]);
   const [manualScores, setManualScores] = useState([]);
   const [enrollments, setEnrollments] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -50,16 +49,14 @@ export default function TutorExamScoreCoursePage() {
       setError('');
       setEdits({});
       setCellState({});
-      const [courseList, examList, resultList, manualList, enrollmentList] = await Promise.all([
+      const [courseList, examList, manualList, enrollmentList] = await Promise.all([
         getMyCourses(),
         getExamsByCourse(courseId),
-        getResultsByCourse(courseId).catch(() => []),
         getManualScoresByCourse(courseId).catch(() => []),
         getEnrollmentsByCourse(courseId).catch(() => []),
       ]);
       setCourse((Array.isArray(courseList) ? courseList : []).find((c) => String(c.id) === String(courseId)) || null);
       setExams(Array.isArray(examList) ? examList : []);
-      setResults(Array.isArray(resultList) ? resultList : []);
       setManualScores(Array.isArray(manualList) ? manualList : []);
       setEnrollments(
         (Array.isArray(enrollmentList) ? enrollmentList : []).filter((e) =>
@@ -75,35 +72,13 @@ export default function TutorExamScoreCoursePage() {
 
   useEffect(() => { load(); }, [load]);
 
-  const lessonOrderByLessonId = useMemo(() => {
-    const map = {};
-    (course?.lessons || []).forEach((l) => { map[l.id] = l.lessonOrder; });
-    return map;
-  }, [course]);
-
   const orderedExams = useMemo(() => {
     return [...exams]
       .filter((e) => e.status !== 'CANCELLED')
-      .sort((a, b) => {
-        const oa = lessonOrderByLessonId[a.lessonId] ?? 999;
-        const ob = lessonOrderByLessonId[b.lessonId] ?? 999;
-        if (oa !== ob) return oa - ob;
-        return (a.startTime ? new Date(a.startTime).getTime() : 0) -
-          (b.startTime ? new Date(b.startTime).getTime() : 0);
-      });
-  }, [exams, lessonOrderByLessonId]);
-
-  const systemScoreMap = useMemo(() => {
-    const map = {};
-    results.forEach((r) => {
-      const key = cellKey(r.examId, r.studentId);
-      const cur = map[key];
-      if (!cur || (r.attemptNumber || 1) >= (cur.attemptNumber || 1)) {
-        map[key] = { score: r.obtainedScore, attemptNumber: r.attemptNumber || 1 };
-      }
-    });
-    return map;
-  }, [results]);
+      .sort((a, b) =>
+        (a.startTime ? new Date(a.startTime).getTime() : 0) -
+        (b.startTime ? new Date(b.startTime).getTime() : 0));
+  }, [exams]);
 
   const manualScoreMap = useMemo(() => {
     const map = {};
@@ -116,23 +91,17 @@ export default function TutorExamScoreCoursePage() {
     enrollments.forEach((e) => {
       byId[e.studentId] = { studentId: e.studentId, studentName: e.studentName };
     });
-    results.forEach((r) => {
-      if (!byId[r.studentId]) byId[r.studentId] = { studentId: r.studentId, studentName: r.studentName };
-    });
     manualScores.forEach((m) => {
       if (!byId[m.studentId]) byId[m.studentId] = { studentId: m.studentId, studentName: m.studentName };
     });
     return Object.values(byId).sort((a, b) =>
       (a.studentName || '').localeCompare(b.studentName || '', 'th')
     );
-  }, [enrollments, results, manualScores]);
+  }, [enrollments, manualScores]);
 
   const savedScoreFor = useCallback((examId, studentId) => {
-    const key = cellKey(examId, studentId);
-    if (key in manualScoreMap) return manualScoreMap[key];
-    const sys = systemScoreMap[key];
-    return sys ? sys.score : undefined;
-  }, [manualScoreMap, systemScoreMap]);
+    return manualScoreMap[cellKey(examId, studentId)];
+  }, [manualScoreMap]);
 
   function flashCellState(key, state) {
     setCellState((prev) => ({ ...prev, [key]: state }));
@@ -289,12 +258,11 @@ export default function TutorExamScoreCoursePage() {
                     {orderedExams.map((exam) => {
                       const key = cellKey(exam.id, stu.studentId);
                       const saved = savedScoreFor(exam.id, stu.studentId);
-                      const fromSystem = !(key in manualScoreMap) && systemScoreMap[key];
                       const locked = !isExamGradable(exam);
                       const value = key in edits ? edits[key] : (saved != null ? saved : '');
                       const state = cellState[key];
                       return (
-                        <td key={exam.id} className={`escd-cell${fromSystem ? ' escd-cell-system' : ''}${locked ? ' escd-cell-locked' : ''}`}>
+                        <td key={exam.id} className={`escd-cell${locked ? ' escd-cell-locked' : ''}`}>
                           <input
                             type="number"
                             min="0"
@@ -305,13 +273,7 @@ export default function TutorExamScoreCoursePage() {
                             onChange={(e) => setEdits((p) => ({ ...p, [key]: e.target.value }))}
                             onBlur={() => commitCell(exam, stu.studentId)}
                             onKeyDown={(e) => { if (e.key === 'Enter') e.currentTarget.blur(); }}
-                            title={
-                              locked
-                                ? 'ยังไม่ถึงกำหนดสอบ — กรอกคะแนนได้เมื่อถึงเวลาสอบแล้ว'
-                                : fromSystem
-                                  ? 'คะแนนจากการทำข้อสอบในระบบ (แก้ทับได้)'
-                                  : undefined
-                            }
+                            title={locked ? 'ยังไม่ถึงกำหนดสอบ — กรอกคะแนนได้เมื่อถึงเวลาสอบแล้ว' : undefined}
                           />
                           {state === 'saving' && <i className="escd-dot saving" title="กำลังบันทึก" />}
                           {state === 'saved' && <i className="escd-dot saved" title="บันทึกแล้ว" />}
@@ -338,7 +300,6 @@ export default function TutorExamScoreCoursePage() {
           </div>
 
           <div className="escd-legend">
-            <span><i className="escd-swatch system" /> คะแนนจากการทำข้อสอบในระบบ (แก้ทับได้)</span>
             <span><i className="escd-swatch locked" /> ยังไม่ถึงกำหนดสอบ กรอกไม่ได้</span>
             <span>พิมพ์คะแนนแล้วคลิกออกเพื่อบันทึก · เว้นว่างเพื่อลบ</span>
           </div>

@@ -70,27 +70,3 @@ export const getEnrollmentReport = async (filters) => {
 };
 export const exportEnrollmentReport = (filters) =>
   downloadCsv('enrollment-report', '/admin/reports/enrollments/export', filters);
-
-// ── การเข้าเรียน ──
-export const getAttendanceReport = async (filters) => {
-  try {
-    const response = await api.get('/admin/reports/attendance', { params: cleanParams(filters) });
-    return response.data.data;
-  } catch (error) {
-    throw new Error(apiError('getAttendanceReport', error), { cause: error });
-  }
-};
-export const exportAttendanceReport = (filters) =>
-  downloadCsv('attendance-report', '/admin/reports/attendance/export', filters);
-
-// ── ผลสอบ/ผลงานติวเตอร์ ──
-export const getExamPerformanceReport = async (filters) => {
-  try {
-    const response = await api.get('/admin/reports/exam-performance', { params: cleanParams(filters) });
-    return response.data.data;
-  } catch (error) {
-    throw new Error(apiError('getExamPerformanceReport', error), { cause: error });
-  }
-};
-export const exportExamPerformanceReport = (filters) =>
-  downloadCsv('exam-performance-report', '/admin/reports/exam-performance/export', filters);

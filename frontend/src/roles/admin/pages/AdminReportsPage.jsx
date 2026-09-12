@@ -4,20 +4,15 @@ import {
   statusLabelTH,
   COURSE_STATUS_TH,
   ENROLLMENT_STATUS_TH,
-  ATTENDANCE_STATUS_TH,
 } from '../../../shared/utils/statusLabels';
 import RevenueReportTab from '../components/reports/RevenueReportTab';
 import EnrollmentReportTab from '../components/reports/EnrollmentReportTab';
-import AttendanceReportTab from '../components/reports/AttendanceReportTab';
-import ExamPerformanceReportTab from '../components/reports/ExamPerformanceReportTab';
 import './AdminReportsPage.css';
 
 const TABS = [
   { key: 'OVERVIEW', label: 'ภาพรวม' },
   { key: 'REVENUE', label: 'รายได้/การชำระเงิน' },
   { key: 'ENROLLMENT', label: 'การสมัครเรียน' },
-  { key: 'ATTENDANCE', label: 'การเข้าเรียน' },
-  { key: 'EXAM_PERFORMANCE', label: 'ผลสอบ/ผลงานติวเตอร์' },
 ];
 
 function formatNumber(value) {
@@ -160,11 +155,6 @@ function OverviewTab() {
               data={report.enrollmentsByStatus}
               labelMap={ENROLLMENT_STATUS_TH}
             />
-            <StatusBreakdown
-              title="การเข้าเรียนแยกตามสถานะ"
-              data={report.attendanceByStatus}
-              labelMap={ATTENDANCE_STATUS_TH}
-            />
           </div>
 
           <section className="ar-card">
@@ -241,8 +231,6 @@ export default function AdminReportsPage() {
       {tab === 'OVERVIEW' && <OverviewTab />}
       {tab === 'REVENUE' && <RevenueReportTab />}
       {tab === 'ENROLLMENT' && <EnrollmentReportTab />}
-      {tab === 'ATTENDANCE' && <AttendanceReportTab />}
-      {tab === 'EXAM_PERFORMANCE' && <ExamPerformanceReportTab />}
     </div>
   );
 }

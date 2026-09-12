@@ -18,8 +18,6 @@ public class CreateExamRequest {
     @NotNull(message = "Course ID is required")
     private Long courseId;
 
-    private Long lessonId;
-
     @NotBlank(message = "Title is required")
     private String title;
 

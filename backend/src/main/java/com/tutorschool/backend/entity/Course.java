@@ -59,16 +59,6 @@ public class Course {
     @JoinColumn(name = "tutor_id", nullable = false)
     private Tutor tutor;
 
-    @OneToMany(mappedBy = "course", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
-    @OrderBy("lessonOrder ASC")
-    @Builder.Default
-    private List<CourseLesson> lessons = new ArrayList<>();
-
-    @OneToMany(mappedBy = "course", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
-    @OrderBy("testOrder ASC")
-    @Builder.Default
-    private List<CourseTest> tests = new ArrayList<>();
-
     @Column(name = "tutor_remark", columnDefinition = "TEXT")
     private String tutorRemark;
 

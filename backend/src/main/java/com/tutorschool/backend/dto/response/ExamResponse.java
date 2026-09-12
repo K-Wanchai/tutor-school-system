@@ -4,7 +4,6 @@ import com.tutorschool.backend.entity.ExamStatus;
 import lombok.*;
 
 import java.time.LocalDateTime;
-import java.util.List;
 
 @Getter
 @Setter
@@ -18,8 +17,6 @@ public class ExamResponse {
     private Long courseId;
     private String courseName;
     private String courseCode;
-    private Long lessonId;
-    private String lessonTitle;
     private Long tutorId;
     private String teacherName;
     private String title;
@@ -35,7 +32,6 @@ public class ExamResponse {
     private Boolean showScoreAfterSubmit;
     private Boolean showCorrectAnswersAfterSubmit;
     private ExamStatus status;
-    private List<ExamQuestionResponse> questions;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 }

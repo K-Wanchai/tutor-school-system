@@ -1,10 +1,8 @@
 package com.tutorschool.backend.controller;
 
 import com.tutorschool.backend.dto.request.CreateExamRequest;
-import com.tutorschool.backend.dto.request.CreateExamQuestionRequest;
 import com.tutorschool.backend.dto.request.UpdateExamRequest;
 import com.tutorschool.backend.dto.response.ApiResponse;
-import com.tutorschool.backend.dto.response.ExamQuestionResponse;
 import com.tutorschool.backend.dto.response.ExamResponse;
 import com.tutorschool.backend.entity.User;
 import com.tutorschool.backend.service.ExamService;
@@ -54,12 +52,6 @@ public class ExamController {
     @PreAuthorize("hasRole('TUTOR') or hasRole('ADMIN')")
     public ResponseEntity<ApiResponse<List<ExamResponse>>> getExamsByCourse(@PathVariable Long courseId) {
         return ResponseEntity.ok(ApiResponse.success("Exams retrieved", examService.getExamsByCourse(courseId)));
-    }
-
-    @GetMapping("/lesson/{lessonId}")
-    @PreAuthorize("hasRole('TUTOR') or hasRole('ADMIN')")
-    public ResponseEntity<ApiResponse<List<ExamResponse>>> getExamsByLesson(@PathVariable Long lessonId) {
-        return ResponseEntity.ok(ApiResponse.success("Exams retrieved", examService.getExamsByLesson(lessonId)));
     }
 
     // Student ดูได้เฉพาะ OPEN exams
@@ -114,16 +106,4 @@ public class ExamController {
         return ResponseEntity.ok(ApiResponse.success("Exam deleted"));
     }
 
-    // ─── Question management ──────────────────────────────────────────────────
-
-    @PostMapping("/{examId}/questions")
-    @PreAuthorize("hasRole('TUTOR') or hasRole('ADMIN')")
-    public ResponseEntity<ApiResponse<ExamQuestionResponse>> addQuestion(
-            @PathVariable Long examId,
-            @Valid @RequestBody CreateExamQuestionRequest request,
-            Principal principal) {
-        ExamQuestionResponse response = examService.addQuestion(examId, request, principal.getName());
-        return ResponseEntity.status(HttpStatus.CREATED)
-                .body(ApiResponse.success("Question added successfully", response));
-    }
 }
