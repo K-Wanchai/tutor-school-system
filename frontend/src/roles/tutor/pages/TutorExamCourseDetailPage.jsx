@@ -346,10 +346,8 @@ export default function TutorExamCourseDetailPage() {
 
   async function handleSubmit(e) {
     e.preventDefault();
-    if (!form.title) return setFormErr('ไม่พบชื่อประเภทข้อสอบ กรุณาปิดแล้วลองใหม่');
-    // สร้างใหม่ต้องมีลิงก์ข้อสอบเสมอ แต่แก้ไขไม่บังคับ — ข้อสอบเก่าที่ยังไม่มีลิงก์ (สร้างไว้ก่อนมีฟีเจอร์นี้)
-    // ต้องยังแก้ไขฟิลด์อื่น (เช่นคะแนนเต็ม) ได้โดยไม่ถูกบล็อกเพราะไม่มีลิงก์
-    if (!editingExamId && !form.examLink.trim()) return setFormErr('กรุณากรอกลิงก์ข้อสอบ');
+    if (!form.title) return setFormErr('ไม่พบข้อสอบ กรุณาปิดแล้วลองใหม่');
+    // ลิงก์ข้อสอบไม่บังคับกรอก ทั้งตอนสร้างและแก้ไข — ติวเตอร์บางคนแจกข้อสอบในคลาสแทนการส่งลิงก์
     if (form.totalScore === '' || Number.isNaN(Number(form.totalScore))) {
       return setFormErr('กรุณากรอกคะแนนเต็ม');
     }
@@ -599,7 +597,6 @@ export default function TutorExamCourseDetailPage() {
               </div>
 
               <label>
-                ประเภทข้อสอบ
                 <input type="text" value={form.title} readOnly disabled />
                 {!editingExamId && (
                   <span className="tes-lbl-hint">ตั้งชื่ออัตโนมัติตามลำดับการสอบของคอร์สนี้</span>
@@ -607,7 +604,7 @@ export default function TutorExamCourseDetailPage() {
               </label>
 
               <label>
-                ลิงก์ข้อสอบ{!editingExamId && ' *'} <span className="tes-lbl-hint">(เช่น Google Form)</span>
+                ลิงก์ข้อสอบ <span className="tes-lbl-hint">(เช่น Google Form, ไม่บังคับ)</span>
                 <input
                   type="url"
                   placeholder="https://forms.google.com/..."
