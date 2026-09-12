@@ -210,3 +210,141 @@
     transform: rotate(360deg);
   }
 }
+
+/* ── Tabs ── */
+.ar-tabs {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  border-bottom: 1px solid #e2e8f0;
+  padding-bottom: 2px;
+}
+
+.ar-tab-btn {
+  padding: 10px 16px;
+  border: none;
+  background: transparent;
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 700;
+  color: #64748b;
+  cursor: pointer;
+  border-radius: 10px 10px 0 0;
+  border-bottom: 2px solid transparent;
+}
+
+.ar-tab-btn:hover {
+  color: #1d4ed8;
+  background: #f8fafc;
+}
+
+.ar-tab-btn.active {
+  color: #1d4ed8;
+  border-bottom-color: #1d4ed8;
+}
+
+/* ── Filter bar ── */
+.ar-filter-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 14px;
+  padding: 18px 20px;
+  border: 1px solid #e2e8f0;
+  border-radius: 16px;
+  background: #fff;
+  box-shadow: 0 10px 26px rgba(15, 23, 42, 0.05);
+}
+
+.ar-filter-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 160px;
+}
+
+.ar-filter-field label {
+  font-size: 12px;
+  font-weight: 700;
+  color: #64748b;
+}
+
+.ar-filter-field input,
+.ar-filter-field select {
+  padding: 9px 12px;
+  border: 1px solid #cbd5e1;
+  border-radius: 10px;
+  font-family: inherit;
+  font-size: 14px;
+  color: #0f172a;
+  background: #fff;
+}
+
+.ar-filter-actions {
+  display: flex;
+  gap: 10px;
+  margin-left: auto;
+}
+
+.ar-btn-search {
+  padding: 10px 20px;
+  border: none;
+  border-radius: 10px;
+  background: #1d4ed8;
+  color: #fff;
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.ar-btn-search:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.ar-btn-export {
+  padding: 10px 20px;
+  border: 1px solid #16a34a;
+  border-radius: 10px;
+  background: #f0fdf4;
+  color: #15803d;
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.ar-btn-export:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.ar-summary-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.ar-chip {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 12px 16px;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  background: #fff;
+  min-width: 140px;
+}
+
+.ar-chip span {
+  font-size: 12px;
+  color: #64748b;
+  font-weight: 600;
+}
+
+.ar-chip strong {
+  font-size: 18px;
+  font-weight: 800;
+  color: #0f172a;
+}

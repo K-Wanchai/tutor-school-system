@@ -2,16 +2,30 @@ package com.tutorschool.backend.service.impl;
 
 import com.tutorschool.backend.dto.response.AdminReportResponse;
 import com.tutorschool.backend.dto.response.AdminReportResponse.CourseReportItem;
+import com.tutorschool.backend.dto.response.AttendanceReportResponse;
+import com.tutorschool.backend.dto.response.AttendanceReportResponse.AttendanceReportItem;
+import com.tutorschool.backend.dto.response.EnrollmentReportResponse;
+import com.tutorschool.backend.dto.response.EnrollmentReportResponse.EnrollmentReportItem;
+import com.tutorschool.backend.dto.response.ExamPerformanceReportResponse;
+import com.tutorschool.backend.dto.response.ExamPerformanceReportResponse.ExamPerformanceReportItem;
+import com.tutorschool.backend.dto.response.RevenueReportResponse;
+import com.tutorschool.backend.dto.response.RevenueReportResponse.RevenueReportItem;
+import com.tutorschool.backend.entity.AttendanceRecord;
+import com.tutorschool.backend.entity.AttendanceStatus;
 import com.tutorschool.backend.entity.Course;
 import com.tutorschool.backend.entity.CourseEvaluation;
 import com.tutorschool.backend.entity.Enrollment;
 import com.tutorschool.backend.entity.EnrollmentStatus;
+import com.tutorschool.backend.entity.ExamSubmission;
 import com.tutorschool.backend.entity.Payment;
 import com.tutorschool.backend.entity.PaymentVerificationStatus;
+import com.tutorschool.backend.entity.Student;
+import com.tutorschool.backend.entity.Tutor;
 import com.tutorschool.backend.repository.AttendanceRecordRepository;
 import com.tutorschool.backend.repository.CourseEvaluationRepository;
 import com.tutorschool.backend.repository.CourseRepository;
 import com.tutorschool.backend.repository.EnrollmentRepository;
+import com.tutorschool.backend.repository.ExamSubmissionRepository;
 import com.tutorschool.backend.repository.PaymentRepository;
 import com.tutorschool.backend.repository.StudentRepository;
 import com.tutorschool.backend.repository.TutorRepository;
@@ -21,6 +35,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -42,6 +59,7 @@ public class AdminReportServiceImpl implements AdminReportService {
     private final PaymentRepository paymentRepository;
     private final CourseEvaluationRepository courseEvaluationRepository;
     private final AttendanceRecordRepository attendanceRecordRepository;
+    private final ExamSubmissionRepository examSubmissionRepository;
 
     @Override
     @Transactional(readOnly = true)
@@ -113,5 +131,211 @@ public class AdminReportServiceImpl implements AdminReportService {
     private <T> Map<String, Long> countBy(List<T> items, Function<T, String> keyFn) {
         return items.stream().collect(Collectors.groupingBy(
                 keyFn, LinkedHashMap::new, Collectors.counting()));
+    }
+
+    // ช่วงวันที่จาก UI เป็น LocalDate (แค่วัน) — แปลงเป็นขอบเขต LocalDateTime ครอบคลุมทั้งวัน
+    // ก่อนส่งเข้า query ที่เก็บเป็น LocalDateTime; ไม่ส่งมาก็ปล่อยเป็น null (ไม่กรอง)
+    private LocalDateTime startOfDay(LocalDate date) {
+        return date != null ? date.atStartOfDay() : null;
+    }
+
+    private LocalDateTime endOfDay(LocalDate date) {
+        return date != null ? LocalDateTime.of(date, LocalTime.MAX) : null;
+    }
+
+    private String tutorFullName(Tutor tutor) {
+        if (tutor == null) return "";
+        return ((tutor.getFirstName() != null ? tutor.getFirstName() : "") + " "
+                + (tutor.getLastName() != null ? tutor.getLastName() : "")).trim();
+    }
+
+    private String studentFullName(Student student) {
+        if (student == null) return "";
+        if (student.getFullName() != null && !student.getFullName().isBlank()) return student.getFullName();
+        return ((student.getFirstName() != null ? student.getFirstName() : "") + " "
+                + (student.getLastName() != null ? student.getLastName() : "")).trim();
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public RevenueReportResponse getRevenueReport(LocalDate dateFrom, LocalDate dateTo, Long courseId,
+                                                   PaymentVerificationStatus status) {
+        List<Payment> payments = paymentRepository.searchForReport(
+                startOfDay(dateFrom), endOfDay(dateTo), courseId, status);
+
+        List<RevenueReportItem> items = payments.stream()
+                .map(p -> {
+                    Course course = p.getEnrollment() != null ? p.getEnrollment().getCourse() : null;
+                    return RevenueReportItem.builder()
+                            .paymentId(p.getId())
+                            .paymentCode(p.getPaymentCode())
+                            .paymentDate(p.getCreatedAt())
+                            .studentName(studentFullName(p.getStudent()))
+                            .studentCode(p.getStudent() != null ? p.getStudent().getStudentCode() : null)
+                            .courseId(course != null ? course.getId() : null)
+                            .courseName(course != null ? course.getCourseName() : null)
+                            .courseCode(course != null ? course.getCourseCode() : null)
+                            .amount(p.getAmount())
+                            .paymentMethod(p.getPaymentMethod() != null ? p.getPaymentMethod().name() : null)
+                            .paymentStatus(p.getPaymentStatus() != null ? p.getPaymentStatus().name() : null)
+                            .build();
+                })
+                .toList();
+
+        BigDecimal totalAmount = sumAmount(payments, Payment::getAmount);
+        BigDecimal verifiedAmount = sumAmount(
+                payments.stream().filter(p -> p.getPaymentStatus() == PaymentVerificationStatus.VERIFIED).toList(),
+                Payment::getAmount);
+        BigDecimal pendingAmount = sumAmount(
+                payments.stream().filter(p -> p.getPaymentStatus() == PaymentVerificationStatus.PENDING).toList(),
+                Payment::getAmount);
+
+        return RevenueReportResponse.builder()
+                .totalCount(payments.size())
+                .totalAmount(totalAmount)
+                .verifiedAmount(verifiedAmount)
+                .pendingAmount(pendingAmount)
+                .items(items)
+                .build();
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public EnrollmentReportResponse getEnrollmentReport(LocalDate dateFrom, LocalDate dateTo, Long courseId,
+                                                         EnrollmentStatus status) {
+        List<Enrollment> enrollments = enrollmentRepository.searchForReport(
+                startOfDay(dateFrom), endOfDay(dateTo), courseId, status);
+
+        List<EnrollmentReportItem> items = enrollments.stream()
+                .map(e -> EnrollmentReportItem.builder()
+                        .enrollmentId(e.getId())
+                        .enrollmentCode(e.getEnrollmentCode())
+                        .enrollmentDate(e.getEnrollmentDate())
+                        .studentName(studentFullName(e.getStudent()))
+                        .studentCode(e.getStudent() != null ? e.getStudent().getStudentCode() : null)
+                        .courseId(e.getCourse() != null ? e.getCourse().getId() : null)
+                        .courseName(e.getCourse() != null ? e.getCourse().getCourseName() : null)
+                        .courseCode(e.getCourse() != null ? e.getCourse().getCourseCode() : null)
+                        .tutorName(e.getCourse() != null ? tutorFullName(e.getCourse().getTutor()) : null)
+                        .status(e.getStatus() != null ? e.getStatus().name() : null)
+                        .paymentStatus(e.getPaymentStatus() != null ? e.getPaymentStatus().name() : null)
+                        .finalAmount(e.getFinalAmount())
+                        .build())
+                .toList();
+
+        BigDecimal totalAmount = enrollments.stream()
+                .map(Enrollment::getFinalAmount)
+                .filter(java.util.Objects::nonNull)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        return EnrollmentReportResponse.builder()
+                .totalCount(enrollments.size())
+                .totalAmount(totalAmount)
+                .byStatus(countBy(enrollments, e -> e.getStatus() != null ? e.getStatus().name() : "UNKNOWN"))
+                .items(items)
+                .build();
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public AttendanceReportResponse getAttendanceReport(LocalDate dateFrom, LocalDate dateTo, Long courseId,
+                                                          Long studentId, AttendanceStatus status) {
+        List<AttendanceRecord> records = attendanceRecordRepository.searchForReport(
+                startOfDay(dateFrom), endOfDay(dateTo), courseId, studentId, status);
+
+        List<AttendanceReportItem> items = records.stream()
+                .map(a -> AttendanceReportItem.builder()
+                        .attendanceId(a.getId())
+                        .attendanceCode(a.getAttendanceCode())
+                        .checkInTime(a.getCheckInTime())
+                        .studentName(studentFullName(a.getStudent()))
+                        .studentCode(a.getStudent() != null ? a.getStudent().getStudentCode() : null)
+                        .courseId(a.getCourse() != null ? a.getCourse().getId() : null)
+                        .courseName(a.getCourse() != null ? a.getCourse().getCourseName() : null)
+                        .courseCode(a.getCourse() != null ? a.getCourse().getCourseCode() : null)
+                        .lessonTitle(a.getLesson() != null ? a.getLesson().getLessonTitle() : null)
+                        .status(a.getStatus() != null ? a.getStatus().name() : null)
+                        .lateMinutes(a.getLateMinutes())
+                        .build())
+                .toList();
+
+        long present = records.stream().filter(a -> a.getStatus() == AttendanceStatus.PRESENT).count();
+        long late = records.stream().filter(a -> a.getStatus() == AttendanceStatus.LATE).count();
+        long absent = records.stream().filter(a -> a.getStatus() == AttendanceStatus.ABSENT).count();
+        long leave = records.stream()
+                .filter(a -> a.getStatus() == AttendanceStatus.LEAVE || a.getStatus() == AttendanceStatus.EXCUSED)
+                .count();
+        long attended = present + late;
+        long recorded = records.size() - records.stream()
+                .filter(a -> a.getStatus() == AttendanceStatus.LEAVE || a.getStatus() == AttendanceStatus.EXCUSED)
+                .count();
+        double rate = recorded > 0 ? Math.round((attended * 1000.0) / recorded) / 10.0 : 0.0;
+
+        return AttendanceReportResponse.builder()
+                .totalCount(records.size())
+                .presentCount(present)
+                .lateCount(late)
+                .absentCount(absent)
+                .leaveCount(leave)
+                .attendanceRate(rate)
+                .items(items)
+                .build();
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public ExamPerformanceReportResponse getExamPerformanceReport(LocalDate dateFrom, LocalDate dateTo,
+                                                                    Long courseId, Long tutorId) {
+        List<ExamSubmission> submissions = examSubmissionRepository.searchForReport(
+                startOfDay(dateFrom), endOfDay(dateTo), courseId, tutorId);
+
+        Map<Long, List<ExamSubmission>> byCourse = submissions.stream()
+                .filter(s -> s.getExam() != null && s.getExam().getCourse() != null)
+                .collect(Collectors.groupingBy(s -> s.getExam().getCourse().getId(), LinkedHashMap::new,
+                        Collectors.toList()));
+
+        List<ExamPerformanceReportItem> items = byCourse.values().stream()
+                .map(rows -> {
+                    Course course = rows.get(0).getExam().getCourse();
+                    long examCount = rows.stream().map(s -> s.getExam().getId()).distinct().count();
+                    long studentCount = rows.stream().map(s -> s.getStudent().getId()).distinct().count();
+
+                    List<ExamSubmission> scored = rows.stream()
+                            .filter(s -> s.getObtainedScore() != null && s.getTotalScore() != null
+                                    && s.getTotalScore() > 0)
+                            .toList();
+                    Double avgPercent = scored.isEmpty() ? null : Math.round(scored.stream()
+                            .mapToDouble(s -> (s.getObtainedScore() / s.getTotalScore()) * 100)
+                            .average().orElse(0.0) * 10.0) / 10.0;
+
+                    List<ExamSubmission> withPassFlag = rows.stream().filter(s -> s.getIsPassed() != null).toList();
+                    Double passRate = withPassFlag.isEmpty() ? null : Math.round(withPassFlag.stream()
+                            .filter(ExamSubmission::getIsPassed)
+                            .count() * 1000.0 / withPassFlag.size()) / 10.0;
+
+                    return ExamPerformanceReportItem.builder()
+                            .courseId(course.getId())
+                            .courseName(course.getCourseName())
+                            .courseCode(course.getCourseCode())
+                            .tutorId(course.getTutor() != null ? course.getTutor().getId() : null)
+                            .tutorName(tutorFullName(course.getTutor()))
+                            .examCount(examCount)
+                            .submissionCount(rows.size())
+                            .studentCount(studentCount)
+                            .averageScorePercent(avgPercent)
+                            .passRate(passRate)
+                            .build();
+                })
+                .sorted(Comparator.comparingLong(ExamPerformanceReportItem::getSubmissionCount).reversed())
+                .toList();
+
+        return ExamPerformanceReportResponse.builder().items(items).build();
+    }
+
+    private <T> BigDecimal sumAmount(List<T> items, Function<T, BigDecimal> amountFn) {
+        return items.stream()
+                .map(amountFn)
+                .filter(java.util.Objects::nonNull)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
     }
 }

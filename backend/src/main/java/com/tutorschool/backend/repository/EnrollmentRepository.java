@@ -54,4 +54,16 @@ public interface EnrollmentRepository extends JpaRepository<Enrollment, Long> {
     List<Enrollment> findExpiredPaymentEnrollments(@Param("now") LocalDateTime now);
 
     void deleteByCourseId(Long courseId);
+
+    // รายงานการสมัครเรียน — กรองแบบ nullable-param (พารามิเตอร์ไหนไม่ส่งมาก็ไม่ถูกใช้กรอง)
+    @Query("SELECT e FROM Enrollment e " +
+            "WHERE (:dateFrom IS NULL OR e.enrollmentDate >= :dateFrom) " +
+            "AND (:dateTo IS NULL OR e.enrollmentDate <= :dateTo) " +
+            "AND (:courseId IS NULL OR e.course.id = :courseId) " +
+            "AND (:status IS NULL OR e.status = :status) " +
+            "ORDER BY e.enrollmentDate DESC")
+    List<Enrollment> searchForReport(@Param("dateFrom") LocalDateTime dateFrom,
+                                      @Param("dateTo") LocalDateTime dateTo,
+                                      @Param("courseId") Long courseId,
+                                      @Param("status") EnrollmentStatus status);
 }
