@@ -16,7 +16,10 @@ DROP TABLE IF EXISTS classroom_sessions;
 
 -- ตารางเรียนแบบวันที่จริง + บทเรียน (คงเหลือแค่ course_schedule_days ซึ่งเป็นรูปแบบวนซ้ำรายสัปดาห์)
 -- exams.lesson_id อ้างถึง course_lessons — ต้องลบคอลัมน์นี้ก่อน ไม่งั้น FK จะกันไม่ให้ลบตาราง
+-- schedule_attendances เป็นตารางเก่าของฟีเจอร์เช็คชื่อรุ่นก่อน ClassAttendance (ถูกแทนที่ไปแล้วก่อนหน้านี้
+-- ไม่มี entity ไหนอ้างถึงในโค้ดปัจจุบันเลย) แต่ยังมี FK ค้างชี้ไปที่ course_schedules อยู่ ต้องลบก่อน
 ALTER TABLE exams DROP COLUMN IF EXISTS lesson_id;
+DROP TABLE IF EXISTS schedule_attendances;
 DROP TABLE IF EXISTS course_schedules;
 DROP TABLE IF EXISTS course_lessons;
 
