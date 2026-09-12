@@ -1,0 +1,123 @@
+/*
+ * โทนสีเฉพาะของฝั่งผู้ปกครอง — ให้แตกต่างจากฝั่งนักเรียน (ม่วง/indigo) และแอดมิน/ติวเตอร์
+ * หน้าผู้ปกครองใช้ CSS ของฝั่งนักเรียนซ้ำเพื่อให้ UI เหมือนกันทุกจุด (ดูบทสนทนาก่อนหน้า)
+ * ไฟล์นี้จึง override เฉพาะ "สีม่วง/indigo" (โทนของนักเรียน) เป็นโทนเขียวสนสงบตา (sage/seafoam)
+ * แทน — เข้มน้อยกว่าและอิ่มตัวน้อยกว่าม่วงเดิม เพื่อความสบายตาและความรู้สึกอบอุ่น เหมาะกับผู้ปกครอง
+ * โดย scope ทุก rule ไว้ใต้ .parent-theme (ครอบทั้งหน้าใน ParentLayout) ไม่กระทบ role อื่น
+ *
+ * Scale ที่ใช้ (sage/seafoam):
+ *   50  #f4faf8   100 #e1f3ec   200 #c3e7dc   300 #97d4c1
+ *   500 #429e86   600 #337d6c   700 #2b6558   800 #244f46   900 #1f403a
+ */
+
+/* ── Sidebar ── */
+.parent-theme .student-sidebar { background: #1f403a; }
+.parent-theme .student-sidebar-nav-link--active,
+.parent-theme .student-sidebar-nav-link--active:hover {
+  background: rgba(66, 158, 134, 0.3);
+  color: #c3e7dc;
+}
+
+/* ── Navbar ── */
+.parent-theme .student-badge {
+  background: #f4faf8;
+  color: #337d6c;
+  border-color: #c3e7dc;
+}
+.parent-theme .student-navbar-avatar {
+  background: linear-gradient(135deg, #429e86, #337d6c);
+}
+
+/* ── Dashboard hero + stat cards ── */
+.parent-theme .student-hero-card {
+  background:
+    radial-gradient(circle at top right, rgba(255, 255, 255, 0.22), transparent 34%),
+    linear-gradient(135deg, #244f46, #337d6c 48%, #429e86);
+  box-shadow: 0 20px 45px rgba(51, 125, 108, 0.2);
+}
+.parent-theme .student-hero-card::before { background: rgba(66, 158, 134, 0.32); }
+.parent-theme .student-hero-card::after { background: rgba(151, 212, 193, 0.14); }
+.parent-theme .student-hero-date,
+.parent-theme .student-hero-card p { color: #e1f3ec; }
+.parent-theme .student-hero-badge span { color: #c3e7dc; }
+
+.parent-theme .student-stat-card:hover,
+.parent-theme .student-stat-card:focus-visible {
+  border-color: #97d4c1;
+  box-shadow: 0 12px 28px rgba(51, 125, 108, 0.12);
+}
+.parent-theme .student-stat-icon { background: #f4faf8; }
+
+.parent-theme .student-course-card { border-color: #e1f3ec; background: #f7fbf9; }
+.parent-theme .student-course-btn { background: #337d6c; }
+.parent-theme .student-schedule-item span { color: #337d6c; }
+
+.parent-theme .student-dashboard-loading,
+.parent-theme .student-empty-state {
+  border-color: #c3e7dc;
+  background: #f7fbf9;
+  color: #337d6c;
+}
+.parent-theme .student-loading-spinner {
+  border-color: #e1f3ec;
+  border-top-color: #337d6c;
+}
+
+.parent-theme .student-panel-link-btn { background: #e1f3ec; color: #2b6558; }
+.parent-theme .student-panel-link-btn:hover { background: #c3e7dc; }
+
+/* ── ประวัติการสมัครเรียน ── */
+.parent-theme .hist-spinner { border-top-color: #337d6c; }
+.parent-theme .hist-filter-btn.active { background: #337d6c; border-color: #337d6c; }
+.parent-theme .hist-code { color: #2b6558; background: #f4faf8; }
+.parent-theme .hist-detail-btn { color: #2b6558; background: #f4faf8; border-color: #c3e7dc; }
+.parent-theme .hist-detail-btn:hover { background: #e1f3ec; }
+.parent-theme .hist-slip-link { color: #337d6c; }
+
+/* ── ตารางเรียน ── */
+.parent-theme .ssp-timetable-nav button { border-color: #c3e7dc; color: #2b6558; }
+.parent-theme .ssp-timetable-nav button:hover { background: #f4faf8; }
+.parent-theme .ssp-timetable-range,
+.parent-theme .ssp-tt-day-name,
+.parent-theme .ssp-empty-state h3 { color: #244f46; }
+.parent-theme .ssp-timetable-scroll { border-color: #e1f3ec; }
+.parent-theme .ssp-tt-corner,
+.parent-theme .ssp-tt-timeaxis { border-color: #c3e7dc; }
+.parent-theme .ssp-tt-dayrow-header { background: #f7fbf9; border-right-color: #c3e7dc; }
+.parent-theme .ssp-tt-dayrow-header.ssp-tt-today { background: #e1f3ec; }
+.parent-theme .ssp-tt-dayrow-header.ssp-tt-today .ssp-tt-day-name,
+.parent-theme .ssp-tt-dayrow-header.ssp-tt-today .ssp-tt-day-date { color: #2b6558; }
+.parent-theme .ssp-tt-dayrow.ssp-tt-today-col { background: #f9fcfb; }
+.parent-theme .ssp-tt-event-scheduled,
+.parent-theme .ssp-tt-event-upcoming {
+  border-left-color: #337d6c;
+  background: #f4faf8;
+  color: #244f46;
+}
+.parent-theme .ssp-status-scheduled,
+.parent-theme .ssp-status-upcoming { background: #e1f3ec; color: #2b6558; }
+.parent-theme .ssp-btn-primary { background: #337d6c; box-shadow: 0 12px 24px rgba(51, 125, 108, 0.22); }
+.parent-theme .ssp-btn-outline { border-color: #c3e7dc; color: #2b6558; }
+.parent-theme .ssp-btn-soft { background: #f4faf8; color: #2b6558; }
+.parent-theme .ssp-spinner { border-color: #e1f3ec; border-top-color: #337d6c; }
+.parent-theme .ssp-empty-state { border-color: #c3e7dc; background: #f7fbf9; }
+.parent-theme .ssp-modal-header p { color: #337d6c; }
+.parent-theme .ssp-detail-item a { color: #337d6c; }
+
+/* ── โปรไฟล์บุตรหลาน ── */
+.parent-theme .sp-hero-card {
+  background:
+    radial-gradient(circle at top right, rgba(255, 255, 255, 0.22), transparent 34%),
+    linear-gradient(135deg, #1f403a 0%, #2b6558 52%, #429e86 100%);
+  box-shadow: 0 20px 45px rgba(31, 64, 58, 0.2);
+}
+.parent-theme .sp-avatar { background: #337d6c; }
+.parent-theme .sp-kicker { color: #c3e7dc; }
+.parent-theme .sp-primary-btn { background: #337d6c; box-shadow: 0 12px 24px rgba(51, 125, 108, 0.22); }
+.parent-theme .sp-primary-btn:hover { background: #2b6558; }
+.parent-theme .sp-spinner { border-color: #c3e7dc; border-top-color: #337d6c; }
+.parent-theme .sp-field input:focus,
+.parent-theme .sp-field textarea:focus {
+  border-color: #337d6c;
+  box-shadow: 0 0 0 4px rgba(51, 125, 108, 0.12);
+}
