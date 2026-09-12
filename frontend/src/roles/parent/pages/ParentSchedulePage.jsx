@@ -1,0 +1,626 @@
+import { Fragment, useEffect, useMemo, useState } from 'react';
+import { getChildSchedules } from '../services/parentService';
+import '../../student/pages/StudentSchedulePage.css';
+
+const DAY_LABELS = ['จันทร์', 'อังคาร', 'พุธ', 'พฤหัสบดี', 'ศุกร์', 'เสาร์', 'อาทิตย์'];
+
+const STATUS_LABELS = {
+  SCHEDULED: 'รอตารางเรียน',
+  UPCOMING: 'กำลังจะถึง',
+  ONGOING: 'กำลังเรียน',
+  COMPLETED: 'เรียนเสร็จแล้ว',
+  CANCELLED: 'ยกเลิก',
+  CLOSED: 'ปิดห้องเรียนแล้ว',
+};
+
+const DEFAULT_RANGE_START = 8 * 60;
+const DEFAULT_RANGE_END = 20 * 60;
+const PX_PER_MIN = 2.2;
+const LANE_HEIGHT = 64;
+const LANE_GAP = 8;
+const MIN_EVENT_WIDTH = 108;
+
+function safeText(value) {
+  return value === null || value === undefined || value === '' ? '-' : value;
+}
+
+function formatDate(dateValue) {
+  if (!dateValue) return '-';
+
+  const date = new Date(dateValue);
+
+  if (Number.isNaN(date.getTime())) return '-';
+
+  return date.toLocaleDateString('th-TH', {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+    weekday: 'long',
+  });
+}
+
+function formatTime(timeValue) {
+  if (!timeValue) return '-';
+
+  if (typeof timeValue === 'string') {
+    return timeValue.slice(0, 5);
+  }
+
+  return '-';
+}
+
+function formatDateTime(dateTimeValue) {
+  if (!dateTimeValue) return '-';
+
+  const date = new Date(dateTimeValue);
+
+  if (Number.isNaN(date.getTime())) return '-';
+
+  return date.toLocaleString('th-TH', {
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  });
+}
+
+function getStatusLabel(status) {
+  if (!status) return '-';
+  return STATUS_LABELS[status] || status;
+}
+
+function getStatusClass(status) {
+  const normalized = String(status || '').toLowerCase();
+  return `ssp-status ssp-status-${normalized || 'unknown'}`;
+}
+
+function getTimetableEventClass(status) {
+  const normalized = String(status || '').toLowerCase();
+  return `ssp-tt-event ssp-tt-event-${normalized || 'unknown'}`;
+}
+
+function getLocalDateKey(date = new Date()) {
+  const year = date.getFullYear();
+  const month = `${date.getMonth() + 1}`.padStart(2, '0');
+  const day = `${date.getDate()}`.padStart(2, '0');
+
+  return `${year}-${month}-${day}`;
+}
+
+function getStartOfWeek(date = new Date()) {
+  const start = new Date(date);
+  const currentDay = start.getDay();
+  const diffToMonday = currentDay === 0 ? -6 : 1 - currentDay;
+
+  start.setDate(start.getDate() + diffToMonday);
+  start.setHours(0, 0, 0, 0);
+
+  return start;
+}
+
+function parseTimeToMinutes(timeValue) {
+  if (!timeValue || typeof timeValue !== 'string') return null;
+
+  const [h, m] = timeValue.split(':');
+  const hours = Number(h);
+  const minutes = Number(m);
+
+  if (Number.isNaN(hours) || Number.isNaN(minutes)) return null;
+
+  return hours * 60 + minutes;
+}
+
+function getScheduleDateKey(schedule) {
+  return schedule.scheduleDate || '';
+}
+
+function isCancelled(schedule) {
+  return schedule.status === 'CANCELLED';
+}
+
+function normalizeSchedule(item) {
+  return {
+    id: item.id,
+    scheduleCode: item.scheduleCode || item.code || item.schedule_code,
+    courseId: item.courseId || item.course?.id,
+    courseName: item.courseName || item.course?.courseName || item.course?.name,
+    lessonId: item.lessonId || item.lesson?.id,
+    lessonTitle: item.lessonTitle || item.lesson?.lessonTitle || item.lesson?.title || item.lessonName,
+    tutorName:
+      item.tutorName ||
+      item.tutor?.fullName ||
+      item.tutor?.name ||
+      item.teacherName ||
+      item.teacher?.fullName,
+    scheduleDate: item.scheduleDate || item.date || item.classDate,
+    startTime: item.startTime || item.start_time,
+    endTime: item.endTime || item.end_time,
+    status: item.status,
+    classroomSessionId: item.classroomSessionId || item.sessionId || item.classroomSession?.id,
+    sessionCode: item.sessionCode || item.classroomSession?.sessionCode,
+    meetingUrl: item.meetingUrl || item.onlineUrl || item.classroomSession?.meetingUrl,
+    location: item.location || item.roomName || item.room,
+    note: item.note || item.remark,
+    cancelReason: item.cancelReason,
+    createdAt: item.createdAt,
+    updatedAt: item.updatedAt,
+  };
+}
+
+function getErrorMessage(err) {
+  const status = err?.response?.status;
+
+  if (status === 401) {
+    return 'กรุณาเข้าสู่ระบบใหม่อีกครั้ง';
+  }
+
+  if (status === 403) {
+    return 'คุณไม่มีสิทธิ์เข้าถึงหน้านี้';
+  }
+
+  if (status === 500) {
+    return 'เกิดข้อผิดพลาดจากระบบ กรุณาลองใหม่อีกครั้ง';
+  }
+
+  return err?.response?.data?.message || err?.message || 'ไม่สามารถโหลดตารางเรียนได้';
+}
+
+function formatWeekRangeLabel(startDate) {
+  const endDate = new Date(startDate);
+  endDate.setDate(endDate.getDate() + 6);
+
+  const startLabel = startDate.toLocaleDateString('th-TH', { day: 'numeric', month: 'short' });
+  const endLabel = endDate.toLocaleDateString('th-TH', {
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric',
+  });
+
+  return `${startLabel} - ${endLabel}`;
+}
+
+function clusterByOverlap(sortedEvents) {
+  const clusters = [];
+  let current = [];
+  let currentEnd = -Infinity;
+
+  sortedEvents.forEach((ev) => {
+    if (current.length === 0 || ev.startMin < currentEnd) {
+      current.push(ev);
+      currentEnd = Math.max(currentEnd, ev.endMin);
+    } else {
+      clusters.push(current);
+      current = [ev];
+      currentEnd = ev.endMin;
+    }
+  });
+
+  if (current.length > 0) clusters.push(current);
+
+  return clusters;
+}
+
+function assignLanes(cluster) {
+  const laneEnds = [];
+  const withLanes = [];
+
+  cluster.forEach((ev) => {
+    let lane = laneEnds.findIndex((end) => end <= ev.startMin);
+
+    if (lane === -1) {
+      lane = laneEnds.length;
+      laneEnds.push(ev.endMin);
+    } else {
+      laneEnds[lane] = ev.endMin;
+    }
+
+    withLanes.push({ ...ev, lane });
+  });
+
+  return { events: withLanes, laneCount: laneEnds.length };
+}
+
+function layoutDayEventsHorizontal(dayEvents, rangeStart, pxPerMin) {
+  const withMinutes = dayEvents
+    .map((ev) => {
+      const startMin = parseTimeToMinutes(ev.startTime);
+      const endMin = parseTimeToMinutes(ev.endTime);
+
+      return {
+        ...ev,
+        startMin: startMin === null ? rangeStart : startMin,
+        endMin: endMin === null ? (startMin === null ? rangeStart + 45 : startMin + 45) : endMin,
+      };
+    })
+    .sort((a, b) => a.startMin - b.startMin || a.endMin - b.endMin);
+
+  const clusters = clusterByOverlap(withMinutes);
+  const positioned = [];
+  let maxLaneCount = 1;
+
+  clusters.forEach((cluster) => {
+    const { events, laneCount } = assignLanes(cluster);
+    maxLaneCount = Math.max(maxLaneCount, laneCount);
+
+    events.forEach((ev) => {
+      positioned.push({
+        ...ev,
+        left: (ev.startMin - rangeStart) * pxPerMin,
+        width: Math.max((ev.endMin - ev.startMin) * pxPerMin, MIN_EVENT_WIDTH),
+        top: ev.lane * (LANE_HEIGHT + LANE_GAP),
+        height: LANE_HEIGHT,
+      });
+    });
+  });
+
+  return { events: positioned, laneCount: maxLaneCount };
+}
+
+export default function ParentSchedulePage() {
+  const [schedules, setSchedules] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+  const [weekStart, setWeekStart] = useState(() => getStartOfWeek(new Date()));
+  const [selectedSchedule, setSelectedSchedule] = useState(null);
+  const [toast, setToast] = useState({ type: '', msg: '' });
+  const [now, setNow] = useState(() => new Date());
+
+  function showToast(type, msg) {
+    setToast({ type, msg });
+
+    window.clearTimeout(showToast.timer);
+    showToast.timer = window.setTimeout(() => {
+      setToast({ type: '', msg: '' });
+    }, 3000);
+  }
+
+  useEffect(() => {
+    let mounted = true;
+
+    async function loadSchedule() {
+      try {
+        setLoading(true);
+        setError('');
+
+        const data = await getChildSchedules();
+        const list = Array.isArray(data) ? data : data?.content || [];
+
+        const normalized = list.map(normalizeSchedule);
+
+        if (!mounted) return;
+
+        setSchedules(normalized);
+
+        if (normalized.length > 0) {
+          showToast('success', 'โหลดตารางเรียนสำเร็จ');
+        }
+      } catch (err) {
+        if (!mounted) return;
+
+        const message = getErrorMessage(err);
+        setError(message);
+        showToast('error', message);
+      } finally {
+        if (mounted) {
+          setLoading(false);
+        }
+      }
+    }
+
+    loadSchedule();
+
+    return () => {
+      mounted = false;
+      window.clearTimeout(showToast.timer);
+    };
+  }, []);
+
+  useEffect(() => {
+    const timer = window.setInterval(() => setNow(new Date()), 60000);
+    return () => window.clearInterval(timer);
+  }, []);
+
+  const weekDays = useMemo(() => {
+    return Array.from({ length: 7 }, (_, i) => {
+      const date = new Date(weekStart);
+      date.setDate(date.getDate() + i);
+
+      return {
+        key: getLocalDateKey(date),
+        date,
+        label: DAY_LABELS[i],
+        dateLabel: date.toLocaleDateString('th-TH', { day: 'numeric', month: 'short' }),
+      };
+    });
+  }, [weekStart]);
+
+  const timeRange = useMemo(() => {
+    let start = DEFAULT_RANGE_START;
+    let end = DEFAULT_RANGE_END;
+
+    schedules.forEach((s) => {
+      const startMin = parseTimeToMinutes(s.startTime);
+      const endMin = parseTimeToMinutes(s.endTime);
+
+      if (startMin !== null) start = Math.min(start, startMin);
+      if (endMin !== null) end = Math.max(end, endMin);
+    });
+
+    start = Math.floor(start / 60) * 60;
+    end = Math.ceil(end / 60) * 60;
+
+    return { start, end };
+  }, [schedules]);
+
+  const totalWidthPx = (timeRange.end - timeRange.start) * PX_PER_MIN;
+
+  const hourMarks = useMemo(() => {
+    const marks = [];
+
+    for (let m = timeRange.start; m <= timeRange.end; m += 60) {
+      marks.push({
+        minutes: m,
+        left: (m - timeRange.start) * PX_PER_MIN,
+        label: `${String(Math.floor(m / 60)).padStart(2, '0')}:00`,
+      });
+    }
+
+    return marks;
+  }, [timeRange]);
+
+  const scheduleByDay = useMemo(() => {
+    const map = {};
+
+    weekDays.forEach((day) => {
+      const dayEvents = schedules.filter((s) => getScheduleDateKey(s) === day.key);
+      map[day.key] = layoutDayEventsHorizontal(dayEvents, timeRange.start, PX_PER_MIN);
+    });
+
+    return map;
+  }, [schedules, weekDays, timeRange]);
+
+  const todayKey = getLocalDateKey(now);
+
+  const nowOffset = useMemo(() => {
+    const minutes = now.getHours() * 60 + now.getMinutes();
+
+    if (minutes < timeRange.start || minutes > timeRange.end) return null;
+
+    return (minutes - timeRange.start) * PX_PER_MIN;
+  }, [now, timeRange]);
+
+  function handlePrevWeek() {
+    setWeekStart((prev) => {
+      const next = new Date(prev);
+      next.setDate(next.getDate() - 7);
+      return next;
+    });
+  }
+
+  function handleNextWeek() {
+    setWeekStart((prev) => {
+      const next = new Date(prev);
+      next.setDate(next.getDate() + 7);
+      return next;
+    });
+  }
+
+  function handleToday() {
+    setWeekStart(getStartOfWeek(new Date()));
+  }
+
+  function handleOpenMeeting(url) {
+    if (!url) return;
+    window.open(url, '_blank', 'noopener,noreferrer');
+  }
+
+  return (
+    <div className="ssp-page">
+      {toast.msg && (
+        <div className={`ssp-toast ssp-toast-${toast.type}`}>
+          {toast.msg}
+        </div>
+      )}
+
+      <section className="ssp-content-card">
+        <div className="ssp-timetable-toolbar">
+          <div className="ssp-timetable-nav">
+            <button type="button" onClick={handlePrevWeek} aria-label="สัปดาห์ก่อนหน้า">
+              ‹
+            </button>
+            <button type="button" className="ssp-timetable-today-btn" onClick={handleToday}>
+              วันนี้
+            </button>
+            <button type="button" onClick={handleNextWeek} aria-label="สัปดาห์ถัดไป">
+              ›
+            </button>
+          </div>
+
+          <div className="ssp-timetable-range">{formatWeekRangeLabel(weekStart)}</div>
+        </div>
+
+        {loading && (
+          <div className="ssp-loading">
+            <div className="ssp-spinner" />
+            <p>กำลังโหลดตารางเรียน...</p>
+          </div>
+        )}
+
+        {!loading && error && (
+          <div className="ssp-error-box">
+            <strong>เกิดข้อผิดพลาด</strong>
+            <p>{error}</p>
+          </div>
+        )}
+
+        {!loading && !error && schedules.length === 0 && (
+          <div className="ssp-empty-state">
+            <div className="ssp-empty-icon">🗓️</div>
+            <h3>ยังไม่มีตารางเรียน</h3>
+            <p>
+              เมื่อลงทะเบียนคอร์สและมีการจัดตารางเรียน รายการจะแสดงที่หน้านี้
+            </p>
+          </div>
+        )}
+
+        {!loading && !error && schedules.length > 0 && (
+          <div className="ssp-timetable-scroll">
+            <div
+              className="ssp-timetable-grid"
+              style={{ gridTemplateColumns: `120px ${totalWidthPx}px` }}
+            >
+              <div className="ssp-tt-corner" />
+
+              <div className="ssp-tt-timeaxis" style={{ width: totalWidthPx }}>
+                {hourMarks.map((mark) => (
+                  <div key={mark.minutes} className="ssp-tt-hour-label" style={{ left: mark.left }}>
+                    {mark.label}
+                  </div>
+                ))}
+              </div>
+
+              {weekDays.map((day) => {
+                const dayLayout = scheduleByDay[day.key] || { events: [], laneCount: 1 };
+                const rowHeight = dayLayout.laneCount * (LANE_HEIGHT + LANE_GAP) + LANE_GAP;
+
+                return (
+                  <Fragment key={day.key}>
+                    <div
+                      className={`ssp-tt-dayrow-header ${day.key === todayKey ? 'ssp-tt-today' : ''}`}
+                      style={{ height: rowHeight }}
+                    >
+                      <span className="ssp-tt-day-name">{day.label}</span>
+                      <span className="ssp-tt-day-date">{day.dateLabel}</span>
+                    </div>
+
+                    <div
+                      className={`ssp-tt-dayrow ${day.key === todayKey ? 'ssp-tt-today-col' : ''}`}
+                      style={{ width: totalWidthPx, height: rowHeight }}
+                    >
+                      {hourMarks.map((mark) => (
+                        <div key={mark.minutes} className="ssp-tt-hourline" style={{ left: mark.left }} />
+                      ))}
+
+                      {day.key === todayKey && nowOffset !== null && (
+                        <div className="ssp-tt-now-line" style={{ left: nowOffset }} />
+                      )}
+
+                      {dayLayout.events.map((ev) => (
+                        <button
+                          type="button"
+                          key={ev.id || ev.scheduleCode}
+                          className={getTimetableEventClass(ev.status)}
+                          style={{ top: ev.top, height: ev.height, left: ev.left, width: ev.width }}
+                          onClick={() => setSelectedSchedule(ev)}
+                        >
+                          <span className="ssp-tt-event-time">
+                            {formatTime(ev.startTime)}-{formatTime(ev.endTime)}
+                          </span>
+                          <span className="ssp-tt-event-title">{safeText(ev.courseName)}</span>
+                          <span className="ssp-tt-event-sub">{safeText(ev.tutorName)}</span>
+                        </button>
+                      ))}
+                    </div>
+                  </Fragment>
+                );
+              })}
+            </div>
+          </div>
+        )}
+      </section>
+
+      {selectedSchedule && (
+        <div className="ssp-modal-backdrop" onClick={() => setSelectedSchedule(null)}>
+          <div className="ssp-modal" onClick={(event) => event.stopPropagation()}>
+            <div className="ssp-modal-header">
+              <div>
+                <p>รายละเอียดตารางเรียน</p>
+                <h2>{safeText(selectedSchedule.courseName)}</h2>
+                <span className={getStatusClass(selectedSchedule.status)}>
+                  {getStatusLabel(selectedSchedule.status)}
+                </span>
+              </div>
+
+              <button
+                type="button"
+                className="ssp-modal-close"
+                onClick={() => setSelectedSchedule(null)}
+                aria-label="ปิดหน้าต่างรายละเอียด"
+              >
+                ×
+              </button>
+            </div>
+
+            <div className="ssp-modal-body">
+              <DetailItem label="รหัสตารางเรียน" value={safeText(selectedSchedule.scheduleCode)} />
+              <DetailItem label="ชื่อคอร์ส" value={safeText(selectedSchedule.courseName)} />
+              <DetailItem label="บทเรียน" value={safeText(selectedSchedule.lessonTitle)} />
+              <DetailItem label="ติวเตอร์" value={safeText(selectedSchedule.tutorName)} />
+              <DetailItem label="วันที่เรียน" value={formatDate(selectedSchedule.scheduleDate)} />
+              <DetailItem
+                label="เวลาเรียน"
+                value={`${formatTime(selectedSchedule.startTime)} - ${formatTime(selectedSchedule.endTime)}`}
+              />
+              <DetailItem label="สถานะ" value={getStatusLabel(selectedSchedule.status)} />
+
+              <div className="ssp-detail-item">
+                <span>ลิงก์เรียนออนไลน์</span>
+                {selectedSchedule.meetingUrl ? (
+                  <a
+                    href={selectedSchedule.meetingUrl}
+                    target="_blank"
+                    rel="noreferrer"
+                  >
+                    {selectedSchedule.meetingUrl}
+                  </a>
+                ) : (
+                  <strong>-</strong>
+                )}
+              </div>
+
+              <DetailItem label="สถานที่" value={safeText(selectedSchedule.location)} />
+              <DetailItem label="หมายเหตุ" value={safeText(selectedSchedule.note)} />
+
+              {isCancelled(selectedSchedule) && (
+                <DetailItem label="เหตุผลที่ยกเลิก" value={safeText(selectedSchedule.cancelReason)} />
+              )}
+
+              <DetailItem label="สร้างเมื่อ" value={formatDateTime(selectedSchedule.createdAt)} />
+              <DetailItem label="แก้ไขล่าสุด" value={formatDateTime(selectedSchedule.updatedAt)} />
+            </div>
+
+            <div className="ssp-modal-footer">
+              <button
+                type="button"
+                className="ssp-btn ssp-btn-outline"
+                onClick={() => setSelectedSchedule(null)}
+              >
+                ปิด
+              </button>
+
+              {selectedSchedule.meetingUrl && (
+                <button
+                  type="button"
+                  className="ssp-btn ssp-btn-soft"
+                  onClick={() => handleOpenMeeting(selectedSchedule.meetingUrl)}
+                >
+                  เปิดลิงก์เรียนออนไลน์
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function DetailItem({ label, value }) {
+  return (
+    <div className="ssp-detail-item">
+      <span>{label}</span>
+      <strong>{value}</strong>
+    </div>
+  );
+}

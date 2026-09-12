@@ -36,3 +36,8 @@ export async function getChildExamResults() {
 export async function getChildAttendance() {
   return asArray(unwrap(await api.get('/parent/attendance')));
 }
+
+// รายละเอียดคำตอบของผลสอบหนึ่งฉบับ (เฉพาะของบุตรหลานที่ผูกกับบัญชีนี้ — ตรวจสิทธิ์ฝั่ง backend)
+export async function getChildSubmissionById(submissionId) {
+  return unwrap(await api.get(`/exam-submissions/${submissionId}`));
+}

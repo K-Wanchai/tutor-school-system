@@ -176,13 +176,22 @@ public class ExamSubmissionServiceImpl implements ExamSubmissionService {
         ExamSubmission submission = submissionRepository.findById(submissionId)
                 .orElseThrow(() -> new ExamSubmissionNotFoundException(submissionId));
 
-        // นักเรียนดูได้เฉพาะของตัวเอง — Tutor/Admin ดูได้ทุกคน
+        // นักเรียนดูได้เฉพาะของตัวเอง — ผู้ปกครองดูได้เฉพาะของบุตรหลานที่ผูกบัญชีไว้ — Tutor/Admin ดูได้ทุกคน
         boolean isStudent = studentRepository.existsByUserEmail(userEmail);
         if (isStudent) {
             User user = userRepository.findByEmail(userEmail).orElseThrow();
             Student student = studentRepository.findByUserId(user.getId()).orElseThrow();
             if (!submission.getStudent().getId().equals(student.getId())) {
                 throw new ExamAccessDeniedException("You can only view your own submissions");
+            }
+        } else {
+            User user = userRepository.findByEmail(userEmail).orElseThrow();
+            if (user.getRole() == Role.PARENT) {
+                Student child = studentRepository.findByParentUserId(user.getId())
+                        .orElseThrow(() -> new ExamAccessDeniedException("No child linked to this parent account"));
+                if (!submission.getStudent().getId().equals(child.getId())) {
+                    throw new ExamAccessDeniedException("You can only view your child's submissions");
+                }
             }
         }
 
