@@ -148,12 +148,6 @@ public class GlobalExceptionHandler {
                 .body(ApiResponse.error(ex.getMessage()));
     }
 
-    @ExceptionHandler(ExamSubmissionNotFoundException.class)
-    public ResponseEntity<ApiResponse<Void>> handleExamSubmissionNotFoundException(ExamSubmissionNotFoundException ex) {
-        return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                .body(ApiResponse.error(ex.getMessage()));
-    }
-
     @ExceptionHandler(ExamNotOpenException.class)
     public ResponseEntity<ApiResponse<Void>> handleExamNotOpenException(ExamNotOpenException ex) {
         return ResponseEntity.status(HttpStatus.FORBIDDEN)
@@ -166,27 +160,9 @@ public class GlobalExceptionHandler {
                 .body(ApiResponse.error(ex.getMessage()));
     }
 
-    @ExceptionHandler(ExamAlreadyStartedException.class)
-    public ResponseEntity<ApiResponse<Void>> handleExamAlreadyStartedException(ExamAlreadyStartedException ex) {
-        return ResponseEntity.status(HttpStatus.CONFLICT)
-                .body(ApiResponse.error(ex.getMessage()));
-    }
-
     @ExceptionHandler(CourseNotOngoingException.class)
     public ResponseEntity<ApiResponse<Void>> handleCourseNotOngoingException(CourseNotOngoingException ex) {
         return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                .body(ApiResponse.error(ex.getMessage()));
-    }
-
-    @ExceptionHandler(ExamAlreadySubmittedException.class)
-    public ResponseEntity<ApiResponse<Void>> handleExamAlreadySubmittedException(ExamAlreadySubmittedException ex) {
-        return ResponseEntity.status(HttpStatus.CONFLICT)
-                .body(ApiResponse.error(ex.getMessage()));
-    }
-
-    @ExceptionHandler(ExamMaxAttemptsExceededException.class)
-    public ResponseEntity<ApiResponse<Void>> handleExamMaxAttemptsExceededException(ExamMaxAttemptsExceededException ex) {
-        return ResponseEntity.status(HttpStatus.FORBIDDEN)
                 .body(ApiResponse.error(ex.getMessage()));
     }
 
@@ -213,37 +189,6 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(DuplicateAchievementException.class)
     public ResponseEntity<ApiResponse<Void>> handleDuplicateAchievementException(DuplicateAchievementException ex) {
         return ResponseEntity.status(HttpStatus.CONFLICT)
-                .body(ApiResponse.error(ex.getMessage()));
-    }
-
-    // Course Schedule exceptions
-    @ExceptionHandler(CourseScheduleNotFoundException.class)
-    public ResponseEntity<ApiResponse<Void>> handleCourseScheduleNotFoundException(CourseScheduleNotFoundException ex) {
-        return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                .body(ApiResponse.error(ex.getMessage()));
-    }
-
-    @ExceptionHandler(UnauthorizedScheduleAccessException.class)
-    public ResponseEntity<ApiResponse<Void>> handleUnauthorizedScheduleAccessException(UnauthorizedScheduleAccessException ex) {
-        return ResponseEntity.status(HttpStatus.FORBIDDEN)
-                .body(ApiResponse.error(ex.getMessage()));
-    }
-
-    @ExceptionHandler(InvalidScheduleTimeException.class)
-    public ResponseEntity<ApiResponse<Void>> handleInvalidScheduleTimeException(InvalidScheduleTimeException ex) {
-        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                .body(ApiResponse.error(ex.getMessage()));
-    }
-
-    @ExceptionHandler(ScheduleAlreadyCancelledException.class)
-    public ResponseEntity<ApiResponse<Void>> handleScheduleAlreadyCancelledException(ScheduleAlreadyCancelledException ex) {
-        return ResponseEntity.status(HttpStatus.CONFLICT)
-                .body(ApiResponse.error(ex.getMessage()));
-    }
-
-    @ExceptionHandler(ScheduleTimeCannotBeChangedException.class)
-    public ResponseEntity<ApiResponse<Void>> handleScheduleTimeCannotBeChangedException(ScheduleTimeCannotBeChangedException ex) {
-        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                 .body(ApiResponse.error(ex.getMessage()));
     }
 
@@ -281,25 +226,6 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(UnauthorizedEvaluationAccessException.class)
     public ResponseEntity<ApiResponse<Void>> handleUnauthorizedEvaluationAccessException(UnauthorizedEvaluationAccessException ex) {
-        return ResponseEntity.status(HttpStatus.FORBIDDEN)
-                .body(ApiResponse.error(ex.getMessage()));
-    }
-
-    // Classroom Session exceptions
-    @ExceptionHandler(ClassroomSessionClosedException.class)
-    public ResponseEntity<ApiResponse<Void>> handleClassroomSessionClosedException(ClassroomSessionClosedException ex) {
-        return ResponseEntity.status(HttpStatus.CONFLICT)
-                .body(ApiResponse.error(ex.getMessage()));
-    }
-
-    @ExceptionHandler(InvalidSessionTimeException.class)
-    public ResponseEntity<ApiResponse<Void>> handleInvalidSessionTimeException(InvalidSessionTimeException ex) {
-        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                .body(ApiResponse.error(ex.getMessage()));
-    }
-
-    @ExceptionHandler(StudentNotEnrolledException.class)
-    public ResponseEntity<ApiResponse<Void>> handleStudentNotEnrolledException(StudentNotEnrolledException ex) {
         return ResponseEntity.status(HttpStatus.FORBIDDEN)
                 .body(ApiResponse.error(ex.getMessage()));
     }
