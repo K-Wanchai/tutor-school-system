@@ -30,12 +30,14 @@ public interface PaymentRepository extends JpaRepository<Payment, Long> {
 
     // รายงานรายได้/การชำระเงิน — ใช้ createdAt เป็นวันที่ทำรายการ (paymentDate ไม่เคยถูกตั้งค่าจริง
     // ในโค้ด สร้าง Payment แล้วปล่อยเป็น null เสมอ ดู PaymentServiceImpl) กรองแบบ nullable-param
-    // เพื่อให้พารามิเตอร์ไหนไม่ส่งมาก็ไม่ถูกใช้กรอง
+    // เพื่อให้พารามิเตอร์ไหนไม่ส่งมาก็ไม่ถูกใช้กรอง — ใช้ COALESCE(:param, field) แทน
+    // "(:param IS NULL OR field = :param)" เพราะแบบหลัง PostgreSQL หาชนิดข้อมูลของพารามิเตอร์ที่เป็น
+    // null ไม่ได้ (error 42P18 "could not determine data type of parameter") เมื่อไม่ส่ง filter มาเลย
     @Query("SELECT p FROM Payment p " +
-            "WHERE (:dateFrom IS NULL OR p.createdAt >= :dateFrom) " +
-            "AND (:dateTo IS NULL OR p.createdAt <= :dateTo) " +
-            "AND (:courseId IS NULL OR p.enrollment.course.id = :courseId) " +
-            "AND (:status IS NULL OR p.paymentStatus = :status) " +
+            "WHERE p.createdAt >= COALESCE(:dateFrom, p.createdAt) " +
+            "AND p.createdAt <= COALESCE(:dateTo, p.createdAt) " +
+            "AND p.enrollment.course.id = COALESCE(:courseId, p.enrollment.course.id) " +
+            "AND p.paymentStatus = COALESCE(:status, p.paymentStatus) " +
             "ORDER BY p.createdAt DESC")
     List<Payment> searchForReport(@Param("dateFrom") LocalDateTime dateFrom,
                                    @Param("dateTo") LocalDateTime dateTo,
