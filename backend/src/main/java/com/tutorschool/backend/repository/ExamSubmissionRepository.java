@@ -32,13 +32,15 @@ public interface ExamSubmissionRepository extends JpaRepository<ExamSubmission, 
     List<ExamSubmission> findByExamCourseId(Long courseId);
 
     // รายงานผลสอบ/ผลงานติวเตอร์ — กรองแบบ nullable-param เฉพาะฉบับที่ส่งแล้ว (มี submittedAt)
-    // เพราะฉบับที่ยัง IN_PROGRESS ยังไม่มีคะแนนที่เป็นผลสรุปให้นับ
+    // เพราะฉบับที่ยัง IN_PROGRESS ยังไม่มีคะแนนที่เป็นผลสรุปให้นับ — ใช้ COALESCE(:param, field) แทน
+    // "(:param IS NULL OR field = :param)" เพราะแบบหลัง PostgreSQL หาชนิดข้อมูลของพารามิเตอร์ที่เป็น
+    // null ไม่ได้ (error 42P18) เมื่อไม่ส่ง filter มาเลย
     @Query("SELECT s FROM ExamSubmission s " +
             "WHERE s.submittedAt IS NOT NULL " +
-            "AND (:dateFrom IS NULL OR s.submittedAt >= :dateFrom) " +
-            "AND (:dateTo IS NULL OR s.submittedAt <= :dateTo) " +
-            "AND (:courseId IS NULL OR s.exam.course.id = :courseId) " +
-            "AND (:tutorId IS NULL OR s.exam.course.tutor.id = :tutorId) " +
+            "AND s.submittedAt >= COALESCE(:dateFrom, s.submittedAt) " +
+            "AND s.submittedAt <= COALESCE(:dateTo, s.submittedAt) " +
+            "AND s.exam.course.id = COALESCE(:courseId, s.exam.course.id) " +
+            "AND s.exam.course.tutor.id = COALESCE(:tutorId, s.exam.course.tutor.id) " +
             "ORDER BY s.submittedAt DESC")
     List<ExamSubmission> searchForReport(@Param("dateFrom") LocalDateTime dateFrom,
                                           @Param("dateTo") LocalDateTime dateTo,
