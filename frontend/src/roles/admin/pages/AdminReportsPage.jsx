@@ -6,7 +6,19 @@ import {
   ENROLLMENT_STATUS_TH,
   ATTENDANCE_STATUS_TH,
 } from '../../../shared/utils/statusLabels';
+import RevenueReportTab from '../components/reports/RevenueReportTab';
+import EnrollmentReportTab from '../components/reports/EnrollmentReportTab';
+import AttendanceReportTab from '../components/reports/AttendanceReportTab';
+import ExamPerformanceReportTab from '../components/reports/ExamPerformanceReportTab';
 import './AdminReportsPage.css';
+
+const TABS = [
+  { key: 'OVERVIEW', label: 'ภาพรวม' },
+  { key: 'REVENUE', label: 'รายได้/การชำระเงิน' },
+  { key: 'ENROLLMENT', label: 'การสมัครเรียน' },
+  { key: 'ATTENDANCE', label: 'การเข้าเรียน' },
+  { key: 'EXAM_PERFORMANCE', label: 'ผลสอบ/ผลงานติวเตอร์' },
+];
 
 function formatNumber(value) {
   return Number(value || 0).toLocaleString('th-TH');
@@ -49,7 +61,7 @@ function StatusBreakdown({ title, data, labelMap }) {
   );
 }
 
-export default function AdminReportsPage() {
+function OverviewTab() {
   const [report, setReport] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -99,7 +111,7 @@ export default function AdminReportsPage() {
     : [];
 
   return (
-    <div className="ar-page">
+    <>
       <div className="ar-header">
         <div>
           <h1>รายงานภาพรวม</h1>
@@ -195,6 +207,42 @@ export default function AdminReportsPage() {
           </section>
         </>
       )}
+    </>
+  );
+}
+
+export default function AdminReportsPage() {
+  const [tab, setTab] = useState('OVERVIEW');
+
+  return (
+    <div className="ar-page">
+      {tab !== 'OVERVIEW' && (
+        <div className="ar-header">
+          <div>
+            <h1>รายงาน</h1>
+            <p>เลือกเงื่อนไขเพื่อเรียกดูรายงาน — export เป็น CSV ได้</p>
+          </div>
+        </div>
+      )}
+
+      <div className="ar-tabs">
+        {TABS.map((t) => (
+          <button
+            key={t.key}
+            type="button"
+            className={`ar-tab-btn${tab === t.key ? ' active' : ''}`}
+            onClick={() => setTab(t.key)}
+          >
+            {t.label}
+          </button>
+        ))}
+      </div>
+
+      {tab === 'OVERVIEW' && <OverviewTab />}
+      {tab === 'REVENUE' && <RevenueReportTab />}
+      {tab === 'ENROLLMENT' && <EnrollmentReportTab />}
+      {tab === 'ATTENDANCE' && <AttendanceReportTab />}
+      {tab === 'EXAM_PERFORMANCE' && <ExamPerformanceReportTab />}
     </div>
   );
 }

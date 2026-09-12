@@ -85,6 +85,9 @@ public class SecurityConfig {
         ));
         configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
         configuration.setAllowedHeaders(List.of("Authorization", "Content-Type", "Accept"));
+        // ให้ frontend อ่านชื่อไฟล์จาก header นี้ได้ตอนดาวน์โหลด CSV รายงาน (ค่า default ของ
+        // เบราว์เซอร์ไม่ให้ JS เห็น response header ข้าม origin นอกเหนือจาก "simple" list)
+        configuration.setExposedHeaders(List.of("Content-Disposition"));
         configuration.setAllowCredentials(true);
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
