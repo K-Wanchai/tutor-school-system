@@ -1,16 +1,10 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../../../shared/services/api';
-import { toLocalISODate } from '../../../shared/utils/dateUtils';
 import { getUsername } from '../../../shared/utils/tokenUtils';
 import { statusLabelTH } from '../../../shared/utils/statusLabels';
 import { replaceIfChanged } from '../../../shared/utils/replaceIfChanged';
 import './TutorDashboardPage.css';
-
-function formatDate(value) {
-  if (!value) return '-';
-  return new Date(value).toLocaleDateString('th-TH', { year: 'numeric', month: 'short', day: 'numeric' });
-}
 
 export default function TutorDashboardPage() {
   const navigate = useNavigate();
@@ -18,7 +12,6 @@ export default function TutorDashboardPage() {
 
   const [loading, setLoading] = useState(true);
   const [courses, setCourses] = useState([]);
-  const [schedules, setSchedules] = useState([]);
   const [evaluations, setEvaluations] = useState([]);
 
   const today = new Date().toLocaleDateString('th-TH', {
@@ -40,15 +33,13 @@ export default function TutorDashboardPage() {
 
       const requests = [
         api.get('/courses/my-courses').catch(() => ({ data: [] })),
-        api.get('/course-schedules/tutor/me').catch(() => ({ data: [] })),
         api.get('/course-evaluations/tutor/me').catch(() => ({ data: [] })),
       ];
 
-      const [coursesRes, schedulesRes, evaluationsRes] = await Promise.all(requests);
+      const [coursesRes, evaluationsRes] = await Promise.all(requests);
 
       // อัปเดตเฉพาะเมื่อข้อมูลเปลี่ยนจริง — poll ทุก 10 วิ ไม่ให้ re-render ทั้งหน้าถ้าข้อมูลเท่าเดิม
       replaceIfChanged(setCourses, getData(coursesRes));
-      replaceIfChanged(setSchedules, getData(schedulesRes));
       replaceIfChanged(setEvaluations, getData(evaluationsRes));
     } finally {
       if (!silent) setLoading(false);
@@ -73,12 +64,6 @@ export default function TutorDashboardPage() {
       ['OPEN', 'ACTIVE', 'OPEN_FOR_REGISTRATION'].includes(c.status)
     ).length;
 
-    const todayText = toLocalISODate(new Date());
-
-    const todaySchedules = schedules.filter(
-      (s) => s.scheduleDate === todayText
-    ).length;
-
     const avgRating =
       evaluations.length > 0
         ? (
@@ -90,13 +75,11 @@ export default function TutorDashboardPage() {
     return {
       totalCourses: courses.length,
       activeCourses,
-      todaySchedules,
       totalEvaluations: evaluations.length,
       avgRating,
     };
-  }, [courses, schedules, evaluations]);
+  }, [courses, evaluations]);
 
-  const recentSchedules = schedules.slice(0, 5);
   const recentCourses = courses.slice(0, 5);
 
   return (
@@ -119,36 +102,10 @@ export default function TutorDashboardPage() {
           <div className="tutor-dashboard-stats">
             <StatCard title="คอร์สทั้งหมด" value={summary.totalCourses} desc="คอร์สที่รับผิดชอบ" onClick={() => navigate('/tutor/courses')} />
             <StatCard title="คอร์สที่เปิดอยู่" value={summary.activeCourses} desc="คอร์สที่กำลังใช้งาน" onClick={() => navigate('/tutor/courses')} />
-            <StatCard title="ตารางสอนวันนี้" value={summary.todaySchedules} desc="จำนวนคาบวันนี้" onClick={() => navigate('/tutor/schedule')} />
             <StatCard title="คะแนนประเมินเฉลี่ย" value={summary.avgRating} desc={`${summary.totalEvaluations} รีวิว`} onClick={() => navigate('/tutor/evaluations')} />
           </div>
 
           <div className="tutor-dashboard-grid">
-            <section className="tutor-dashboard-card">
-              <div className="tutor-dashboard-card-head">
-                <h2>ตารางสอนล่าสุด</h2>
-                <span>{recentSchedules.length} รายการ</span>
-              </div>
-
-              {recentSchedules.length === 0 ? (
-                <EmptyText text="ยังไม่มีตารางสอน" />
-              ) : (
-                <div className="tutor-dashboard-list">
-                  {recentSchedules.map((item) => (
-                    <div className="tutor-dashboard-list-item" key={item.id}>
-                      <div>
-                        <h3>{item.courseName || 'ไม่ระบุชื่อคอร์ส'}</h3>
-                        <p>
-                          {formatDate(item.scheduleDate)} · {item.startTime || '-'} - {item.endTime || '-'}
-                        </p>
-                      </div>
-                      <StatusBadge status={item.status} />
-                    </div>
-                  ))}
-                </div>
-              )}
-            </section>
-
             <section className="tutor-dashboard-card">
               <div className="tutor-dashboard-card-head">
                 <h2>คอร์สของฉัน</h2>

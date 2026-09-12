@@ -21,23 +21,3 @@ export async function getMyChildProfile() {
 export async function getChildEnrollments() {
   return asArray(unwrap(await api.get('/parent/enrollments')));
 }
-
-// ตารางเรียนของบุตรหลาน
-export async function getChildSchedules() {
-  return asArray(unwrap(await api.get('/parent/schedules')));
-}
-
-// ผลสอบของบุตรหลาน
-export async function getChildExamResults() {
-  return asArray(unwrap(await api.get('/parent/exam-results')));
-}
-
-// ประวัติการเข้าเรียนของบุตรหลาน
-export async function getChildAttendance() {
-  return asArray(unwrap(await api.get('/parent/attendance')));
-}
-
-// รายละเอียดคำตอบของผลสอบหนึ่งฉบับ (เฉพาะของบุตรหลานที่ผูกกับบัญชีนี้ — ตรวจสิทธิ์ฝั่ง backend)
-export async function getChildSubmissionById(submissionId) {
-  return unwrap(await api.get(`/exam-submissions/${submissionId}`));
-}

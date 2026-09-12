@@ -34,8 +34,6 @@ public class CourseResponse {
     private String tutorRemark;
     private boolean tutorViewed;
     private long enrolledCount;
-    private List<CourseLessonResponse> lessons;
-    private List<CourseTestResponse> tests;
     private List<ScheduleDaySlotResponse> scheduleDays;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;

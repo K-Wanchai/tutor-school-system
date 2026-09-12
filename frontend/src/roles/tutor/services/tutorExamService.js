@@ -77,86 +77,6 @@ export async function deleteExam(examId) {
   }
 }
 
-export async function addQuestion(examId, payload) {
-  try {
-    const res = await api.post(`/exams/${examId}/questions`, payload);
-    return unwrap(res);
-  } catch (error) {
-    throw new Error(apiError(error, 'addQuestion'), { cause: error });
-  }
-}
-
-export async function updateQuestion(questionId, payload) {
-  try {
-    const res = await api.put(`/exam-questions/${questionId}`, payload);
-    return unwrap(res);
-  } catch (error) {
-    throw new Error(apiError(error, 'updateQuestion'), { cause: error });
-  }
-}
-
-export async function deleteQuestion(questionId) {
-  try {
-    await api.delete(`/exam-questions/${questionId}`);
-  } catch (error) {
-    throw new Error(apiError(error, 'deleteQuestion'), { cause: error });
-  }
-}
-
-export async function addOption(questionId, payload) {
-  try {
-    const res = await api.post(`/questions/${questionId}/options`, payload);
-    return unwrap(res);
-  } catch (error) {
-    throw new Error(apiError(error, 'addOption'), { cause: error });
-  }
-}
-
-export async function updateOption(optionId, payload) {
-  try {
-    const res = await api.put(`/question-options/${optionId}`, payload);
-    return unwrap(res);
-  } catch (error) {
-    throw new Error(apiError(error, 'updateOption'), { cause: error });
-  }
-}
-
-export async function deleteOption(optionId) {
-  try {
-    await api.delete(`/question-options/${optionId}`);
-  } catch (error) {
-    throw new Error(apiError(error, 'deleteOption'), { cause: error });
-  }
-}
-
-export async function getSubmissionById(submissionId) {
-  try {
-    const res = await api.get(`/exam-submissions/${submissionId}`);
-    return unwrap(res);
-  } catch (error) {
-    throw new Error(apiError(error, 'getSubmissionById'), { cause: error });
-  }
-}
-
-export async function gradeAnswer(submissionId, payload) {
-  try {
-    const res = await api.post(`/exam-submissions/${submissionId}/grade`, payload);
-    return unwrap(res);
-  } catch (error) {
-    throw new Error(apiError(error, 'gradeAnswer'), { cause: error });
-  }
-}
-
-export async function getResultsByExam(examId) {
-  try {
-    const res = await api.get(`/exam-results/exam/${examId}`);
-    const data = unwrap(res);
-    return Array.isArray(data) ? data : [];
-  } catch (error) {
-    throw new Error(apiError(error, 'getResultsByExam'), { cause: error });
-  }
-}
-
 export async function getExamsByCourse(courseId) {
   try {
     const res = await api.get(`/exams/course/${courseId}`);
@@ -164,15 +84,5 @@ export async function getExamsByCourse(courseId) {
     return Array.isArray(data) ? data : [];
   } catch (error) {
     throw new Error(apiError(error, 'getExamsByCourse'), { cause: error });
-  }
-}
-
-export async function getResultsByCourse(courseId) {
-  try {
-    const res = await api.get(`/exam-results/course/${courseId}`);
-    const data = unwrap(res);
-    return Array.isArray(data) ? data : [];
-  } catch (error) {
-    throw new Error(apiError(error, 'getResultsByCourse'), { cause: error });
   }
 }

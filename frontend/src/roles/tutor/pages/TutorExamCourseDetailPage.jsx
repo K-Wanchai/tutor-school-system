@@ -10,7 +10,6 @@ import { getMyCourses } from '../services/tutorCourseService';
 import RefreshButton from '../components/RefreshButton';
 import CalendarDateInput from '../../../shared/components/CalendarDateInput';
 import { useConfirm } from '../../../shared/components/ConfirmDialog';
-import './TutorSchedulesPage.css';
 import './TutorExamSchedulePage.css';
 
 const STATUS_LABELS = {

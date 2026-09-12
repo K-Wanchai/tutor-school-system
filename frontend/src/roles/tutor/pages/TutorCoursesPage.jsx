@@ -1,13 +1,9 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
-  addLesson,
-  addTest,
   completeCourse,
-  deleteLesson,
   getMyCourses,
   markCourseViewed,
-  updateLesson,
 } from '../services/tutorCourseService';
 
 import RefreshButton from '../components/RefreshButton';
@@ -68,7 +64,6 @@ export default function TutorCoursesPage() {
   const [filter, setFilter] = useState('ALL');
 
   const [loading, setLoading] = useState(true);
-  const [manageCourse, setManageCourse] = useState(null);
   const [detailCourse, setDetailCourse] = useState(null);
   const [completeTarget, setCompleteTarget] = useState(null);
   const [completing, setCompleting] = useState(false);
@@ -132,13 +127,6 @@ export default function TutorCoursesPage() {
     } finally {
       setCompleting(false);
     }
-  }
-
-  async function refreshManageCourse() {
-    const data = await getMyCourses();
-    const list = Array.isArray(data) ? data : [];
-    setCourses(list);
-    setManageCourse((prev) => (prev ? list.find((c) => c.id === prev.id) || null : null));
   }
 
   return (
@@ -311,14 +299,6 @@ export default function TutorCoursesPage() {
         </div>
       )}
 
-      {manageCourse && (
-        <LessonManagerModal
-          course={manageCourse}
-          onClose={() => setManageCourse(null)}
-          onChanged={refreshManageCourse}
-        />
-      )}
-
       {detailCourse && (
         <CourseDetailModal
           course={detailCourse}
@@ -423,217 +403,6 @@ function CourseDetailModal({ course, onClose }) {
 
           {course.tutorRemark && (
             <p className="tc-modal-hint">หมายเหตุ: {course.tutorRemark}</p>
-          )}
-        </div>
-
-        <div className="tc-modal-footer">
-          <button onClick={onClose}>ปิด</button>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function LessonManagerModal({ course, onClose, onChanged }) {
-  const lessonsEditable = ['PENDING', 'CLOSED', 'OPEN_FOR_REGISTRATION'].includes(course.status);
-  const testsAddable = ['PENDING', 'CLOSED', 'OPEN_FOR_REGISTRATION', 'ONGOING'].includes(course.status);
-
-  const [busy, setBusy] = useState(false);
-  const [error, setError] = useState('');
-
-  const [editingLessonId, setEditingLessonId] = useState(null);
-  const [lessonForm, setLessonForm] = useState({ lessonTitle: '', lessonContent: '', lessonOrder: '' });
-
-  // แบบฟอร์มเพิ่มหัวข้อสอบ แยกตามบทเรียน (key = lessonOrder ของบทนั้น)
-  const [testFormByLesson, setTestFormByLesson] = useState({});
-
-  // ลำดับบทเรียนนับจากลำดับที่เพิ่มครั้งแรก ไม่ให้ติวเตอร์กรอกเอง
-  const lessons = [...(course.lessons || [])].sort((a, b) => (a.lessonOrder || 0) - (b.lessonOrder || 0));
-  const tests = [...(course.tests || [])].sort((a, b) => (a.testOrder || 0) - (b.testOrder || 0));
-
-  function nextLessonOrder() {
-    return lessons.length > 0 ? Math.max(...lessons.map((l) => l.lessonOrder || 0)) + 1 : 1;
-  }
-
-  function testsForLesson(lessonOrder) {
-    return tests.filter((t) => t.lessonOrder === lessonOrder);
-  }
-
-  function startAddLesson() {
-    setEditingLessonId(null);
-    setLessonForm({ lessonTitle: '', lessonContent: '', lessonOrder: String(nextLessonOrder()) });
-  }
-
-  function startEditLesson(lesson) {
-    setEditingLessonId(lesson.id);
-    setLessonForm({
-      lessonTitle: lesson.lessonTitle || '',
-      lessonContent: lesson.lessonContent || '',
-      lessonOrder: String(lesson.lessonOrder ?? ''),
-    });
-  }
-
-  async function submitLesson(e) {
-    e.preventDefault();
-    if (!lessonForm.lessonTitle.trim()) {
-      setError('กรุณากรอกชื่อบทเรียน');
-      return;
-    }
-    setBusy(true);
-    setError('');
-    try {
-      const payload = {
-        lessonTitle: lessonForm.lessonTitle.trim(),
-        lessonContent: lessonForm.lessonContent.trim(),
-        lessonOrder: Number(lessonForm.lessonOrder) || nextLessonOrder(),
-      };
-      if (editingLessonId) {
-        await updateLesson(course.id, editingLessonId, payload);
-      } else {
-        await addLesson(course.id, payload);
-      }
-      setEditingLessonId(null);
-      setLessonForm({ lessonTitle: '', lessonContent: '', lessonOrder: '' });
-      await onChanged();
-    } catch (err) {
-      setError(err.message);
-    } finally {
-      setBusy(false);
-    }
-  }
-
-  async function handleDeleteLesson(lessonId) {
-    setBusy(true);
-    setError('');
-    try {
-      await deleteLesson(course.id, lessonId);
-      await onChanged();
-    } catch (err) {
-      setError(err.message);
-    } finally {
-      setBusy(false);
-    }
-  }
-
-  function setTestField(lessonOrder, field, value) {
-    setTestFormByLesson((prev) => ({
-      ...prev,
-      [lessonOrder]: { ...prev[lessonOrder], [field]: value },
-    }));
-  }
-
-  async function submitTestForLesson(e, lesson) {
-    e.preventDefault();
-    const formState = testFormByLesson[lesson.lessonOrder] || {};
-    if (!formState.testTitle?.trim()) {
-      setError('กรุณากรอกหัวข้อสอบ');
-      return;
-    }
-    setBusy(true);
-    setError('');
-    try {
-      await addTest(course.id, {
-        testTitle: formState.testTitle.trim(),
-        testDescription: (formState.testDescription || '').trim(),
-        testOrder: testsForLesson(lesson.lessonOrder).length + 1,
-        lessonOrder: lesson.lessonOrder,
-      });
-      setTestFormByLesson((prev) => ({ ...prev, [lesson.lessonOrder]: { testTitle: '', testDescription: '' } }));
-      await onChanged();
-    } catch (err) {
-      setError(err.message);
-    } finally {
-      setBusy(false);
-    }
-  }
-
-  return (
-    <div className="tc-modal-overlay" onClick={onClose}>
-      <div className="tc-modal" onClick={(e) => e.stopPropagation()}>
-        <div className="tc-modal-header">
-          <h2>จัดการบทเรียน — {course.courseName}</h2>
-          <button className="tc-modal-close" onClick={onClose}>✕</button>
-        </div>
-
-        {error && <div className="tc-modal-error">{error}</div>}
-
-        <div className="tc-modal-section">
-          <h3>บทเรียน ({lessons.length})</h3>
-
-          {!lessonsEditable && (
-            <p className="tc-modal-hint">คอร์สเริ่มสอนแล้ว ไม่สามารถเพิ่ม/แก้ไข/ลบบทเรียนได้อีก แต่ยังเพิ่มหัวข้อสอบได้</p>
-          )}
-
-          {lessons.map((lesson) => {
-            const lessonTests = testsForLesson(lesson.lessonOrder);
-            const testForm = testFormByLesson[lesson.lessonOrder] || {};
-
-            return (
-              <div key={lesson.id} className="tc-lesson-row tc-lesson-row--column">
-                <div className="tc-lesson-row-top">
-                  <div>
-                    <strong>บทที่ {lesson.lessonOrder}: {lesson.lessonTitle}</strong>
-                    {lesson.lessonContent && <p>{lesson.lessonContent}</p>}
-                  </div>
-                  {lessonsEditable && (
-                    <div className="tc-lesson-row-actions">
-                      <button type="button" onClick={() => startEditLesson(lesson)} disabled={busy}>แก้ไข</button>
-                      <button type="button" onClick={() => handleDeleteLesson(lesson.id)} disabled={busy}>ลบ</button>
-                    </div>
-                  )}
-                </div>
-
-                {lessonTests.length > 0 && (
-                  <ul className="tc-lesson-test-list">
-                    {lessonTests.map((test) => (
-                      <li key={test.id}>
-                        <strong>สอบ: {test.testTitle}</strong>
-                        {test.testDescription && <span> — {test.testDescription}</span>}
-                      </li>
-                    ))}
-                  </ul>
-                )}
-
-                {testsAddable && (
-                  <form className="tc-inline-test-form" onSubmit={(e) => submitTestForLesson(e, lesson)}>
-                    <input
-                      placeholder="เพิ่มหัวข้อสอบสำหรับบทนี้"
-                      value={testForm.testTitle || ''}
-                      onChange={(e) => setTestField(lesson.lessonOrder, 'testTitle', e.target.value)}
-                    />
-                    <input
-                      placeholder="รายละเอียด (ถ้ามี)"
-                      value={testForm.testDescription || ''}
-                      onChange={(e) => setTestField(lesson.lessonOrder, 'testDescription', e.target.value)}
-                    />
-                    <button type="submit" disabled={busy}>+ เพิ่ม</button>
-                  </form>
-                )}
-              </div>
-            );
-          })}
-
-          {lessonsEditable && (
-            <form className="tc-inline-form" onSubmit={submitLesson}>
-              <input
-                placeholder="ชื่อบทเรียน"
-                value={lessonForm.lessonTitle}
-                onChange={(e) => setLessonForm((f) => ({ ...f, lessonTitle: e.target.value }))}
-              />
-              <textarea
-                placeholder="เนื้อหาบทเรียน"
-                value={lessonForm.lessonContent}
-                onChange={(e) => setLessonForm((f) => ({ ...f, lessonContent: e.target.value }))}
-              />
-              <div className="tc-inline-form-actions">
-                <button type="submit" disabled={busy}>
-                  {editingLessonId ? 'บันทึกการแก้ไข' : '+ เพิ่มบทเรียน'}
-                </button>
-                {editingLessonId && (
-                  <button type="button" onClick={startAddLesson} disabled={busy}>ยกเลิกแก้ไข</button>
-                )}
-              </div>
-            </form>
           )}
         </div>
 

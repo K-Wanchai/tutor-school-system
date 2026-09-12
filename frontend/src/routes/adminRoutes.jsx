@@ -1,4 +1,4 @@
-import { Route } from 'react-router-dom';
+import { Route, Navigate } from 'react-router-dom';
 import ProtectedRoute from './ProtectedRoute';
 import AdminLayout from '../roles/admin/layouts/AdminLayout';
 import AdminDashboardPage from '../roles/admin/pages/AdminDashboardPage';
@@ -16,9 +16,6 @@ import StudentAchievementDetailPage from '../roles/admin/pages/StudentAchievemen
 import AdminExamTutorListPage from '../roles/admin/pages/AdminExamTutorListPage';
 import AdminExamTutorCoursesPage from '../roles/admin/pages/AdminExamTutorCoursesPage';
 import AdminExamCourseScoresPage from '../roles/admin/pages/AdminExamCourseScoresPage';
-import AdminAttendanceTutorListPage from '../roles/admin/pages/AdminAttendanceTutorListPage';
-import AdminAttendanceTutorCoursesPage from '../roles/admin/pages/AdminAttendanceTutorCoursesPage';
-import AdminAttendanceCoursePage from '../roles/admin/pages/AdminAttendanceCoursePage';
 import AdminReportsPage from '../roles/admin/pages/AdminReportsPage';
 
 const adminRoutes = (
@@ -42,13 +39,12 @@ const adminRoutes = (
     <Route path="exams" element={<AdminExamTutorListPage />} />
     <Route path="exams/tutors/:tutorId" element={<AdminExamTutorCoursesPage />} />
     <Route path="exams/tutors/:tutorId/courses/:courseId" element={<AdminExamCourseScoresPage />} />
-    <Route path="attendance" element={<AdminAttendanceTutorListPage />} />
-    <Route path="attendance/tutors/:tutorId" element={<AdminAttendanceTutorCoursesPage />} />
-    <Route path="attendance/tutors/:tutorId/courses/:courseId" element={<AdminAttendanceCoursePage />} />
     <Route path="student-exam-achievements" element={<StudentExamAchievementManagePage />} />
     <Route path="student-exam-achievements/:achievementId/detail" element={<StudentAchievementDetailPage />} />
     <Route path="reports" element={<AdminReportsPage />} />
     <Route path="settings" element={<AdminSettingsPage />} />
+    {/* เส้นทางเดิม — คงไว้กันลิงก์เก่า/บุ๊กมาร์กพัง (การเช็คชื่อ/ตารางเรียนถูกถอดออกแล้ว) */}
+    <Route path="attendance" element={<Navigate to="/admin/dashboard" replace />} />
   </Route>
 );
 

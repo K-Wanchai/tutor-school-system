@@ -42,12 +42,6 @@ public class UpdateCourseRequest {
     @NotNull(message = "Tutor ID is required")
     private Long tutorId;
 
-    @Valid
-    private List<CourseLessonRequest> lessons;
-
-    @Valid
-    private List<CourseTestRequest> tests;
-
     @NotEmpty(message = "Schedule days are required")
     @Valid
     private List<ScheduleDaySlotRequest> scheduleDays;

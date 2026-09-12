@@ -2,7 +2,6 @@ import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { getChildDashboard } from '../services/parentDashboardService';
 import { getChildEnrollments } from '../services/parentService';
-import { statusLabelTH, EXAM_STATUS_TH } from '../../../shared/utils/statusLabels';
 import '../../student/pages/StudentDashboardPage.css';
 
 const ENROLLMENT_STATUS_LABELS = {
@@ -111,7 +110,7 @@ export default function ParentDashboardPage() {
           <p className="student-hero-date">{today}</p>
           <h1>ติดตามการเรียนของ {dashboard?.fullName || 'บุตรหลาน'}</h1>
           <p>
-            ตรวจสอบคอร์สเรียน ตารางเรียน ผลสอบ และการเข้าเรียนของบุตรหลานของคุณ
+            ตรวจสอบคอร์สเรียนและการชำระเงินของบุตรหลานของคุณ
           </p>
         </div>
 
@@ -146,39 +145,13 @@ export default function ParentDashboardPage() {
         <button
           type="button"
           className="student-stat-card"
-          onClick={() => navigate('/parent/schedule')}
+          onClick={() => navigate('/parent/enrollment-history')}
         >
-          <div className="student-stat-icon">📅</div>
+          <div className="student-stat-icon">💳</div>
           <div>
-            <p>ตารางเรียนวันนี้</p>
-            <h2>{dashboard?.todayClasses ?? '-'}</h2>
-            <span>คลาสเรียนวันนี้</span>
-          </div>
-        </button>
-
-        <button
-          type="button"
-          className="student-stat-card"
-          onClick={() => navigate('/parent/exam-results')}
-        >
-          <div className="student-stat-icon">📝</div>
-          <div>
-            <p>คะแนนเฉลี่ย</p>
-            <h2>{dashboard?.averageScore != null ? `${dashboard.averageScore}%` : '-'}</h2>
-            <span>จากผลสอบทั้งหมด</span>
-          </div>
-        </button>
-
-        <button
-          type="button"
-          className="student-stat-card"
-          onClick={() => navigate('/parent/attendance')}
-        >
-          <div className="student-stat-icon">✅</div>
-          <div>
-            <p>การเข้าเรียน</p>
-            <h2>{dashboard?.attendanceRate != null ? `${dashboard.attendanceRate}%` : '-'}</h2>
-            <span>อัตราการเข้าเรียน</span>
+            <p>การชำระเงิน</p>
+            <h2>{courseSummary.paid}</h2>
+            <span>คอร์สที่ชำระเงินแล้ว</span>
           </div>
         </button>
       </section>
@@ -226,58 +199,6 @@ export default function ParentDashboardPage() {
                   >
                     ดูรายละเอียด
                   </button>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-
-        <div className="student-panel">
-          <div className="student-panel-header">
-            <div>
-              <h2>ตารางเรียนวันนี้</h2>
-              <p>คลาสที่กำลังจะมาถึง</p>
-            </div>
-          </div>
-
-          {!dashboard?.todaySchedules?.length ? (
-            <EmptyState text="ยังไม่มีตารางเรียนวันนี้" />
-          ) : (
-            <div className="student-schedule-list">
-              {dashboard.todaySchedules.map((item) => (
-                <div className="student-schedule-item" key={item.id}>
-                  <span>{item.startTime || '-'}</span>
-                  <div>
-                    <strong>{item.courseName || '-'}</strong>
-                    <p>{item.lessonName || '-'}</p>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-
-        <div className="student-panel">
-          <div className="student-panel-header">
-            <div>
-              <h2>คะแนนสอบล่าสุด</h2>
-              <p>ผลสอบและสถานะ</p>
-            </div>
-          </div>
-
-          {!dashboard?.latestExams?.length ? (
-            <EmptyState text="ยังไม่มีข้อมูลคะแนนสอบ" />
-          ) : (
-            <div className="student-exam-list">
-              {dashboard.latestExams.map((exam) => (
-                <div className="student-exam-item" key={exam.id}>
-                  <div>
-                    <strong>{exam.examName || '-'}</strong>
-                    <span>
-                      {exam.score != null ? `${exam.score}/${exam.totalScore}` : '-'}
-                    </span>
-                  </div>
-                  <p>{exam.status ? statusLabelTH(exam.status, EXAM_STATUS_TH) : '-'}</p>
                 </div>
               ))}
             </div>

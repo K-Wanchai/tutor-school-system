@@ -36,16 +36,6 @@ export async function getExamsByCourse(courseId) {
   }
 }
 
-export async function getResultsByCourse(courseId) {
-  try {
-    const res = await api.get(`/exam-results/course/${courseId}`);
-    const data = unwrap(res);
-    return Array.isArray(data) ? data : [];
-  } catch (error) {
-    throw new Error(apiError(error, 'getResultsByCourse'), { cause: error });
-  }
-}
-
 // คะแนนสอบที่ติวเตอร์กรอกเอง (ข้อสอบลิงก์ภายนอก) รายคอร์ส
 export async function getManualScoresByCourse(courseId) {
   try {

@@ -1,42 +1,13 @@
 package com.tutorschool.backend.mapper;
 
-import com.tutorschool.backend.dto.response.CourseLessonResponse;
 import com.tutorschool.backend.dto.response.CourseResponse;
-import com.tutorschool.backend.dto.response.CourseTestResponse;
 import com.tutorschool.backend.entity.Course;
-import com.tutorschool.backend.entity.CourseLesson;
-import com.tutorschool.backend.entity.CourseTest;
 import org.springframework.stereotype.Component;
-
-import java.util.Collections;
-import java.util.List;
 
 @Component
 public class CourseMapper {
 
-    public CourseResponse toSummaryResponse(Course course, long enrolledCount) {
-        List<CourseLessonResponse> lessons = course.getLessons().stream()
-                .map(this::toLessonResponse)
-                .toList();
-
-        return buildResponse(course, enrolledCount, lessons, Collections.emptyList());
-    }
-
-    public CourseResponse toDetailResponse(Course course, long enrolledCount) {
-        List<CourseLessonResponse> lessons = course.getLessons().stream()
-                .map(this::toLessonResponse)
-                .toList();
-
-        List<CourseTestResponse> tests = course.getTests().stream()
-                .map(this::toTestResponse)
-                .toList();
-
-        return buildResponse(course, enrolledCount, lessons, tests);
-    }
-
-    private CourseResponse buildResponse(Course course, long enrolledCount,
-                                         List<CourseLessonResponse> lessons,
-                                         List<CourseTestResponse> tests) {
+    public CourseResponse toResponse(Course course, long enrolledCount) {
         String teacherName = null;
         String tutorEmail = null;
         Long tutorId = null;
@@ -67,34 +38,9 @@ public class CourseMapper {
                 .tutorRemark(course.getTutorRemark())
                 .tutorViewed(course.isTutorViewed())
                 .enrolledCount(enrolledCount)
-                .lessons(lessons)
-                .tests(tests)
                 .scheduleDays(CourseScheduleDayMapper.toResponseList(course.getScheduleDayPatterns()))
                 .createdAt(course.getCreatedAt())
                 .updatedAt(course.getUpdatedAt())
-                .build();
-    }
-
-    public CourseLessonResponse toLessonResponse(CourseLesson lesson) {
-        return CourseLessonResponse.builder()
-                .id(lesson.getId())
-                .lessonTitle(lesson.getLessonTitle())
-                .lessonContent(lesson.getLessonContent())
-                .lessonOrder(lesson.getLessonOrder())
-                .createdAt(lesson.getCreatedAt())
-                .updatedAt(lesson.getUpdatedAt())
-                .build();
-    }
-
-    public CourseTestResponse toTestResponse(CourseTest test) {
-        return CourseTestResponse.builder()
-                .id(test.getId())
-                .testTitle(test.getTestTitle())
-                .testDescription(test.getTestDescription())
-                .testOrder(test.getTestOrder())
-                .lessonOrder(test.getLessonOrder())
-                .createdAt(test.getCreatedAt())
-                .updatedAt(test.getUpdatedAt())
                 .build();
     }
 }

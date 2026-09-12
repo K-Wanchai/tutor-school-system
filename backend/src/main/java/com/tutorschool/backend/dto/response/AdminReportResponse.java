@@ -27,8 +27,6 @@ public class AdminReportResponse {
     private Map<String, Long> coursesByStatus;
     // จำนวนใบสมัครแยกตามสถานะ เช่น APPROVED, PENDING
     private Map<String, Long> enrollmentsByStatus;
-    // จำนวนบันทึกการเข้าเรียนแยกตามสถานะ เช่น PRESENT, ABSENT, LATE
-    private Map<String, Long> attendanceByStatus;
 
     private BigDecimal totalRevenue;
     private long pendingPaymentVerifications;

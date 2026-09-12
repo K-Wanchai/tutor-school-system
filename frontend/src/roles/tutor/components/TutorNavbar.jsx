@@ -7,14 +7,9 @@ const PAGE_TITLES = {
   '/tutor/dashboard':        'แดชบอร์ด',
   '/tutor/courses':          'คอร์สของฉัน',
   '/tutor/notifications':    'การแจ้งเตือน',
-  '/tutor/schedule':         'ตารางสอน',
   '/tutor/exam-schedule':    'ตารางสอบ',
-  '/tutor/exams':            'จัดการข้อสอบ',
   '/tutor/exam-scores':      'คะแนนสอบ',
-  '/tutor/attendance':       'การเข้าเรียน',
   '/tutor/evaluations':      'การประเมิน',
-  '/tutor/reports':          'รายงาน',
-  '/tutor/students':         'นักเรียน',
 };
 
 function getPageTitle(pathname) {

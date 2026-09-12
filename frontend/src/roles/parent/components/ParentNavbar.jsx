@@ -6,9 +6,6 @@ import '../../student/components/StudentNavbar.css';
 const PAGE_TITLES = {
   '/parent/dashboard':          'แดชบอร์ด',
   '/parent/enrollment-history': 'ประวัติการสมัครเรียน',
-  '/parent/schedule':           'ตารางเรียน',
-  '/parent/exam-results':       'ผลสอบของบุตรหลาน',
-  '/parent/attendance':         'การเข้าเรียน',
   '/parent/profile':            'โปรไฟล์บุตรหลาน',
 };
 

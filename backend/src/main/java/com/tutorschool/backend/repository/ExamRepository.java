@@ -18,8 +18,6 @@ public interface ExamRepository extends JpaRepository<Exam, Long> {
 
     List<Exam> findByCourseIdAndStatus(Long courseId, ExamStatus status);
 
-    List<Exam> findByLessonId(Long lessonId);
-
     List<Exam> findByTutorId(Long tutorId);
 
     Optional<Exam> findByExamCode(String examCode);

@@ -13,7 +13,6 @@ const BREADCRUMB_MAP = {
   '/admin/enrollments':       'การสมัครเรียน',
   '/admin/payments':          'ประวัติการชำระเงิน',
   '/admin/exams':             'ข้อสอบ',
-  '/admin/attendance':        'การเข้าเรียน',
   '/admin/notifications':     'การแจ้งเตือน',
   '/admin/reports':           'รายงาน',
   '/admin/exam-institutions': 'สถาบันที่จัดสอบ',

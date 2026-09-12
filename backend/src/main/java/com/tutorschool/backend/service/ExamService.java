@@ -1,7 +1,8 @@
 package com.tutorschool.backend.service;
 
-import com.tutorschool.backend.dto.request.*;
-import com.tutorschool.backend.dto.response.*;
+import com.tutorschool.backend.dto.request.CreateExamRequest;
+import com.tutorschool.backend.dto.request.UpdateExamRequest;
+import com.tutorschool.backend.dto.response.ExamResponse;
 
 import java.util.List;
 
@@ -12,7 +13,6 @@ public interface ExamService {
     ExamResponse getExamById(Long id);
     List<ExamResponse> getAllExams();
     List<ExamResponse> getExamsByCourse(Long courseId);
-    List<ExamResponse> getExamsByLesson(Long lessonId);
     ExamResponse updateExam(Long id, UpdateExamRequest request, String teacherEmail);
     ExamResponse openExam(Long id, String teacherEmail);
     ExamResponse closeExam(Long id, String teacherEmail);
@@ -27,14 +27,4 @@ public interface ExamService {
 
     // เรียกโดย ExamScheduler — เปิด/ปิดข้อสอบอัตโนมัติตาม startTime/endTime ที่ตั้งไว้
     void autoTransitionExams();
-
-    // Question management
-    ExamQuestionResponse addQuestion(Long examId, CreateExamQuestionRequest request, String teacherEmail);
-    ExamQuestionResponse updateQuestion(Long questionId, UpdateExamQuestionRequest request, String teacherEmail);
-    void deleteQuestion(Long questionId, String teacherEmail);
-
-    // Option management
-    QuestionOptionResponse addOption(Long questionId, CreateQuestionOptionRequest request, String teacherEmail);
-    QuestionOptionResponse updateOption(Long optionId, UpdateQuestionOptionRequest request, String teacherEmail);
-    void deleteOption(Long optionId, String teacherEmail);
 }

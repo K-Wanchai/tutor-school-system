@@ -2,30 +2,21 @@ package com.tutorschool.backend.service.impl;
 
 import com.tutorschool.backend.dto.response.AdminReportResponse;
 import com.tutorschool.backend.dto.response.AdminReportResponse.CourseReportItem;
-import com.tutorschool.backend.dto.response.AttendanceReportResponse;
-import com.tutorschool.backend.dto.response.AttendanceReportResponse.AttendanceReportItem;
 import com.tutorschool.backend.dto.response.EnrollmentReportResponse;
 import com.tutorschool.backend.dto.response.EnrollmentReportResponse.EnrollmentReportItem;
-import com.tutorschool.backend.dto.response.ExamPerformanceReportResponse;
-import com.tutorschool.backend.dto.response.ExamPerformanceReportResponse.ExamPerformanceReportItem;
 import com.tutorschool.backend.dto.response.RevenueReportResponse;
 import com.tutorschool.backend.dto.response.RevenueReportResponse.RevenueReportItem;
-import com.tutorschool.backend.entity.AttendanceRecord;
-import com.tutorschool.backend.entity.AttendanceStatus;
 import com.tutorschool.backend.entity.Course;
 import com.tutorschool.backend.entity.CourseEvaluation;
 import com.tutorschool.backend.entity.Enrollment;
 import com.tutorschool.backend.entity.EnrollmentStatus;
-import com.tutorschool.backend.entity.ExamSubmission;
 import com.tutorschool.backend.entity.Payment;
 import com.tutorschool.backend.entity.PaymentVerificationStatus;
 import com.tutorschool.backend.entity.Student;
 import com.tutorschool.backend.entity.Tutor;
-import com.tutorschool.backend.repository.AttendanceRecordRepository;
 import com.tutorschool.backend.repository.CourseEvaluationRepository;
 import com.tutorschool.backend.repository.CourseRepository;
 import com.tutorschool.backend.repository.EnrollmentRepository;
-import com.tutorschool.backend.repository.ExamSubmissionRepository;
 import com.tutorschool.backend.repository.PaymentRepository;
 import com.tutorschool.backend.repository.StudentRepository;
 import com.tutorschool.backend.repository.TutorRepository;
@@ -58,8 +49,6 @@ public class AdminReportServiceImpl implements AdminReportService {
     private final EnrollmentRepository enrollmentRepository;
     private final PaymentRepository paymentRepository;
     private final CourseEvaluationRepository courseEvaluationRepository;
-    private final AttendanceRecordRepository attendanceRecordRepository;
-    private final ExamSubmissionRepository examSubmissionRepository;
 
     @Override
     @Transactional(readOnly = true)
@@ -117,8 +106,6 @@ public class AdminReportServiceImpl implements AdminReportService {
                 .totalEnrollments(enrollments.size())
                 .coursesByStatus(countBy(courses, c -> c.getStatus() != null ? c.getStatus().name() : "UNKNOWN"))
                 .enrollmentsByStatus(countBy(enrollments, e -> e.getStatus() != null ? e.getStatus().name() : "UNKNOWN"))
-                .attendanceByStatus(countBy(attendanceRecordRepository.findAll(),
-                        a -> a.getStatus() != null ? a.getStatus().name() : "UNKNOWN"))
                 .totalRevenue(totalRevenue)
                 .pendingPaymentVerifications(
                         paymentRepository.countByPaymentStatus(PaymentVerificationStatus.PENDING))
@@ -234,102 +221,6 @@ public class AdminReportServiceImpl implements AdminReportService {
                 .byStatus(countBy(enrollments, e -> e.getStatus() != null ? e.getStatus().name() : "UNKNOWN"))
                 .items(items)
                 .build();
-    }
-
-    @Override
-    @Transactional(readOnly = true)
-    public AttendanceReportResponse getAttendanceReport(LocalDate dateFrom, LocalDate dateTo, Long courseId,
-                                                          Long studentId, AttendanceStatus status) {
-        List<AttendanceRecord> records = attendanceRecordRepository.searchForReport(
-                startOfDay(dateFrom), endOfDay(dateTo), courseId, studentId, status);
-
-        List<AttendanceReportItem> items = records.stream()
-                .map(a -> AttendanceReportItem.builder()
-                        .attendanceId(a.getId())
-                        .attendanceCode(a.getAttendanceCode())
-                        .checkInTime(a.getCheckInTime())
-                        .studentName(studentFullName(a.getStudent()))
-                        .studentCode(a.getStudent() != null ? a.getStudent().getStudentCode() : null)
-                        .courseId(a.getCourse() != null ? a.getCourse().getId() : null)
-                        .courseName(a.getCourse() != null ? a.getCourse().getCourseName() : null)
-                        .courseCode(a.getCourse() != null ? a.getCourse().getCourseCode() : null)
-                        .lessonTitle(a.getLesson() != null ? a.getLesson().getLessonTitle() : null)
-                        .status(a.getStatus() != null ? a.getStatus().name() : null)
-                        .lateMinutes(a.getLateMinutes())
-                        .build())
-                .toList();
-
-        long present = records.stream().filter(a -> a.getStatus() == AttendanceStatus.PRESENT).count();
-        long late = records.stream().filter(a -> a.getStatus() == AttendanceStatus.LATE).count();
-        long absent = records.stream().filter(a -> a.getStatus() == AttendanceStatus.ABSENT).count();
-        long leave = records.stream()
-                .filter(a -> a.getStatus() == AttendanceStatus.LEAVE || a.getStatus() == AttendanceStatus.EXCUSED)
-                .count();
-        long attended = present + late;
-        long recorded = records.size() - records.stream()
-                .filter(a -> a.getStatus() == AttendanceStatus.LEAVE || a.getStatus() == AttendanceStatus.EXCUSED)
-                .count();
-        double rate = recorded > 0 ? Math.round((attended * 1000.0) / recorded) / 10.0 : 0.0;
-
-        return AttendanceReportResponse.builder()
-                .totalCount(records.size())
-                .presentCount(present)
-                .lateCount(late)
-                .absentCount(absent)
-                .leaveCount(leave)
-                .attendanceRate(rate)
-                .items(items)
-                .build();
-    }
-
-    @Override
-    @Transactional(readOnly = true)
-    public ExamPerformanceReportResponse getExamPerformanceReport(LocalDate dateFrom, LocalDate dateTo,
-                                                                    Long courseId, Long tutorId) {
-        List<ExamSubmission> submissions = examSubmissionRepository.searchForReport(
-                startOfDay(dateFrom), endOfDay(dateTo), courseId, tutorId);
-
-        Map<Long, List<ExamSubmission>> byCourse = submissions.stream()
-                .filter(s -> s.getExam() != null && s.getExam().getCourse() != null)
-                .collect(Collectors.groupingBy(s -> s.getExam().getCourse().getId(), LinkedHashMap::new,
-                        Collectors.toList()));
-
-        List<ExamPerformanceReportItem> items = byCourse.values().stream()
-                .map(rows -> {
-                    Course course = rows.get(0).getExam().getCourse();
-                    long examCount = rows.stream().map(s -> s.getExam().getId()).distinct().count();
-                    long studentCount = rows.stream().map(s -> s.getStudent().getId()).distinct().count();
-
-                    List<ExamSubmission> scored = rows.stream()
-                            .filter(s -> s.getObtainedScore() != null && s.getTotalScore() != null
-                                    && s.getTotalScore() > 0)
-                            .toList();
-                    Double avgPercent = scored.isEmpty() ? null : Math.round(scored.stream()
-                            .mapToDouble(s -> (s.getObtainedScore() / s.getTotalScore()) * 100)
-                            .average().orElse(0.0) * 10.0) / 10.0;
-
-                    List<ExamSubmission> withPassFlag = rows.stream().filter(s -> s.getIsPassed() != null).toList();
-                    Double passRate = withPassFlag.isEmpty() ? null : Math.round(withPassFlag.stream()
-                            .filter(ExamSubmission::getIsPassed)
-                            .count() * 1000.0 / withPassFlag.size()) / 10.0;
-
-                    return ExamPerformanceReportItem.builder()
-                            .courseId(course.getId())
-                            .courseName(course.getCourseName())
-                            .courseCode(course.getCourseCode())
-                            .tutorId(course.getTutor() != null ? course.getTutor().getId() : null)
-                            .tutorName(tutorFullName(course.getTutor()))
-                            .examCount(examCount)
-                            .submissionCount(rows.size())
-                            .studentCount(studentCount)
-                            .averageScorePercent(avgPercent)
-                            .passRate(passRate)
-                            .build();
-                })
-                .sorted(Comparator.comparingLong(ExamPerformanceReportItem::getSubmissionCount).reversed())
-                .toList();
-
-        return ExamPerformanceReportResponse.builder().items(items).build();
     }
 
     private <T> BigDecimal sumAmount(List<T> items, Function<T, BigDecimal> amountFn) {

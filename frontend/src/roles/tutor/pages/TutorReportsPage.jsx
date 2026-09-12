@@ -3,13 +3,9 @@ import RefreshButton from '../components/RefreshButton';
 import {
   BookOpen,
   Users,
-  CheckSquare,
   Star,
-  BarChart3,
 } from 'lucide-react';
 import {
-  getClassroomSessions,
-  getCourseExamResults,
   getTutorCourses,
   getTutorEvaluations,
 } from '../services/tutorReportService';
@@ -17,9 +13,7 @@ import './TutorReportsPage.css';
 
 export default function TutorReportsPage() {
   const [courses, setCourses] = useState([]);
-  const [sessions, setSessions] = useState([]);
   const [evaluations, setEvaluations] = useState([]);
-  const [examResults, setExamResults] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -30,35 +24,13 @@ export default function TutorReportsPage() {
     try {
       setLoading(true);
 
-      const [courseData, sessionData, evaluationData] =
-        await Promise.all([
-          getTutorCourses(),
-          getClassroomSessions().catch(() => []),
-          getTutorEvaluations().catch(() => []),
-        ]);
+      const [courseData, evaluationData] = await Promise.all([
+        getTutorCourses(),
+        getTutorEvaluations().catch(() => []),
+      ]);
 
-      const courseList = Array.isArray(courseData) ? courseData : [];
-      const allResults = [];
-
-      for (const course of courseList) {
-        try {
-          const results = await getCourseExamResults(course.id);
-          allResults.push(
-            ...results.map((item) => ({
-              ...item,
-              courseId: course.id,
-              courseName: course.courseName,
-            }))
-          );
-        } catch {
-          // skip
-        }
-      }
-
-      setCourses(courseList);
-      setSessions(Array.isArray(sessionData) ? sessionData : []);
+      setCourses(Array.isArray(courseData) ? courseData : []);
       setEvaluations(Array.isArray(evaluationData) ? evaluationData : []);
-      setExamResults(allResults);
     } catch (error) {
       console.error('Load reports error:', error);
     } finally {
@@ -72,36 +44,22 @@ export default function TutorReportsPage() {
       0
     );
 
-    const totalLessons = courses.reduce(
-      (sum, c) => sum + Number(c.lessons?.length || 0),
-      0
-    );
-
     return {
       totalCourses: courses.length,
       totalStudents,
-      totalLessons,
-      avgScore: averageScore(examResults),
       avgRating: averageRating(evaluations),
-      openRooms: sessions.filter((s) =>
-        ['OPEN', 'ACTIVE', 'IN_PROGRESS'].includes(String(s.status).toUpperCase())
-      ).length,
     };
-  }, [courses, sessions, evaluations, examResults]);
+  }, [courses, evaluations]);
 
   const courseRows = useMemo(() => {
-    return courses.map((course) => {
-      const results = examResults.filter((r) => String(r.courseId) === String(course.id));
-
-      return {
-        id: course.id,
-        name: course.courseName || '-',
-        code: course.courseCode || '-',
-        students: course.enrolledCount || course.studentCount || 0,
-        score: averageScore(results),
-      };
-    });
-  }, [courses, examResults]);
+    return courses.map((course) => ({
+      id: course.id,
+      name: course.courseName || '-',
+      code: course.courseCode || '-',
+      students: course.enrolledCount || course.studentCount || 0,
+      status: course.status || '-',
+    }));
+  }, [courses]);
 
   const activities = useMemo(() => {
     const courseActivities = courses.slice(0, 3).map((c) => ({
@@ -128,7 +86,7 @@ export default function TutorReportsPage() {
       <div className="tr-header">
         <div>
           <h1>รายงานภาพรวม</h1>
-          <p>ภาพรวมผลการสอน และประสิทธิภาพการเรียนรู้ของนักเรียน</p>
+          <p>ภาพรวมคอร์สและการประเมินจากนักเรียน</p>
         </div>
 
         <RefreshButton onClick={loadReports} loading={loading} />
@@ -137,55 +95,13 @@ export default function TutorReportsPage() {
       <div className="tr-summary">
         <SummaryCard icon={BookOpen} color="green" title="คอร์สทั้งหมด" value={report.totalCourses} unit="คอร์ส" />
         <SummaryCard icon={Users} color="blue" title="นักเรียนทั้งหมด" value={report.totalStudents} unit="คน" />
-        <SummaryCard icon={CheckSquare} color="emerald" title="ห้องเรียนเปิดอยู่" value={report.openRooms} unit="ห้อง" />
-        <SummaryCard icon={Star} color="orange" title="คะแนนเฉลี่ย" value={`${report.avgScore}%`} unit="เฉลี่ยทุกคอร์ส" />
-        <SummaryCard icon={BarChart3} color="purple" title="บทเรียนที่สอน" value={report.totalLessons} unit="บทเรียน" />
-      </div>
-
-      <div className="tr-top-grid">
-        <section className="tr-card">
-          <div className="tr-card-head">
-            <h2>การเข้าเรียนรายสัปดาห์</h2>
-            <select><option>ทุกคอร์ส</option></select>
-          </div>
-
-          <div className="tr-line-chart">
-            {[76, 80, 85, 88, 79, 85].map((value, index) => (
-              <div className="tr-line-col" key={index}>
-                <span style={{ height: `${value}%` }} />
-                <b>{value}%</b>
-                <p>สัปดาห์ที่ {index + 1}</p>
-              </div>
-            ))}
-          </div>
-        </section>
-
-        <section className="tr-card">
-          <div className="tr-card-head">
-            <h2>สัดส่วนคะแนน</h2>
-            <select><option>ทุกคอร์ส</option></select>
-          </div>
-
-          <div className="tr-donut">
-            <div>
-              <strong>{report.totalStudents}</strong>
-              <span>นักเรียน</span>
-            </div>
-          </div>
-
-          <div className="tr-legend-list">
-            <Legend color="green" label="ดีมาก (80-100%)" value={countScore(examResults, 80, 100)} />
-            <Legend color="mint" label="ดี (60-79%)" value={countScore(examResults, 60, 79)} />
-            <Legend color="yellow" label="ปานกลาง (40-59%)" value={countScore(examResults, 40, 59)} />
-            <Legend color="red" label="ควรปรับปรุง (0-39%)" value={countScore(examResults, 0, 39)} />
-          </div>
-        </section>
+        <SummaryCard icon={Star} color="orange" title="คะแนนประเมินเฉลี่ย" value={report.avgRating} unit="จาก 5.0" />
       </div>
 
       <div className="tr-bottom-grid">
         <section className="tr-card">
           <div className="tr-card-head">
-            <h2>ผลการเรียนเฉลี่ยรายคอร์ส</h2>
+            <h2>คอร์สที่สอนอยู่</h2>
           </div>
 
           <div className="tr-course-list">
@@ -204,15 +120,7 @@ export default function TutorReportsPage() {
                   </div>
 
                   <span>{course.students} คน</span>
-
-                  <div className="tr-progress">
-                    <b>{course.score}%</b>
-                    <div>
-                      <span style={{ width: `${Math.min(course.score, 100)}%` }} />
-                    </div>
-                  </div>
-
-                  <small>↗ เพิ่มขึ้น</small>
+                  <small>{course.status}</small>
                 </div>
               ))
             )}
@@ -257,10 +165,7 @@ export default function TutorReportsPage() {
             <p>★ ★ ★ ★ ★</p>
           </div>
 
-          <RatingBar label="การอธิบายเนื้อหา" value={report.avgRating} />
-          <RatingBar label="การจัดการเรียนการสอน" value={report.avgRating} />
-          <RatingBar label="การดูแลนักเรียน" value={report.avgRating} />
-          <RatingBar label="สื่อการสอน" value={report.avgRating} />
+          <RatingBar label="คะแนนประเมินเฉลี่ยรวม" value={report.avgRating} />
         </section>
       </div>
 
@@ -284,16 +189,6 @@ function SummaryCard({ icon: Icon, title, value, unit, color }) {
   );
 }
 
-function Legend({ color, label, value }) {
-  return (
-    <div className={`tr-legend ${color}`}>
-      <span />
-      <p>{label}</p>
-      <strong>{value}</strong>
-    </div>
-  );
-}
-
 function RatingBar({ label, value }) {
   const percent = Math.min((Number(value || 0) / 5) * 100, 100);
 
@@ -310,17 +205,6 @@ function RatingBar({ label, value }) {
   );
 }
 
-function averageScore(results) {
-  if (!Array.isArray(results) || results.length === 0) return 0;
-
-  const scores = results
-    .map((r) => Number(r.score ?? r.totalScore ?? r.obtainedScore ?? 0))
-    .filter((n) => !Number.isNaN(n));
-
-  if (scores.length === 0) return 0;
-  return Number((scores.reduce((a, b) => a + b, 0) / scores.length).toFixed(1));
-}
-
 function averageRating(items) {
   if (!Array.isArray(items) || items.length === 0) return '0.0';
 
@@ -330,11 +214,4 @@ function averageRating(items) {
 
   if (ratings.length === 0) return '0.0';
   return (ratings.reduce((a, b) => a + b, 0) / ratings.length).toFixed(1);
-}
-
-function countScore(results, min, max) {
-  return results.filter((r) => {
-    const score = Number(r.score ?? r.totalScore ?? r.obtainedScore ?? 0);
-    return score >= min && score <= max;
-  }).length;
 }

@@ -11,8 +11,6 @@ import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.tutorschool.backend.dto.request.CourseLessonRequest;
-import com.tutorschool.backend.dto.request.CourseTestRequest;
 import com.tutorschool.backend.dto.request.CreateCourseRequest;
 import com.tutorschool.backend.dto.request.CreateNotificationRequest;
 import com.tutorschool.backend.dto.request.ScheduleDaySlotRequest;
@@ -20,13 +18,13 @@ import com.tutorschool.backend.dto.request.UpdateCourseRequest;
 import com.tutorschool.backend.dto.request.UpdateCourseStatusRequest;
 import com.tutorschool.backend.dto.response.CourseResponse;
 import com.tutorschool.backend.dto.response.PageResponse;
+import com.tutorschool.backend.dto.response.TutorAvailabilityResponse;
 import com.tutorschool.backend.entity.Course;
-import com.tutorschool.backend.entity.CourseLesson;
 import com.tutorschool.backend.entity.CourseScheduleDay;
 import com.tutorschool.backend.entity.CourseStatus;
-import com.tutorschool.backend.entity.CourseTest;
 import com.tutorschool.backend.entity.Enrollment;
 import com.tutorschool.backend.entity.EnrollmentStatus;
+import com.tutorschool.backend.entity.InstitutionProfile;
 import com.tutorschool.backend.entity.NotificationType;
 import com.tutorschool.backend.entity.ReferenceType;
 import com.tutorschool.backend.entity.Tutor;
@@ -35,14 +33,12 @@ import com.tutorschool.backend.exception.InvalidCourseDateException;
 import com.tutorschool.backend.exception.ResourceInUseException;
 import com.tutorschool.backend.exception.ResourceNotFoundException;
 import com.tutorschool.backend.mapper.CourseMapper;
-import com.tutorschool.backend.repository.AttendanceRecordRepository;
-import com.tutorschool.backend.repository.ClassroomSessionRepository;
 import com.tutorschool.backend.repository.CourseEvaluationRepository;
 import com.tutorschool.backend.repository.CourseRepository;
 import com.tutorschool.backend.repository.CourseScheduleDayRepository;
-import com.tutorschool.backend.repository.CourseScheduleRepository;
 import com.tutorschool.backend.repository.EnrollmentRepository;
 import com.tutorschool.backend.repository.ExamRepository;
+import com.tutorschool.backend.repository.InstitutionProfileRepository;
 import com.tutorschool.backend.repository.TutorRepository;
 import com.tutorschool.backend.util.ScheduleDaysParser;
 import com.tutorschool.backend.service.CourseService;
@@ -50,6 +46,11 @@ import com.tutorschool.backend.service.NotificationService;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+
+import java.time.LocalTime;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.Map;
 
 @Slf4j
 @Service
@@ -60,11 +61,9 @@ public class CourseServiceImpl implements CourseService {
     private final TutorRepository TutorRepository;
     private final EnrollmentRepository enrollmentRepository;
     private final ExamRepository examRepository;
-    private final AttendanceRecordRepository attendanceRecordRepository;
-    private final ClassroomSessionRepository classroomSessionRepository;
     private final CourseEvaluationRepository courseEvaluationRepository;
-    private final CourseScheduleRepository courseScheduleRepository;
     private final CourseScheduleDayRepository courseScheduleDayRepository;
+    private final InstitutionProfileRepository institutionProfileRepository;
     private final CourseMapper courseMapper;
     private final NotificationService notificationService;
 
@@ -76,7 +75,7 @@ public class CourseServiceImpl implements CourseService {
         Page<CourseResponse> responsePage = coursePage.map(course -> {
             long count = enrollmentRepository.countByCourseIdAndStatusIn(course.getId(),
                     List.of(EnrollmentStatus.PENDING, EnrollmentStatus.APPROVED));
-            return courseMapper.toSummaryResponse(course, count);
+            return courseMapper.toResponse(course, count);
         });
         return PageResponse.from(responsePage);
     }
@@ -88,7 +87,7 @@ public class CourseServiceImpl implements CourseService {
                 .orElseThrow(() -> new ResourceNotFoundException("Course", id));
         long enrolledCount = enrollmentRepository.countByCourseIdAndStatusIn(id,
                 List.of(EnrollmentStatus.PENDING, EnrollmentStatus.APPROVED));
-        return courseMapper.toDetailResponse(course, enrolledCount);
+        return courseMapper.toResponse(course, enrolledCount);
     }
 
     @Override
@@ -98,7 +97,7 @@ public class CourseServiceImpl implements CourseService {
                 .orElseThrow(() -> new ResourceNotFoundException("Course not found with code: " + courseCode));
         long enrolledCount = enrollmentRepository.countByCourseIdAndStatusIn(course.getId(),
                 List.of(EnrollmentStatus.PENDING, EnrollmentStatus.APPROVED));
-        return courseMapper.toDetailResponse(course, enrolledCount);
+        return courseMapper.toResponse(course, enrolledCount);
     }
 
     @Override
@@ -111,7 +110,7 @@ public class CourseServiceImpl implements CourseService {
                 .map(course -> {
                     long count = enrollmentRepository.countByCourseIdAndStatusIn(course.getId(),
                             List.of(EnrollmentStatus.PENDING, EnrollmentStatus.APPROVED));
-                    return courseMapper.toSummaryResponse(course, count);
+                    return courseMapper.toResponse(course, count);
                 })
                 .toList();
     }
@@ -125,7 +124,7 @@ public class CourseServiceImpl implements CourseService {
                 .map(course -> {
                     long count = enrollmentRepository.countByCourseIdAndStatusIn(course.getId(),
                             List.of(EnrollmentStatus.PENDING, EnrollmentStatus.APPROVED));
-                    return courseMapper.toDetailResponse(course, count);
+                    return courseMapper.toResponse(course, count);
                 })
                 .toList();
     }
@@ -164,8 +163,6 @@ public class CourseServiceImpl implements CourseService {
                 .tutor(tutor)
                 .build();
 
-        addLessonsToCoure(course, request.getLessons());
-        addTestsToCourse(course, request.getTests());
         addScheduleDayPatterns(course, scheduleDays);
 
         course = courseRepository.save(course);
@@ -176,7 +173,7 @@ public class CourseServiceImpl implements CourseService {
 
         sendCourseAssignedNotification(course, tutor);
 
-        return courseMapper.toDetailResponse(course, 0L);
+        return courseMapper.toResponse(course, 0L);
     }
 
     /**
@@ -268,12 +265,6 @@ public class CourseServiceImpl implements CourseService {
         course.setCourseStartDate(request.getCourseStartDate());
         course.setTutor(Tutor);
 
-        course.getLessons().clear();
-        addLessonsToCoure(course, request.getLessons());
-
-        course.getTests().clear();
-        addTestsToCourse(course, request.getTests());
-
         course.getScheduleDayPatterns().clear();
         addScheduleDayPatterns(course, request.getScheduleDays());
 
@@ -295,7 +286,7 @@ public class CourseServiceImpl implements CourseService {
         course = courseRepository.save(course);
         long enrolledCount = enrollmentRepository.countByCourseIdAndStatusIn(id,
                 List.of(EnrollmentStatus.PENDING, EnrollmentStatus.APPROVED));
-        return courseMapper.toDetailResponse(course, enrolledCount);
+        return courseMapper.toResponse(course, enrolledCount);
     }
 
     @Override
@@ -322,90 +313,7 @@ public class CourseServiceImpl implements CourseService {
         course = courseRepository.save(course);
         long enrolledCount = enrollmentRepository.countByCourseIdAndStatusIn(id,
                 List.of(EnrollmentStatus.PENDING, EnrollmentStatus.APPROVED));
-        return courseMapper.toSummaryResponse(course, enrolledCount);
-    }
-
-    @Override
-    @Transactional
-    public CourseResponse addLesson(Long courseId, CourseLessonRequest request, Long tutorUserId) {
-        Course course = courseRepository.findById(courseId)
-                .orElseThrow(() -> new ResourceNotFoundException("Course", courseId));
-        verifyTutorOwnsCourse(course, tutorUserId);
-        ensureLessonsEditable(course);
-
-        CourseLesson lesson = CourseLesson.builder()
-                .course(course)
-                .lessonTitle(request.getLessonTitle())
-                .lessonContent(request.getLessonContent())
-                .lessonOrder(request.getLessonOrder())
-                .build();
-        course.getLessons().add(lesson);
-
-        course = courseRepository.save(course);
-        return courseMapper.toDetailResponse(course, countActiveEnrollments(courseId));
-    }
-
-    @Override
-    @Transactional
-    public CourseResponse updateLesson(Long courseId, Long lessonId, CourseLessonRequest request, Long tutorUserId) {
-        Course course = courseRepository.findById(courseId)
-                .orElseThrow(() -> new ResourceNotFoundException("Course", courseId));
-        verifyTutorOwnsCourse(course, tutorUserId);
-        ensureLessonsEditable(course);
-
-        CourseLesson lesson = course.getLessons().stream()
-                .filter(l -> l.getId().equals(lessonId))
-                .findFirst()
-                .orElseThrow(() -> new ResourceNotFoundException("Lesson", lessonId));
-
-        lesson.setLessonTitle(request.getLessonTitle());
-        lesson.setLessonContent(request.getLessonContent());
-        lesson.setLessonOrder(request.getLessonOrder());
-
-        course = courseRepository.save(course);
-        return courseMapper.toDetailResponse(course, countActiveEnrollments(courseId));
-    }
-
-    @Override
-    @Transactional
-    public void deleteLesson(Long courseId, Long lessonId, Long tutorUserId) {
-        Course course = courseRepository.findById(courseId)
-                .orElseThrow(() -> new ResourceNotFoundException("Course", courseId));
-        verifyTutorOwnsCourse(course, tutorUserId);
-        ensureLessonsEditable(course);
-
-        boolean removed = course.getLessons().removeIf(l -> l.getId().equals(lessonId));
-        if (!removed) {
-            throw new ResourceNotFoundException("Lesson", lessonId);
-        }
-
-        courseRepository.save(course);
-    }
-
-    @Override
-    @Transactional
-    public CourseResponse addTest(Long courseId, CourseTestRequest request, Long tutorUserId) {
-        Course course = courseRepository.findById(courseId)
-                .orElseThrow(() -> new ResourceNotFoundException("Course", courseId));
-        verifyTutorOwnsCourse(course, tutorUserId);
-        ensureTestsAddable(course);
-
-        if (request.getLessonOrder() != null
-                && course.getLessons().stream().noneMatch(l -> l.getLessonOrder().equals(request.getLessonOrder()))) {
-            throw new ResourceNotFoundException("Lesson with order " + request.getLessonOrder() + " not found in this course");
-        }
-
-        CourseTest test = CourseTest.builder()
-                .course(course)
-                .testTitle(request.getTestTitle())
-                .testDescription(request.getTestDescription())
-                .testOrder(request.getTestOrder())
-                .lessonOrder(request.getLessonOrder())
-                .build();
-        course.getTests().add(test);
-
-        course = courseRepository.save(course);
-        return courseMapper.toDetailResponse(course, countActiveEnrollments(courseId));
+        return courseMapper.toResponse(course, enrolledCount);
     }
 
     @Override
@@ -446,7 +354,7 @@ public class CourseServiceImpl implements CourseService {
 
         sendCourseCompletedNotifications(course, approved);
 
-        return courseMapper.toDetailResponse(course, countActiveEnrollments(courseId));
+        return courseMapper.toResponse(course, countActiveEnrollments(courseId));
     }
 
     private void sendCourseCompletedNotifications(Course course, List<Enrollment> completedEnrollments) {
@@ -480,27 +388,6 @@ public class CourseServiceImpl implements CourseService {
             throw new IllegalStateException("You are not assigned to this course");
         }
         return tutor;
-    }
-
-    // บทเรียนแก้ไข/เพิ่ม/ลบได้เฉพาะช่วง PENDING/CLOSED/OPEN_FOR_REGISTRATION — ล็อกทันทีที่เริ่มสอน (ONGOING)
-    private void ensureLessonsEditable(Course course) {
-        if (course.getStatus() != CourseStatus.PENDING
-                && course.getStatus() != CourseStatus.CLOSED
-                && course.getStatus() != CourseStatus.OPEN_FOR_REGISTRATION) {
-            throw new IllegalStateException(
-                    "Lessons can only be added, edited, or deleted while the course is pending, closed, or open for registration (not once teaching has started)");
-        }
-    }
-
-    // หัวข้อสอบเพิ่มได้ต่อเนื่องแม้เริ่มสอนแล้ว (ONGOING) เพื่อให้เปิดสอบทีละบทได้
-    private void ensureTestsAddable(Course course) {
-        if (course.getStatus() != CourseStatus.PENDING
-                && course.getStatus() != CourseStatus.CLOSED
-                && course.getStatus() != CourseStatus.OPEN_FOR_REGISTRATION
-                && course.getStatus() != CourseStatus.ONGOING) {
-            throw new IllegalStateException(
-                    "Exam topics can only be added while the course is pending, closed, open for registration, or ongoing");
-        }
     }
 
     /**
@@ -577,63 +464,100 @@ public class CourseServiceImpl implements CourseService {
         boolean hasRelatedData = enrollmentRepository.existsByCourseIdAndStatusNotIn(
                         id, List.of(EnrollmentStatus.REJECTED, EnrollmentStatus.CANCELLED))
                 || examRepository.existsByCourseId(id)
-                || courseScheduleRepository.existsByCourseId(id)
-                || classroomSessionRepository.existsByCourseId(id)
-                || attendanceRecordRepository.existsByCourseId(id)
                 || courseEvaluationRepository.existsByCourseId(id);
         if (hasRelatedData) {
             throw new ResourceInUseException(
-                    "ไม่สามารถลบคอร์สเรียนได้เนื่องจากมีข้อมูลเชื่อมโยงอยู่ (การสมัครเรียน/ตารางเรียน/ข้อสอบ/การเข้าเรียน)");
+                    "ไม่สามารถลบคอร์สเรียนได้เนื่องจากมีข้อมูลเชื่อมโยงอยู่ (การสมัครเรียน/ข้อสอบ/การประเมิน)");
         }
 
         // ลบใบสมัครที่ถูกปฏิเสธ/ยกเลิกที่ยังผูกกับคอร์สนี้ทิ้งไปด้วย — เพื่อไม่ให้เหลือแถวกำพร้าอ้างอิงคอร์สที่ถูกลบ
         // แล้ว และเพื่อให้ประวัติการสมัครของนักเรียนสำหรับคอร์สนี้หายไปตามคอร์สที่ถูกลบ
         enrollmentRepository.deleteByCourseId(id);
 
-        // ลบ course (cascade → lessons, tests ผ่าน orphanRemoval)
+        // ลบ course (cascade → scheduleDayPatterns ผ่าน orphanRemoval)
         courseRepository.deleteById(id);
     }
 
-    private void addLessonsToCoure(Course course, List<CourseLessonRequest> lessonRequests) {
-        if (lessonRequests == null) return;
-        for (CourseLessonRequest req : lessonRequests) {
-            CourseLesson lesson = CourseLesson.builder()
-                    .course(course)
-                    .lessonTitle(req.getLessonTitle())
-                    .lessonContent(req.getLessonContent())
-                    .lessonOrder(req.getLessonOrder())
-                    .build();
-            course.getLessons().add(lesson);
+    @Override
+    @Transactional(readOnly = true)
+    public TutorAvailabilityResponse getTutorAvailability(Long tutorId, LocalDate date, Long excludeCourseId) {
+        Tutor tutor = TutorRepository.findById(tutorId)
+                .orElseThrow(() -> new ResourceNotFoundException("Tutor not found with id: " + tutorId));
 
-            // เพิ่มแบบทดสอบที่ผูกกับบทนี้
-            if (req.getTests() != null) {
-                int testOrder = 1;
-                for (CourseTestRequest t : req.getTests()) {
-                    if (t.getTestTitle() == null || t.getTestTitle().isBlank()) continue;
-                    CourseTest test = CourseTest.builder()
-                            .course(course)
-                            .testTitle(t.getTestTitle())
-                            .testDescription(t.getTestDescription())
-                            .testOrder(testOrder++)
-                            .lessonOrder(req.getLessonOrder())
-                            .build();
-                    course.getTests().add(test);
-                }
-            }
-        }
+        String dayCode = ScheduleDaysParser.toDayCode(date.getDayOfWeek());
+
+        // busy ที่เกิดจาก pattern การสอนรายสัปดาห์ (ตาราง course_schedule_days) ของคอร์สอื่นของติวเตอร์คนนี้ —
+        // แหล่งข้อมูลเดียวกับที่ validateNoScheduleConflict ใช้ตรวจตอน submit เพื่อให้ panel นี้ตรงกับผลตอน submit จริง
+        List<TutorAvailabilityResponse.TimeSlot> busySlots = courseScheduleDayRepository
+                .findByCourse_Tutor_IdAndDayOfWeek(tutor.getId(), dayCode).stream()
+                .filter(csd -> excludeCourseId == null || !excludeCourseId.equals(csd.getCourse().getId()))
+                .map(csd -> TutorAvailabilityResponse.TimeSlot.builder()
+                        .startTime(csd.getStartTime())
+                        .endTime(csd.getEndTime())
+                        .courseTitle(csd.getCourse().getCourseName())
+                        .build())
+                .sorted(Comparator.comparing(TutorAvailabilityResponse.TimeSlot::getStartTime))
+                .toList();
+
+        LocalTime[] allowedWindow = resolveAllowedWindow(date);
+        List<TutorAvailabilityResponse.TimeSlot> freeSlots =
+                computeFreeSlots(busySlots, allowedWindow[0], allowedWindow[1]);
+
+        return TutorAvailabilityResponse.builder()
+                .tutorId(tutorId)
+                .date(date)
+                .busySlots(busySlots)
+                .freeSlots(freeSlots)
+                .build();
     }
 
-    private void addTestsToCourse(Course course, List<CourseTestRequest> testRequests) {
-        if (testRequests == null) return;
-        for (CourseTestRequest req : testRequests) {
-            CourseTest test = CourseTest.builder()
-                    .course(course)
-                    .testTitle(req.getTestTitle())
-                    .testDescription(req.getTestDescription())
-                    .testOrder(req.getTestOrder())
-                    .build();
-            course.getTests().add(test);
+    // ช่วงเวลาที่สถาบันอนุญาตให้จัดตารางสอนของวันนั้น (allowedTimeSlots) — วันที่ไม่ได้ตั้งค่า = ไม่จำกัด (fallback 08:00-22:00)
+    private LocalTime[] resolveAllowedWindow(LocalDate date) {
+        final LocalTime DAY_START = LocalTime.of(8, 0);
+        final LocalTime DAY_END = LocalTime.of(22, 0);
+
+        String dayCode = ScheduleDaysParser.toDayCode(date.getDayOfWeek());
+        Map<String, LocalTime[]> allowedByDay = institutionProfileRepository.findFirstBy()
+                .map(InstitutionProfile::getAllowedTimeSlots)
+                .map(ScheduleDaysParser::parseSlots)
+                .orElseGet(Map::of);
+
+        LocalTime[] allowed = allowedByDay.get(dayCode);
+        if (allowed != null) {
+            return allowed;
         }
+        return new LocalTime[]{DAY_START, DAY_END};
+    }
+
+    // คำนวณ free slots จาก busy slots (เรียงตาม startTime แล้ว, อาจซ้อนทับกันได้) โดยแบ่งช่วงเวลาภายในหน้าต่างเวลาที่สถาบันอนุญาต
+    private List<TutorAvailabilityResponse.TimeSlot> computeFreeSlots(List<TutorAvailabilityResponse.TimeSlot> busySlots,
+                                                                        LocalTime dayStart, LocalTime dayEnd) {
+        List<TutorAvailabilityResponse.TimeSlot> freeSlots = new ArrayList<>();
+        LocalTime cursor = dayStart;
+
+        for (TutorAvailabilityResponse.TimeSlot busy : busySlots) {
+            LocalTime start = busy.getStartTime().isBefore(dayStart) ? dayStart : busy.getStartTime();
+            LocalTime end = busy.getEndTime().isAfter(dayEnd) ? dayEnd : busy.getEndTime();
+            if (!end.isAfter(cursor)) {
+                continue;
+            }
+            if (cursor.isBefore(start)) {
+                freeSlots.add(TutorAvailabilityResponse.TimeSlot.builder()
+                        .startTime(cursor)
+                        .endTime(start)
+                        .build());
+            }
+            cursor = end;
+        }
+
+        if (cursor.isBefore(dayEnd)) {
+            freeSlots.add(TutorAvailabilityResponse.TimeSlot.builder()
+                    .startTime(cursor)
+                    .endTime(dayEnd)
+                    .build());
+        }
+
+        return freeSlots;
     }
 
     private void validateCourseDates(LocalDate regStart, LocalDate regEnd, LocalDate courseStart) {
