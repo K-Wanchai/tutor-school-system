@@ -90,7 +90,7 @@ public class CourseEvaluationServiceImpl implements CourseEvaluationService {
         Course course = enrollment.getCourse();
         Tutor Tutor = course.getTutor();
 
-        // 5. สร้าง evaluation
+        // 5. สร้าง evaluation — เผยแพร่ทันทีที่ส่ง (ไม่มีขั้นตอนให้แอดมินตรวจสอบ/อนุมัติก่อน)
         CourseEvaluation evaluation = CourseEvaluation.builder()
                 .student(student)
                 .course(course)
@@ -99,6 +99,7 @@ public class CourseEvaluationServiceImpl implements CourseEvaluationService {
                 .comment(request.getComment())
                 .suggestion(request.getSuggestion())
                 .isAnonymous(request.getIsAnonymous() != null ? request.getIsAnonymous() : false)
+                .status(EvaluationStatus.PUBLISHED)
                 .build();
 
         attachCriteriaScores(evaluation, request.getCriteriaScores());

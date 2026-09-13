@@ -1,35 +1,14 @@
 import { useLocation } from 'react-router-dom';
 import { logout } from '../../../auth/services/authService';
 import { getUsername } from '../../../shared/utils/tokenUtils';
+import { NAV_ITEMS } from './studentNavItems.jsx';
+import { findMatchingNavItem } from '../../../shared/utils/navMatch';
 import './StudentNavbar.css';
-
-const PAGE_TITLES = {
-  '/student/dashboard':         'แดชบอร์ด',
-  '/student/courses':           'คอร์สของฉัน',
-  '/student/enrollments':       'การสมัครเรียน',
-  '/student/exam-schedule':     'ตารางสอบ',
-  '/student/payments':          'การชำระเงิน',
-  '/student/enrollment-history':'ประวัติการลงทะเบียน',
-  '/student/notifications':     'การแจ้งเตือน',
-  '/student/profile':           'โปรไฟล์',
-};
-
-function getPageTitle(pathname) {
-  if (PAGE_TITLES[pathname]) {
-    return PAGE_TITLES[pathname];
-  }
-
-  const match = Object.keys(PAGE_TITLES)
-    .filter((path) => pathname.startsWith(path))
-    .sort((a, b) => b.length - a.length)[0];
-
-  return match ? PAGE_TITLES[match] : 'แดชบอร์ด';
-}
 
 export default function StudentNavbar({ onMenuToggle }) {
   const username = getUsername() || 'นักเรียน';
   const location = useLocation();
-  const pageTitle = getPageTitle(location.pathname);
+  const pageTitle = findMatchingNavItem(location.pathname, NAV_ITEMS)?.label || 'แดชบอร์ด';
 
   return (
     <header className="student-navbar">
