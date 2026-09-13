@@ -96,13 +96,13 @@ public class CourseEvaluationServiceImpl implements CourseEvaluationService {
                 .course(course)
                 .enrollment(enrollment)
                 .tutor(Tutor)
-                .rating(request.getRating())
                 .comment(request.getComment())
                 .suggestion(request.getSuggestion())
                 .isAnonymous(request.getIsAnonymous() != null ? request.getIsAnonymous() : false)
                 .build();
 
         attachCriteriaScores(evaluation, request.getCriteriaScores());
+        evaluation.setRating(computeOverallRating(evaluation.getCriteriaScores()));
 
         CourseEvaluation saved = evaluationRepository.save(evaluation);
         saved.setEvaluationCode("EVL-" + String.format("%08d", saved.getId()));
@@ -257,9 +257,9 @@ public class CourseEvaluationServiceImpl implements CourseEvaluationService {
                     "Evaluation can only be edited within " + EDIT_WINDOW_HOURS + " hours after submission");
         }
 
-        evaluation.setRating(request.getRating());
         evaluation.getCriteriaScores().clear();
         attachCriteriaScores(evaluation, request.getCriteriaScores());
+        evaluation.setRating(computeOverallRating(evaluation.getCriteriaScores()));
         evaluation.setComment(request.getComment());
         evaluation.setSuggestion(request.getSuggestion());
         if (request.getIsAnonymous() != null) {
@@ -362,5 +362,14 @@ public class CourseEvaluationServiceImpl implements CourseEvaluationService {
                     .score(item.getScore())
                     .build());
         }
+    }
+
+    // คะแนนรวม (rating) ไม่ได้ให้ผู้ใช้กดแยกอีกต่อไป — คำนวณจากค่าเฉลี่ยของคะแนนแต่ละหัวข้อที่ให้ไว้ ปัดเป็นจำนวนเต็มที่ใกล้ที่สุด
+    private Integer computeOverallRating(List<EvaluationCriteriaScore> scores) {
+        double average = scores.stream()
+                .mapToInt(EvaluationCriteriaScore::getScore)
+                .average()
+                .orElse(0);
+        return (int) Math.round(average);
     }
 }

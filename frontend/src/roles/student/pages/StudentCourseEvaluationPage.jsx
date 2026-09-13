@@ -50,7 +50,6 @@ function Stars({ value, onChange, readOnly = false, size = 'md' }) {
 
 function EvaluationFormModal({ target, existing, scoreFields, onClose, onSaved }) {
   const [form, setForm] = useState(() => ({
-    rating: existing?.rating || 0,
     scores: buildInitialScores(scoreFields, existing),
     comment: existing?.comment || '',
     suggestion: existing?.suggestion || '',
@@ -67,14 +66,17 @@ function EvaluationFormModal({ target, existing, scoreFields, onClose, onSaved }
     setForm((prev) => ({ ...prev, scores: { ...prev.scores, [criteriaId]: val } }));
   }
 
+  // คะแนนรวมไม่ให้กดเอง — คำนวณจากค่าเฉลี่ยของคะแนนแต่ละหัวข้อที่กรอกไว้ (server จะคำนวณซ้ำอีกครั้งตอนบันทึกจริง)
+  const filledScores = scoreFields.map((field) => form.scores[field.id] || 0);
+  const allFilled = scoreFields.length > 0 && filledScores.every((v) => v >= 1);
+  const overallPreview = allFilled
+    ? filledScores.reduce((sum, v) => sum + v, 0) / filledScores.length
+    : null;
+
   async function handleSubmit(e) {
     e.preventDefault();
     setError('');
 
-    if (form.rating < 1) {
-      setError('กรุณาให้คะแนนความพึงพอใจโดยรวม');
-      return;
-    }
     for (const field of scoreFields) {
       if (!form.scores[field.id] || form.scores[field.id] < 1) {
         setError(`กรุณาให้คะแนนหัวข้อ "${field.label}"`);
@@ -91,7 +93,6 @@ function EvaluationFormModal({ target, existing, scoreFields, onClose, onSaved }
     try {
       if (existing) {
         await updateEvaluation(existing.id, {
-          rating: form.rating,
           criteriaScores,
           comment: form.comment.trim() || null,
           suggestion: form.suggestion.trim() || null,
@@ -100,7 +101,6 @@ function EvaluationFormModal({ target, existing, scoreFields, onClose, onSaved }
       } else {
         await submitEvaluation({
           enrollmentId: target.enrollmentId,
-          rating: form.rating,
           criteriaScores,
           comment: form.comment.trim() || null,
           suggestion: form.suggestion.trim() || null,
@@ -138,17 +138,24 @@ function EvaluationFormModal({ target, existing, scoreFields, onClose, onSaved }
         </div>
 
         <form className="sce-modal-body" onSubmit={handleSubmit}>
-          <div className="sce-form-block sce-form-block--overall">
-            <span className="sce-form-label">ความพึงพอใจโดยรวม</span>
-            <Stars value={form.rating} onChange={(n) => setField('rating', n)} size="lg" />
-          </div>
-
           {scoreFields.map((field) => (
             <div key={field.id} className="sce-form-block sce-form-row">
               <span className="sce-form-label">{field.label}</span>
               <Stars value={form.scores[field.id] || 0} onChange={(n) => setScore(field.id, n)} />
             </div>
           ))}
+
+          <div className="sce-form-block sce-form-block--overall">
+            <span className="sce-form-label">
+              คะแนนรวม <small>(เฉลี่ยจากคะแนนแต่ละหัวข้อด้านบน)</small>
+            </span>
+            <div className="sce-overall-preview">
+              <Stars value={overallPreview || 0} readOnly size="lg" />
+              <span className="sce-overall-value">
+                {overallPreview !== null ? `${overallPreview.toFixed(1)} / 5` : 'ให้คะแนนครบทุกหัวข้อก่อน'}
+              </span>
+            </div>
+          </div>
 
           <div className="sce-form-block">
             <label className="sce-form-label" htmlFor="sce-comment">
