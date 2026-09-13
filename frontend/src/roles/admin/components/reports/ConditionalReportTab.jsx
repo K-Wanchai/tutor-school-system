@@ -364,21 +364,24 @@ export default function ConditionalReportTab() {
                             {(inst.faculties || []).length === 0 ? (
                               <tr><td colSpan={2} className="ar-empty">ไม่มีข้อมูลคณะ/สาขา</td></tr>
                             ) : (
-                              inst.faculties.flatMap((f) => (
-                                (f.majors || []).length === 0
-                                  ? [
+                              inst.faculties.flatMap((f) => {
+                                const majors = f.majors || [];
+                                const rowSpan = Math.max(majors.length, 1);
+                                if (majors.length === 0) {
+                                  return [
                                     <tr key={`${f.id}-none`}>
-                                      <td>{f.name || '-'}</td>
+                                      <td rowSpan={rowSpan}>{f.name || '-'}</td>
                                       <td>-</td>
                                     </tr>,
-                                  ]
-                                  : f.majors.map((m) => (
-                                    <tr key={`${f.id}-${m.id}`}>
-                                      <td>{f.name || '-'}</td>
-                                      <td>{m.name || '-'}</td>
-                                    </tr>
-                                  ))
-                              ))
+                                  ];
+                                }
+                                return majors.map((m, i) => (
+                                  <tr key={`${f.id}-${m.id}`}>
+                                    {i === 0 && <td rowSpan={rowSpan}>{f.name || '-'}</td>}
+                                    <td>{m.name || '-'}</td>
+                                  </tr>
+                                ));
+                              })
                             )}
                           </tbody>
                         </table>
