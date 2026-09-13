@@ -13,6 +13,7 @@ import StudentExamSchedulePage from '../roles/student/pages/StudentExamScheduleP
 import StudentExamCourseDetailPage from '../roles/student/pages/StudentExamCourseDetailPage';
 import StudentCourseEvaluationPage from '../roles/student/pages/StudentCourseEvaluationPage';
 import StudentAttendancePage from '../roles/student/pages/StudentAttendancePage';
+import StudentAttendanceCoursePage from '../roles/student/pages/StudentAttendanceCoursePage';
 
 const studentRoutes = (
   <Route
@@ -33,6 +34,7 @@ const studentRoutes = (
   <Route path="exam-schedule/:courseId" element={<StudentExamCourseDetailPage />} />
   <Route path="course-evaluations" element={<StudentCourseEvaluationPage />} />
   <Route path="attendance" element={<StudentAttendancePage />} />
+  <Route path="attendance/:courseId" element={<StudentAttendanceCoursePage />} />
   {/* เส้นทางเดิม — คงไว้กันลิงก์เก่า/บุ๊กมาร์กพัง (ตารางเรียน/ผลสอบในระบบถูกถอดออกแล้ว) */}
   <Route path="schedule" element={<Navigate to="/student/dashboard" replace />} />
   <Route path="exam-results" element={<Navigate to="/student/dashboard" replace />} />

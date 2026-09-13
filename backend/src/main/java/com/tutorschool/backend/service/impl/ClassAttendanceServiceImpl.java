@@ -15,6 +15,7 @@ import com.tutorschool.backend.exception.ResourceNotFoundException;
 import com.tutorschool.backend.repository.ClassAttendanceRepository;
 import com.tutorschool.backend.repository.CourseRepository;
 import com.tutorschool.backend.repository.CourseScheduleDayRepository;
+import com.tutorschool.backend.repository.EnrollmentRepository;
 import com.tutorschool.backend.repository.StudentRepository;
 import com.tutorschool.backend.repository.TutorRepository;
 import com.tutorschool.backend.repository.UserRepository;
@@ -39,6 +40,7 @@ public class ClassAttendanceServiceImpl implements ClassAttendanceService {
     private final ClassAttendanceRepository attendanceRepository;
     private final CourseRepository courseRepository;
     private final CourseScheduleDayRepository courseScheduleDayRepository;
+    private final EnrollmentRepository enrollmentRepository;
     private final StudentRepository studentRepository;
     private final TutorRepository tutorRepository;
     private final UserRepository userRepository;
@@ -61,8 +63,10 @@ public class ClassAttendanceServiceImpl implements ClassAttendanceService {
     @Transactional(readOnly = true)
     public List<CourseSessionResponse> getCourseSessions(Long courseId, User currentUser) {
         Course course = getCourse(courseId);
-        if (currentUser.getRole() != Role.ADMIN) {
+        if (currentUser.getRole() == Role.TUTOR) {
             requireOwner(course, getTutor(currentUser.getEmail()));
+        } else if (currentUser.getRole() == Role.STUDENT) {
+            requireEnrolled(course, currentUser.getEmail());
         }
 
         Map<String, LocalTime[]> daySlots = new HashMap<>();
@@ -160,6 +164,16 @@ public class ClassAttendanceServiceImpl implements ClassAttendanceService {
     private void requireOwner(Course course, Tutor tutor) {
         if (course.getTutor() == null || !course.getTutor().getId().equals(tutor.getId())) {
             throw new ExamAccessDeniedException("You do not have permission to record attendance for this course");
+        }
+    }
+
+    private void requireEnrolled(Course course, String studentEmail) {
+        User user = userRepository.findByEmail(studentEmail)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found: " + studentEmail));
+        Student student = studentRepository.findByUserId(user.getId())
+                .orElseThrow(() -> new ResourceNotFoundException("Student profile not found for current user"));
+        if (!enrollmentRepository.existsByStudentIdAndCourseId(student.getId(), course.getId())) {
+            throw new ExamAccessDeniedException("You do not have permission to view this course's sessions");
         }
     }
 

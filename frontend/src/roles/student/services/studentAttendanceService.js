@@ -15,3 +15,9 @@ export async function getMyClassAttendance() {
   const res = await api.get('/class-attendance/student/me');
   return unwrapApiResponse(res);
 }
+
+// คาบเรียนของคอร์ส คำนวณจากตารางสอนรายสัปดาห์ + วันเริ่มเรียน — ใช้เป็นคอลัมน์ของตารางเช็คชื่อ
+export async function getCourseSessions(courseId) {
+  const res = await api.get(`/class-attendance/course/${courseId}/sessions`);
+  return unwrapApiResponse(res);
+}

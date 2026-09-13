@@ -38,7 +38,7 @@ public class ClassAttendanceController {
     }
 
     @GetMapping("/course/{courseId}/sessions")
-    @PreAuthorize("hasRole('TUTOR') or hasRole('ADMIN')")
+    @PreAuthorize("hasRole('TUTOR') or hasRole('ADMIN') or hasRole('STUDENT')")
     public ResponseEntity<ApiResponse<List<CourseSessionResponse>>> getCourseSessions(
             @PathVariable Long courseId,
             @AuthenticationPrincipal User currentUser) {
