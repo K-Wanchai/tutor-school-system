@@ -245,50 +245,40 @@ export default function ConditionalReportTab() {
                 <span>พิมพ์เมื่อ {formatDate(new Date())}</span>
               </h2>
 
-              <div className="ar-summary-chips">
-                <div className="ar-chip"><span>จำนวนระเบียน</span><strong>{report.totalCount}</strong></div>
-              </div>
-
-              <section className="ar-card">
-                <div className="ar-table-wrap">
-                  <table id="ar-print-table" className="ar-table">
-                    <thead>
-                      <tr>
-                        <th>รหัสสถาบัน</th>
-                        <th>ชื่อสถาบัน</th>
-                        <th>ที่อยู่</th>
-                        <th>เบอร์โทรศัพท์</th>
-                        <th>อีเมล</th>
-                        <th>ธนาคาร</th>
-                        <th>ชื่อบัญชี</th>
-                        <th>เลขบัญชี</th>
-                        <th>พร้อมเพย์</th>
-                        <th>ปรับปรุงล่าสุด</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {(report.items || []).length === 0 ? (
-                        <tr><td colSpan={10} className="ar-empty">ไม่พบข้อมูลสถาบัน</td></tr>
-                      ) : (
-                        report.items.map((inst) => (
-                          <tr key={inst.id}>
-                            <td>{inst.institutionCode || '-'}</td>
-                            <td>{inst.institutionName || '-'}</td>
-                            <td>{inst.address || '-'}</td>
-                            <td>{inst.phoneNumber || '-'}</td>
-                            <td>{inst.email || '-'}</td>
-                            <td>{inst.bankName || '-'}</td>
-                            <td>{inst.bankAccountName || '-'}</td>
-                            <td>{inst.bankAccountNumber || '-'}</td>
-                            <td>{inst.promptPayId || '-'}</td>
-                            <td>{formatDate(inst.updatedAt)}</td>
-                          </tr>
-                        ))
-                      )}
-                    </tbody>
-                  </table>
-                </div>
-              </section>
+              {(report.items || []).length === 0 ? (
+                <section className="ar-card">
+                  <p className="ar-empty">ไม่พบข้อมูลสถาบัน</p>
+                </section>
+              ) : (
+                <section className="ar-card">
+                  <div className="ar-kv-grid">
+                    {[
+                      ['รหัสสถาบัน', report.items[0].institutionCode],
+                      ['ชื่อสถาบัน', report.items[0].institutionName],
+                      ['ที่อยู่', report.items[0].address],
+                      ['เบอร์โทรศัพท์', report.items[0].phoneNumber],
+                      ['อีเมล', report.items[0].email],
+                      ['ลิงก์ Google Map', report.items[0].googleMapUrl],
+                      ['ลิงก์โลโก้', report.items[0].logoUrl],
+                      ['ธนาคาร', report.items[0].bankName],
+                      ['ชื่อบัญชี', report.items[0].bankAccountName],
+                      ['เลขบัญชี', report.items[0].bankAccountNumber],
+                      ['ลิงก์ QR ธนาคาร', report.items[0].bankQrCode],
+                      ['พร้อมเพย์', report.items[0].promptPayId],
+                      ['ระยะเวลาชำระเงินหลังสมัคร (นาที)', report.items[0].enrollmentPaymentDeadlineMinutes],
+                      ['ระยะเวลาแก้ไขสลิป (นาที)', report.items[0].slipRevisionDeadlineMinutes],
+                      ['ช่วงเวลาที่อนุญาตจัดตาราง', report.items[0].allowedTimeSlots],
+                      ['วันที่สร้าง', formatDate(report.items[0].createdAt)],
+                      ['ปรับปรุงล่าสุด', formatDate(report.items[0].updatedAt)],
+                    ].map(([label, value]) => (
+                      <div className="ar-kv-item" key={label}>
+                        <span className="ar-kv-label">{label}</span>
+                        <span className="ar-kv-value">{value || value === 0 ? value : '-'}</span>
+                      </div>
+                    ))}
+                  </div>
+                </section>
+              )}
             </div>
           )}
         </>

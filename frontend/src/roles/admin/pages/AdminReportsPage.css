@@ -353,6 +353,37 @@
   display: none;
 }
 
+/* ── ตารางแบบ key-value (ใช้กับหมวดข้อมูลที่มีระเบียนเดียว เช่น ข้อมูลสถาบัน) ── */
+.ar-kv-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 0;
+  border: 1px solid #94a3b8;
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.ar-kv-item {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 12px 16px;
+  border-bottom: 1px solid #94a3b8;
+  border-right: 1px solid #94a3b8;
+}
+
+.ar-kv-label {
+  font-size: 12px;
+  font-weight: 700;
+  color: #64748b;
+}
+
+.ar-kv-value {
+  font-size: 14px;
+  color: #0f172a;
+  word-break: break-word;
+}
+
 /* ── พิมพ์เป็น PDF (window.print) — ซ่อนทุกอย่างยกเว้น #ar-print-area ── */
 @page {
   size: portrait;
@@ -435,6 +466,13 @@
 
   #ar-print-area .ar-table tbody tr:nth-child(even) {
     background: #f1f5f9 !important;
+  }
+
+  #ar-print-area .ar-kv-grid,
+  #ar-print-area .ar-kv-item {
+    border-color: #0f172a !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
   }
 }
 
