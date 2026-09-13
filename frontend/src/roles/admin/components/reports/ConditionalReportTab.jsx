@@ -4,6 +4,34 @@ import { getStudents } from '../../services/adminStudentService';
 import { getStudentReport } from '../../services/adminReportService';
 import { getInstitutionProfile } from '../../../../shared/services/institutionService';
 import { getExamInstitutions, getExamInstitutionById } from '../../services/examInstitutionService';
+import { getFaculties, getMajors } from '../../services/academicFacultyService';
+import { getVocationalMajors } from '../../services/vocationalMajorService';
+import { getSchoolTracks } from '../../services/schoolTrackService';
+
+const EDUCATION_LEVEL_TH = {
+  LOWER_SECONDARY: 'มัธยมต้น',
+  UPPER_SECONDARY: 'มัธยมปลาย',
+  VOCATIONAL_DIPLOMA: 'ปวส.',
+  BACHELOR: 'ปริญญาตรี',
+};
+
+// โหลดข้อมูลย่อยของสถาบันที่จัดสอบตามประเภท — มหาวิทยาลัย: คณะ > สาขา, ปวส.: สาขา, โรงเรียน: สายการเรียน/ห้องเรียน
+async function loadInstitutionChildren(inst) {
+  if (inst.institutionType === 'UNIVERSITY') {
+    const faculties = asList(await getFaculties(inst.id));
+    const facultiesWithMajors = await Promise.all(
+      faculties.map(async (f) => ({ ...f, majors: asList(await getMajors(inst.id, f.id)) }))
+    );
+    return { ...inst, faculties: facultiesWithMajors };
+  }
+  if (inst.institutionType === 'VOCATIONAL_DIPLOMA') {
+    return { ...inst, majors: asList(await getVocationalMajors(inst.id)) };
+  }
+  if (inst.institutionType === 'SECONDARY') {
+    return { ...inst, tracks: asList(await getSchoolTracks(inst.id)) };
+  }
+  return inst;
+}
 
 function asList(pageOrArray) {
   if (Array.isArray(pageOrArray)) return pageOrArray;
@@ -84,18 +112,18 @@ export default function ConditionalReportTab() {
   useEffect(() => {
     function fitPrintTable() {
       const area = document.getElementById('ar-print-area');
-      const table = document.getElementById('ar-print-table');
-      if (!area || !table) return;
-      table.style.zoom = '1';
-      const available = area.clientWidth;
-      const needed = table.scrollWidth;
-      if (available > 0 && needed > available) {
-        table.style.zoom = String(available / needed);
-      }
+      if (!area) return;
+      area.querySelectorAll('.ar-print-table').forEach((table) => {
+        table.style.zoom = '1';
+        const available = area.clientWidth;
+        const needed = table.scrollWidth;
+        if (available > 0 && needed > available) {
+          table.style.zoom = String(available / needed);
+        }
+      });
     }
     function resetPrintTable() {
-      const table = document.getElementById('ar-print-table');
-      if (table) table.style.zoom = '';
+      document.querySelectorAll('.ar-print-table').forEach((table) => { table.style.zoom = ''; });
     }
     window.addEventListener('beforeprint', fitPrintTable);
     window.addEventListener('afterprint', resetPrintTable);
@@ -121,14 +149,15 @@ export default function ConditionalReportTab() {
         const profile = await getInstitutionProfile();
         setReport({ totalCount: profile ? 1 : 0, items: profile ? [profile] : [] });
       } else if (filters.category === 'EXAM_INSTITUTION') {
+        let baseItems;
         if (filters.specific) {
           const inst = await getExamInstitutionById(filters.specific);
-          setReport({ totalCount: inst ? 1 : 0, items: inst ? [inst] : [] });
+          baseItems = inst ? [inst] : [];
         } else {
-          const data = await getExamInstitutions({});
-          const items = asList(data);
-          setReport({ totalCount: items.length, items });
+          baseItems = asList(await getExamInstitutions({}));
         }
+        const items = await Promise.all(baseItems.map(loadInstitutionChildren));
+        setReport({ totalCount: items.length, items });
       }
     } catch (err) {
       setError(err.message || 'ไม่สามารถโหลดรายงานได้');
@@ -225,7 +254,7 @@ export default function ConditionalReportTab() {
 
               <section className="ar-card">
                 <div className="ar-table-wrap">
-                  <table id="ar-print-table" className="ar-table">
+                  <table className="ar-table ar-print-table">
                     <thead>
                       <tr>
                         <th>รหัสนักเรียน</th>
@@ -307,36 +336,101 @@ export default function ConditionalReportTab() {
                 <div className="ar-chip"><span>จำนวนสถาบัน</span><strong>{report.totalCount}</strong></div>
               </div>
 
-              <section className="ar-card">
-                <div className="ar-table-wrap">
-                  <table id="ar-print-table" className="ar-table">
-                    <thead>
-                      <tr>
-                        <th>รหัสสถาบัน</th>
-                        <th>ชื่อสถาบัน</th>
-                        <th>ประเภท</th>
-                        <th>จังหวัด</th>
-                        <th>อำเภอ/เขต</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {(report.items || []).length === 0 ? (
-                        <tr><td colSpan={5} className="ar-empty">ไม่พบข้อมูลตามเงื่อนไขที่เลือก</td></tr>
-                      ) : (
-                        report.items.map((inst) => (
-                          <tr key={inst.id}>
-                            <td>{inst.institutionCode || '-'}</td>
-                            <td>{inst.institutionName || '-'}</td>
-                            <td>{inst.institutionTypeLabel || inst.institutionType || '-'}</td>
-                            <td>{inst.province || '-'}</td>
-                            <td>{inst.district || '-'}</td>
-                          </tr>
-                        ))
+              {(report.items || []).length === 0 ? (
+                <section className="ar-card">
+                  <p className="ar-empty">ไม่พบข้อมูลตามเงื่อนไขที่เลือก</p>
+                </section>
+              ) : (
+                report.items.map((inst) => (
+                  <section className="ar-card ar-exam-inst-card" key={inst.id}>
+                    <h3 className="ar-exam-inst-title">
+                      {inst.institutionName || '-'}
+                      <span className="ar-code">
+                        {inst.institutionCode || '-'} · {inst.institutionTypeLabel || inst.institutionType || '-'}
+                        {' · '}{inst.province || '-'} {inst.district || ''}
+                      </span>
+                    </h3>
+
+                    <div className="ar-table-wrap">
+                      {inst.institutionType === 'UNIVERSITY' && (
+                        <table className="ar-table ar-print-table">
+                          <thead>
+                            <tr>
+                              <th>คณะ</th>
+                              <th>สาขา</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {(inst.faculties || []).length === 0 ? (
+                              <tr><td colSpan={2} className="ar-empty">ไม่มีข้อมูลคณะ/สาขา</td></tr>
+                            ) : (
+                              inst.faculties.flatMap((f) => (
+                                (f.majors || []).length === 0
+                                  ? [
+                                    <tr key={`${f.id}-none`}>
+                                      <td>{f.name || '-'}</td>
+                                      <td>-</td>
+                                    </tr>,
+                                  ]
+                                  : f.majors.map((m) => (
+                                    <tr key={`${f.id}-${m.id}`}>
+                                      <td>{f.name || '-'}</td>
+                                      <td>{m.name || '-'}</td>
+                                    </tr>
+                                  ))
+                              ))
+                            )}
+                          </tbody>
+                        </table>
                       )}
-                    </tbody>
-                  </table>
-                </div>
-              </section>
+
+                      {inst.institutionType === 'VOCATIONAL_DIPLOMA' && (
+                        <table className="ar-table ar-print-table">
+                          <thead>
+                            <tr>
+                              <th>สาขา</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {(inst.majors || []).length === 0 ? (
+                              <tr><td className="ar-empty">ไม่มีข้อมูลสาขา</td></tr>
+                            ) : (
+                              inst.majors.map((m) => (
+                                <tr key={m.id}>
+                                  <td>{m.name || '-'}</td>
+                                </tr>
+                              ))
+                            )}
+                          </tbody>
+                        </table>
+                      )}
+
+                      {inst.institutionType === 'SECONDARY' && (
+                        <table className="ar-table ar-print-table">
+                          <thead>
+                            <tr>
+                              <th>ระดับชั้น</th>
+                              <th>สายการเรียน/ห้องเรียน</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {(inst.tracks || []).length === 0 ? (
+                              <tr><td colSpan={2} className="ar-empty">ไม่มีข้อมูลสายการเรียน/ห้องเรียน</td></tr>
+                            ) : (
+                              inst.tracks.map((t) => (
+                                <tr key={t.id}>
+                                  <td>{EDUCATION_LEVEL_TH[t.educationLevel] || t.educationLevel || '-'}</td>
+                                  <td>{t.name || '-'}</td>
+                                </tr>
+                              ))
+                            )}
+                          </tbody>
+                        </table>
+                      )}
+                    </div>
+                  </section>
+                ))
+              )}
             </div>
           )}
         </>

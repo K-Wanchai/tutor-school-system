@@ -353,6 +353,25 @@
   display: none;
 }
 
+#ar-print-area {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+/* ── การ์ดสถาบันที่จัดสอบ (วนลูปทีละสถาบัน ตารางคณะ/สาขาแยกของใครของมัน) ── */
+.ar-exam-inst-title {
+  margin: 0 0 12px;
+  font-size: 15px;
+  font-weight: 800;
+}
+
+.ar-exam-inst-title .ar-code {
+  margin-top: 4px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
 /* ── ตารางแบบ key-value (ใช้กับหมวดข้อมูลที่มีระเบียนเดียว เช่น ข้อมูลสถาบัน) ── */
 .ar-kv-grid {
   display: grid;
@@ -473,6 +492,12 @@
     border-color: #0f172a !important;
     -webkit-print-color-adjust: exact;
     print-color-adjust: exact;
+  }
+
+  /* แต่ละสถาบันที่จัดสอบเป็นการ์ด/ตารางของตัวเอง — กันไม่ให้ถูกตัดข้ามหน้ากลางตาราง */
+  .ar-exam-inst-card {
+    break-inside: avoid;
+    page-break-inside: avoid;
   }
 }
 
