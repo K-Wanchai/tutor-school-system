@@ -16,7 +16,7 @@ const DATA_CATEGORIES = [
 ];
 
 export default function ConditionalReportTab() {
-  const [filters, setFilters] = useState({ category: '', dateFrom: '', dateTo: '' });
+  const [filters, setFilters] = useState({ category: '', dateFrom: '', dateTo: '', specific: '' });
 
   function fld(name, value) {
     setFilters((f) => ({ ...f, [name]: value }));
@@ -40,6 +40,13 @@ export default function ConditionalReportTab() {
             {DATA_CATEGORIES.map((c) => (
               <option key={c.key} value={c.key}>{c.label}</option>
             ))}
+          </select>
+        </div>
+        {/* ตัวกรองเฉพาะทาง — ตัวเลือกจะเปลี่ยนตาม "ข้อมูลหลัก" ที่เลือก ยังไม่ผูก options ในตอนนี้ */}
+        <div className="ar-filter-field">
+          <label>ตัวกรองเฉพาะทาง</label>
+          <select value={filters.specific} onChange={(e) => fld('specific', e.target.value)}>
+            <option value="">ทั้งหมด</option>
           </select>
         </div>
       </div>
