@@ -253,22 +253,14 @@ export default function ConditionalReportTab() {
                 <section className="ar-card">
                   <div className="ar-kv-grid">
                     {[
-                      ['รหัสสถาบัน', report.items[0].institutionCode],
                       ['ชื่อสถาบัน', report.items[0].institutionName],
                       ['ที่อยู่', report.items[0].address],
                       ['เบอร์โทรศัพท์', report.items[0].phoneNumber],
                       ['อีเมล', report.items[0].email],
-                      ['ลิงก์ Google Map', report.items[0].googleMapUrl],
-                      ['ลิงก์โลโก้', report.items[0].logoUrl],
                       ['ธนาคาร', report.items[0].bankName],
                       ['ชื่อบัญชี', report.items[0].bankAccountName],
                       ['เลขบัญชี', report.items[0].bankAccountNumber],
-                      ['ลิงก์ QR ธนาคาร', report.items[0].bankQrCode],
                       ['พร้อมเพย์', report.items[0].promptPayId],
-                      ['ระยะเวลาชำระเงินหลังสมัคร (นาที)', report.items[0].enrollmentPaymentDeadlineMinutes],
-                      ['ระยะเวลาแก้ไขสลิป (นาที)', report.items[0].slipRevisionDeadlineMinutes],
-                      ['ช่วงเวลาที่อนุญาตจัดตาราง', report.items[0].allowedTimeSlots],
-                      ['วันที่สร้าง', formatDate(report.items[0].createdAt)],
                       ['ปรับปรุงล่าสุด', formatDate(report.items[0].updatedAt)],
                     ].map(([label, value]) => (
                       <div className="ar-kv-item" key={label}>
