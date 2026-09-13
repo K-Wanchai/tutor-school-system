@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import CalendarDateInput from '../../../../shared/components/CalendarDateInput';
 import { getStudents } from '../../services/adminStudentService';
 import { getStudentReport } from '../../services/adminReportService';
+import { getInstitutionProfile } from '../../../../shared/services/institutionService';
 
 function asList(pageOrArray) {
   if (Array.isArray(pageOrArray)) return pageOrArray;
@@ -60,6 +61,11 @@ export default function ConditionalReportTab() {
     ? students.map((s) => ({ value: s.id, label: `${s.fullName} (${s.studentCode})` }))
     : [];
 
+  // "ข้อมูลสถาบัน" มีแค่ระเบียนเดียวในระบบ — ช่องวันที่และตัวกรองเฉพาะทางจึงไม่มีผล
+  const isSearchable = filters.category === 'STUDENT' || filters.category === 'INSTITUTION';
+  const hasDateFilter = filters.category === 'STUDENT';
+  const hasSpecificFilter = filters.category === 'STUDENT';
+
   // ต้องแสดงข้อมูลครบทุกตัวอักษรในบรรทัดเดียวตอนพิมพ์ ห้ามตัดขึ้นบรรทัดใหม่ — คำนวณ zoom
   // ให้ตารางย่อพอดีความกว้างหน้ากระดาษแทนการ wrap (ดู white-space: nowrap ใน AdminReportsPage.css)
   useEffect(() => {
@@ -87,16 +93,21 @@ export default function ConditionalReportTab() {
   }, []);
 
   async function handleSearch() {
-    if (filters.category !== 'STUDENT') return;
+    if (!isSearchable) return;
     setLoading(true);
     setError('');
     try {
-      const data = await getStudentReport({
-        dateFrom: filters.dateFrom,
-        dateTo: filters.dateTo,
-        studentId: filters.specific,
-      });
-      setReport(data);
+      if (filters.category === 'STUDENT') {
+        const data = await getStudentReport({
+          dateFrom: filters.dateFrom,
+          dateTo: filters.dateTo,
+          studentId: filters.specific,
+        });
+        setReport(data);
+      } else if (filters.category === 'INSTITUTION') {
+        const profile = await getInstitutionProfile();
+        setReport({ totalCount: profile ? 1 : 0, items: profile ? [profile] : [] });
+      }
     } catch (err) {
       setError(err.message || 'ไม่สามารถโหลดรายงานได้');
     } finally {
@@ -109,11 +120,11 @@ export default function ConditionalReportTab() {
       <div className="ar-filter-bar">
         <div className="ar-filter-field">
           <label>วันที่เริ่มต้น</label>
-          <CalendarDateInput value={filters.dateFrom} onChange={(v) => fld('dateFrom', v)} />
+          <CalendarDateInput value={filters.dateFrom} onChange={(v) => fld('dateFrom', v)} disabled={!hasDateFilter} />
         </div>
         <div className="ar-filter-field">
           <label>วันที่สิ้นสุด</label>
-          <CalendarDateInput value={filters.dateTo} onChange={(v) => fld('dateTo', v)} />
+          <CalendarDateInput value={filters.dateTo} onChange={(v) => fld('dateTo', v)} disabled={!hasDateFilter} />
         </div>
         <div className="ar-filter-field">
           <label>ข้อมูลหลัก</label>
@@ -127,7 +138,7 @@ export default function ConditionalReportTab() {
         {/* ตัวกรองเฉพาะทาง — ตัวเลือกเปลี่ยนตาม "ข้อมูลหลัก" ที่เลือก ตอนนี้รองรับเฉพาะข้อมูลนักเรียน */}
         <div className="ar-filter-field">
           <label>ตัวกรองเฉพาะทาง</label>
-          <select value={filters.specific} onChange={(e) => fld('specific', e.target.value)}>
+          <select value={filters.specific} onChange={(e) => fld('specific', e.target.value)} disabled={!hasSpecificFilter}>
             <option value="">ทั้งหมด</option>
             {specificOptions.map((o) => (
               <option key={o.value} value={o.value}>{o.label}</option>
@@ -139,7 +150,7 @@ export default function ConditionalReportTab() {
             type="button"
             className="ar-btn-search"
             onClick={handleSearch}
-            disabled={loading || filters.category !== 'STUDENT'}
+            disabled={loading || !isSearchable}
           >
             {loading ? 'กำลังค้นหา...' : 'ค้นหา'}
           </button>
@@ -158,11 +169,11 @@ export default function ConditionalReportTab() {
         <p className="ar-empty">เลือก "ข้อมูลหลัก" เพื่อเริ่มค้นหารายงาน</p>
       )}
 
-      {filters.category !== '' && filters.category !== 'STUDENT' && (
+      {filters.category !== '' && !isSearchable && (
         <p className="ar-empty">กำลังพัฒนา</p>
       )}
 
-      {filters.category === 'STUDENT' && (
+      {isSearchable && (
         <>
           {error && (
             <div className="ar-state ar-state--error">
@@ -174,7 +185,7 @@ export default function ConditionalReportTab() {
             <p className="ar-empty">เลือกเงื่อนไขแล้วกด "ค้นหา" เพื่อดูรายงาน</p>
           )}
 
-          {report && (
+          {report && filters.category === 'STUDENT' && (
             <div id="ar-print-area">
               <h2 className="ar-print-title">
                 รายงานข้อมูลนักเรียน
@@ -217,6 +228,60 @@ export default function ConditionalReportTab() {
                             <td>{formatDate(s.birthDate)}</td>
                             <td>{s.guardianPhoneNumber || '-'}</td>
                             <td>{formatDate(s.createdAt)}</td>
+                          </tr>
+                        ))
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              </section>
+            </div>
+          )}
+
+          {report && filters.category === 'INSTITUTION' && (
+            <div id="ar-print-area">
+              <h2 className="ar-print-title">
+                รายงานข้อมูลสถาบัน
+                <span>พิมพ์เมื่อ {formatDate(new Date())}</span>
+              </h2>
+
+              <div className="ar-summary-chips">
+                <div className="ar-chip"><span>จำนวนระเบียน</span><strong>{report.totalCount}</strong></div>
+              </div>
+
+              <section className="ar-card">
+                <div className="ar-table-wrap">
+                  <table id="ar-print-table" className="ar-table">
+                    <thead>
+                      <tr>
+                        <th>รหัสสถาบัน</th>
+                        <th>ชื่อสถาบัน</th>
+                        <th>ที่อยู่</th>
+                        <th>เบอร์โทรศัพท์</th>
+                        <th>อีเมล</th>
+                        <th>ธนาคาร</th>
+                        <th>ชื่อบัญชี</th>
+                        <th>เลขบัญชี</th>
+                        <th>พร้อมเพย์</th>
+                        <th>ปรับปรุงล่าสุด</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {(report.items || []).length === 0 ? (
+                        <tr><td colSpan={10} className="ar-empty">ไม่พบข้อมูลสถาบัน</td></tr>
+                      ) : (
+                        report.items.map((inst) => (
+                          <tr key={inst.id}>
+                            <td>{inst.institutionCode || '-'}</td>
+                            <td>{inst.institutionName || '-'}</td>
+                            <td>{inst.address || '-'}</td>
+                            <td>{inst.phoneNumber || '-'}</td>
+                            <td>{inst.email || '-'}</td>
+                            <td>{inst.bankName || '-'}</td>
+                            <td>{inst.bankAccountName || '-'}</td>
+                            <td>{inst.bankAccountNumber || '-'}</td>
+                            <td>{inst.promptPayId || '-'}</td>
+                            <td>{formatDate(inst.updatedAt)}</td>
                           </tr>
                         ))
                       )}
