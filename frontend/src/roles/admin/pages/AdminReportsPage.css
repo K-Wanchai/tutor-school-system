@@ -353,6 +353,11 @@
 }
 
 /* ── พิมพ์เป็น PDF (window.print) — ซ่อนทุกอย่างยกเว้น #ar-print-area ── */
+@page {
+  size: landscape;
+  margin: 10mm;
+}
+
 @media print {
   body * {
     visibility: hidden;
@@ -387,6 +392,21 @@
   .ar-card {
     box-shadow: none;
     border-color: #cbd5e1;
+  }
+
+  /* ตารางต้องแสดงครบทุกตัวอักษรในบรรทัดเดียว ห้ามตัดขึ้นบรรทัดใหม่ — ปรับ
+     ขนาดให้พอดีหน้ากระดาษด้วย zoom ที่คำนวณจาก JS (ดู ConditionalReportTab) */
+  #ar-print-area .ar-table-wrap {
+    overflow: visible;
+  }
+
+  #ar-print-area .ar-table th,
+  #ar-print-area .ar-table td {
+    white-space: nowrap;
+  }
+
+  #ar-print-area .ar-table {
+    width: max-content;
   }
 }
 

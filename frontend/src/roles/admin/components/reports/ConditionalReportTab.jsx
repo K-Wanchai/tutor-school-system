@@ -60,6 +60,32 @@ export default function ConditionalReportTab() {
     ? students.map((s) => ({ value: s.id, label: `${s.fullName} (${s.studentCode})` }))
     : [];
 
+  // ต้องแสดงข้อมูลครบทุกตัวอักษรในบรรทัดเดียวตอนพิมพ์ ห้ามตัดขึ้นบรรทัดใหม่ — คำนวณ zoom
+  // ให้ตารางย่อพอดีความกว้างหน้ากระดาษแทนการ wrap (ดู white-space: nowrap ใน AdminReportsPage.css)
+  useEffect(() => {
+    function fitPrintTable() {
+      const area = document.getElementById('ar-print-area');
+      const table = document.getElementById('ar-print-table');
+      if (!area || !table) return;
+      table.style.zoom = '1';
+      const available = area.clientWidth;
+      const needed = table.scrollWidth;
+      if (available > 0 && needed > available) {
+        table.style.zoom = String(available / needed);
+      }
+    }
+    function resetPrintTable() {
+      const table = document.getElementById('ar-print-table');
+      if (table) table.style.zoom = '';
+    }
+    window.addEventListener('beforeprint', fitPrintTable);
+    window.addEventListener('afterprint', resetPrintTable);
+    return () => {
+      window.removeEventListener('beforeprint', fitPrintTable);
+      window.removeEventListener('afterprint', resetPrintTable);
+    };
+  }, []);
+
   async function handleSearch() {
     if (filters.category !== 'STUDENT') return;
     setLoading(true);
@@ -166,7 +192,7 @@ export default function ConditionalReportTab() {
 
               <section className="ar-card">
                 <div className="ar-table-wrap">
-                  <table className="ar-table">
+                  <table id="ar-print-table" className="ar-table">
                     <thead>
                       <tr>
                         <th>รหัสนักเรียน</th>
