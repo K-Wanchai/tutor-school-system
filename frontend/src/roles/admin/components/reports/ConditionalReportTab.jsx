@@ -60,9 +60,10 @@ const DATA_CATEGORIES = [
 ];
 
 export default function ConditionalReportTab() {
-  const [filters, setFilters] = useState({ category: '', dateFrom: '', dateTo: '', specific: '' });
+  const [filters, setFilters] = useState({ category: '', dateFrom: '', dateTo: '', specific: '', faculty: '' });
   const [students, setStudents] = useState([]);
   const [examInstitutions, setExamInstitutions] = useState([]);
+  const [faculties, setFaculties] = useState([]);
   const [report, setReport] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -72,9 +73,13 @@ export default function ConditionalReportTab() {
   }
 
   function changeCategory(value) {
-    setFilters((f) => ({ ...f, category: value, specific: '' }));
+    setFilters((f) => ({ ...f, category: value, specific: '', faculty: '' }));
     setReport(null);
     setError('');
+  }
+
+  function changeSpecific(value) {
+    setFilters((f) => ({ ...f, specific: value, faculty: '' }));
   }
 
   // ตัวกรองเฉพาะทางของ "ข้อมูลนักเรียน" — โหลดรายชื่อนักเรียนแบบ lazy ตอนเลือกหมวดนี้ครั้งแรกเท่านั้น
@@ -102,6 +107,20 @@ export default function ConditionalReportTab() {
     : filters.category === 'EXAM_INSTITUTION'
     ? examInstitutions.map((e) => ({ value: e.id, label: `${e.institutionName} (${e.institutionTypeLabel || ''})` }))
     : [];
+
+  // ตัวกรอง "คณะ" ใช้ได้เฉพาะตอนเจาะจงสถาบันประเภทมหาวิทยาลัยเท่านั้น (ไม่มีคณะถ้าเลือก "ทั้งหมด")
+  const selectedInstitution = examInstitutions.find((e) => String(e.id) === String(filters.specific));
+  const isUniversitySpecific = filters.category === 'EXAM_INSTITUTION' && !!filters.specific
+    && selectedInstitution?.institutionType === 'UNIVERSITY';
+
+  useEffect(() => {
+    if (!isUniversitySpecific) return;
+    let mounted = true;
+    getFaculties(filters.specific)
+      .then((data) => { if (mounted) setFaculties(asList(data)); })
+      .catch(() => {});
+    return () => { mounted = false; };
+  }, [isUniversitySpecific, filters.specific]);
 
   const isSearchable = filters.category === 'STUDENT' || filters.category === 'INSTITUTION'
     || filters.category === 'EXAM_INSTITUTION';
@@ -156,7 +175,13 @@ export default function ConditionalReportTab() {
         } else {
           baseItems = asList(await getExamInstitutions({}));
         }
-        const items = await Promise.all(baseItems.map(loadInstitutionChildren));
+        let items = await Promise.all(baseItems.map(loadInstitutionChildren));
+        if (isUniversitySpecific && filters.faculty) {
+          items = items.map((inst) => ({
+            ...inst,
+            faculties: (inst.faculties || []).filter((f) => String(f.id) === String(filters.faculty)),
+          }));
+        }
         setReport({ totalCount: items.length, items });
       }
     } catch (err) {
@@ -189,10 +214,20 @@ export default function ConditionalReportTab() {
         {/* ตัวกรองเฉพาะทาง — ตัวเลือกเปลี่ยนตาม "ข้อมูลหลัก" ที่เลือก ตอนนี้รองรับข้อมูลนักเรียน/สถาบันที่จัดสอบ */}
         <div className="ar-filter-field">
           <label>ตัวกรองเฉพาะทาง</label>
-          <select value={filters.specific} onChange={(e) => fld('specific', e.target.value)} disabled={!hasSpecificFilter}>
+          <select value={filters.specific} onChange={(e) => changeSpecific(e.target.value)} disabled={!hasSpecificFilter}>
             <option value="">ทั้งหมด</option>
             {specificOptions.map((o) => (
               <option key={o.value} value={o.value}>{o.label}</option>
+            ))}
+          </select>
+        </div>
+        {/* ตัวกรอง "คณะ" — ใช้ได้เฉพาะตอนเจาะจงสถาบันประเภทมหาวิทยาลัย */}
+        <div className="ar-filter-field">
+          <label>คณะ</label>
+          <select value={filters.faculty} onChange={(e) => fld('faculty', e.target.value)} disabled={!isUniversitySpecific}>
+            <option value="">ทั้งหมด</option>
+            {isUniversitySpecific && faculties.map((f) => (
+              <option key={f.id} value={f.id}>{f.name}</option>
             ))}
           </select>
         </div>
