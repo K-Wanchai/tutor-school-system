@@ -420,8 +420,17 @@
     print-color-adjust: exact;
   }
 
+  /* เส้นกั้นหัวฟิลด์หาย เพราะ (1) th กำหนด border-top: none ไว้บนหน้าจอ และ (2)
+     เส้น 1px บางเกินไปเมื่อถูกย่อด้วย zoom ระหว่างพิมพ์ — บังคับเส้นรอบทุกด้าน
+     หนาขึ้นทับของเดิม และปิด position: sticky ที่ไม่มีความหมายตอนพิมพ์ */
   #ar-print-area .ar-table th {
+    position: static;
+    border: 2px solid #0f172a !important;
     background: #e2e8f0 !important;
+  }
+
+  #ar-print-area .ar-table td {
+    border-width: 1.5px !important;
   }
 
   #ar-print-area .ar-table tbody tr:nth-child(even) {
