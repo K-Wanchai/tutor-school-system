@@ -26,6 +26,14 @@ export default function ConditionalReportTab() {
     <div className="ar-page">
       <div className="ar-filter-bar">
         <div className="ar-filter-field">
+          <label>วันที่เริ่มต้น</label>
+          <CalendarDateInput value={filters.dateFrom} onChange={(v) => fld('dateFrom', v)} />
+        </div>
+        <div className="ar-filter-field">
+          <label>วันที่สิ้นสุด</label>
+          <CalendarDateInput value={filters.dateTo} onChange={(v) => fld('dateTo', v)} />
+        </div>
+        <div className="ar-filter-field">
           <label>ข้อมูลหลัก</label>
           <select value={filters.category} onChange={(e) => fld('category', e.target.value)}>
             <option value="">เลือกประเภทข้อมูล</option>
@@ -33,14 +41,6 @@ export default function ConditionalReportTab() {
               <option key={c.key} value={c.key}>{c.label}</option>
             ))}
           </select>
-        </div>
-        <div className="ar-filter-field">
-          <label>วันที่เริ่มต้น</label>
-          <CalendarDateInput value={filters.dateFrom} onChange={(v) => fld('dateFrom', v)} />
-        </div>
-        <div className="ar-filter-field">
-          <label>วันที่สิ้นสุด</label>
-          <CalendarDateInput value={filters.dateTo} onChange={(v) => fld('dateTo', v)} />
         </div>
       </div>
 
