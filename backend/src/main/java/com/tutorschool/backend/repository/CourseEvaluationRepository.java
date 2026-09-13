@@ -48,4 +48,7 @@ public interface CourseEvaluationRepository extends JpaRepository<CourseEvaluati
     long countByCourseIdAndStatus(Long courseId, EvaluationStatus status);
 
     void deleteByCourseId(Long courseId);
+
+    @Query("SELECT DISTINCT e.course.id FROM CourseEvaluation e")
+    List<Long> findDistinctCourseIds();
 }

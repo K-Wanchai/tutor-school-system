@@ -34,3 +34,9 @@ export async function updateEvaluation(id, payload) {
   const res = await api.put(`/course-evaluations/${id}`, payload);
   return unwrapApiResponse(res);
 }
+
+// ชื่อหัวข้อคะแนนย่อยที่แอดมินตั้งค่าไว้ (การสอน, เนื้อหา, เอกสาร, การสื่อสาร, ความคุ้มค่า)
+export async function getEvaluationSettings() {
+  const res = await api.get('/evaluation-settings');
+  return unwrapApiResponse(res);
+}
