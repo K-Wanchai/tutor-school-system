@@ -137,6 +137,7 @@
   border-collapse: collapse;
   font-size: 14px;
   border: 1px solid #94a3b8;
+  border-top: 2px solid #334155;
 }
 
 .ar-table th,
@@ -152,7 +153,9 @@
   letter-spacing: 0.04em;
   color: #334155;
   background: #eef2f7;
-  border-bottom: 2px solid #475569;
+  border: 1px solid #334155;
+  border-top: none;
+  border-bottom: 2px solid #334155;
   position: sticky;
   top: 0;
 }
