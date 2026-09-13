@@ -146,9 +146,9 @@ public class AdminReportServiceImpl implements AdminReportService {
     @Override
     @Transactional(readOnly = true)
     public RevenueReportResponse getRevenueReport(LocalDate dateFrom, LocalDate dateTo, Long courseId,
-                                                   PaymentVerificationStatus status) {
+                                                   PaymentVerificationStatus status, Long studentId) {
         List<Payment> payments = paymentRepository.searchForReport(
-                startOfDay(dateFrom), endOfDay(dateTo), courseId, status);
+                startOfDay(dateFrom), endOfDay(dateTo), courseId, status, studentId);
 
         List<RevenueReportItem> items = payments.stream()
                 .map(p -> {
@@ -189,9 +189,9 @@ public class AdminReportServiceImpl implements AdminReportService {
     @Override
     @Transactional(readOnly = true)
     public EnrollmentReportResponse getEnrollmentReport(LocalDate dateFrom, LocalDate dateTo, Long courseId,
-                                                         EnrollmentStatus status) {
+                                                         EnrollmentStatus status, Long studentId) {
         List<Enrollment> enrollments = enrollmentRepository.searchForReport(
-                startOfDay(dateFrom), endOfDay(dateTo), courseId, status);
+                startOfDay(dateFrom), endOfDay(dateTo), courseId, status, studentId);
 
         List<EnrollmentReportItem> items = enrollments.stream()
                 .map(e -> EnrollmentReportItem.builder()

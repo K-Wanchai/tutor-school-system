@@ -56,8 +56,9 @@ public class AdminController {
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate dateFrom,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate dateTo,
             @RequestParam(required = false) Long courseId,
-            @RequestParam(required = false) PaymentVerificationStatus status) {
-        RevenueReportResponse data = adminReportService.getRevenueReport(dateFrom, dateTo, courseId, status);
+            @RequestParam(required = false) PaymentVerificationStatus status,
+            @RequestParam(required = false) Long studentId) {
+        RevenueReportResponse data = adminReportService.getRevenueReport(dateFrom, dateTo, courseId, status, studentId);
         return ResponseEntity.ok(ApiResponse.success("Revenue report retrieved", data));
     }
 
@@ -67,8 +68,9 @@ public class AdminController {
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate dateFrom,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate dateTo,
             @RequestParam(required = false) Long courseId,
-            @RequestParam(required = false) PaymentVerificationStatus status) {
-        RevenueReportResponse data = adminReportService.getRevenueReport(dateFrom, dateTo, courseId, status);
+            @RequestParam(required = false) PaymentVerificationStatus status,
+            @RequestParam(required = false) Long studentId) {
+        RevenueReportResponse data = adminReportService.getRevenueReport(dateFrom, dateTo, courseId, status, studentId);
         List<String> headers = List.of(
                 "วันที่", "รหัสการชำระเงิน", "นักเรียน", "รหัสนักเรียน", "คอร์ส", "รหัสคอร์ส",
                 "ยอดชำระ", "วิธีชำระ", "สถานะ");
@@ -89,8 +91,9 @@ public class AdminController {
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate dateFrom,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate dateTo,
             @RequestParam(required = false) Long courseId,
-            @RequestParam(required = false) EnrollmentStatus status) {
-        EnrollmentReportResponse data = adminReportService.getEnrollmentReport(dateFrom, dateTo, courseId, status);
+            @RequestParam(required = false) EnrollmentStatus status,
+            @RequestParam(required = false) Long studentId) {
+        EnrollmentReportResponse data = adminReportService.getEnrollmentReport(dateFrom, dateTo, courseId, status, studentId);
         return ResponseEntity.ok(ApiResponse.success("Enrollment report retrieved", data));
     }
 
@@ -100,8 +103,9 @@ public class AdminController {
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate dateFrom,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate dateTo,
             @RequestParam(required = false) Long courseId,
-            @RequestParam(required = false) EnrollmentStatus status) {
-        EnrollmentReportResponse data = adminReportService.getEnrollmentReport(dateFrom, dateTo, courseId, status);
+            @RequestParam(required = false) EnrollmentStatus status,
+            @RequestParam(required = false) Long studentId) {
+        EnrollmentReportResponse data = adminReportService.getEnrollmentReport(dateFrom, dateTo, courseId, status, studentId);
         List<String> headers = List.of(
                 "รหัสสมัคร", "วันที่สมัคร", "นักเรียน", "รหัสนักเรียน", "คอร์ส", "รหัสคอร์ส",
                 "ติวเตอร์", "สถานะสมัคร", "สถานะชำระเงิน", "ยอดชำระ");

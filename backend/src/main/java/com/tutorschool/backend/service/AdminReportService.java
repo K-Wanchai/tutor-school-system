@@ -13,8 +13,8 @@ public interface AdminReportService {
     AdminReportResponse getOverviewReport();
 
     RevenueReportResponse getRevenueReport(LocalDate dateFrom, LocalDate dateTo, Long courseId,
-                                            PaymentVerificationStatus status);
+                                            PaymentVerificationStatus status, Long studentId);
 
     EnrollmentReportResponse getEnrollmentReport(LocalDate dateFrom, LocalDate dateTo, Long courseId,
-                                                  EnrollmentStatus status);
+                                                  EnrollmentStatus status, Long studentId);
 }

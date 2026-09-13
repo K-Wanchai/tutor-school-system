@@ -22,8 +22,8 @@ function formatDateTime(value) {
 }
 
 export default function EnrollmentReportTab() {
-  const { courses } = useReportLookups();
-  const [filters, setFilters] = useState({ dateFrom: '', dateTo: '', courseId: '', status: '' });
+  const { courses, students } = useReportLookups();
+  const [filters, setFilters] = useState({ dateFrom: '', dateTo: '', courseId: '', status: '', studentId: '' });
   const [report, setReport] = useState(null);
   const [loading, setLoading] = useState(false);
   const [exporting, setExporting] = useState(false);
@@ -84,6 +84,15 @@ export default function EnrollmentReportTab() {
             <option value="">ทั้งหมด</option>
             {STATUS_OPTIONS.map((s) => (
               <option key={s} value={s}>{statusLabelTH(s, ENROLLMENT_STATUS_TH)}</option>
+            ))}
+          </select>
+        </div>
+        <div className="ar-filter-field">
+          <label>นักเรียน</label>
+          <select value={filters.studentId} onChange={(e) => fld('studentId', e.target.value)}>
+            <option value="">ทั้งหมด</option>
+            {students.map((s) => (
+              <option key={s.id} value={s.id}>{s.fullName} ({s.studentCode})</option>
             ))}
           </select>
         </div>
