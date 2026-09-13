@@ -1,9 +1,13 @@
 package com.tutorschool.backend.mapper;
 
 import com.tutorschool.backend.dto.response.CourseEvaluationResponse;
+import com.tutorschool.backend.dto.response.CriteriaScoreResponse;
 import com.tutorschool.backend.entity.CourseEvaluation;
 import com.tutorschool.backend.entity.Tutor;
 import org.springframework.stereotype.Component;
+
+import java.util.Comparator;
+import java.util.List;
 
 @Component
 public class CourseEvaluationMapper {
@@ -28,11 +32,7 @@ public class CourseEvaluationMapper {
                 .tutorId(Tutor.getId())
                 .teacherName(teacherName)
                 .rating(evaluation.getRating())
-                .teachingScore(evaluation.getTeachingScore())
-                .contentScore(evaluation.getContentScore())
-                .materialScore(evaluation.getMaterialScore())
-                .communicationScore(evaluation.getCommunicationScore())
-                .valueScore(evaluation.getValueScore())
+                .criteriaScores(toCriteriaScoreResponses(evaluation))
                 .comment(evaluation.getComment())
                 .suggestion(evaluation.getSuggestion())
                 .isAnonymous(evaluation.getIsAnonymous())
@@ -64,11 +64,7 @@ public class CourseEvaluationMapper {
                 .tutorId(Tutor.getId())
                 .teacherName(teacherName)
                 .rating(evaluation.getRating())
-                .teachingScore(evaluation.getTeachingScore())
-                .contentScore(evaluation.getContentScore())
-                .materialScore(evaluation.getMaterialScore())
-                .communicationScore(evaluation.getCommunicationScore())
-                .valueScore(evaluation.getValueScore())
+                .criteriaScores(toCriteriaScoreResponses(evaluation))
                 .comment(evaluation.getComment())
                 .suggestion(evaluation.getSuggestion())
                 .isAnonymous(evaluation.getIsAnonymous())
@@ -77,5 +73,16 @@ public class CourseEvaluationMapper {
                 .createdAt(evaluation.getCreatedAt())
                 .updatedAt(evaluation.getUpdatedAt())
                 .build();
+    }
+
+    private List<CriteriaScoreResponse> toCriteriaScoreResponses(CourseEvaluation evaluation) {
+        return evaluation.getCriteriaScores().stream()
+                .sorted(Comparator.comparing(s -> s.getCriteria().getDisplayOrder()))
+                .map(s -> CriteriaScoreResponse.builder()
+                        .criteriaId(s.getCriteria().getId())
+                        .label(s.getCriteria().getLabel())
+                        .score(s.getScore())
+                        .build())
+                .toList();
     }
 }

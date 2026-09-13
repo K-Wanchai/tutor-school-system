@@ -5,6 +5,7 @@ import lombok.Builder;
 import lombok.Getter;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Getter
 @Builder
@@ -26,11 +27,7 @@ public class CourseEvaluationResponse {
     private String teacherName;
 
     private Integer rating;
-    private Integer teachingScore;
-    private Integer contentScore;
-    private Integer materialScore;
-    private Integer communicationScore;
-    private Integer valueScore;
+    private List<CriteriaScoreResponse> criteriaScores;
 
     private String comment;
     private String suggestion;

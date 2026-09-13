@@ -1,26 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { getCourseEvaluationSummaries, getEvaluationsByCourse } from '../services/adminEvaluationService';
-import { getEvaluationSettings } from '../services/adminSettingsService';
 import './AdminEvaluationResultsPage.css';
-
-const DEFAULT_SCORE_FIELDS = [
-  { key: 'averageTeachingScore', label: 'การสอน / เทคนิคการถ่ายทอด' },
-  { key: 'averageContentScore', label: 'เนื้อหาคอร์ส' },
-  { key: 'averageMaterialScore', label: 'เอกสาร / สื่อการสอน' },
-  { key: 'averageCommunicationScore', label: 'การสื่อสาร / การตอบคำถาม' },
-  { key: 'averageValueScore', label: 'ความคุ้มค่า' },
-];
-
-function buildScoreFields(settings) {
-  if (!settings) return DEFAULT_SCORE_FIELDS;
-  return [
-    { key: 'averageTeachingScore', label: settings.teachingLabel || DEFAULT_SCORE_FIELDS[0].label },
-    { key: 'averageContentScore', label: settings.contentLabel || DEFAULT_SCORE_FIELDS[1].label },
-    { key: 'averageMaterialScore', label: settings.materialLabel || DEFAULT_SCORE_FIELDS[2].label },
-    { key: 'averageCommunicationScore', label: settings.communicationLabel || DEFAULT_SCORE_FIELDS[3].label },
-    { key: 'averageValueScore', label: settings.valueLabel || DEFAULT_SCORE_FIELDS[4].label },
-  ];
-}
 
 function formatScore(value) {
   if (value === null || value === undefined) return '—';
@@ -45,7 +25,7 @@ function Stars({ value }) {
   );
 }
 
-function DetailModal({ course, scoreFields, onClose }) {
+function DetailModal({ course, onClose }) {
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -80,10 +60,10 @@ function DetailModal({ course, scoreFields, onClose }) {
             <span>{course.totalEvaluations} รีวิว</span>
           </div>
           <div className="er-modal-scores">
-            {scoreFields.map((field) => (
-              <div key={field.key} className="er-modal-score-item">
+            {(course.criteriaAverages || []).map((field) => (
+              <div key={field.criteriaId} className="er-modal-score-item">
                 <span>{field.label}</span>
-                <strong>{formatScore(course[field.key])}</strong>
+                <strong>{formatScore(field.averageScore)}</strong>
               </div>
             ))}
           </div>
@@ -104,6 +84,15 @@ function DetailModal({ course, scoreFields, onClose }) {
                 </div>
                 <div className="er-review-rating"><Stars value={item.rating} /><span>{item.rating}/5</span></div>
               </div>
+              {(item.criteriaScores || []).length > 0 && (
+                <div className="er-review-criteria">
+                  {item.criteriaScores.map((s) => (
+                    <span key={s.criteriaId} className="er-review-criteria-item">
+                      {s.label}: <b>{s.score}</b>
+                    </span>
+                  ))}
+                </div>
+              )}
               {item.comment && <p className="er-review-text">“{item.comment}”</p>}
               {item.suggestion && (
                 <p className="er-review-suggestion"><b>ข้อเสนอแนะ:</b> {item.suggestion}</p>
@@ -122,7 +111,6 @@ export default function AdminEvaluationResultsPage() {
   const [error, setError] = useState('');
   const [keyword, setKeyword] = useState('');
   const [detailCourse, setDetailCourse] = useState(null);
-  const [evaluationSettings, setEvaluationSettings] = useState(null);
 
   function load() {
     setLoading(true);
@@ -133,12 +121,14 @@ export default function AdminEvaluationResultsPage() {
       .finally(() => setLoading(false));
   }
 
-  useEffect(() => {
-    load();
-    getEvaluationSettings().then(setEvaluationSettings).catch(() => {});
-  }, []);
+  useEffect(() => { load(); }, []);
 
-  const scoreFields = useMemo(() => buildScoreFields(evaluationSettings), [evaluationSettings]);
+  // หัวข้อคะแนนย่อยทั้งหมดที่ใช้อยู่ ณ ปัจจุบัน (มาจาก criteriaAverages ของ summary — ทุกคอร์สใช้ชุดหัวข้อเดียวกัน
+  // คือหัวข้อที่เปิดใช้งานอยู่ตอนคำนวณ) ใช้เป็นหัวคอลัมน์ตาราง
+  const scoreFields = useMemo(() => {
+    const withCriteria = summaries.find((s) => s.criteriaAverages?.length);
+    return (withCriteria?.criteriaAverages || []).map((c) => ({ criteriaId: c.criteriaId, label: c.label }));
+  }, [summaries]);
 
   const filtered = useMemo(() => {
     const kw = keyword.trim().toLowerCase();
@@ -158,6 +148,10 @@ export default function AdminEvaluationResultsPage() {
     const overallAverage = totalEvaluations > 0 ? weightedSum / totalEvaluations : 0;
     return { totalCourses, totalEvaluations, overallAverage };
   }, [summaries]);
+
+  function scoreFor(summary, criteriaId) {
+    return summary.criteriaAverages?.find((c) => c.criteriaId === criteriaId)?.averageScore;
+  }
 
   return (
     <div className="er-page">
@@ -224,7 +218,7 @@ export default function AdminEvaluationResultsPage() {
                   <th>ผู้สอน</th>
                   <th>จำนวนรีวิว</th>
                   <th>คะแนนเฉลี่ยรวม</th>
-                  {scoreFields.map((field) => <th key={field.key}>{field.label}</th>)}
+                  {scoreFields.map((field) => <th key={field.criteriaId}>{field.label}</th>)}
                   <th>รายละเอียด</th>
                 </tr>
               </thead>
@@ -241,7 +235,7 @@ export default function AdminEvaluationResultsPage() {
                       </div>
                     </td>
                     {scoreFields.map((field) => (
-                      <td key={field.key}>{formatScore(s[field.key])}</td>
+                      <td key={field.criteriaId}>{formatScore(scoreFor(s, field.criteriaId))}</td>
                     ))}
                     <td>
                       <button className="er-row-btn" onClick={() => setDetailCourse(s)}>
@@ -259,7 +253,6 @@ export default function AdminEvaluationResultsPage() {
       {detailCourse && (
         <DetailModal
           course={detailCourse}
-          scoreFields={scoreFields}
           onClose={() => setDetailCourse(null)}
         />
       )}
