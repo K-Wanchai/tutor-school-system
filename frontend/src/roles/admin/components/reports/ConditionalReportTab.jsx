@@ -1,10 +1,18 @@
 import { useEffect, useState } from 'react';
 import CalendarDateInput from '../../../../shared/components/CalendarDateInput';
 import { getStudents } from '../../services/adminStudentService';
+import { getStudentReport } from '../../services/adminReportService';
 
 function asList(pageOrArray) {
   if (Array.isArray(pageOrArray)) return pageOrArray;
   return pageOrArray?.content || [];
+}
+
+function formatDate(value) {
+  if (!value) return '-';
+  const d = new Date(value);
+  if (Number.isNaN(d.getTime())) return '-';
+  return d.toLocaleDateString('th-TH', { year: 'numeric', month: 'short', day: 'numeric' });
 }
 
 const DATA_CATEGORIES = [
@@ -24,6 +32,9 @@ const DATA_CATEGORIES = [
 export default function ConditionalReportTab() {
   const [filters, setFilters] = useState({ category: '', dateFrom: '', dateTo: '', specific: '' });
   const [students, setStudents] = useState([]);
+  const [report, setReport] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
 
   function fld(name, value) {
     setFilters((f) => ({ ...f, [name]: value }));
@@ -31,6 +42,8 @@ export default function ConditionalReportTab() {
 
   function changeCategory(value) {
     setFilters((f) => ({ ...f, category: value, specific: '' }));
+    setReport(null);
+    setError('');
   }
 
   // ตัวกรองเฉพาะทางของ "ข้อมูลนักเรียน" — โหลดรายชื่อนักเรียนแบบ lazy ตอนเลือกหมวดนี้ครั้งแรกเท่านั้น
@@ -46,6 +59,24 @@ export default function ConditionalReportTab() {
   const specificOptions = filters.category === 'STUDENT'
     ? students.map((s) => ({ value: s.id, label: `${s.fullName} (${s.studentCode})` }))
     : [];
+
+  async function handleSearch() {
+    if (filters.category !== 'STUDENT') return;
+    setLoading(true);
+    setError('');
+    try {
+      const data = await getStudentReport({
+        dateFrom: filters.dateFrom,
+        dateTo: filters.dateTo,
+        studentId: filters.specific,
+      });
+      setReport(data);
+    } catch (err) {
+      setError(err.message || 'ไม่สามารถโหลดรายงานได้');
+    } finally {
+      setLoading(false);
+    }
+  }
 
   return (
     <div className="ar-page">
@@ -77,9 +108,82 @@ export default function ConditionalReportTab() {
             ))}
           </select>
         </div>
+        <div className="ar-filter-actions">
+          <button
+            type="button"
+            className="ar-btn-search"
+            onClick={handleSearch}
+            disabled={loading || filters.category !== 'STUDENT'}
+          >
+            {loading ? 'กำลังค้นหา...' : 'ค้นหา'}
+          </button>
+        </div>
       </div>
 
-      <p className="ar-empty">กำลังพัฒนา</p>
+      {filters.category === '' && (
+        <p className="ar-empty">เลือก "ข้อมูลหลัก" เพื่อเริ่มค้นหารายงาน</p>
+      )}
+
+      {filters.category !== '' && filters.category !== 'STUDENT' && (
+        <p className="ar-empty">กำลังพัฒนา</p>
+      )}
+
+      {filters.category === 'STUDENT' && (
+        <>
+          {error && (
+            <div className="ar-state ar-state--error">
+              <p>{error}</p>
+            </div>
+          )}
+
+          {!error && !report && !loading && (
+            <p className="ar-empty">เลือกเงื่อนไขแล้วกด "ค้นหา" เพื่อดูรายงาน</p>
+          )}
+
+          {report && (
+            <>
+              <div className="ar-summary-chips">
+                <div className="ar-chip"><span>จำนวนนักเรียน</span><strong>{report.totalCount}</strong></div>
+              </div>
+
+              <section className="ar-card">
+                <div className="ar-table-wrap">
+                  <table className="ar-table">
+                    <thead>
+                      <tr>
+                        <th>รหัสนักเรียน</th>
+                        <th>ชื่อ-นามสกุล</th>
+                        <th>อีเมล</th>
+                        <th>เบอร์โทรศัพท์</th>
+                        <th>วันเกิด</th>
+                        <th>เบอร์ผู้ปกครอง</th>
+                        <th>วันที่สมัคร</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {(report.items || []).length === 0 ? (
+                        <tr><td colSpan={7} className="ar-empty">ไม่พบข้อมูลตามเงื่อนไขที่เลือก</td></tr>
+                      ) : (
+                        report.items.map((s) => (
+                          <tr key={s.id}>
+                            <td>{s.studentCode || '-'}</td>
+                            <td>{s.fullName || '-'}</td>
+                            <td>{s.email || '-'}</td>
+                            <td>{s.phoneNumber || '-'}</td>
+                            <td>{formatDate(s.birthDate)}</td>
+                            <td>{s.guardianPhoneNumber || '-'}</td>
+                            <td>{formatDate(s.createdAt)}</td>
+                          </tr>
+                        ))
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              </section>
+            </>
+          )}
+        </>
+      )}
     </div>
   );
 }
