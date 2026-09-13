@@ -28,6 +28,7 @@ public class ExamServiceImpl implements ExamService {
     private final TutorRepository TutorRepository;
     private final StudentRepository studentRepository;
     private final EnrollmentRepository enrollmentRepository;
+    private final ExamManualScoreRepository examManualScoreRepository;
     private final NotificationService notificationService;
     private final ExamMapper examMapper;
 
@@ -242,7 +243,10 @@ public class ExamServiceImpl implements ExamService {
         validateTeacherOwnsExam(Tutor, exam);
 
         if (exam.getStatus() == ExamStatus.OPEN) {
-            throw new IllegalStateException("Cannot delete an exam that is currently OPEN. Close it first.");
+            throw new IllegalStateException("ไม่สามารถลบข้อสอบที่กำลังเปิดสอบอยู่ได้ กรุณาปิดสอบก่อนแล้วจึงลบ");
+        }
+        if (examManualScoreRepository.existsByExamId(exam.getId())) {
+            throw new ResourceInUseException("ไม่สามารถลบข้อสอบนี้ได้ เนื่องจากมีการบันทึกคะแนนนักเรียนไว้แล้ว");
         }
 
         examRepository.delete(exam);
