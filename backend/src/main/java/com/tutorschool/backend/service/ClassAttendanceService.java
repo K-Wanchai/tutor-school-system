@@ -2,6 +2,7 @@ package com.tutorschool.backend.service;
 
 import com.tutorschool.backend.dto.request.SaveClassAttendanceRequest;
 import com.tutorschool.backend.dto.response.ClassAttendanceResponse;
+import com.tutorschool.backend.dto.response.CourseSessionResponse;
 import com.tutorschool.backend.entity.User;
 
 import java.time.LocalDate;
@@ -11,6 +12,9 @@ public interface ClassAttendanceService {
 
     // ADMIN ดูการเข้าเรียนของทุกคอร์ส (อ่านอย่างเดียว), TUTOR ดูได้เฉพาะคอร์สของตัวเอง
     List<ClassAttendanceResponse> getCourseAttendance(Long courseId, User currentUser);
+
+    // รายการคาบเรียน (คำนวณจากตารางสอนรายสัปดาห์ + วันเริ่มเรียน) ใช้เป็นคอลัมน์ของตารางเช็คชื่อ
+    List<CourseSessionResponse> getCourseSessions(Long courseId, User currentUser);
 
     // นักเรียนดูการเช็คชื่อของตัวเองทุกคอร์ส
     List<ClassAttendanceResponse> getMyAttendance(String studentEmail);

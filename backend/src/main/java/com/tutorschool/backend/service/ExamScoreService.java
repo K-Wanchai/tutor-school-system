@@ -8,7 +8,8 @@ import java.util.List;
 
 public interface ExamScoreService {
 
-    // ADMIN สามารถดูคะแนนของทุกคอร์ส (อ่านอย่างเดียว), TUTOR ดูได้เฉพาะคอร์สของตัวเอง
+    // ADMIN สามารถดูคะแนนของทุกคอร์ส (อ่านอย่างเดียว), TUTOR ดูได้เฉพาะคอร์สของตัวเอง,
+    // STUDENT ดูได้เฉพาะคะแนนของตัวเองในคอร์สที่ลงทะเบียน
     List<ExamManualScoreResponse> getCourseScores(Long courseId, User currentUser);
 
     ExamManualScoreResponse saveScore(SaveExamScoreRequest request, String tutorEmail);

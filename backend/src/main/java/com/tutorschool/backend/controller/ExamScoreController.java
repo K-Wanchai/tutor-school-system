@@ -26,7 +26,7 @@ public class ExamScoreController {
     private final ExamScoreService examScoreService;
 
     @GetMapping("/course/{courseId}")
-    @PreAuthorize("hasRole('TUTOR') or hasRole('ADMIN')")
+    @PreAuthorize("hasRole('TUTOR') or hasRole('ADMIN') or hasRole('STUDENT')")
     public ResponseEntity<ApiResponse<List<ExamManualScoreResponse>>> getCourseScores(
             @PathVariable Long courseId,
             @AuthenticationPrincipal User currentUser) {

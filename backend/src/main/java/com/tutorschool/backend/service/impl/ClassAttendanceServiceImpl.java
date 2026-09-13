@@ -2,8 +2,10 @@ package com.tutorschool.backend.service.impl;
 
 import com.tutorschool.backend.dto.request.SaveClassAttendanceRequest;
 import com.tutorschool.backend.dto.response.ClassAttendanceResponse;
+import com.tutorschool.backend.dto.response.CourseSessionResponse;
 import com.tutorschool.backend.entity.ClassAttendance;
 import com.tutorschool.backend.entity.Course;
+import com.tutorschool.backend.entity.CourseScheduleDay;
 import com.tutorschool.backend.entity.Role;
 import com.tutorschool.backend.entity.Student;
 import com.tutorschool.backend.entity.Tutor;
@@ -12,16 +14,24 @@ import com.tutorschool.backend.exception.ExamAccessDeniedException;
 import com.tutorschool.backend.exception.ResourceNotFoundException;
 import com.tutorschool.backend.repository.ClassAttendanceRepository;
 import com.tutorschool.backend.repository.CourseRepository;
+import com.tutorschool.backend.repository.CourseScheduleDayRepository;
+import com.tutorschool.backend.repository.EnrollmentRepository;
 import com.tutorschool.backend.repository.StudentRepository;
 import com.tutorschool.backend.repository.TutorRepository;
 import com.tutorschool.backend.repository.UserRepository;
 import com.tutorschool.backend.service.ClassAttendanceService;
+import com.tutorschool.backend.util.ScheduleDaysParser;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Duration;
 import java.time.LocalDate;
+import java.time.LocalTime;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @Service
 @RequiredArgsConstructor
@@ -29,9 +39,13 @@ public class ClassAttendanceServiceImpl implements ClassAttendanceService {
 
     private final ClassAttendanceRepository attendanceRepository;
     private final CourseRepository courseRepository;
+    private final CourseScheduleDayRepository courseScheduleDayRepository;
+    private final EnrollmentRepository enrollmentRepository;
     private final StudentRepository studentRepository;
     private final TutorRepository tutorRepository;
     private final UserRepository userRepository;
+
+    private static final int SESSION_SCAN_LIMIT_DAYS = 3650; // 10 years — กันลูปไม่รู้จบถ้า pattern ไม่ตรงวันไหนเลย
 
     @Override
     @Transactional(readOnly = true)
@@ -43,6 +57,47 @@ public class ClassAttendanceServiceImpl implements ClassAttendanceService {
         return attendanceRepository.findByCourseId(courseId).stream()
                 .map(this::toResponse)
                 .toList();
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<CourseSessionResponse> getCourseSessions(Long courseId, User currentUser) {
+        Course course = getCourse(courseId);
+        if (currentUser.getRole() == Role.TUTOR) {
+            requireOwner(course, getTutor(currentUser.getEmail()));
+        } else if (currentUser.getRole() == Role.STUDENT) {
+            requireEnrolled(course, currentUser.getEmail());
+        }
+
+        Map<String, LocalTime[]> daySlots = new HashMap<>();
+        for (CourseScheduleDay pattern : courseScheduleDayRepository.findByCourseId(courseId)) {
+            daySlots.put(pattern.getDayOfWeek(), new LocalTime[]{pattern.getStartTime(), pattern.getEndTime()});
+        }
+        if (daySlots.isEmpty() || course.getCourseStartDate() == null || course.getTotalHours() == null) {
+            return List.of();
+        }
+
+        List<CourseSessionResponse> sessions = new ArrayList<>();
+        LocalDate cursor = course.getCourseStartDate();
+        long targetMinutes = course.getTotalHours() * 60L;
+        long cumulativeMinutes = 0;
+        int scanned = 0;
+
+        while (cumulativeMinutes < targetMinutes && scanned < SESSION_SCAN_LIMIT_DAYS) {
+            LocalTime[] slot = daySlots.get(ScheduleDaysParser.toDayCode(cursor.getDayOfWeek()));
+            if (slot != null) {
+                sessions.add(CourseSessionResponse.builder()
+                        .scheduleDate(cursor)
+                        .startTime(slot[0])
+                        .endTime(slot[1])
+                        .build());
+                cumulativeMinutes += Duration.between(slot[0], slot[1]).toMinutes();
+            }
+            cursor = cursor.plusDays(1);
+            scanned++;
+        }
+
+        return sessions;
     }
 
     @Override
@@ -109,6 +164,16 @@ public class ClassAttendanceServiceImpl implements ClassAttendanceService {
     private void requireOwner(Course course, Tutor tutor) {
         if (course.getTutor() == null || !course.getTutor().getId().equals(tutor.getId())) {
             throw new ExamAccessDeniedException("You do not have permission to record attendance for this course");
+        }
+    }
+
+    private void requireEnrolled(Course course, String studentEmail) {
+        User user = userRepository.findByEmail(studentEmail)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found: " + studentEmail));
+        Student student = studentRepository.findByUserId(user.getId())
+                .orElseThrow(() -> new ResourceNotFoundException("Student profile not found for current user"));
+        if (!enrollmentRepository.existsByStudentIdAndCourseId(student.getId(), course.getId())) {
+            throw new ExamAccessDeniedException("You do not have permission to view this course's sessions");
         }
     }
 
