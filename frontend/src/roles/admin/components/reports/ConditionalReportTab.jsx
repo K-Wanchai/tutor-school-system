@@ -3,6 +3,7 @@ import CalendarDateInput from '../../../../shared/components/CalendarDateInput';
 import { getStudents } from '../../services/adminStudentService';
 import { getStudentReport } from '../../services/adminReportService';
 import { getInstitutionProfile } from '../../../../shared/services/institutionService';
+import { getExamInstitutions, getExamInstitutionById } from '../../services/examInstitutionService';
 
 function asList(pageOrArray) {
   if (Array.isArray(pageOrArray)) return pageOrArray;
@@ -33,6 +34,7 @@ const DATA_CATEGORIES = [
 export default function ConditionalReportTab() {
   const [filters, setFilters] = useState({ category: '', dateFrom: '', dateTo: '', specific: '' });
   const [students, setStudents] = useState([]);
+  const [examInstitutions, setExamInstitutions] = useState([]);
   const [report, setReport] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -57,14 +59,28 @@ export default function ConditionalReportTab() {
     return () => { mounted = false; };
   }, [filters.category, students.length]);
 
+  // ตัวกรองเฉพาะทางของ "ข้อมูลสถาบันที่จัดสอบ" — โหลดรายชื่อสถาบันแบบ lazy ตอนเลือกหมวดนี้ครั้งแรกเท่านั้น
+  useEffect(() => {
+    if (filters.category !== 'EXAM_INSTITUTION' || examInstitutions.length > 0) return;
+    let mounted = true;
+    getExamInstitutions({})
+      .then((data) => { if (mounted) setExamInstitutions(asList(data)); })
+      .catch(() => {});
+    return () => { mounted = false; };
+  }, [filters.category, examInstitutions.length]);
+
   const specificOptions = filters.category === 'STUDENT'
     ? students.map((s) => ({ value: s.id, label: `${s.fullName} (${s.studentCode})` }))
+    : filters.category === 'EXAM_INSTITUTION'
+    ? examInstitutions.map((e) => ({ value: e.id, label: `${e.institutionName} (${e.institutionTypeLabel || ''})` }))
     : [];
 
-  // "ข้อมูลสถาบัน" มีแค่ระเบียนเดียวในระบบ — ช่องวันที่และตัวกรองเฉพาะทางจึงไม่มีผล
-  const isSearchable = filters.category === 'STUDENT' || filters.category === 'INSTITUTION';
+  // "ข้อมูลสถาบัน" มีแค่ระเบียนเดียวในระบบ, "ข้อมูลสถาบันที่จัดสอบ" ไม่มีการกรองตามช่วงวันที่ —
+  // ช่องวันที่จึงไม่มีผลกับทั้งสองหมวดนี้
+  const isSearchable = filters.category === 'STUDENT' || filters.category === 'INSTITUTION'
+    || filters.category === 'EXAM_INSTITUTION';
   const hasDateFilter = filters.category === 'STUDENT';
-  const hasSpecificFilter = filters.category === 'STUDENT';
+  const hasSpecificFilter = filters.category === 'STUDENT' || filters.category === 'EXAM_INSTITUTION';
 
   // ต้องแสดงข้อมูลครบทุกตัวอักษรในบรรทัดเดียวตอนพิมพ์ ห้ามตัดขึ้นบรรทัดใหม่ — คำนวณ zoom
   // ให้ตารางย่อพอดีความกว้างหน้ากระดาษแทนการ wrap (ดู white-space: nowrap ใน AdminReportsPage.css)
@@ -107,6 +123,15 @@ export default function ConditionalReportTab() {
       } else if (filters.category === 'INSTITUTION') {
         const profile = await getInstitutionProfile();
         setReport({ totalCount: profile ? 1 : 0, items: profile ? [profile] : [] });
+      } else if (filters.category === 'EXAM_INSTITUTION') {
+        if (filters.specific) {
+          const inst = await getExamInstitutionById(filters.specific);
+          setReport({ totalCount: inst ? 1 : 0, items: inst ? [inst] : [] });
+        } else {
+          const data = await getExamInstitutions({});
+          const items = asList(data);
+          setReport({ totalCount: items.length, items });
+        }
       }
     } catch (err) {
       setError(err.message || 'ไม่สามารถโหลดรายงานได้');
@@ -135,7 +160,7 @@ export default function ConditionalReportTab() {
             ))}
           </select>
         </div>
-        {/* ตัวกรองเฉพาะทาง — ตัวเลือกเปลี่ยนตาม "ข้อมูลหลัก" ที่เลือก ตอนนี้รองรับเฉพาะข้อมูลนักเรียน */}
+        {/* ตัวกรองเฉพาะทาง — ตัวเลือกเปลี่ยนตาม "ข้อมูลหลัก" ที่เลือก ตอนนี้รองรับข้อมูลนักเรียน/สถาบันที่จัดสอบ */}
         <div className="ar-filter-field">
           <label>ตัวกรองเฉพาะทาง</label>
           <select value={filters.specific} onChange={(e) => fld('specific', e.target.value)} disabled={!hasSpecificFilter}>
@@ -271,6 +296,54 @@ export default function ConditionalReportTab() {
                   </div>
                 </section>
               )}
+            </div>
+          )}
+
+          {report && filters.category === 'EXAM_INSTITUTION' && (
+            <div id="ar-print-area">
+              <h2 className="ar-print-title">
+                รายงานข้อมูลสถาบันที่จัดสอบ
+                <span>พิมพ์เมื่อ {formatDate(new Date())}</span>
+              </h2>
+
+              <div className="ar-summary-chips">
+                <div className="ar-chip"><span>จำนวนสถาบัน</span><strong>{report.totalCount}</strong></div>
+              </div>
+
+              <section className="ar-card">
+                <div className="ar-table-wrap">
+                  <table id="ar-print-table" className="ar-table">
+                    <thead>
+                      <tr>
+                        <th>รหัสสถาบัน</th>
+                        <th>ชื่อสถาบัน</th>
+                        <th>ประเภท</th>
+                        <th>จังหวัด</th>
+                        <th>อำเภอ/เขต</th>
+                        <th>เว็บไซต์</th>
+                        <th>สถานะ</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {(report.items || []).length === 0 ? (
+                        <tr><td colSpan={7} className="ar-empty">ไม่พบข้อมูลตามเงื่อนไขที่เลือก</td></tr>
+                      ) : (
+                        report.items.map((inst) => (
+                          <tr key={inst.id}>
+                            <td>{inst.institutionCode || '-'}</td>
+                            <td>{inst.institutionName || '-'}</td>
+                            <td>{inst.institutionTypeLabel || inst.institutionType || '-'}</td>
+                            <td>{inst.province || '-'}</td>
+                            <td>{inst.district || '-'}</td>
+                            <td>{inst.websiteUrl || '-'}</td>
+                            <td>{inst.active ? 'ใช้งาน' : 'ปิดใช้งาน'}</td>
+                          </tr>
+                        ))
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              </section>
             </div>
           )}
         </>
