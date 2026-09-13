@@ -14,6 +14,8 @@ import StudentExamCourseDetailPage from '../roles/student/pages/StudentExamCours
 import StudentCourseEvaluationPage from '../roles/student/pages/StudentCourseEvaluationPage';
 import StudentAttendancePage from '../roles/student/pages/StudentAttendancePage';
 import StudentAttendanceCoursePage from '../roles/student/pages/StudentAttendanceCoursePage';
+import StudentExamResultsPage from '../roles/student/pages/StudentExamResultsPage';
+import StudentExamResultsCoursePage from '../roles/student/pages/StudentExamResultsCoursePage';
 
 const studentRoutes = (
   <Route
@@ -35,9 +37,10 @@ const studentRoutes = (
   <Route path="course-evaluations" element={<StudentCourseEvaluationPage />} />
   <Route path="attendance" element={<StudentAttendancePage />} />
   <Route path="attendance/:courseId" element={<StudentAttendanceCoursePage />} />
-  {/* เส้นทางเดิม — คงไว้กันลิงก์เก่า/บุ๊กมาร์กพัง (ตารางเรียน/ผลสอบในระบบถูกถอดออกแล้ว) */}
+  <Route path="exam-results" element={<StudentExamResultsPage />} />
+  <Route path="exam-results/:courseId" element={<StudentExamResultsCoursePage />} />
+  {/* เส้นทางเดิม — คงไว้กันลิงก์เก่า/บุ๊กมาร์กพัง (ตารางเรียนในระบบถูกถอดออกแล้ว) */}
   <Route path="schedule" element={<Navigate to="/student/dashboard" replace />} />
-  <Route path="exam-results" element={<Navigate to="/student/dashboard" replace />} />
   <Route path="exams/:examId/take" element={<Navigate to="/student/exam-schedule" replace />} />
 </Route>
 );

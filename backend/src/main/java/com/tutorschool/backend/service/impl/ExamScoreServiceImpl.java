@@ -12,10 +12,12 @@ import com.tutorschool.backend.entity.User;
 import com.tutorschool.backend.exception.ExamAccessDeniedException;
 import com.tutorschool.backend.exception.ExamNotFoundException;
 import com.tutorschool.backend.exception.ResourceNotFoundException;
+import com.tutorschool.backend.repository.EnrollmentRepository;
 import com.tutorschool.backend.repository.ExamManualScoreRepository;
 import com.tutorschool.backend.repository.ExamRepository;
 import com.tutorschool.backend.repository.StudentRepository;
 import com.tutorschool.backend.repository.TutorRepository;
+import com.tutorschool.backend.repository.UserRepository;
 import com.tutorschool.backend.service.ExamScoreService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -30,16 +32,21 @@ public class ExamScoreServiceImpl implements ExamScoreService {
 
     private final ExamManualScoreRepository manualScoreRepository;
     private final ExamRepository examRepository;
+    private final EnrollmentRepository enrollmentRepository;
     private final StudentRepository studentRepository;
     private final TutorRepository tutorRepository;
+    private final UserRepository userRepository;
 
     @Override
     @Transactional(readOnly = true)
     public List<ExamManualScoreResponse> getCourseScores(Long courseId, User currentUser) {
         var scores = manualScoreRepository.findByExamCourseId(courseId).stream();
-        if (currentUser.getRole() != Role.ADMIN) {
+        if (currentUser.getRole() == Role.TUTOR) {
             Tutor tutor = getTutor(currentUser.getEmail());
             scores = scores.filter(s -> s.getExam().getTutor().getId().equals(tutor.getId()));
+        } else if (currentUser.getRole() == Role.STUDENT) {
+            Student student = requireEnrolled(courseId, currentUser.getEmail());
+            scores = scores.filter(s -> s.getStudent().getId().equals(student.getId()));
         }
         return scores.map(this::toResponse).toList();
     }
@@ -93,6 +100,17 @@ public class ExamScoreServiceImpl implements ExamScoreService {
         if (!exam.getTutor().getId().equals(tutor.getId())) {
             throw new ExamAccessDeniedException("You do not have permission to grade this exam");
         }
+    }
+
+    private Student requireEnrolled(Long courseId, String studentEmail) {
+        User user = userRepository.findByEmail(studentEmail)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found: " + studentEmail));
+        Student student = studentRepository.findByUserId(user.getId())
+                .orElseThrow(() -> new ResourceNotFoundException("Student profile not found for current user"));
+        if (!enrollmentRepository.existsByStudentIdAndCourseId(student.getId(), courseId)) {
+            throw new ExamAccessDeniedException("You do not have permission to view this course's scores");
+        }
+        return student;
     }
 
     // กรอกคะแนนได้ต่อเมื่อถึงกำหนดสอบแล้ว — ยังไม่เปิดสอบ (DRAFT) หรือเวลาเริ่มสอบยังไม่มาถึง = กรอกไม่ได้
