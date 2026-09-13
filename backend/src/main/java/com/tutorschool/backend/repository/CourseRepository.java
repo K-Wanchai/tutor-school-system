@@ -20,6 +20,8 @@ public interface CourseRepository extends JpaRepository<Course, Long> {
 
     Page<Course> findByStatus(CourseStatus status, Pageable pageable);
 
+    Page<Course> findByStatusNot(CourseStatus status, Pageable pageable);
+
     Page<Course> findByCourseNameContainingIgnoreCase(String courseName, Pageable pageable);
 
     List<Course> findByStatusAndRegistrationStartDateLessThanEqual(CourseStatus status, LocalDate date);

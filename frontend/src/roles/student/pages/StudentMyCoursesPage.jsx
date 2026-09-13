@@ -39,10 +39,6 @@ const FILTERS = [
     key: 'APPROVED',
     label: 'ชำระเงินเรียบร้อยแล้ว',
   },
-  {
-    key: 'COMPLETED',
-    label: 'เรียนจบแล้ว',
-  },
 ];
 
 function safeText(value) {
@@ -173,9 +169,10 @@ function StudentMyCoursesPage() {
   }, []);
 
   // ยกเลิก/ถูกปฏิเสธ ไม่แสดงในหน้านี้ — ไปดูได้ที่หน้า "ประวัติการลงทะเบียน" แทน
+  // เรียนจบแล้ว ก็ไม่แสดงในหน้านี้เช่นกัน — ย้ายไปแสดงที่หน้า "ประวัติคอร์สเรียน" แทน
   const activeCourses = useMemo(() => {
     return courses.filter(
-      (item) => item.status !== 'CANCELLED' && item.status !== 'REJECTED'
+      (item) => !['CANCELLED', 'REJECTED', 'COMPLETED'].includes(item.status)
     );
   }, [courses]);
 

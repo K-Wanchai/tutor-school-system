@@ -8,12 +8,15 @@ import com.tutorschool.backend.dto.request.UpdateCourseStatusRequest;
 import com.tutorschool.backend.dto.response.CourseResponse;
 import com.tutorschool.backend.dto.response.PageResponse;
 import com.tutorschool.backend.dto.response.TutorAvailabilityResponse;
+import com.tutorschool.backend.entity.CourseStatus;
 
 import java.time.LocalDate;
 
 public interface CourseService {
 
-    PageResponse<CourseResponse> getAllCourses(int page, int size);
+    // status/excludeStatus เป็น optional filter (ใส่ได้ทีละอย่าง) — ใช้แยกหน้า "จัดการคอร์สเรียน" (ไม่รวมคอร์สที่สอนจบแล้ว)
+    // ออกจากหน้า "ประวัติคอร์สเรียน" (เฉพาะคอร์สที่สอนจบแล้ว) โดยไม่กระทบผู้เรียกเดิมที่ไม่ส่งค่ามา (ได้ทุกสถานะเหมือนเดิม)
+    PageResponse<CourseResponse> getAllCourses(int page, int size, CourseStatus status, CourseStatus excludeStatus);
 
     CourseResponse getCourseById(Long id);
 
