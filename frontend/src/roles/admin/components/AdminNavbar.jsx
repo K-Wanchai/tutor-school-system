@@ -1,32 +1,17 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useLocation, matchPath } from 'react-router-dom';
 import { logout } from '../../../auth/services/authService';
 import { getExamInstitutionById } from '../services/examInstitutionService';
 import { getUsername } from '../../../shared/utils/tokenUtils';
+import { NAV_GROUPS } from './adminNavItems.jsx';
+import { findMatchingNavItem } from '../../../shared/utils/navMatch';
 import './AdminNavbar.css';
-
-const BREADCRUMB_MAP = {
-  '/admin/dashboard':         'แดชบอร์ด',
-  '/admin/students':          'นักเรียน',
-  '/admin/tutors':            'ติวเตอร์',
-  '/admin/courses':           'คอร์สเรียน',
-  '/admin/enrollments':       'การสมัครเรียน',
-  '/admin/payments':          'ประวัติการชำระเงิน',
-  '/admin/exams':             'ข้อสอบ',
-  '/admin/notifications':     'การแจ้งเตือน',
-  '/admin/reports':           'รายงาน',
-  '/admin/exam-institutions': 'สถาบันที่จัดสอบ',
-  '/admin/settings':          'ตั้งค่าสถาบัน',
-  '/admin/student-exam-achievements': 'นักเรียนที่สอบติด',
-  '/admin/courses/create': 'เพิ่มคอร์สเรียนใหม่',
-  
-
-};
 
 export default function AdminNavbar({ onMenuToggle }) {
   const location = useLocation();
   const username  = getUsername() || 'Administrator';
   const [institutionName, setInstitutionName] = useState('');
+  const navItems = useMemo(() => NAV_GROUPS.flatMap((group) => group.items), []);
 
   const institutionMatch = matchPath('/admin/exam-institutions/:institutionId', location.pathname);
   const institutionId = institutionMatch?.params?.institutionId;
@@ -45,7 +30,7 @@ export default function AdminNavbar({ onMenuToggle }) {
 
   const breadcrumbSegments = institutionId
     ? ['สถาบันที่จัดสอบ', institutionName || '...']
-    : [BREADCRUMB_MAP[location.pathname] || 'แดชบอร์ด'];
+    : [findMatchingNavItem(location.pathname, navItems)?.label || 'แดชบอร์ด'];
 
   return (
     <header className="admin-navbar">

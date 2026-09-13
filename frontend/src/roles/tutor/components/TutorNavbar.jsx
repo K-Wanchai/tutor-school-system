@@ -1,35 +1,16 @@
 import { useLocation, useNavigate } from 'react-router-dom';
 import { logout } from '../../../auth/services/authService';
 import { getUsername } from '../../../shared/utils/tokenUtils';
+import { NAV_ITEMS } from './tutorNavItems.jsx';
+import { findMatchingNavItem } from '../../../shared/utils/navMatch';
 import './TutorNavbar.css';
-
-const PAGE_TITLES = {
-  '/tutor/dashboard':        'แดชบอร์ด',
-  '/tutor/courses':          'คอร์สของฉัน',
-  '/tutor/notifications':    'การแจ้งเตือน',
-  '/tutor/exam-schedule':    'ตารางสอบ',
-  '/tutor/exam-scores':      'คะแนนสอบ',
-  '/tutor/evaluations':      'การประเมิน',
-};
-
-function getPageTitle(pathname) {
-  if (PAGE_TITLES[pathname]) {
-    return PAGE_TITLES[pathname];
-  }
-
-  const match = Object.keys(PAGE_TITLES)
-    .filter((path) => pathname.startsWith(path))
-    .sort((a, b) => b.length - a.length)[0];
-
-  return match ? PAGE_TITLES[match] : 'TutorSchool';
-}
 
 export default function TutorNavbar({ onMenuToggle }) {
   const navigate = useNavigate();
   const location = useLocation();
 
   const username = getUsername() || 'ติวเตอร์';
-  const pageTitle = getPageTitle(location.pathname);
+  const pageTitle = findMatchingNavItem(location.pathname, NAV_ITEMS)?.label || 'TutorSchool';
 
   return (
     <header className="tutor-navbar">
