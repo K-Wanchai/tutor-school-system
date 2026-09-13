@@ -75,11 +75,8 @@ export default function ConditionalReportTab() {
     ? examInstitutions.map((e) => ({ value: e.id, label: `${e.institutionName} (${e.institutionTypeLabel || ''})` }))
     : [];
 
-  // "ข้อมูลสถาบัน" มีแค่ระเบียนเดียวในระบบ, "ข้อมูลสถาบันที่จัดสอบ" ไม่มีการกรองตามช่วงวันที่ —
-  // ช่องวันที่จึงไม่มีผลกับทั้งสองหมวดนี้
   const isSearchable = filters.category === 'STUDENT' || filters.category === 'INSTITUTION'
     || filters.category === 'EXAM_INSTITUTION';
-  const hasDateFilter = filters.category === 'STUDENT';
   const hasSpecificFilter = filters.category === 'STUDENT' || filters.category === 'EXAM_INSTITUTION';
 
   // ต้องแสดงข้อมูลครบทุกตัวอักษรในบรรทัดเดียวตอนพิมพ์ ห้ามตัดขึ้นบรรทัดใหม่ — คำนวณ zoom
@@ -145,11 +142,11 @@ export default function ConditionalReportTab() {
       <div className="ar-filter-bar">
         <div className="ar-filter-field">
           <label>วันที่เริ่มต้น</label>
-          <CalendarDateInput value={filters.dateFrom} onChange={(v) => fld('dateFrom', v)} disabled={!hasDateFilter} />
+          <CalendarDateInput value={filters.dateFrom} onChange={(v) => fld('dateFrom', v)} />
         </div>
         <div className="ar-filter-field">
           <label>วันที่สิ้นสุด</label>
-          <CalendarDateInput value={filters.dateTo} onChange={(v) => fld('dateTo', v)} disabled={!hasDateFilter} />
+          <CalendarDateInput value={filters.dateTo} onChange={(v) => fld('dateTo', v)} />
         </div>
         <div className="ar-filter-field">
           <label>ข้อมูลหลัก</label>
@@ -320,13 +317,11 @@ export default function ConditionalReportTab() {
                         <th>ประเภท</th>
                         <th>จังหวัด</th>
                         <th>อำเภอ/เขต</th>
-                        <th>เว็บไซต์</th>
-                        <th>สถานะ</th>
                       </tr>
                     </thead>
                     <tbody>
                       {(report.items || []).length === 0 ? (
-                        <tr><td colSpan={7} className="ar-empty">ไม่พบข้อมูลตามเงื่อนไขที่เลือก</td></tr>
+                        <tr><td colSpan={5} className="ar-empty">ไม่พบข้อมูลตามเงื่อนไขที่เลือก</td></tr>
                       ) : (
                         report.items.map((inst) => (
                           <tr key={inst.id}>
@@ -335,8 +330,6 @@ export default function ConditionalReportTab() {
                             <td>{inst.institutionTypeLabel || inst.institutionType || '-'}</td>
                             <td>{inst.province || '-'}</td>
                             <td>{inst.district || '-'}</td>
-                            <td>{inst.websiteUrl || '-'}</td>
-                            <td>{inst.active ? 'ใช้งาน' : 'ปิดใช้งาน'}</td>
                           </tr>
                         ))
                       )}
