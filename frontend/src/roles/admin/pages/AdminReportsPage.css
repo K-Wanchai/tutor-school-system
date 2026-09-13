@@ -150,6 +150,9 @@
   text-transform: uppercase;
   letter-spacing: 0.04em;
   color: #64748b;
+  background: #f8fafc;
+  position: sticky;
+  top: 0;
 }
 
 .ar-table .ar-num {
@@ -158,6 +161,14 @@
 
 .ar-table tbody tr:last-child td {
   border-bottom: none;
+}
+
+.ar-table tbody tr:nth-child(even) {
+  background: #f8fafc;
+}
+
+.ar-table tbody tr:hover {
+  background: #eef2ff;
 }
 
 .ar-code {
@@ -318,6 +329,65 @@
 .ar-btn-export:disabled {
   opacity: 0.6;
   cursor: not-allowed;
+}
+
+.ar-btn-pdf {
+  padding: 10px 20px;
+  border: 1px solid #dc2626;
+  border-radius: 10px;
+  background: #fef2f2;
+  color: #b91c1c;
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.ar-btn-pdf:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.ar-print-title {
+  display: none;
+}
+
+/* ── พิมพ์เป็น PDF (window.print) — ซ่อนทุกอย่างยกเว้น #ar-print-area ── */
+@media print {
+  body * {
+    visibility: hidden;
+  }
+
+  #ar-print-area,
+  #ar-print-area * {
+    visibility: visible;
+  }
+
+  #ar-print-area {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+  }
+
+  .ar-print-title {
+    display: block;
+    margin: 0 0 16px;
+    font-size: 20px;
+    font-weight: 800;
+  }
+
+  .ar-print-title span {
+    display: block;
+    margin-top: 4px;
+    font-size: 13px;
+    font-weight: 600;
+    color: #475569;
+  }
+
+  .ar-card {
+    box-shadow: none;
+    border-color: #cbd5e1;
+  }
 }
 
 .ar-summary-chips {

@@ -117,6 +117,14 @@ export default function ConditionalReportTab() {
           >
             {loading ? 'กำลังค้นหา...' : 'ค้นหา'}
           </button>
+          <button
+            type="button"
+            className="ar-btn-pdf"
+            onClick={() => window.print()}
+            disabled={!report}
+          >
+            ดาวน์โหลด PDF
+          </button>
         </div>
       </div>
 
@@ -141,7 +149,17 @@ export default function ConditionalReportTab() {
           )}
 
           {report && (
-            <>
+            <div id="ar-print-area">
+              <h2 className="ar-print-title">
+                รายงานข้อมูลนักเรียน
+                <span>
+                  {filters.dateFrom || filters.dateTo
+                    ? `ช่วงวันที่สมัคร: ${filters.dateFrom ? formatDate(filters.dateFrom) : 'ไม่ระบุ'} ถึง ${filters.dateTo ? formatDate(filters.dateTo) : 'ไม่ระบุ'}`
+                    : 'ทุกช่วงวันที่สมัคร'}
+                  {' · '}พิมพ์เมื่อ {formatDate(new Date())}
+                </span>
+              </h2>
+
               <div className="ar-summary-chips">
                 <div className="ar-chip"><span>จำนวนนักเรียน</span><strong>{report.totalCount}</strong></div>
               </div>
@@ -180,7 +198,7 @@ export default function ConditionalReportTab() {
                   </table>
                 </div>
               </section>
-            </>
+            </div>
           )}
         </>
       )}
