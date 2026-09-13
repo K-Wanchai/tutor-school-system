@@ -10,6 +10,7 @@ import { getMyCourses } from '../services/tutorCourseService';
 import RefreshButton from '../components/RefreshButton';
 import CalendarDateInput from '../../../shared/components/CalendarDateInput';
 import { useConfirm } from '../../../shared/components/ConfirmDialog';
+import { useToast } from '../../../shared/components/Toast';
 import './TutorExamSchedulePage.css';
 
 const STATUS_LABELS = {
@@ -207,6 +208,7 @@ export default function TutorExamCourseDetailPage() {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const { confirm, confirmDialog } = useConfirm();
+  const { showToast, toastElement } = useToast();
 
   const [course, setCourse] = useState(null);
   const [exams, setExams] = useState([]);
@@ -407,9 +409,10 @@ export default function TutorExamCourseDetailPage() {
     setBusyId(examId);
     try {
       await deleteExam(examId);
+      showToast('success', 'ลบข้อสอบเรียบร้อยแล้ว');
       await load();
     } catch (err) {
-      setError(err.message);
+      showToast('error', err.message || 'ลบข้อสอบไม่สำเร็จ กรุณาลองใหม่อีกครั้ง');
     } finally {
       setBusyId(null);
     }
@@ -445,6 +448,7 @@ export default function TutorExamCourseDetailPage() {
   return (
     <div className="tes-page">
       {confirmDialog}
+      {toastElement}
 
       <div className="tutor-schedule-header">
         <div>
@@ -556,12 +560,6 @@ export default function TutorExamCourseDetailPage() {
                   {exam.status !== 'OPEN' && (
                     <button type="button" onClick={() => openEdit(exam)}>
                       ✏️ แก้ไข
-                    </button>
-                  )}
-
-                  {exam.status !== 'DRAFT' && (
-                    <button type="button" onClick={() => navigate(`/tutor/exams/${exam.id}/grading`)}>
-                      📊 ผลสอบ/ตรวจข้อสอบ
                     </button>
                   )}
 
