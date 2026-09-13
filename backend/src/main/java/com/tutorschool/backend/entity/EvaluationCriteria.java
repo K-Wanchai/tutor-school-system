@@ -6,32 +6,27 @@ import lombok.*;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "evaluation_settings")
+@Table(name = "evaluation_criteria")
 @Getter
 @Setter
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class EvaluationSettings {
+public class EvaluationCriteria {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "teaching_label", nullable = false, length = 100)
-    private String teachingLabel;
+    @Column(name = "label", nullable = false, length = 100)
+    private String label;
 
-    @Column(name = "content_label", nullable = false, length = 100)
-    private String contentLabel;
+    @Column(name = "display_order", nullable = false)
+    private Integer displayOrder;
 
-    @Column(name = "material_label", nullable = false, length = 100)
-    private String materialLabel;
-
-    @Column(name = "communication_label", nullable = false, length = 100)
-    private String communicationLabel;
-
-    @Column(name = "value_label", nullable = false, length = 100)
-    private String valueLabel;
+    @Column(name = "is_active", nullable = false)
+    @Builder.Default
+    private Boolean isActive = true;
 
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;

@@ -4,6 +4,8 @@ import jakarta.persistence.*;
 import lombok.*;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity
 @Table(name = "course_evaluations",
@@ -41,20 +43,10 @@ public class CourseEvaluation {
     @Column(nullable = false)
     private Integer rating;
 
-    @Column(name = "teaching_score", nullable = false)
-    private Integer teachingScore;
-
-    @Column(name = "content_score", nullable = false)
-    private Integer contentScore;
-
-    @Column(name = "material_score", nullable = false)
-    private Integer materialScore;
-
-    @Column(name = "communication_score", nullable = false)
-    private Integer communicationScore;
-
-    @Column(name = "value_score", nullable = false)
-    private Integer valueScore;
+    // คะแนนย่อยรายหัวข้อ อ้างอิงหัวข้อที่แอดมินตั้งค่าไว้ (ตั้งได้ไม่จำกัดจำนวน) แทนคอลัมน์คะแนนตายตัวแบบเดิม
+    @OneToMany(mappedBy = "evaluation", cascade = CascadeType.ALL, orphanRemoval = true)
+    @Builder.Default
+    private List<EvaluationCriteriaScore> criteriaScores = new ArrayList<>();
 
     @Column(columnDefinition = "TEXT")
     private String comment;

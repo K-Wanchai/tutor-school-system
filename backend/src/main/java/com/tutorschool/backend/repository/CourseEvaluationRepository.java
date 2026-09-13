@@ -30,21 +30,6 @@ public interface CourseEvaluationRepository extends JpaRepository<CourseEvaluati
     @Query("SELECT AVG(e.rating) FROM CourseEvaluation e WHERE e.course.id = :courseId AND e.status = 'PUBLISHED'")
     Double findAverageRatingByCourseId(@Param("courseId") Long courseId);
 
-    @Query("SELECT AVG(e.teachingScore) FROM CourseEvaluation e WHERE e.course.id = :courseId AND e.status = 'PUBLISHED'")
-    Double findAverageTeachingScoreByCourseId(@Param("courseId") Long courseId);
-
-    @Query("SELECT AVG(e.contentScore) FROM CourseEvaluation e WHERE e.course.id = :courseId AND e.status = 'PUBLISHED'")
-    Double findAverageContentScoreByCourseId(@Param("courseId") Long courseId);
-
-    @Query("SELECT AVG(e.materialScore) FROM CourseEvaluation e WHERE e.course.id = :courseId AND e.status = 'PUBLISHED'")
-    Double findAverageMaterialScoreByCourseId(@Param("courseId") Long courseId);
-
-    @Query("SELECT AVG(e.communicationScore) FROM CourseEvaluation e WHERE e.course.id = :courseId AND e.status = 'PUBLISHED'")
-    Double findAverageCommunicationScoreByCourseId(@Param("courseId") Long courseId);
-
-    @Query("SELECT AVG(e.valueScore) FROM CourseEvaluation e WHERE e.course.id = :courseId AND e.status = 'PUBLISHED'")
-    Double findAverageValueScoreByCourseId(@Param("courseId") Long courseId);
-
     long countByCourseIdAndStatus(Long courseId, EvaluationStatus status);
 
     void deleteByCourseId(Long courseId);

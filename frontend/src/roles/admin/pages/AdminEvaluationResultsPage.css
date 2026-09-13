@@ -264,6 +264,10 @@
 
 .er-review-rating { display: flex; align-items: center; gap: 6px; font-size: 12.5px; color: #6b7280; white-space: nowrap; }
 
+.er-review-criteria { display: flex; flex-wrap: wrap; gap: 6px 14px; margin: 8px 0 0; }
+.er-review-criteria-item { font-size: 11.5px; color: #6b7280; }
+.er-review-criteria-item b { color: #111827; font-weight: 700; }
+
 .er-review-text { margin: 6px 0 0; font-size: 13px; color: #374151; font-style: italic; }
 .er-review-suggestion { margin: 6px 0 0; font-size: 12.5px; color: #6b7280; }
 

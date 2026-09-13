@@ -7,16 +7,20 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.tutorschool.backend.dto.request.CreateCourseEvaluationRequest;
+import com.tutorschool.backend.dto.request.CriteriaScoreRequest;
 import com.tutorschool.backend.dto.request.UpdateCourseEvaluationRequest;
 import com.tutorschool.backend.dto.request.UpdateEvaluationStatusRequest;
 import com.tutorschool.backend.dto.response.CourseEvaluationResponse;
 import com.tutorschool.backend.dto.response.CourseEvaluationSummaryResponse;
+import com.tutorschool.backend.dto.response.CriteriaAverageResponse;
 import com.tutorschool.backend.dto.response.PendingEvaluationResponse;
 import com.tutorschool.backend.entity.Course;
 import com.tutorschool.backend.entity.CourseEvaluation;
 import com.tutorschool.backend.entity.CourseStatus;
 import com.tutorschool.backend.entity.Enrollment;
 import com.tutorschool.backend.entity.EnrollmentStatus;
+import com.tutorschool.backend.entity.EvaluationCriteria;
+import com.tutorschool.backend.entity.EvaluationCriteriaScore;
 import com.tutorschool.backend.entity.EvaluationStatus;
 import com.tutorschool.backend.entity.Role;
 import com.tutorschool.backend.entity.Student;
@@ -31,6 +35,8 @@ import com.tutorschool.backend.mapper.CourseEvaluationMapper;
 import com.tutorschool.backend.repository.CourseEvaluationRepository;
 import com.tutorschool.backend.repository.CourseRepository;
 import com.tutorschool.backend.repository.EnrollmentRepository;
+import com.tutorschool.backend.repository.EvaluationCriteriaRepository;
+import com.tutorschool.backend.repository.EvaluationCriteriaScoreRepository;
 import com.tutorschool.backend.repository.StudentRepository;
 import com.tutorschool.backend.repository.TutorRepository;
 import com.tutorschool.backend.repository.UserRepository;
@@ -51,6 +57,8 @@ public class CourseEvaluationServiceImpl implements CourseEvaluationService {
     private final CourseRepository courseRepository;
     private final UserRepository userRepository;
     private final CourseEvaluationMapper evaluationMapper;
+    private final EvaluationCriteriaRepository evaluationCriteriaRepository;
+    private final EvaluationCriteriaScoreRepository evaluationCriteriaScoreRepository;
 
     @Override
     @Transactional
@@ -89,15 +97,12 @@ public class CourseEvaluationServiceImpl implements CourseEvaluationService {
                 .enrollment(enrollment)
                 .tutor(Tutor)
                 .rating(request.getRating())
-                .teachingScore(request.getTeachingScore())
-                .contentScore(request.getContentScore())
-                .materialScore(request.getMaterialScore())
-                .communicationScore(request.getCommunicationScore())
-                .valueScore(request.getValueScore())
                 .comment(request.getComment())
                 .suggestion(request.getSuggestion())
                 .isAnonymous(request.getIsAnonymous() != null ? request.getIsAnonymous() : false)
                 .build();
+
+        attachCriteriaScores(evaluation, request.getCriteriaScores());
 
         CourseEvaluation saved = evaluationRepository.save(evaluation);
         saved.setEvaluationCode("EVL-" + String.format("%08d", saved.getId()));
@@ -253,11 +258,8 @@ public class CourseEvaluationServiceImpl implements CourseEvaluationService {
         }
 
         evaluation.setRating(request.getRating());
-        evaluation.setTeachingScore(request.getTeachingScore());
-        evaluation.setContentScore(request.getContentScore());
-        evaluation.setMaterialScore(request.getMaterialScore());
-        evaluation.setCommunicationScore(request.getCommunicationScore());
-        evaluation.setValueScore(request.getValueScore());
+        evaluation.getCriteriaScores().clear();
+        attachCriteriaScores(evaluation, request.getCriteriaScores());
         evaluation.setComment(request.getComment());
         evaluation.setSuggestion(request.getSuggestion());
         if (request.getIsAnonymous() != null) {
@@ -295,6 +297,16 @@ public class CourseEvaluationServiceImpl implements CourseEvaluationService {
         Tutor Tutor = course.getTutor();
         String teacherName = Tutor.getFirstName() + " " + Tutor.getLastName();
 
+        List<CriteriaAverageResponse> criteriaAverages = evaluationCriteriaRepository
+                .findAllByIsActiveTrueOrderByDisplayOrderAsc().stream()
+                .map(criteria -> CriteriaAverageResponse.builder()
+                        .criteriaId(criteria.getId())
+                        .label(criteria.getLabel())
+                        .averageScore(roundToOne(evaluationCriteriaScoreRepository
+                                .findAverageScoreByCriteriaIdAndCourseId(criteria.getId(), courseId)))
+                        .build())
+                .toList();
+
         return CourseEvaluationSummaryResponse.builder()
                 .courseId(courseId)
                 .courseName(course.getCourseName())
@@ -302,11 +314,7 @@ public class CourseEvaluationServiceImpl implements CourseEvaluationService {
                 .teacherName(teacherName)
                 .totalEvaluations(totalEvaluations)
                 .averageRating(roundToOne(evaluationRepository.findAverageRatingByCourseId(courseId)))
-                .averageTeachingScore(roundToOne(evaluationRepository.findAverageTeachingScoreByCourseId(courseId)))
-                .averageContentScore(roundToOne(evaluationRepository.findAverageContentScoreByCourseId(courseId)))
-                .averageMaterialScore(roundToOne(evaluationRepository.findAverageMaterialScoreByCourseId(courseId)))
-                .averageCommunicationScore(roundToOne(evaluationRepository.findAverageCommunicationScoreByCourseId(courseId)))
-                .averageValueScore(roundToOne(evaluationRepository.findAverageValueScoreByCourseId(courseId)))
+                .criteriaAverages(criteriaAverages)
                 .build();
     }
 
@@ -342,5 +350,17 @@ public class CourseEvaluationServiceImpl implements CourseEvaluationService {
     private Double roundToOne(Double value) {
         if (value == null) return null;
         return Math.round(value * 10.0) / 10.0;
+    }
+
+    private void attachCriteriaScores(CourseEvaluation evaluation, List<CriteriaScoreRequest> items) {
+        for (CriteriaScoreRequest item : items) {
+            EvaluationCriteria criteria = evaluationCriteriaRepository.findById(item.getCriteriaId())
+                    .orElseThrow(() -> new ResourceNotFoundException("Evaluation criteria", item.getCriteriaId()));
+            evaluation.getCriteriaScores().add(EvaluationCriteriaScore.builder()
+                    .evaluation(evaluation)
+                    .criteria(criteria)
+                    .score(item.getScore())
+                    .build());
+        }
     }
 }
