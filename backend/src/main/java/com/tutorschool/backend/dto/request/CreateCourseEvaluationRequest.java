@@ -1,8 +1,6 @@
 package com.tutorschool.backend.dto.request;
 
 import jakarta.validation.Valid;
-import jakarta.validation.constraints.Max;
-import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
 import lombok.Getter;
@@ -17,11 +15,7 @@ public class CreateCourseEvaluationRequest {
     @NotNull(message = "Enrollment ID is required")
     private Long enrollmentId;
 
-    @NotNull(message = "Rating is required")
-    @Min(value = 1, message = "Rating must be at least 1")
-    @Max(value = 5, message = "Rating must be at most 5")
-    private Integer rating;
-
+    // คะแนนรวม (rating) คำนวณจากค่าเฉลี่ยของ criteriaScores ฝั่ง server เสมอ ไม่รับจาก client
     @NotEmpty(message = "At least one criteria score is required")
     @Valid
     private List<CriteriaScoreRequest> criteriaScores;
