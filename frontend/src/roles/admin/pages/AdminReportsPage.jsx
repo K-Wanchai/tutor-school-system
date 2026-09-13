@@ -5,14 +5,12 @@ import {
   COURSE_STATUS_TH,
   ENROLLMENT_STATUS_TH,
 } from '../../../shared/utils/statusLabels';
-import RevenueReportTab from '../components/reports/RevenueReportTab';
-import EnrollmentReportTab from '../components/reports/EnrollmentReportTab';
+import ConditionalReportTab from '../components/reports/ConditionalReportTab';
 import './AdminReportsPage.css';
 
 const TABS = [
   { key: 'OVERVIEW', label: 'ภาพรวม' },
-  { key: 'REVENUE', label: 'รายได้/การชำระเงิน' },
-  { key: 'ENROLLMENT', label: 'การสมัครเรียน' },
+  { key: 'CONDITIONAL', label: 'รายงานตามเงื่อนไข' },
 ];
 
 function formatNumber(value) {
@@ -229,8 +227,7 @@ export default function AdminReportsPage() {
       </div>
 
       {tab === 'OVERVIEW' && <OverviewTab />}
-      {tab === 'REVENUE' && <RevenueReportTab />}
-      {tab === 'ENROLLMENT' && <EnrollmentReportTab />}
+      {tab === 'CONDITIONAL' && <ConditionalReportTab />}
     </div>
   );
 }
