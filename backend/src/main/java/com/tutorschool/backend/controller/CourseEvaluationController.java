@@ -119,6 +119,14 @@ public class CourseEvaluationController {
         return ResponseEntity.ok(ApiResponse.success("Course evaluation summary retrieved successfully", response));
     }
 
+    // GET /api/v1/course-evaluations/summary -- Admin views the evaluation summary of every course
+    @GetMapping("/summary")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<ApiResponse<List<CourseEvaluationSummaryResponse>>> getAllCourseSummaries() {
+        List<CourseEvaluationSummaryResponse> response = evaluationService.getAllCourseSummaries();
+        return ResponseEntity.ok(ApiResponse.success("Course evaluation summaries retrieved successfully", response));
+    }
+
     // PUT /api/v1/course-evaluations/{id} â€” à¸™à¸±à¸à¹€à¸£à¸µà¸¢à¸™à¹à¸à¹‰à¹„à¸‚à¸£à¸µà¸§à¸´à¸§ (à¸ à¸²à¸¢à¹ƒà¸™ 24 à¸Šà¸¡.)
     @PutMapping("/{id}")
     @PreAuthorize("hasRole('STUDENT')")

@@ -53,6 +53,31 @@ export async function updateInstitutionProfile(form) {
   }
 }
 
+export async function getEvaluationSettings() {
+  try {
+    const res = await api.get('/evaluation-settings');
+    return unwrap(res);
+  } catch (error) {
+    throw new Error(apiError(error, 'getEvaluationSettings'), { cause: error });
+  }
+}
+
+export async function updateEvaluationSettings(form) {
+  const payload = {
+    teachingLabel: form.teachingLabel || '',
+    contentLabel: form.contentLabel || '',
+    materialLabel: form.materialLabel || '',
+    communicationLabel: form.communicationLabel || '',
+    valueLabel: form.valueLabel || '',
+  };
+  try {
+    const res = await api.put('/evaluation-settings', payload);
+    return unwrap(res);
+  } catch (error) {
+    throw new Error(apiError(error, 'updateEvaluationSettings'), { cause: error });
+  }
+}
+
 // Uploads an image via the generic file endpoint and returns its public URL
 export async function uploadInstitutionImage(file) {
   const formData = new FormData();

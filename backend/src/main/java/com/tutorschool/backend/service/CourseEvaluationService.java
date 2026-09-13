@@ -34,4 +34,6 @@ public interface CourseEvaluationService {
     void deleteEvaluation(Long id);
 
     CourseEvaluationSummaryResponse getCourseSummary(Long courseId);
+
+    List<CourseEvaluationSummaryResponse> getAllCourseSummaries();
 }

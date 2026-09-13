@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
+  getEvaluationSettings,
   getMyEvaluations,
   getPendingEvaluations,
   submitEvaluation,
@@ -7,13 +8,25 @@ import {
 } from '../services/studentEvaluationService';
 import './StudentCourseEvaluationPage.css';
 
-const SCORE_FIELDS = [
+const DEFAULT_SCORE_FIELDS = [
   { key: 'teachingScore', label: 'การสอน / เทคนิคการถ่ายทอด' },
   { key: 'contentScore', label: 'เนื้อหาคอร์ส' },
   { key: 'materialScore', label: 'เอกสาร / สื่อการสอน' },
   { key: 'communicationScore', label: 'การสื่อสาร / การตอบคำถาม' },
   { key: 'valueScore', label: 'ความคุ้มค่า' },
 ];
+
+// ใช้ label ที่แอดมินตั้งค่าไว้ ถ้าโหลดไม่สำเร็จจะ fallback เป็นชื่อ default ด้านบน
+function buildScoreFields(settings) {
+  if (!settings) return DEFAULT_SCORE_FIELDS;
+  return [
+    { key: 'teachingScore', label: settings.teachingLabel || DEFAULT_SCORE_FIELDS[0].label },
+    { key: 'contentScore', label: settings.contentLabel || DEFAULT_SCORE_FIELDS[1].label },
+    { key: 'materialScore', label: settings.materialLabel || DEFAULT_SCORE_FIELDS[2].label },
+    { key: 'communicationScore', label: settings.communicationLabel || DEFAULT_SCORE_FIELDS[3].label },
+    { key: 'valueScore', label: settings.valueLabel || DEFAULT_SCORE_FIELDS[4].label },
+  ];
+}
 
 const EMPTY_FORM = {
   rating: 0,
@@ -61,7 +74,7 @@ function Stars({ value, onChange, readOnly = false, size = 'md' }) {
   );
 }
 
-function EvaluationFormModal({ target, existing, onClose, onSaved }) {
+function EvaluationFormModal({ target, existing, scoreFields, onClose, onSaved }) {
   const [form, setForm] = useState(() => {
     if (existing) {
       return {
@@ -93,7 +106,7 @@ function EvaluationFormModal({ target, existing, onClose, onSaved }) {
       setError('กรุณาให้คะแนนความพึงพอใจโดยรวม');
       return;
     }
-    for (const field of SCORE_FIELDS) {
+    for (const field of scoreFields) {
       if (form[field.key] < 1) {
         setError(`กรุณาให้คะแนนหัวข้อ "${field.label}"`);
         return;
@@ -164,7 +177,7 @@ function EvaluationFormModal({ target, existing, onClose, onSaved }) {
             <Stars value={form.rating} onChange={(n) => setField('rating', n)} size="lg" />
           </div>
 
-          {SCORE_FIELDS.map((field) => (
+          {scoreFields.map((field) => (
             <div key={field.key} className="sce-form-block sce-form-row">
               <span className="sce-form-label">{field.label}</span>
               <Stars value={form[field.key]} onChange={(n) => setField(field.key, n)} />
@@ -237,6 +250,7 @@ export default function StudentCourseEvaluationPage() {
   const [modalTarget, setModalTarget] = useState(null);
   const [editTarget, setEditTarget] = useState(null);
   const [toast, setToast] = useState('');
+  const [evaluationSettings, setEvaluationSettings] = useState(null);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -254,6 +268,12 @@ export default function StudentCourseEvaluationPage() {
       setLoading(false);
     }
   }, []);
+
+  useEffect(() => {
+    getEvaluationSettings().then(setEvaluationSettings).catch(() => {});
+  }, []);
+
+  const scoreFields = useMemo(() => buildScoreFields(evaluationSettings), [evaluationSettings]);
 
   useEffect(() => {
     load();
@@ -430,6 +450,7 @@ export default function StudentCourseEvaluationPage() {
       {modalTarget && (
         <EvaluationFormModal
           target={modalTarget}
+          scoreFields={scoreFields}
           onClose={() => setModalTarget(null)}
           onSaved={() => handleSaved(false)}
         />
@@ -438,6 +459,7 @@ export default function StudentCourseEvaluationPage() {
       {editTarget && (
         <EvaluationFormModal
           existing={editTarget}
+          scoreFields={scoreFields}
           onClose={() => setEditTarget(null)}
           onSaved={() => handleSaved(true)}
         />

@@ -310,6 +310,17 @@ public class CourseEvaluationServiceImpl implements CourseEvaluationService {
                 .build();
     }
 
+    @Override
+    @Transactional(readOnly = true)
+    public List<CourseEvaluationSummaryResponse> getAllCourseSummaries() {
+        return evaluationRepository.findDistinctCourseIds().stream()
+                .map(this::getCourseSummary)
+                .sorted(java.util.Comparator.comparing(
+                        CourseEvaluationSummaryResponse::getCourseName,
+                        String.CASE_INSENSITIVE_ORDER))
+                .toList();
+    }
+
     // ---- helper methods ----
 
     private CourseEvaluation findEvaluationById(Long id) {

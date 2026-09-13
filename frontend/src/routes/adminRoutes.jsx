@@ -7,6 +7,8 @@ import AdminTutorManagementPage from '../roles/admin/pages/AdminTutorManagementP
 import AdminCourseManagementPage from '../roles/admin/pages/AdminCourseManagementPage';
 import AdminCourseCreatePage from '../roles/admin/pages/AdminCourseCreatePage';
 import AdminSettingsPage from '../roles/admin/pages/AdminSettingsPage';
+import AdminEvaluationSettingsPage from '../roles/admin/pages/AdminEvaluationSettingsPage';
+import AdminEvaluationResultsPage from '../roles/admin/pages/AdminEvaluationResultsPage';
 import AdminEnrollmentManagementPage from '../roles/admin/pages/AdminEnrollmentManagementPage';
 import AdminPaymentManagementPage from '../roles/admin/pages/AdminPaymentManagementPage';
 import ExamInstitutionManagePage from '../roles/admin/pages/ExamInstitutionManagePage';
@@ -45,6 +47,8 @@ const adminRoutes = (
     <Route path="student-exam-achievements" element={<StudentExamAchievementManagePage />} />
     <Route path="student-exam-achievements/:achievementId/detail" element={<StudentAchievementDetailPage />} />
     <Route path="reports" element={<AdminReportsPage />} />
+    <Route path="evaluation-settings" element={<AdminEvaluationSettingsPage />} />
+    <Route path="evaluation-results" element={<AdminEvaluationResultsPage />} />
     <Route path="settings" element={<AdminSettingsPage />} />
     <Route path="attendance" element={<AdminAttendanceTutorListPage />} />
     <Route path="attendance/tutors/:tutorId" element={<AdminAttendanceTutorCoursesPage />} />
