@@ -70,3 +70,13 @@ export const getEnrollmentReport = async (filters) => {
 };
 export const exportEnrollmentReport = (filters) =>
   downloadCsv('enrollment-report', '/admin/reports/enrollments/export', filters);
+
+// ── ข้อมูลนักเรียน ──
+export const getStudentReport = async (filters) => {
+  try {
+    const response = await api.get('/admin/reports/students', { params: cleanParams(filters) });
+    return response.data.data;
+  } catch (error) {
+    throw new Error(apiError('getStudentReport', error), { cause: error });
+  }
+};

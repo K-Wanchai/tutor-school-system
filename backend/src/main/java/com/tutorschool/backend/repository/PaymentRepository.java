@@ -38,9 +38,11 @@ public interface PaymentRepository extends JpaRepository<Payment, Long> {
             "AND p.createdAt <= COALESCE(:dateTo, p.createdAt) " +
             "AND p.enrollment.course.id = COALESCE(:courseId, p.enrollment.course.id) " +
             "AND p.paymentStatus = COALESCE(:status, p.paymentStatus) " +
+            "AND p.student.id = COALESCE(:studentId, p.student.id) " +
             "ORDER BY p.createdAt DESC")
     List<Payment> searchForReport(@Param("dateFrom") LocalDateTime dateFrom,
                                    @Param("dateTo") LocalDateTime dateTo,
                                    @Param("courseId") Long courseId,
-                                   @Param("status") PaymentVerificationStatus status);
+                                   @Param("status") PaymentVerificationStatus status,
+                                   @Param("studentId") Long studentId);
 }

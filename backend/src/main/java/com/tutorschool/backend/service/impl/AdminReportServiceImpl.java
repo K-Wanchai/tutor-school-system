@@ -6,6 +6,7 @@ import com.tutorschool.backend.dto.response.EnrollmentReportResponse;
 import com.tutorschool.backend.dto.response.EnrollmentReportResponse.EnrollmentReportItem;
 import com.tutorschool.backend.dto.response.RevenueReportResponse;
 import com.tutorschool.backend.dto.response.RevenueReportResponse.RevenueReportItem;
+import com.tutorschool.backend.dto.response.StudentReportResponse;
 import com.tutorschool.backend.entity.Course;
 import com.tutorschool.backend.entity.CourseEvaluation;
 import com.tutorschool.backend.entity.Enrollment;
@@ -20,6 +21,7 @@ import com.tutorschool.backend.repository.EnrollmentRepository;
 import com.tutorschool.backend.repository.PaymentRepository;
 import com.tutorschool.backend.repository.StudentRepository;
 import com.tutorschool.backend.repository.TutorRepository;
+import com.tutorschool.backend.mapper.StudentMapper;
 import com.tutorschool.backend.service.AdminReportService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -49,6 +51,7 @@ public class AdminReportServiceImpl implements AdminReportService {
     private final EnrollmentRepository enrollmentRepository;
     private final PaymentRepository paymentRepository;
     private final CourseEvaluationRepository courseEvaluationRepository;
+    private final StudentMapper studentMapper;
 
     @Override
     @Transactional(readOnly = true)
@@ -146,9 +149,9 @@ public class AdminReportServiceImpl implements AdminReportService {
     @Override
     @Transactional(readOnly = true)
     public RevenueReportResponse getRevenueReport(LocalDate dateFrom, LocalDate dateTo, Long courseId,
-                                                   PaymentVerificationStatus status) {
+                                                   PaymentVerificationStatus status, Long studentId) {
         List<Payment> payments = paymentRepository.searchForReport(
-                startOfDay(dateFrom), endOfDay(dateTo), courseId, status);
+                startOfDay(dateFrom), endOfDay(dateTo), courseId, status, studentId);
 
         List<RevenueReportItem> items = payments.stream()
                 .map(p -> {
@@ -189,9 +192,9 @@ public class AdminReportServiceImpl implements AdminReportService {
     @Override
     @Transactional(readOnly = true)
     public EnrollmentReportResponse getEnrollmentReport(LocalDate dateFrom, LocalDate dateTo, Long courseId,
-                                                         EnrollmentStatus status) {
+                                                         EnrollmentStatus status, Long studentId) {
         List<Enrollment> enrollments = enrollmentRepository.searchForReport(
-                startOfDay(dateFrom), endOfDay(dateTo), courseId, status);
+                startOfDay(dateFrom), endOfDay(dateTo), courseId, status, studentId);
 
         List<EnrollmentReportItem> items = enrollments.stream()
                 .map(e -> EnrollmentReportItem.builder()
@@ -228,5 +231,17 @@ public class AdminReportServiceImpl implements AdminReportService {
                 .map(amountFn)
                 .filter(java.util.Objects::nonNull)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public StudentReportResponse getStudentReport(LocalDate dateFrom, LocalDate dateTo, Long studentId) {
+        List<Student> students = studentRepository.searchForReport(
+                startOfDay(dateFrom), endOfDay(dateTo), studentId);
+
+        return StudentReportResponse.builder()
+                .totalCount(students.size())
+                .items(students.stream().map(studentMapper::toResponse).toList())
+                .build();
     }
 }
