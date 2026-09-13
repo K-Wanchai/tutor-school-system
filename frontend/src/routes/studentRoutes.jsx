@@ -9,6 +9,7 @@ import StudentPaymentsPage from '../roles/student/pages/StudentPaymentsPage';
 import StudentEnrollmentHistoryPage from '../roles/student/pages/StudentEnrollmentHistoryPage';
 import StudentProfilePage from '../roles/student/pages/StudentProfilePage';
 import StudentMyCoursesPage from "../roles/student/pages/StudentMyCoursesPage";
+import StudentCourseHistoryPage from '../roles/student/pages/StudentCourseHistoryPage';
 import StudentExamSchedulePage from '../roles/student/pages/StudentExamSchedulePage';
 import StudentExamCourseDetailPage from '../roles/student/pages/StudentExamCourseDetailPage';
 import StudentCourseEvaluationPage from '../roles/student/pages/StudentCourseEvaluationPage';
@@ -32,6 +33,7 @@ const studentRoutes = (
   <Route path="enrollment-history" element={<StudentEnrollmentHistoryPage />} />
   <Route path="profile" element={<StudentProfilePage />} />
   <Route path="courses" element={<StudentMyCoursesPage />} />
+  <Route path="course-history" element={<StudentCourseHistoryPage />} />
   <Route path="exam-schedule" element={<StudentExamSchedulePage />} />
   <Route path="exam-schedule/:courseId" element={<StudentExamCourseDetailPage />} />
   <Route path="course-evaluations" element={<StudentCourseEvaluationPage />} />

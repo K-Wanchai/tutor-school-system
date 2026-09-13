@@ -30,9 +30,9 @@ function apiError(error, label) {
   return serverMsg || `เกิดข้อผิดพลาด (${status})`;
 }
 
-export async function getCourses({ page = 0, size = 10 } = {}) {
+export async function getCourses({ page = 0, size = 10, status, excludeStatus } = {}) {
   try {
-    const res = await api.get('/courses', { params: { page, size } });
+    const res = await api.get('/courses', { params: { page, size, status, excludeStatus } });
     return unwrap(res);
   } catch (error) {
     throw new Error(apiError(error, 'getCourses'), { cause: error });

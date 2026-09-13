@@ -3,6 +3,7 @@ import ProtectedRoute from './ProtectedRoute';
 import TutorLayout from '../roles/tutor/layouts/TutorLayout';
 import TutorDashboardPage from '../roles/tutor/pages/TutorDashboardPage';
 import TutorCoursesPage from '../roles/tutor/pages/TutorCoursesPage';
+import TutorCourseHistoryPage from '../roles/tutor/pages/TutorCourseHistoryPage';
 import TutorNotificationsPage from '../roles/tutor/pages/TutorNotificationsPage';
 import TutorExamSchedulePage from '../roles/tutor/pages/TutorExamSchedulePage';
 import TutorExamCourseDetailPage from '../roles/tutor/pages/TutorExamCourseDetailPage';
@@ -24,6 +25,7 @@ const tutorRoutes = (
   >
     <Route path="dashboard" element={<TutorDashboardPage />} />
     <Route path="courses" element={<TutorCoursesPage />} />
+    <Route path="course-history" element={<TutorCourseHistoryPage />} />
     <Route path="notifications" element={<TutorNotificationsPage />} />
     <Route path="exam-schedule" element={<TutorExamSchedulePage />} />
     <Route path="exam-schedule/:courseId" element={<TutorExamCourseDetailPage />} />

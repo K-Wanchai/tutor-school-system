@@ -97,11 +97,13 @@ export default function TutorCoursesPage() {
   }, [load]);
 
   const filtered = useMemo(() => {
+    // คอร์สที่สอนจบแล้วย้ายไปแสดงที่หน้า "ประวัติคอร์สเรียน" แทน ไม่แสดงในหน้านี้อีกต่อไป
     return courses.filter((course) => {
       const text =
         `${course.courseName || ''} ${course.courseCode || ''}`.toLowerCase();
 
       return (
+        course.status !== 'COMPLETED' &&
         text.includes(keyword.toLowerCase()) &&
         (filter === 'ALL' || course.status === filter)
       );
@@ -186,10 +188,6 @@ export default function TutorCoursesPage() {
 
           <option value="ONGOING">
             กำลังเรียน
-          </option>
-
-          <option value="COMPLETED">
-            สอนจบแล้ว
           </option>
         </select>
       </div>

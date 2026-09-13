@@ -69,9 +69,16 @@ public class CourseServiceImpl implements CourseService {
 
     @Override
     @Transactional(readOnly = true)
-    public PageResponse<CourseResponse> getAllCourses(int page, int size) {
+    public PageResponse<CourseResponse> getAllCourses(int page, int size, CourseStatus status, CourseStatus excludeStatus) {
         Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
-        Page<Course> coursePage = courseRepository.findAll(pageable);
+        Page<Course> coursePage;
+        if (status != null) {
+            coursePage = courseRepository.findByStatus(status, pageable);
+        } else if (excludeStatus != null) {
+            coursePage = courseRepository.findByStatusNot(excludeStatus, pageable);
+        } else {
+            coursePage = courseRepository.findAll(pageable);
+        }
         Page<CourseResponse> responsePage = coursePage.map(course -> {
             long count = enrollmentRepository.countByCourseIdAndStatusIn(course.getId(),
                     List.of(EnrollmentStatus.PENDING, EnrollmentStatus.APPROVED));

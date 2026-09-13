@@ -228,7 +228,7 @@ export default function AdminCourseManagementPage() {
     if (!silent) setLoading(true);
     try {
       const [data, s] = await Promise.all([
-        getCourses({ page: p, size: PAGE_SIZE }),
+        getCourses({ page: p, size: PAGE_SIZE, excludeStatus: 'COMPLETED' }),
         getCourseStats(),
       ]);
       const list = Array.isArray(data) ? data : (data?.content ?? []);

@@ -24,6 +24,7 @@ import com.tutorschool.backend.dto.response.ApiResponse;
 import com.tutorschool.backend.dto.response.CourseResponse;
 import com.tutorschool.backend.dto.response.PageResponse;
 import com.tutorschool.backend.dto.response.TutorAvailabilityResponse;
+import com.tutorschool.backend.entity.CourseStatus;
 import com.tutorschool.backend.entity.User;
 import com.tutorschool.backend.service.CourseService;
 
@@ -43,8 +44,10 @@ public class CourseController {
     @GetMapping
     public ResponseEntity<ApiResponse<PageResponse<CourseResponse>>> getAllCourses(
             @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size) {
-        PageResponse<CourseResponse> response = courseService.getAllCourses(page, size);
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(required = false) CourseStatus status,
+            @RequestParam(required = false) CourseStatus excludeStatus) {
+        PageResponse<CourseResponse> response = courseService.getAllCourses(page, size, status, excludeStatus);
         return ResponseEntity.ok(ApiResponse.success("Courses retrieved successfully", response));
     }
 
