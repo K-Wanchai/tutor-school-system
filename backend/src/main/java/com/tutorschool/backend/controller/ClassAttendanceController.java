@@ -3,6 +3,7 @@ package com.tutorschool.backend.controller;
 import com.tutorschool.backend.dto.request.SaveClassAttendanceRequest;
 import com.tutorschool.backend.dto.response.ApiResponse;
 import com.tutorschool.backend.dto.response.ClassAttendanceResponse;
+import com.tutorschool.backend.dto.response.CourseSessionResponse;
 import com.tutorschool.backend.entity.User;
 import com.tutorschool.backend.service.ClassAttendanceService;
 import jakarta.validation.Valid;
@@ -34,6 +35,15 @@ public class ClassAttendanceController {
             @AuthenticationPrincipal User currentUser) {
         return ResponseEntity.ok(ApiResponse.success("Attendance retrieved",
                 classAttendanceService.getCourseAttendance(courseId, currentUser)));
+    }
+
+    @GetMapping("/course/{courseId}/sessions")
+    @PreAuthorize("hasRole('TUTOR') or hasRole('ADMIN')")
+    public ResponseEntity<ApiResponse<List<CourseSessionResponse>>> getCourseSessions(
+            @PathVariable Long courseId,
+            @AuthenticationPrincipal User currentUser) {
+        return ResponseEntity.ok(ApiResponse.success("Course sessions retrieved",
+                classAttendanceService.getCourseSessions(courseId, currentUser)));
     }
 
     @GetMapping("/student/me")

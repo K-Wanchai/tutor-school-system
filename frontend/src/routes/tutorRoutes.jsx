@@ -9,6 +9,8 @@ import TutorExamCourseDetailPage from '../roles/tutor/pages/TutorExamCourseDetai
 import TutorExamScoresPage from '../roles/tutor/pages/TutorExamScoresPage';
 import TutorExamScoreCoursePage from '../roles/tutor/pages/TutorExamScoreCoursePage';
 import TutorEvaluationsPage from '../roles/tutor/pages/TutorEvaluationsPage';
+import TutorAttendancePage from '../roles/tutor/pages/TutorAttendancePage';
+import TutorAttendanceCoursePage from '../roles/tutor/pages/TutorAttendanceCoursePage';
 import TutorProfilePage from '../roles/tutor/pages/TutorProfilePage';
 
 const tutorRoutes = (
@@ -28,11 +30,11 @@ const tutorRoutes = (
     <Route path="exam-scores" element={<TutorExamScoresPage />} />
     <Route path="exam-scores/:courseId" element={<TutorExamScoreCoursePage />} />
     <Route path="evaluations" element={<TutorEvaluationsPage />} />
+    <Route path="attendance" element={<TutorAttendancePage />} />
+    <Route path="attendance/:courseId" element={<TutorAttendanceCoursePage />} />
     <Route path="profile" element={<TutorProfilePage />} />
-    {/* เส้นทางเดิม — คงไว้กันลิงก์เก่า/บุ๊กมาร์กพัง (ตารางเรียน/การเข้าเรียน/ทำข้อสอบในระบบถูกถอดออกแล้ว) */}
+    {/* เส้นทางเดิม — คงไว้กันลิงก์เก่า/บุ๊กมาร์กพัง (ตารางเรียน/ทำข้อสอบในระบบถูกถอดออกแล้ว) */}
     <Route path="schedule" element={<Navigate to="/tutor/dashboard" replace />} />
-    <Route path="attendance" element={<Navigate to="/tutor/dashboard" replace />} />
-    <Route path="attendance/:courseId" element={<Navigate to="/tutor/dashboard" replace />} />
     <Route path="exams/:examId/build" element={<Navigate to="/tutor/exam-schedule" replace />} />
     <Route path="exams/:examId/grading" element={<Navigate to="/tutor/exam-schedule" replace />} />
   </Route>
