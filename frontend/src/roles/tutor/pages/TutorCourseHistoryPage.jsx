@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { getMyCourses } from '../services/tutorCourseService';
 import RefreshButton from '../components/RefreshButton';
+import TutorAttendanceGrid from '../components/TutorAttendanceGrid';
+import TutorExamScoreGrid from '../components/TutorExamScoreGrid';
 import { formatScheduleDaysTH } from '../../../shared/utils/dateUtils';
 import './TutorCoursesPage.css';
 
@@ -14,6 +16,8 @@ export default function TutorCourseHistoryPage() {
   const [keyword, setKeyword] = useState('');
   const [loading, setLoading] = useState(true);
   const [detailCourse, setDetailCourse] = useState(null);
+  const [attendanceCourse, setAttendanceCourse] = useState(null);
+  const [examCourse, setExamCourse] = useState(null);
 
   const load = useCallback(async () => {
     try {
@@ -89,9 +93,17 @@ export default function TutorCourseHistoryPage() {
                   <td>{course.enrolledCount || 0}/{course.seatLimit || 0} คน</td>
                   <td>{formatDate(course.courseStartDate)}</td>
                   <td>
-                    <button className="tc-table-btn-icon" title="ดูรายละเอียด" onClick={() => setDetailCourse(course)}>
-                      👁
-                    </button>
+                    <div className="tc-table-actions">
+                      <button className="tc-table-btn-icon" title="ดูการเข้าเรียน" onClick={() => setAttendanceCourse(course)}>
+                        📋
+                      </button>
+                      <button className="tc-table-btn-icon" title="ดูผลการสอบ" onClick={() => setExamCourse(course)}>
+                        📝
+                      </button>
+                      <button className="tc-table-btn-icon" title="ดูรายละเอียด" onClick={() => setDetailCourse(course)}>
+                        👁
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ))}
@@ -146,6 +158,40 @@ export default function TutorCourseHistoryPage() {
 
             <div className="tc-modal-footer">
               <button onClick={() => setDetailCourse(null)}>ปิด</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {attendanceCourse && (
+        <div className="tc-modal-overlay" onClick={() => setAttendanceCourse(null)}>
+          <div className="tc-modal tc-modal--lg" onClick={(e) => e.stopPropagation()}>
+            <div className="tc-modal-header">
+              <h2>การเข้าเรียน — {attendanceCourse.courseName}</h2>
+              <button className="tc-modal-close" onClick={() => setAttendanceCourse(null)}>✕</button>
+            </div>
+
+            <TutorAttendanceGrid courseId={attendanceCourse.id} />
+
+            <div className="tc-modal-footer">
+              <button onClick={() => setAttendanceCourse(null)}>ปิด</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {examCourse && (
+        <div className="tc-modal-overlay" onClick={() => setExamCourse(null)}>
+          <div className="tc-modal tc-modal--lg" onClick={(e) => e.stopPropagation()}>
+            <div className="tc-modal-header">
+              <h2>ผลการสอบ — {examCourse.courseName}</h2>
+              <button className="tc-modal-close" onClick={() => setExamCourse(null)}>✕</button>
+            </div>
+
+            <TutorExamScoreGrid courseId={examCourse.id} />
+
+            <div className="tc-modal-footer">
+              <button onClick={() => setExamCourse(null)}>ปิด</button>
             </div>
           </div>
         </div>

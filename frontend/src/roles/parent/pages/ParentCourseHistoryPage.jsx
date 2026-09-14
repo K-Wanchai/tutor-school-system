@@ -1,10 +1,16 @@
 import { useEffect, useMemo, useState } from 'react';
-import { getMyCourses } from '../services/studentMyCoursesService.js';
+import {
+  getChildEnrollments,
+  getChildAttendance,
+  getChildCourseSessions,
+  getChildExams,
+  getChildCourseScores,
+} from '../services/parentService';
 import { resolveFileUrl } from '../../../shared/services/api';
 import { formatScheduleDaysTH } from '../../../shared/utils/dateUtils';
-import AttendanceGrid from '../components/AttendanceGrid';
-import ExamScoreGrid from '../components/ExamScoreGrid';
-import './StudentMyCoursesPage.css';
+import AttendanceGrid from '../../student/components/AttendanceGrid';
+import ExamScoreGrid from '../../student/components/ExamScoreGrid';
+import '../../student/pages/StudentMyCoursesPage.css';
 
 const PAYMENT_STATUS_LABELS = {
   UNPAID: 'ยังไม่ชำระเงิน',
@@ -64,7 +70,7 @@ function getErrorMessage(err) {
   return err?.response?.data?.message || err?.message || 'เกิดข้อผิดพลาด กรุณาลองใหม่อีกครั้ง';
 }
 
-export default function StudentCourseHistoryPage() {
+export default function ParentCourseHistoryPage() {
   const [courses, setCourses] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -76,7 +82,7 @@ export default function StudentCourseHistoryPage() {
     try {
       setLoading(true);
       setError('');
-      const data = await getMyCourses();
+      const data = await getChildEnrollments();
       const list = Array.isArray(data) ? data : [];
       setCourses(list.filter((item) => item.status === 'COMPLETED'));
     } catch (err) {
@@ -96,7 +102,7 @@ export default function StudentCourseHistoryPage() {
         <div>
           <p className="smc-hero-kicker">Course History</p>
           <h1>ประวัติคอร์สเรียน</h1>
-          <p>คอร์สที่คุณเรียนจบแล้วทั้งหมด</p>
+          <p>คอร์สที่บุตรหลานเรียนจบแล้วทั้งหมด</p>
         </div>
 
         <button type="button" className="smc-refresh-btn" onClick={loadHistory} disabled={loading}>
@@ -115,7 +121,7 @@ export default function StudentCourseHistoryPage() {
         <div className="smc-section-header">
           <div>
             <h2>รายการคอร์สที่เรียนจบแล้ว</h2>
-            <p>ดูรายละเอียดคอร์สที่คุณเรียนจบและประเมินได้จากที่นี่</p>
+            <p>ดูรายละเอียดคอร์สที่บุตรหลานเรียนจบได้จากที่นี่</p>
           </div>
         </div>
 
@@ -138,7 +144,7 @@ export default function StudentCourseHistoryPage() {
           <div className="smc-empty-state">
             <div className="smc-empty-icon">🎓</div>
             <h3>ยังไม่มีประวัติคอร์สเรียน</h3>
-            <p>เมื่อคุณเรียนจบคอร์สใด คอร์สนั้นจะย้ายมาแสดงที่นี่</p>
+            <p>เมื่อบุตรหลานเรียนจบคอร์สใด คอร์สนั้นจะย้ายมาแสดงที่นี่</p>
           </div>
         )}
 
@@ -147,7 +153,7 @@ export default function StudentCourseHistoryPage() {
             <table className="smc-table">
               <thead>
                 <tr>
-                  <th>รหัสสมัครเรียน</th>
+                  <th>รหัสการสมัครเรียน</th>
                   <th>รหัสคอร์ส</th>
                   <th>ชื่อคอร์ส</th>
                   <th>ผู้สอน</th>
@@ -305,7 +311,13 @@ export default function StudentCourseHistoryPage() {
             </div>
 
             <div className="smc-modal-body">
-              <AttendanceGrid courseId={attendanceCourse.courseId} />
+              <AttendanceGrid
+                courseId={attendanceCourse.courseId}
+                fetchSessions={getChildCourseSessions}
+                fetchAttendance={getChildAttendance}
+                legendNote="คุณดูข้อมูลการเข้าเรียนของบุตรหลานได้เท่านั้น — การเช็คชื่อทำได้ที่บัญชีติวเตอร์"
+                fallbackName="บุตรหลาน"
+              />
             </div>
 
             <div className="smc-modal-footer">
@@ -342,7 +354,13 @@ export default function StudentCourseHistoryPage() {
             </div>
 
             <div className="smc-modal-body">
-              <ExamScoreGrid courseId={examCourse.courseId} />
+              <ExamScoreGrid
+                courseId={examCourse.courseId}
+                fetchExams={getChildExams}
+                fetchScores={getChildCourseScores}
+                legendNote="คุณดูคะแนนสอบของบุตรหลานได้เท่านั้น — การกรอกคะแนนทำได้ที่บัญชีติวเตอร์"
+                fallbackName="บุตรหลาน"
+              />
             </div>
 
             <div className="smc-modal-footer">

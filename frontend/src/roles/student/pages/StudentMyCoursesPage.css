@@ -219,6 +219,12 @@
   color: #111827;
 }
 
+.smc-table-actions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
 .smc-table-btn-icon {
   background: none;
   border: none;
@@ -526,6 +532,15 @@
   border-radius: 24px;
   background: #ffffff;
   box-shadow: 0 24px 70px rgba(17, 24, 39, 0.28);
+}
+
+/* โมดัลขนาดใหญ่ — ใช้กับตารางเช็คชื่อ/คะแนนสอบที่มีหลายคอลัมน์ */
+.smc-modal--lg {
+  width: min(1200px, 96vw);
+}
+
+.smc-modal--lg .smc-modal-body {
+  overflow-x: auto;
 }
 
 .smc-modal-header {

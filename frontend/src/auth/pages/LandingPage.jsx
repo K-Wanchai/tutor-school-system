@@ -1,7 +1,16 @@
+import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { resolveFileUrl } from '../../shared/services/api';
+import { getPublicEntranceExamStats } from '../../shared/services/publicStatsService';
 import useInstitutionProfile from '../../shared/hooks/useInstitutionProfile';
 import './LandingPage.css';
+
+const EDUCATION_LEVEL_TH = {
+  LOWER_SECONDARY: 'มัธยมต้น',
+  UPPER_SECONDARY: 'มัธยมปลาย',
+  VOCATIONAL_DIPLOMA: 'ปวส.',
+  BACHELOR: 'ปริญญาตรี',
+};
 
 const FEATURES = [
   {
@@ -51,6 +60,15 @@ function LogoMark({ profile }) {
 export default function LandingPage() {
   const profile = useInstitutionProfile();
   const institutionName = profile?.institutionName || 'TutorSchool';
+  const [examStats, setExamStats] = useState(null);
+
+  useEffect(() => {
+    let active = true;
+    getPublicEntranceExamStats()
+      .then((data) => { if (active) setExamStats(data); })
+      .catch(() => {});
+    return () => { active = false; };
+  }, []);
 
   return (
     <div className="lp-page">
@@ -104,6 +122,57 @@ export default function LandingPage() {
           </div>
         </div>
       </section>
+
+      {/* ── ผลงานนักเรียน / สถิติสอบติด ── */}
+      {examStats && examStats.totalCount > 0 && (
+        <section className="lp-examstats">
+          <div className="lp-examstats-bg-blob" />
+          <div className="lp-examstats-inner">
+            <span className="lp-hero-eyebrow">ผลงานนักเรียนของเรา</span>
+            <h2 className="lp-examstats-title">สอบติดแล้ว</h2>
+            <div className="lp-examstats-big">
+              {examStats.totalCount}
+              <small>คน สอบติดสถาบันต่างๆ</small>
+            </div>
+            <p className="lp-examstats-desc">
+              {examStats.totalInstitutions > 0
+                ? `นักเรียนของเราสอบติดกระจายอยู่ใน ${examStats.totalInstitutions} สถาบันชั้นนำทั่วประเทศ`
+                : 'ผลงานความสำเร็จของนักเรียนที่เรียนกับเรา'}
+            </p>
+
+            {examStats.topInstitutions?.length > 0 && (
+              <div className="lp-examstats-grid">
+                {examStats.topInstitutions.map((inst, i) => (
+                  <div className="lp-examstats-card" key={inst.institutionId ?? inst.institutionName ?? i}>
+                    <span className="lp-examstats-rank">อันดับ {i + 1}</span>
+                    <p className="lp-examstats-iname">{inst.institutionName || 'ไม่ระบุสถาบัน'}</p>
+                    <div className="lp-examstats-icount">
+                      {inst.count}
+                      <small>คน</small>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {examStats.byEducationLevel?.length > 0 && (
+              <div className="lp-examstats-levels">
+                {examStats.byEducationLevel.map((lvl) => (
+                  <span className="lp-examstats-chip" key={lvl.educationLevel}>
+                    <b>{Math.round((lvl.count / examStats.totalCount) * 100)}%</b>
+                    {EDUCATION_LEVEL_TH[lvl.educationLevel] || lvl.educationLevel}
+                  </span>
+                ))}
+              </div>
+            )}
+
+            <div className="lp-hero-actions">
+              <Link to="/register" className="lp-btn lp-btn--white lp-btn--lg">สมัครเรียนกับเรา</Link>
+            </div>
+            <p className="lp-examstats-note">ตัวเลขคือจำนวนรวม ไม่เปิดเผยชื่อนักเรียนรายบุคคล</p>
+          </div>
+        </section>
+      )}
 
       {/* ── About / Contact ── */}
       {(profile?.address || profile?.phoneNumber || profile?.email || profile?.googleMapUrl) && (

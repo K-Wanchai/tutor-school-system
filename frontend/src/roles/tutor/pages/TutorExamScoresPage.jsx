@@ -9,7 +9,6 @@ const COURSE_STATUS_LABEL = {
   OPEN_FOR_REGISTRATION: 'เปิดรับสมัคร',
   CLOSED: 'ปิดรับสมัคร',
   ONGOING: 'กำลังเรียน',
-  COMPLETED: 'สอนจบแล้ว',
   CANCELLED: 'ยกเลิก',
 };
 
@@ -34,7 +33,9 @@ export default function TutorExamScoresPage() {
     getMyCourses()
       .then((data) => {
         if (!active) return;
-        setCourses(Array.isArray(data) ? data : []);
+        // คอร์สที่สอนจบแล้วไม่แสดงในหน้านี้อีกต่อไป — ดูผลการสอบย้อนหลังได้ที่หน้า "ประวัติคอร์สเรียน" แทน
+        const list = (Array.isArray(data) ? data : []).filter((c) => c.status !== 'COMPLETED');
+        setCourses(list);
         setError('');
       })
       .catch((err) => { if (active) setError(err.message); })
@@ -79,7 +80,9 @@ export default function TutorExamScoresPage() {
       {loading ? (
         <div className="esc-empty">กำลังโหลดคอร์ส...</div>
       ) : filtered.length === 0 ? (
-        <div className="esc-empty">ยังไม่มีคอร์สที่รับผิดชอบ</div>
+        <div className="esc-empty">
+          {keyword ? `ไม่พบคอร์สสำหรับ "${keyword}"` : 'ยังไม่มีคอร์สที่รับผิดชอบ — คอร์สที่สอนจบแล้วดูได้ที่หน้า "ประวัติคอร์สเรียน"'}
+        </div>
       ) : (
         <div className="esc-grid">
           {filtered.map((course) => (

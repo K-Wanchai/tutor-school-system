@@ -135,6 +135,12 @@
   color: #111827;
 }
 
+.tc-table-actions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
 .tc-table-btn-icon {
   background: none;
   border: none;
@@ -423,6 +429,11 @@
   display: flex;
   flex-direction: column;
   gap: 18px;
+}
+
+/* โมดัลขนาดใหญ่ — ใช้กับตารางเช็คชื่อ/คะแนนสอบที่มีหลายคอลัมน์ */
+.tc-modal--lg {
+  width: min(1200px, 96vw);
 }
 
 .tc-modal-header {

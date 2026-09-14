@@ -28,6 +28,15 @@ const NAV_ITEMS = [
     ),
   },
   {
+    label: 'ประวัติคอร์สเรียน',
+    path: '/parent/course-history',
+    icon: (
+      <svg viewBox="0 0 20 20" fill="currentColor" width="18" height="18">
+        <path fillRule="evenodd" d="M10 2a8 8 0 100 16 8 8 0 000-16zm.75 4a.75.75 0 00-1.5 0v4c0 .29.155.556.406.7l3 1.732a.75.75 0 10.75-1.3L10.75 9.567V6z" clipRule="evenodd" />
+      </svg>
+    ),
+  },
+  {
     label: 'การเข้าเรียน',
     path: '/parent/attendance',
     icon: (

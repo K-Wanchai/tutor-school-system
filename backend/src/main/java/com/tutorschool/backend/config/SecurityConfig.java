@@ -53,6 +53,7 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/api/v1/exam-institutions").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/v1/exam-institutions/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/v1/student-achievements/featured").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/v1/public/**").permitAll()
                         // Swagger UI
                         .requestMatchers(
                                 "/swagger-ui.html",

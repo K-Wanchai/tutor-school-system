@@ -3,11 +3,11 @@ import { useNavigate } from 'react-router-dom';
 import { getMyCourses } from '../services/studentMyCoursesService';
 import '../../admin/pages/AdminExamPages.css';
 
-const ACTIVE_ENROLLMENT_STATUSES = new Set(['APPROVED', 'COMPLETED']);
+// คอร์สที่สอนจบแล้ว (COMPLETED) ไม่แสดงในหน้านี้อีกต่อไป — ดูการเข้าเรียนย้อนหลังได้ที่หน้า "ประวัติคอร์สเรียน" แทน
+const ACTIVE_ENROLLMENT_STATUSES = new Set(['APPROVED']);
 
 const ENROLLMENT_STATUS_LABEL = {
   APPROVED: 'กำลังเรียน',
-  COMPLETED: 'เรียนจบแล้ว',
 };
 
 function formatDate(value) {
@@ -76,7 +76,9 @@ export default function StudentAttendancePage() {
         <div className="aes-empty">กำลังโหลดคอร์ส...</div>
       ) : filtered.length === 0 ? (
         <div className="aes-empty">
-          {keyword ? `ไม่พบคอร์สสำหรับ "${keyword}"` : 'คุณยังไม่มีคอร์สที่ลงทะเบียนอนุมัติแล้ว'}
+          {keyword
+            ? `ไม่พบคอร์สสำหรับ "${keyword}"`
+            : 'คุณยังไม่มีคอร์สที่กำลังเรียนอยู่ — คอร์สที่สอนจบแล้วดูได้ที่หน้า "ประวัติคอร์สเรียน"'}
         </div>
       ) : (
         <div className="aes-grid">

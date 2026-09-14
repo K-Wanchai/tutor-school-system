@@ -3,6 +3,7 @@ import ProtectedRoute from './ProtectedRoute';
 import ParentLayout from '../roles/parent/layouts/ParentLayout';
 import ParentDashboardPage from '../roles/parent/pages/ParentDashboardPage';
 import ParentEnrollmentHistoryPage from '../roles/parent/pages/ParentEnrollmentHistoryPage';
+import ParentCourseHistoryPage from '../roles/parent/pages/ParentCourseHistoryPage';
 import ParentProfilePage from '../roles/parent/pages/ParentProfilePage';
 import ParentAttendancePage from '../roles/parent/pages/ParentAttendancePage';
 import ParentAttendanceCoursePage from '../roles/parent/pages/ParentAttendanceCoursePage';
@@ -21,6 +22,7 @@ const parentRoutes = (
     <Route index element={<Navigate to="/parent/dashboard" replace />} />
     <Route path="dashboard" element={<ParentDashboardPage />} />
     <Route path="enrollment-history" element={<ParentEnrollmentHistoryPage />} />
+    <Route path="course-history" element={<ParentCourseHistoryPage />} />
     <Route path="attendance" element={<ParentAttendancePage />} />
     <Route path="attendance/:courseId" element={<ParentAttendanceCoursePage />} />
     <Route path="exam-results" element={<ParentExamResultsPage />} />
