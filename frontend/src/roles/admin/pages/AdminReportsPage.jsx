@@ -208,7 +208,7 @@ export default function AdminReportsPage() {
         <div className="ar-header">
           <div>
             <h1>รายงาน</h1>
-            <p>เลือกเงื่อนไขเพื่อเรียกดูรายงาน — export เป็น CSV ได้</p>
+            <p>เลือกเงื่อนไขเพื่อเรียกดูรายงาน — ดาวน์โหลดเป็น PDF ได้</p>
           </div>
         </div>
       )}
