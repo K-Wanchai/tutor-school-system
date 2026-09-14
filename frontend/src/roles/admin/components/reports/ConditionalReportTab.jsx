@@ -322,46 +322,48 @@ export default function ConditionalReportTab() {
             ))}
           </select>
         </div>
-        {/* ตัวกรอง "คณะ" — ใช้ได้เฉพาะตอนเจาะจงสถาบันประเภทมหาวิทยาลัย */}
-        <div className="ar-filter-field">
-          <label>คณะ</label>
-          <select value={filters.faculty} onChange={(e) => fld('faculty', e.target.value)} disabled={!isUniversitySpecific}>
-            <option value="">ทั้งหมด</option>
-            {isUniversitySpecific && faculties.map((f) => (
-              <option key={f.id} value={f.id}>{f.name}</option>
-            ))}
-          </select>
-        </div>
-        {/* ตัวกรอง "คอร์ส" — ใช้ได้เฉพาะหมวด "ข้อมูลสมัครเรียน"/"ข้อมูลการชำระเงิน" */}
-        <div className="ar-filter-field">
-          <label>คอร์ส</label>
-          <select value={filters.courseId} onChange={(e) => fld('courseId', e.target.value)} disabled={!hasCourseFilter}>
-            <option value="">ทั้งหมด</option>
-            {hasCourseFilter && courses.map((c) => (
-              <option key={c.id} value={c.id}>{c.courseName} ({c.courseCode || ''})</option>
-            ))}
-          </select>
-        </div>
-        {/* ตัวกรอง "สถานะ" — ใช้ได้เฉพาะหมวดที่มีสถานะ (ตัวเลือกเปลี่ยนความหมายตามหมวด) */}
-        <div className="ar-filter-field">
-          <label>สถานะ</label>
-          <select
-            value={filters.status}
-            onChange={(e) => fld('status', e.target.value)}
-            disabled={!['COURSE', 'ENROLLMENT', 'PAYMENT'].includes(filters.category)}
-          >
-            <option value="">ทั้งหมด</option>
-            {filters.category === 'COURSE' && Object.entries(COURSE_STATUS_TH).map(([key, label]) => (
-              <option key={key} value={key}>{label}</option>
-            ))}
-            {filters.category === 'ENROLLMENT' && Object.entries(ENROLLMENT_STATUS_TH).map(([key, label]) => (
-              <option key={key} value={key}>{label}</option>
-            ))}
-            {filters.category === 'PAYMENT' && PAYMENT_DATA_STATUS_OPTIONS.map((key) => (
-              <option key={key} value={key}>{statusLabelTH(key, ENROLLMENT_HISTORY_STATUS_LABEL)}</option>
-            ))}
-          </select>
-        </div>
+        {/* ตัวกรอง "คณะ" — แสดงเฉพาะตอนเจาะจงสถาบันประเภทมหาวิทยาลัย */}
+        {isUniversitySpecific && (
+          <div className="ar-filter-field">
+            <label>คณะ</label>
+            <select value={filters.faculty} onChange={(e) => fld('faculty', e.target.value)}>
+              <option value="">ทั้งหมด</option>
+              {faculties.map((f) => (
+                <option key={f.id} value={f.id}>{f.name}</option>
+              ))}
+            </select>
+          </div>
+        )}
+        {/* ตัวกรอง "คอร์ส" — แสดงเฉพาะหมวด "ข้อมูลสมัครเรียน"/"ข้อมูลการชำระเงิน" */}
+        {hasCourseFilter && (
+          <div className="ar-filter-field">
+            <label>คอร์ส</label>
+            <select value={filters.courseId} onChange={(e) => fld('courseId', e.target.value)}>
+              <option value="">ทั้งหมด</option>
+              {courses.map((c) => (
+                <option key={c.id} value={c.id}>{c.courseName} ({c.courseCode || ''})</option>
+              ))}
+            </select>
+          </div>
+        )}
+        {/* ตัวกรอง "สถานะ" — แสดงเฉพาะหมวดที่มีสถานะ (ตัวเลือกเปลี่ยนความหมายตามหมวด) */}
+        {['COURSE', 'ENROLLMENT', 'PAYMENT'].includes(filters.category) && (
+          <div className="ar-filter-field">
+            <label>สถานะ</label>
+            <select value={filters.status} onChange={(e) => fld('status', e.target.value)}>
+              <option value="">ทั้งหมด</option>
+              {filters.category === 'COURSE' && Object.entries(COURSE_STATUS_TH).map(([key, label]) => (
+                <option key={key} value={key}>{label}</option>
+              ))}
+              {filters.category === 'ENROLLMENT' && Object.entries(ENROLLMENT_STATUS_TH).map(([key, label]) => (
+                <option key={key} value={key}>{label}</option>
+              ))}
+              {filters.category === 'PAYMENT' && PAYMENT_DATA_STATUS_OPTIONS.map((key) => (
+                <option key={key} value={key}>{statusLabelTH(key, ENROLLMENT_HISTORY_STATUS_LABEL)}</option>
+              ))}
+            </select>
+          </div>
+        )}
         <div className="ar-filter-actions">
           <button
             type="button"
