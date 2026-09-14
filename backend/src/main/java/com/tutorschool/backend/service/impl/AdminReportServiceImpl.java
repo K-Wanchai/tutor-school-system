@@ -299,7 +299,7 @@ public class AdminReportServiceImpl implements AdminReportService {
                         .courseId(e.getCourse() != null ? e.getCourse().getId() : null)
                         .courseName(e.getCourse() != null ? e.getCourse().getCourseName() : null)
                         .courseCode(e.getCourse() != null ? e.getCourse().getCourseCode() : null)
-                        .price(e.getCourse() != null ? e.getCourse().getPrice() : null)
+                        .price(e.getFinalAmount())
                         .paymentMethod(e.getPaymentMethod() != null ? e.getPaymentMethod().name() : null)
                         .status(e.getStatus() != null ? e.getStatus().name() : null)
                         .approvedBy(e.getApprovedBy())
@@ -307,14 +307,16 @@ public class AdminReportServiceImpl implements AdminReportService {
                         .build())
                 .toList();
 
-        Function<Enrollment, BigDecimal> coursePrice = e -> e.getCourse() != null ? e.getCourse().getPrice() : null;
-        BigDecimal totalAmount = sumAmount(enrollments, coursePrice);
+        // ใช้ Enrollment.finalAmount (ยอดที่บันทึกไว้จริงตอนสมัคร) ไม่ใช่ Course.price ปัจจุบัน — ราคาคอร์ส
+        // แก้ไขได้ภายหลัง (ดู CourseServiceImpl#updateCourse) ถ้าใช้ Course.price ยอดจะไม่ตรงกับหน้า
+        // ประวัติการชำระเงินซึ่งคำนวณจาก finalAmount ของแต่ละ enrollment เสมอ
+        BigDecimal totalAmount = sumAmount(enrollments, Enrollment::getFinalAmount);
         BigDecimal approvedAmount = sumAmount(
                 enrollments.stream().filter(e -> e.getStatus() == EnrollmentStatus.APPROVED).toList(),
-                coursePrice);
+                Enrollment::getFinalAmount);
         BigDecimal rejectedAmount = sumAmount(
                 enrollments.stream().filter(e -> e.getStatus() == EnrollmentStatus.REJECTED).toList(),
-                coursePrice);
+                Enrollment::getFinalAmount);
 
         return PaymentReportResponse.builder()
                 .totalCount(enrollments.size())
