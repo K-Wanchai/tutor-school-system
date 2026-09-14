@@ -6,6 +6,7 @@ import com.tutorschool.backend.dto.response.AttendanceReportResponse;
 import com.tutorschool.backend.dto.response.CourseReportResponse;
 import com.tutorschool.backend.dto.response.EnrollmentReportResponse;
 import com.tutorschool.backend.dto.response.EnrollmentReportResponse.EnrollmentReportItem;
+import com.tutorschool.backend.dto.response.EvaluationReportResponse;
 import com.tutorschool.backend.dto.response.ExamResultReportResponse;
 import com.tutorschool.backend.dto.response.PaymentReportResponse;
 import com.tutorschool.backend.dto.response.RevenueReportResponse;
@@ -460,6 +461,49 @@ public class AdminReportServiceImpl implements AdminReportService {
         return ExamResultReportResponse.builder()
                 .totalCount(items.size())
                 .averagePercentage(Math.round(averagePercentage * 10.0) / 10.0)
+                .items(items)
+                .build();
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public EvaluationReportResponse getEvaluationReport(LocalDate dateFrom, LocalDate dateTo, Long courseId) {
+        List<CourseEvaluation> evaluations = courseEvaluationRepository.searchForReport(
+                startOfDay(dateFrom), endOfDay(dateTo), courseId);
+
+        Map<Long, List<CourseEvaluation>> byCourse = evaluations.stream()
+                .filter(e -> e.getCourse() != null)
+                .collect(Collectors.groupingBy(e -> e.getCourse().getId()));
+
+        List<EvaluationReportResponse.EvaluationReportItem> items = byCourse.values().stream()
+                .map(list -> {
+                    CourseEvaluation sample = list.get(0);
+                    double avg = list.stream()
+                            .mapToInt(CourseEvaluation::getRating)
+                            .average()
+                            .orElse(0.0);
+                    return EvaluationReportResponse.EvaluationReportItem.builder()
+                            .courseId(sample.getCourse().getId())
+                            .courseName(sample.getCourse().getCourseName())
+                            .courseCode(sample.getCourse().getCourseCode())
+                            .tutorName(tutorFullName(sample.getCourse().getTutor()))
+                            .evaluationCount(list.size())
+                            .averageRating(Math.round(avg * 10.0) / 10.0)
+                            .build();
+                })
+                .sorted(Comparator.comparing(
+                        EvaluationReportResponse.EvaluationReportItem::getCourseName,
+                        Comparator.nullsLast(Comparator.naturalOrder())))
+                .toList();
+
+        double overallAverage = evaluations.stream()
+                .mapToInt(CourseEvaluation::getRating)
+                .average()
+                .orElse(0.0);
+
+        return EvaluationReportResponse.builder()
+                .totalCount(items.size())
+                .overallAverageRating(Math.round(overallAverage * 10.0) / 10.0)
                 .items(items)
                 .build();
     }

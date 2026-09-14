@@ -6,6 +6,7 @@ import com.tutorschool.backend.dto.response.ApiResponse;
 import com.tutorschool.backend.dto.response.AttendanceReportResponse;
 import com.tutorschool.backend.dto.response.CourseReportResponse;
 import com.tutorschool.backend.dto.response.EnrollmentReportResponse;
+import com.tutorschool.backend.dto.response.EvaluationReportResponse;
 import com.tutorschool.backend.dto.response.ExamResultReportResponse;
 import com.tutorschool.backend.dto.response.PaymentReportResponse;
 import com.tutorschool.backend.dto.response.RevenueReportResponse;
@@ -201,6 +202,18 @@ public class AdminController {
             @RequestParam(required = false) Long studentId) {
         ExamResultReportResponse data = adminReportService.getExamResultReport(dateFrom, dateTo, courseId, studentId);
         return ResponseEntity.ok(ApiResponse.success("Exam result report retrieved", data));
+    }
+
+    // ─── รายงานข้อมูลประเมินความพึงพอใจของคอร์สเรียน ────────────────────────
+
+    @GetMapping("/reports/evaluations")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<ApiResponse<EvaluationReportResponse>> getEvaluationReport(
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate dateFrom,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate dateTo,
+            @RequestParam(required = false) Long courseId) {
+        EvaluationReportResponse data = adminReportService.getEvaluationReport(dateFrom, dateTo, courseId);
+        return ResponseEntity.ok(ApiResponse.success("Evaluation report retrieved", data));
     }
 
     // ─── helpers ─────────────────────────────────────────────────────────────

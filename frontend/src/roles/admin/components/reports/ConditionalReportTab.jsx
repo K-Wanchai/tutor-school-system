@@ -3,7 +3,7 @@ import CalendarDateInput from '../../../../shared/components/CalendarDateInput';
 import { getStudents } from '../../services/adminStudentService';
 import { getTutors } from '../../services/adminTutorService';
 import { getCourses } from '../../services/adminCourseService';
-import { getStudentReport, getTutorReport, getCourseReport, getEnrollmentReport, getPaymentStatusReport, getAttendanceReport, getExamResultReport } from '../../services/adminReportService';
+import { getStudentReport, getTutorReport, getCourseReport, getEnrollmentReport, getPaymentStatusReport, getAttendanceReport, getExamResultReport, getEvaluationReport } from '../../services/adminReportService';
 import { getInstitutionProfile } from '../../../../shared/services/institutionService';
 import { getExamInstitutions, getExamInstitutionById } from '../../services/examInstitutionService';
 import { getFaculties, getMajors } from '../../services/academicFacultyService';
@@ -139,7 +139,7 @@ export default function ConditionalReportTab() {
 
   // ตัวกรองเฉพาะทางของ "ข้อมูลคอร์สเรียน"/"ข้อมูลสมัครเรียน"/"ข้อมูลการชำระเงิน" — โหลดรายชื่อคอร์สแบบ lazy ตอนเลือกหมวดนี้ครั้งแรกเท่านั้น
   useEffect(() => {
-    if (!['COURSE', 'ENROLLMENT', 'PAYMENT', 'ATTENDANCE', 'EXAM_RESULT'].includes(filters.category) || courses.length > 0) return;
+    if (!['COURSE', 'ENROLLMENT', 'PAYMENT', 'ATTENDANCE', 'EXAM_RESULT', 'EVALUATION'].includes(filters.category) || courses.length > 0) return;
     let mounted = true;
     getCourses({ page: 0, size: 5000 })
       .then((data) => { if (mounted) setCourses(asList(data)); })
@@ -161,7 +161,7 @@ export default function ConditionalReportTab() {
     ? students.map((s) => ({ value: s.id, label: `${s.fullName} (${s.studentCode})` }))
     : filters.category === 'TUTOR'
     ? tutors.map((t) => ({ value: t.id, label: `${t.firstName} ${t.lastName} (${t.tutorCode || ''})` }))
-    : filters.category === 'COURSE'
+    : filters.category === 'COURSE' || filters.category === 'EVALUATION'
     ? courses.map((c) => ({ value: c.id, label: `${c.courseName} (${c.courseCode || ''})` }))
     : filters.category === 'EXAM_INSTITUTION'
     ? examInstitutions.map((e) => ({ value: e.id, label: `${e.institutionName} (${e.institutionTypeLabel || ''})` }))
@@ -183,11 +183,11 @@ export default function ConditionalReportTab() {
 
   const isSearchable = filters.category === 'STUDENT' || filters.category === 'TUTOR'
     || filters.category === 'COURSE' || filters.category === 'ENROLLMENT' || filters.category === 'PAYMENT'
-    || filters.category === 'ATTENDANCE' || filters.category === 'EXAM_RESULT'
+    || filters.category === 'ATTENDANCE' || filters.category === 'EXAM_RESULT' || filters.category === 'EVALUATION'
     || filters.category === 'INSTITUTION' || filters.category === 'EXAM_INSTITUTION';
   const hasSpecificFilter = filters.category === 'STUDENT' || filters.category === 'TUTOR'
     || filters.category === 'COURSE' || filters.category === 'ENROLLMENT' || filters.category === 'PAYMENT'
-    || filters.category === 'ATTENDANCE' || filters.category === 'EXAM_RESULT'
+    || filters.category === 'ATTENDANCE' || filters.category === 'EXAM_RESULT' || filters.category === 'EVALUATION'
     || filters.category === 'EXAM_INSTITUTION';
   const hasCourseFilter = filters.category === 'ENROLLMENT' || filters.category === 'PAYMENT'
     || filters.category === 'ATTENDANCE' || filters.category === 'EXAM_RESULT';
@@ -282,6 +282,13 @@ export default function ConditionalReportTab() {
           dateTo: filters.dateTo,
           courseId: filters.courseId,
           studentId: filters.specific,
+        });
+        setReport(data);
+      } else if (filters.category === 'EVALUATION') {
+        const data = await getEvaluationReport({
+          dateFrom: filters.dateFrom,
+          dateTo: filters.dateTo,
+          courseId: filters.specific,
         });
         setReport(data);
       } else if (filters.category === 'INSTITUTION') {
@@ -834,6 +841,57 @@ export default function ConditionalReportTab() {
                             <td>{i.gradedBy || '-'}</td>
                             <td>{formatDateTime(i.examStartTime)}</td>
                             <td>{i.note || '-'}</td>
+                          </tr>
+                        ))
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              </section>
+            </div>
+          )}
+
+          {report && filters.category === 'EVALUATION' && (
+            <div id="ar-print-area">
+              <h2 className="ar-print-title">
+                รายงานข้อมูลประเมินความพึงพอใจของคอร์สเรียน
+                <span>
+                  {filters.dateFrom || filters.dateTo
+                    ? `ช่วงวันที่ประเมิน: ${filters.dateFrom ? formatDate(filters.dateFrom) : 'ไม่ระบุ'} ถึง ${filters.dateTo ? formatDate(filters.dateTo) : 'ไม่ระบุ'}`
+                    : 'ทุกช่วงวันที่ประเมิน'}
+                  {' · '}พิมพ์เมื่อ {formatDate(new Date())}
+                </span>
+              </h2>
+
+              <div className="ar-summary-chips">
+                <div className="ar-chip"><span>จำนวนคอร์ส</span><strong>{formatNumber(report.totalCount)}</strong></div>
+                <div className="ar-chip"><span>คะแนนเฉลี่ยรวม</span><strong>{report.overallAverageRating} / 5</strong></div>
+              </div>
+
+              <section className="ar-card">
+                <div className="ar-table-wrap">
+                  <table className="ar-table ar-print-table">
+                    <thead>
+                      <tr>
+                        <th>คอร์ส</th>
+                        <th>ติวเตอร์</th>
+                        <th className="ar-num">จำนวนการประเมิน</th>
+                        <th className="ar-num">คะแนนเฉลี่ย</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {(report.items || []).length === 0 ? (
+                        <tr><td colSpan={4} className="ar-empty">ไม่พบข้อมูลตามเงื่อนไขที่เลือก</td></tr>
+                      ) : (
+                        report.items.map((i) => (
+                          <tr key={i.courseId}>
+                            <td>
+                              <strong>{i.courseName || '-'}</strong>
+                              <span className="ar-code">{i.courseCode || ''}</span>
+                            </td>
+                            <td>{i.tutorName || '-'}</td>
+                            <td className="ar-num">{formatNumber(i.evaluationCount)}</td>
+                            <td className="ar-num">{i.averageRating} / 5</td>
                           </tr>
                         ))
                       )}

@@ -6,6 +6,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -36,4 +37,15 @@ public interface CourseEvaluationRepository extends JpaRepository<CourseEvaluati
 
     @Query("SELECT DISTINCT e.course.id FROM CourseEvaluation e")
     List<Long> findDistinctCourseIds();
+
+    // รายงานข้อมูลประเมินความพึงพอใจ — กรองแบบ nullable-param เหมือน searchForReport ของ Student/Tutor/Course
+    // กรองตามวันที่ส่งประเมิน (submittedAt) — นับทุกสถานะ (ไม่กรองเฉพาะ PUBLISHED) เพื่อให้แอดมินเห็นภาพรวมจริง
+    @Query("SELECT e FROM CourseEvaluation e " +
+            "WHERE e.submittedAt >= COALESCE(:dateFrom, e.submittedAt) " +
+            "AND e.submittedAt <= COALESCE(:dateTo, e.submittedAt) " +
+            "AND e.course.id = COALESCE(:courseId, e.course.id) " +
+            "ORDER BY e.submittedAt ASC")
+    List<CourseEvaluation> searchForReport(@Param("dateFrom") LocalDateTime dateFrom,
+                                            @Param("dateTo") LocalDateTime dateTo,
+                                            @Param("courseId") Long courseId);
 }

@@ -130,3 +130,13 @@ export const getExamResultReport = async (filters) => {
     throw new Error(apiError('getExamResultReport', error), { cause: error });
   }
 };
+
+// ── ข้อมูลประเมินความพึงพอใจของคอร์สเรียน ──
+export const getEvaluationReport = async (filters) => {
+  try {
+    const response = await api.get('/admin/reports/evaluations', { params: cleanParams(filters) });
+    return response.data.data;
+  } catch (error) {
+    throw new Error(apiError('getEvaluationReport', error), { cause: error });
+  }
+};
