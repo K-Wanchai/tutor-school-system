@@ -80,3 +80,13 @@ export const getStudentReport = async (filters) => {
     throw new Error(apiError('getStudentReport', error), { cause: error });
   }
 };
+
+// ── ข้อมูลติวเตอร์ ──
+export const getTutorReport = async (filters) => {
+  try {
+    const response = await api.get('/admin/reports/tutors', { params: cleanParams(filters) });
+    return response.data.data;
+  } catch (error) {
+    throw new Error(apiError('getTutorReport', error), { cause: error });
+  }
+};

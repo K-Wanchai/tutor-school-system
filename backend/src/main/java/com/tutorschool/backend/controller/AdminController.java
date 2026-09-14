@@ -6,6 +6,7 @@ import com.tutorschool.backend.dto.response.ApiResponse;
 import com.tutorschool.backend.dto.response.EnrollmentReportResponse;
 import com.tutorschool.backend.dto.response.RevenueReportResponse;
 import com.tutorschool.backend.dto.response.StudentReportResponse;
+import com.tutorschool.backend.dto.response.TutorReportResponse;
 import com.tutorschool.backend.entity.EnrollmentStatus;
 import com.tutorschool.backend.entity.PaymentVerificationStatus;
 import com.tutorschool.backend.service.AdminDashboardService;
@@ -130,6 +131,18 @@ public class AdminController {
             @RequestParam(required = false) Long studentId) {
         StudentReportResponse data = adminReportService.getStudentReport(dateFrom, dateTo, studentId);
         return ResponseEntity.ok(ApiResponse.success("Student report retrieved", data));
+    }
+
+    // ─── รายงานข้อมูลติวเตอร์ ────────────────────────────────────────────────
+
+    @GetMapping("/reports/tutors")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<ApiResponse<TutorReportResponse>> getTutorReport(
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate dateFrom,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate dateTo,
+            @RequestParam(required = false) Long tutorId) {
+        TutorReportResponse data = adminReportService.getTutorReport(dateFrom, dateTo, tutorId);
+        return ResponseEntity.ok(ApiResponse.success("Tutor report retrieved", data));
     }
 
     // ─── helpers ─────────────────────────────────────────────────────────────

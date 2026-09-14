@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react';
 import CalendarDateInput from '../../../../shared/components/CalendarDateInput';
 import { getStudents } from '../../services/adminStudentService';
-import { getStudentReport } from '../../services/adminReportService';
+import { getTutors } from '../../services/adminTutorService';
+import { getStudentReport, getTutorReport } from '../../services/adminReportService';
 import { getInstitutionProfile } from '../../../../shared/services/institutionService';
 import { getExamInstitutions, getExamInstitutionById } from '../../services/examInstitutionService';
 import { getFaculties, getMajors } from '../../services/academicFacultyService';
@@ -62,6 +63,7 @@ const DATA_CATEGORIES = [
 export default function ConditionalReportTab() {
   const [filters, setFilters] = useState({ category: '', dateFrom: '', dateTo: '', specific: '', faculty: '' });
   const [students, setStudents] = useState([]);
+  const [tutors, setTutors] = useState([]);
   const [examInstitutions, setExamInstitutions] = useState([]);
   const [faculties, setFaculties] = useState([]);
   const [report, setReport] = useState(null);
@@ -92,6 +94,16 @@ export default function ConditionalReportTab() {
     return () => { mounted = false; };
   }, [filters.category, students.length]);
 
+  // ตัวกรองเฉพาะทางของ "ข้อมูลติวเตอร์" — โหลดรายชื่อติวเตอร์แบบ lazy ตอนเลือกหมวดนี้ครั้งแรกเท่านั้น
+  useEffect(() => {
+    if (filters.category !== 'TUTOR' || tutors.length > 0) return;
+    let mounted = true;
+    getTutors({ page: 0, size: 5000 })
+      .then((data) => { if (mounted) setTutors(asList(data)); })
+      .catch(() => {});
+    return () => { mounted = false; };
+  }, [filters.category, tutors.length]);
+
   // ตัวกรองเฉพาะทางของ "ข้อมูลสถาบันที่จัดสอบ" — โหลดรายชื่อสถาบันแบบ lazy ตอนเลือกหมวดนี้ครั้งแรกเท่านั้น
   useEffect(() => {
     if (filters.category !== 'EXAM_INSTITUTION' || examInstitutions.length > 0) return;
@@ -104,6 +116,8 @@ export default function ConditionalReportTab() {
 
   const specificOptions = filters.category === 'STUDENT'
     ? students.map((s) => ({ value: s.id, label: `${s.fullName} (${s.studentCode})` }))
+    : filters.category === 'TUTOR'
+    ? tutors.map((t) => ({ value: t.id, label: `${t.firstName} ${t.lastName} (${t.tutorCode || ''})` }))
     : filters.category === 'EXAM_INSTITUTION'
     ? examInstitutions.map((e) => ({ value: e.id, label: `${e.institutionName} (${e.institutionTypeLabel || ''})` }))
     : [];
@@ -122,9 +136,10 @@ export default function ConditionalReportTab() {
     return () => { mounted = false; };
   }, [isUniversitySpecific, filters.specific]);
 
-  const isSearchable = filters.category === 'STUDENT' || filters.category === 'INSTITUTION'
+  const isSearchable = filters.category === 'STUDENT' || filters.category === 'TUTOR'
+    || filters.category === 'INSTITUTION' || filters.category === 'EXAM_INSTITUTION';
+  const hasSpecificFilter = filters.category === 'STUDENT' || filters.category === 'TUTOR'
     || filters.category === 'EXAM_INSTITUTION';
-  const hasSpecificFilter = filters.category === 'STUDENT' || filters.category === 'EXAM_INSTITUTION';
 
   // ต้องแสดงข้อมูลครบทุกตัวอักษรในบรรทัดเดียวตอนพิมพ์ ห้ามตัดขึ้นบรรทัดใหม่ — คำนวณ zoom
   // ให้ตารางย่อพอดีความกว้างหน้ากระดาษแทนการ wrap (ดู white-space: nowrap ใน AdminReportsPage.css)
@@ -162,6 +177,13 @@ export default function ConditionalReportTab() {
           dateFrom: filters.dateFrom,
           dateTo: filters.dateTo,
           studentId: filters.specific,
+        });
+        setReport(data);
+      } else if (filters.category === 'TUTOR') {
+        const data = await getTutorReport({
+          dateFrom: filters.dateFrom,
+          dateTo: filters.dateTo,
+          tutorId: filters.specific,
         });
         setReport(data);
       } else if (filters.category === 'INSTITUTION') {
@@ -314,6 +336,57 @@ export default function ConditionalReportTab() {
                             <td>{formatDate(s.birthDate)}</td>
                             <td>{s.guardianPhoneNumber || '-'}</td>
                             <td>{formatDate(s.createdAt)}</td>
+                          </tr>
+                        ))
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              </section>
+            </div>
+          )}
+
+          {report && filters.category === 'TUTOR' && (
+            <div id="ar-print-area">
+              <h2 className="ar-print-title">
+                รายงานข้อมูลติวเตอร์
+                <span>
+                  {filters.dateFrom || filters.dateTo
+                    ? `ช่วงวันที่สมัคร: ${filters.dateFrom ? formatDate(filters.dateFrom) : 'ไม่ระบุ'} ถึง ${filters.dateTo ? formatDate(filters.dateTo) : 'ไม่ระบุ'}`
+                    : 'ทุกช่วงวันที่สมัคร'}
+                  {' · '}พิมพ์เมื่อ {formatDate(new Date())}
+                </span>
+              </h2>
+
+              <div className="ar-summary-chips">
+                <div className="ar-chip"><span>จำนวนติวเตอร์</span><strong>{report.totalCount}</strong></div>
+              </div>
+
+              <section className="ar-card">
+                <div className="ar-table-wrap">
+                  <table className="ar-table ar-print-table">
+                    <thead>
+                      <tr>
+                        <th>รหัสติวเตอร์</th>
+                        <th>ชื่อ-นามสกุล</th>
+                        <th>อีเมล</th>
+                        <th>เบอร์โทรศัพท์</th>
+                        <th>ความเชี่ยวชาญ</th>
+                        <th>วันที่สมัคร</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {(report.items || []).length === 0 ? (
+                        <tr><td colSpan={6} className="ar-empty">ไม่พบข้อมูลตามเงื่อนไขที่เลือก</td></tr>
+                      ) : (
+                        report.items.map((t) => (
+                          <tr key={t.id}>
+                            <td>{t.tutorCode || '-'}</td>
+                            <td>{`${t.firstName || ''} ${t.lastName || ''}`.trim() || '-'}</td>
+                            <td>{t.email || '-'}</td>
+                            <td>{t.phoneNumber || '-'}</td>
+                            <td>{t.specialization || '-'}</td>
+                            <td>{formatDate(t.createdAt)}</td>
                           </tr>
                         ))
                       )}

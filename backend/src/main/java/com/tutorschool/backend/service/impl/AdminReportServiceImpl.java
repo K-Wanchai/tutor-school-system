@@ -7,6 +7,7 @@ import com.tutorschool.backend.dto.response.EnrollmentReportResponse.EnrollmentR
 import com.tutorschool.backend.dto.response.RevenueReportResponse;
 import com.tutorschool.backend.dto.response.RevenueReportResponse.RevenueReportItem;
 import com.tutorschool.backend.dto.response.StudentReportResponse;
+import com.tutorschool.backend.dto.response.TutorReportResponse;
 import com.tutorschool.backend.entity.Course;
 import com.tutorschool.backend.entity.CourseEvaluation;
 import com.tutorschool.backend.entity.Enrollment;
@@ -22,6 +23,7 @@ import com.tutorschool.backend.repository.PaymentRepository;
 import com.tutorschool.backend.repository.StudentRepository;
 import com.tutorschool.backend.repository.TutorRepository;
 import com.tutorschool.backend.mapper.StudentMapper;
+import com.tutorschool.backend.mapper.TutorMapper;
 import com.tutorschool.backend.service.AdminReportService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -52,6 +54,7 @@ public class AdminReportServiceImpl implements AdminReportService {
     private final PaymentRepository paymentRepository;
     private final CourseEvaluationRepository courseEvaluationRepository;
     private final StudentMapper studentMapper;
+    private final TutorMapper tutorMapper;
 
     @Override
     @Transactional(readOnly = true)
@@ -244,6 +247,18 @@ public class AdminReportServiceImpl implements AdminReportService {
         return StudentReportResponse.builder()
                 .totalCount(students.size())
                 .items(students.stream().map(studentMapper::toResponse).toList())
+                .build();
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public TutorReportResponse getTutorReport(LocalDate dateFrom, LocalDate dateTo, Long tutorId) {
+        List<Tutor> tutors = tutorRepository.searchForReport(
+                startOfDay(dateFrom), endOfDay(dateTo), tutorId);
+
+        return TutorReportResponse.builder()
+                .totalCount(tutors.size())
+                .items(tutors.stream().map(tutorMapper::toResponse).toList())
                 .build();
     }
 }
