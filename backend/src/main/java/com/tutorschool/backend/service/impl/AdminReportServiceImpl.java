@@ -2,6 +2,7 @@ package com.tutorschool.backend.service.impl;
 
 import com.tutorschool.backend.dto.response.AdminReportResponse;
 import com.tutorschool.backend.dto.response.AdminReportResponse.CourseReportItem;
+import com.tutorschool.backend.dto.response.CourseReportResponse;
 import com.tutorschool.backend.dto.response.EnrollmentReportResponse;
 import com.tutorschool.backend.dto.response.EnrollmentReportResponse.EnrollmentReportItem;
 import com.tutorschool.backend.dto.response.RevenueReportResponse;
@@ -22,6 +23,7 @@ import com.tutorschool.backend.repository.EnrollmentRepository;
 import com.tutorschool.backend.repository.PaymentRepository;
 import com.tutorschool.backend.repository.StudentRepository;
 import com.tutorschool.backend.repository.TutorRepository;
+import com.tutorschool.backend.mapper.CourseMapper;
 import com.tutorschool.backend.mapper.StudentMapper;
 import com.tutorschool.backend.mapper.TutorMapper;
 import com.tutorschool.backend.service.AdminReportService;
@@ -55,6 +57,7 @@ public class AdminReportServiceImpl implements AdminReportService {
     private final CourseEvaluationRepository courseEvaluationRepository;
     private final StudentMapper studentMapper;
     private final TutorMapper tutorMapper;
+    private final CourseMapper courseMapper;
 
     @Override
     @Transactional(readOnly = true)
@@ -259,6 +262,22 @@ public class AdminReportServiceImpl implements AdminReportService {
         return TutorReportResponse.builder()
                 .totalCount(tutors.size())
                 .items(tutors.stream().map(tutorMapper::toResponse).toList())
+                .build();
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public CourseReportResponse getCourseReport(LocalDate dateFrom, LocalDate dateTo, Long courseId,
+                                                 com.tutorschool.backend.entity.CourseStatus status) {
+        List<Course> courses = courseRepository.searchForReport(
+                startOfDay(dateFrom), endOfDay(dateTo), courseId, status);
+
+        return CourseReportResponse.builder()
+                .totalCount(courses.size())
+                .items(courses.stream()
+                        .map(c -> courseMapper.toResponse(
+                                c, enrollmentRepository.countByCourseIdAndStatusIn(c.getId(), ACTIVE_ENROLLMENT_STATUSES)))
+                        .toList())
                 .build();
     }
 }

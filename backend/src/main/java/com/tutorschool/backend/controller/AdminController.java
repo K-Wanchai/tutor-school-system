@@ -3,10 +3,12 @@ package com.tutorschool.backend.controller;
 import com.tutorschool.backend.dto.response.AdminDashboardResponse;
 import com.tutorschool.backend.dto.response.AdminReportResponse;
 import com.tutorschool.backend.dto.response.ApiResponse;
+import com.tutorschool.backend.dto.response.CourseReportResponse;
 import com.tutorschool.backend.dto.response.EnrollmentReportResponse;
 import com.tutorschool.backend.dto.response.RevenueReportResponse;
 import com.tutorschool.backend.dto.response.StudentReportResponse;
 import com.tutorschool.backend.dto.response.TutorReportResponse;
+import com.tutorschool.backend.entity.CourseStatus;
 import com.tutorschool.backend.entity.EnrollmentStatus;
 import com.tutorschool.backend.entity.PaymentVerificationStatus;
 import com.tutorschool.backend.service.AdminDashboardService;
@@ -143,6 +145,19 @@ public class AdminController {
             @RequestParam(required = false) Long tutorId) {
         TutorReportResponse data = adminReportService.getTutorReport(dateFrom, dateTo, tutorId);
         return ResponseEntity.ok(ApiResponse.success("Tutor report retrieved", data));
+    }
+
+    // ─── รายงานข้อมูลคอร์สเรียน ──────────────────────────────────────────────
+
+    @GetMapping("/reports/courses")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<ApiResponse<CourseReportResponse>> getCourseReport(
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate dateFrom,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate dateTo,
+            @RequestParam(required = false) Long courseId,
+            @RequestParam(required = false) CourseStatus status) {
+        CourseReportResponse data = adminReportService.getCourseReport(dateFrom, dateTo, courseId, status);
+        return ResponseEntity.ok(ApiResponse.success("Course report retrieved", data));
     }
 
     // ─── helpers ─────────────────────────────────────────────────────────────

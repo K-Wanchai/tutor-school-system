@@ -90,3 +90,13 @@ export const getTutorReport = async (filters) => {
     throw new Error(apiError('getTutorReport', error), { cause: error });
   }
 };
+
+// ── ข้อมูลคอร์สเรียน ──
+export const getCourseReport = async (filters) => {
+  try {
+    const response = await api.get('/admin/reports/courses', { params: cleanParams(filters) });
+    return response.data.data;
+  } catch (error) {
+    throw new Error(apiError('getCourseReport', error), { cause: error });
+  }
+};
