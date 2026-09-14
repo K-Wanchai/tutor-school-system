@@ -285,6 +285,7 @@ public class EnrollmentServiceImpl implements EnrollmentService {
 
         enrollment.setStatus(EnrollmentStatus.REJECTED);
         enrollment.setNote(request.getNote());
+        enrollment.setRejectedBy(request.getRejectedBy());
 
         Enrollment saved = enrollmentRepository.save(enrollment);
         sendRejectionNotification(saved);

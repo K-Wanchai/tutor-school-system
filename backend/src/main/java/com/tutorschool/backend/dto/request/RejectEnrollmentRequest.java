@@ -12,4 +12,6 @@ public class RejectEnrollmentRequest {
 
     @NotBlank(message = "Reason is required")
     private String note;
+
+    private String rejectedBy;
 }

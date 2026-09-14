@@ -46,8 +46,9 @@ public class PaymentReportResponse {
         private BigDecimal price;
         private String paymentMethod;
         private String status;
-        // ผู้ดำเนินการ/วันที่ดำเนินการ — ครอบคลุมทั้งอนุมัติและปฏิเสธ เพราะระบบมีแอดมินเป็นผู้ดำเนินการ
-        // ฝ่ายเดียว (ไม่มี rejectedBy/rejectedAt เก็บแยกจริง) กรณีปฏิเสธจึงใช้ "แอดมิน" + updatedAt แทน
+        // ผู้ดำเนินการ/วันที่ดำเนินการ — ครอบคลุมทั้งอนุมัติ (Enrollment.approvedBy) และปฏิเสธ
+        // (Enrollment.rejectedBy) ส่วนวันที่ปฏิเสธไม่มีคอลัมน์แยก ใช้ updatedAt แทน — แถวเก่าก่อนมี
+        // rejectedBy จะว่างเปล่า (ย้อนไปกรอกให้ไม่ได้)
         private String processedBy;
         private LocalDateTime processedAt;
         private String note;

@@ -10,7 +10,7 @@ import {
 import { getInstitutionProfile, updateInstitutionProfile } from '../services/adminSettingsService';
 import { parseDaySlots } from '../utils/courseScheduleUtils';
 import { resolveFileUrl } from '../../../shared/services/api';
-import { getUsername } from '../../../shared/utils/tokenUtils';
+import { getUsername, getEmail } from '../../../shared/utils/tokenUtils';
 import { useConfirm } from '../../../shared/components/ConfirmDialog';
 import './AdminEnrollmentManagementPage.css';
 
@@ -412,7 +412,7 @@ export default function AdminEnrollmentManagementPage() {
           setActionPending(false);
           return;
         }
-        await rejectEnrollment(enrollment.id, note.trim());
+        await rejectEnrollment(enrollment.id, note.trim(), getEmail());
         showToast('success', 'ปฏิเสธการสมัครเรียนและคืนที่นั่งแล้ว');
       } else if (action === 'cancel') {
         const okCancel = await confirm({

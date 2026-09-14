@@ -96,10 +96,10 @@ export async function returnForSlipRevision(id, note) {
 }
 
 // ปฏิเสธการสมัคร (ถาวร) — status เปลี่ยนเป็น REJECTED และที่นั่งจะถูกคืนกลับเข้าระบบให้อัตโนมัติ
-// note คือเหตุผลที่ปฏิเสธ (บังคับกรอก)
-export async function rejectEnrollment(id, note) {
+// note คือเหตุผลที่ปฏิเสธ (บังคับกรอก), rejectedBy คืออีเมลแอดมินที่กดปฏิเสธ
+export async function rejectEnrollment(id, note, rejectedBy) {
   try {
-    const res = await api.patch(`/enrollments/${id}/reject`, { note });
+    const res = await api.patch(`/enrollments/${id}/reject`, { note, rejectedBy: rejectedBy || null });
     return unwrap(res);
   } catch (error) {
     throw new Error(apiError(error, 'rejectEnrollment'), { cause: error });

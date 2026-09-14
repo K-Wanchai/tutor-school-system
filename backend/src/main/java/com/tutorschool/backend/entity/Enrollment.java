@@ -72,6 +72,10 @@ public class Enrollment {
     @Column(name = "approved_at")
     private LocalDateTime approvedAt;
 
+    // อีเมลแอดมินที่กดปฏิเสธ — ใช้ updatedAt เป็นเวลาที่ปฏิเสธแทน ไม่มี rejected_at แยก
+    @Column(name = "rejected_by", length = 100)
+    private String rejectedBy;
+
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;
 
