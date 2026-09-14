@@ -64,7 +64,7 @@ public interface EnrollmentRepository extends JpaRepository<Enrollment, Long> {
             "AND e.course.id = COALESCE(:courseId, e.course.id) " +
             "AND e.status = COALESCE(:status, e.status) " +
             "AND e.student.id = COALESCE(:studentId, e.student.id) " +
-            "ORDER BY e.enrollmentDate DESC")
+            "ORDER BY e.enrollmentDate ASC")
     List<Enrollment> searchForReport(@Param("dateFrom") LocalDateTime dateFrom,
                                       @Param("dateTo") LocalDateTime dateTo,
                                       @Param("courseId") Long courseId,

@@ -39,7 +39,7 @@ public interface CourseRepository extends JpaRepository<Course, Long> {
             "AND c.createdAt <= COALESCE(:dateTo, c.createdAt) " +
             "AND c.id = COALESCE(:courseId, c.id) " +
             "AND c.status = COALESCE(:status, c.status) " +
-            "ORDER BY c.createdAt DESC")
+            "ORDER BY c.createdAt ASC")
     List<Course> searchForReport(@Param("dateFrom") LocalDateTime dateFrom,
                                   @Param("dateTo") LocalDateTime dateTo,
                                   @Param("courseId") Long courseId,
