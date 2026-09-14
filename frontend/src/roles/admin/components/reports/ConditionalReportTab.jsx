@@ -41,6 +41,9 @@ function asList(pageOrArray) {
   return pageOrArray?.content || [];
 }
 
+// A4 portrait 210mm หัก margin 10mm ทั้งสองข้าง (ดู @page ใน AdminReportsPage.css) แปลงเป็น px ที่ 96dpi
+const PRINT_PAGE_WIDTH_PX = 190 * 3.7795275591;
+
 function formatDate(value) {
   if (!value) return '-';
   const d = new Date(value);
@@ -176,16 +179,21 @@ export default function ConditionalReportTab() {
 
   // ต้องแสดงข้อมูลครบทุกตัวอักษรในบรรทัดเดียวตอนพิมพ์ ห้ามตัดขึ้นบรรทัดใหม่ — คำนวณ zoom
   // ให้ตารางย่อพอดีความกว้างหน้ากระดาษแทนการ wrap (ดู white-space: nowrap ใน AdminReportsPage.css)
+  //
+  // ความกว้างที่ใช้คำนวณต้องมาจากขนาดกระดาษจริง (A4 portrait หักขอบ 10mm ทั้งสองข้าง ดู @page
+  // ใน AdminReportsPage.css) ไม่ใช่ area.clientWidth ของหน้าจอ — ตอน beforeprint ยิง CSS
+  // @media print อาจยังไม่ถูกคำนวณ layout ใหม่ทันเวลา ทำให้ clientWidth ที่อ่านได้เป็นความกว้าง
+  // หน้าจอปกติ (กว้างกว่าโซนพิมพ์จริงมาก) ส่งผลให้ตารางที่กว้างเกินหน้ากระดาษแต่ยังแคบกว่าจอ
+  // ถูกตัดสินว่า "พอดีแล้ว" และไม่ย่อ zoom ให้เลย ข้อความคอลัมน์ขวาสุดเลยหลุดขอบกระดาษตอนพิมพ์จริง
   useEffect(() => {
     function fitPrintTable() {
       const area = document.getElementById('ar-print-area');
       if (!area) return;
       area.querySelectorAll('.ar-print-table').forEach((table) => {
         table.style.zoom = '1';
-        const available = area.clientWidth;
         const needed = table.scrollWidth;
-        if (available > 0 && needed > available) {
-          table.style.zoom = String(available / needed);
+        if (needed > PRINT_PAGE_WIDTH_PX) {
+          table.style.zoom = String(PRINT_PAGE_WIDTH_PX / needed);
         }
       });
     }
