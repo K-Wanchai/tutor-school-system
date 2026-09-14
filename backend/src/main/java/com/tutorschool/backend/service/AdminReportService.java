@@ -4,6 +4,7 @@ import com.tutorschool.backend.dto.response.AdminReportResponse;
 import com.tutorschool.backend.dto.response.AttendanceReportResponse;
 import com.tutorschool.backend.dto.response.CourseReportResponse;
 import com.tutorschool.backend.dto.response.EnrollmentReportResponse;
+import com.tutorschool.backend.dto.response.ExamResultReportResponse;
 import com.tutorschool.backend.dto.response.PaymentReportResponse;
 import com.tutorschool.backend.dto.response.RevenueReportResponse;
 import com.tutorschool.backend.dto.response.StudentReportResponse;
@@ -34,4 +35,6 @@ public interface AdminReportService {
                                             EnrollmentStatus status, Long studentId);
 
     AttendanceReportResponse getAttendanceReport(LocalDate dateFrom, LocalDate dateTo, Long courseId, Long studentId);
+
+    ExamResultReportResponse getExamResultReport(LocalDate dateFrom, LocalDate dateTo, Long courseId, Long studentId);
 }

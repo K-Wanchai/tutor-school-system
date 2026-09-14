@@ -6,6 +6,7 @@ import com.tutorschool.backend.dto.response.AttendanceReportResponse;
 import com.tutorschool.backend.dto.response.CourseReportResponse;
 import com.tutorschool.backend.dto.response.EnrollmentReportResponse;
 import com.tutorschool.backend.dto.response.EnrollmentReportResponse.EnrollmentReportItem;
+import com.tutorschool.backend.dto.response.ExamResultReportResponse;
 import com.tutorschool.backend.dto.response.PaymentReportResponse;
 import com.tutorschool.backend.dto.response.RevenueReportResponse;
 import com.tutorschool.backend.dto.response.RevenueReportResponse.RevenueReportItem;
@@ -17,6 +18,7 @@ import com.tutorschool.backend.entity.Course;
 import com.tutorschool.backend.entity.CourseEvaluation;
 import com.tutorschool.backend.entity.Enrollment;
 import com.tutorschool.backend.entity.EnrollmentStatus;
+import com.tutorschool.backend.entity.ExamManualScore;
 import com.tutorschool.backend.entity.Payment;
 import com.tutorschool.backend.entity.PaymentVerificationStatus;
 import com.tutorschool.backend.entity.Student;
@@ -25,6 +27,7 @@ import com.tutorschool.backend.repository.ClassAttendanceRepository;
 import com.tutorschool.backend.repository.CourseEvaluationRepository;
 import com.tutorschool.backend.repository.CourseRepository;
 import com.tutorschool.backend.repository.EnrollmentRepository;
+import com.tutorschool.backend.repository.ExamManualScoreRepository;
 import com.tutorschool.backend.repository.PaymentRepository;
 import com.tutorschool.backend.repository.StudentRepository;
 import com.tutorschool.backend.repository.TutorRepository;
@@ -61,6 +64,7 @@ public class AdminReportServiceImpl implements AdminReportService {
     private final PaymentRepository paymentRepository;
     private final CourseEvaluationRepository courseEvaluationRepository;
     private final ClassAttendanceRepository classAttendanceRepository;
+    private final ExamManualScoreRepository examManualScoreRepository;
     private final StudentMapper studentMapper;
     private final TutorMapper tutorMapper;
     private final CourseMapper courseMapper;
@@ -390,6 +394,52 @@ public class AdminReportServiceImpl implements AdminReportService {
 
         return AttendanceReportResponse.builder()
                 .totalCount(items.size())
+                .items(items)
+                .build();
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public ExamResultReportResponse getExamResultReport(LocalDate dateFrom, LocalDate dateTo, Long courseId, Long studentId) {
+        List<ExamManualScore> scores = examManualScoreRepository.searchForReport(
+                startOfDay(dateFrom), endOfDay(dateTo), courseId, studentId);
+
+        List<ExamResultReportResponse.ExamResultReportItem> items = scores.stream()
+                .map(s -> {
+                    Double totalScore = s.getExam() != null ? s.getExam().getTotalScore() : null;
+                    Double percentage = (totalScore != null && totalScore > 0 && s.getScore() != null)
+                            ? Math.round(s.getScore() / totalScore * 1000.0) / 10.0
+                            : null;
+                    return ExamResultReportResponse.ExamResultReportItem.builder()
+                            .examId(s.getExam() != null ? s.getExam().getId() : null)
+                            .examCode(s.getExam() != null ? s.getExam().getExamCode() : null)
+                            .examTitle(s.getExam() != null ? s.getExam().getTitle() : null)
+                            .courseId(s.getExam() != null && s.getExam().getCourse() != null ? s.getExam().getCourse().getId() : null)
+                            .courseName(s.getExam() != null && s.getExam().getCourse() != null ? s.getExam().getCourse().getCourseName() : null)
+                            .courseCode(s.getExam() != null && s.getExam().getCourse() != null ? s.getExam().getCourse().getCourseCode() : null)
+                            .studentId(s.getStudent() != null ? s.getStudent().getId() : null)
+                            .studentName(studentFullName(s.getStudent()))
+                            .studentCode(s.getStudent() != null ? s.getStudent().getStudentCode() : null)
+                            .score(s.getScore())
+                            .totalScore(totalScore)
+                            .percentage(percentage)
+                            .gradedBy(s.getGradedBy())
+                            .examStartTime(s.getExam() != null ? s.getExam().getStartTime() : null)
+                            .note(s.getNote())
+                            .build();
+                })
+                .toList();
+
+        double averagePercentage = items.stream()
+                .map(ExamResultReportResponse.ExamResultReportItem::getPercentage)
+                .filter(java.util.Objects::nonNull)
+                .mapToDouble(Double::doubleValue)
+                .average()
+                .orElse(0.0);
+
+        return ExamResultReportResponse.builder()
+                .totalCount(items.size())
+                .averagePercentage(Math.round(averagePercentage * 10.0) / 10.0)
                 .items(items)
                 .build();
     }

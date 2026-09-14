@@ -120,3 +120,13 @@ export const getAttendanceReport = async (filters) => {
     throw new Error(apiError('getAttendanceReport', error), { cause: error });
   }
 };
+
+// ── ข้อมูลผลการสอบ ──
+export const getExamResultReport = async (filters) => {
+  try {
+    const response = await api.get('/admin/reports/exam-results', { params: cleanParams(filters) });
+    return response.data.data;
+  } catch (error) {
+    throw new Error(apiError('getExamResultReport', error), { cause: error });
+  }
+};
