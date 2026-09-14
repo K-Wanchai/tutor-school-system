@@ -39,9 +39,7 @@ public class PaymentReportResponse {
         private Long courseId;
         private String courseName;
         private String courseCode;
-        private BigDecimal amount;
-        private BigDecimal discountAmount;
-        private BigDecimal finalAmount;
+        private BigDecimal price;
         private String paymentMethod;
         private String paymentStatus;
         private String approvedBy;

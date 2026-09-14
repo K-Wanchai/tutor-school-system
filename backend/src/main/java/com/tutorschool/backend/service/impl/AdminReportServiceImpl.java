@@ -300,9 +300,7 @@ public class AdminReportServiceImpl implements AdminReportService {
                         .courseId(e.getCourse() != null ? e.getCourse().getId() : null)
                         .courseName(e.getCourse() != null ? e.getCourse().getCourseName() : null)
                         .courseCode(e.getCourse() != null ? e.getCourse().getCourseCode() : null)
-                        .amount(e.getAmount())
-                        .discountAmount(e.getDiscountAmount())
-                        .finalAmount(e.getFinalAmount())
+                        .price(e.getCourse() != null ? e.getCourse().getPrice() : null)
                         .paymentMethod(e.getPaymentMethod() != null ? e.getPaymentMethod().name() : null)
                         .paymentStatus(e.getPaymentStatus() != null ? e.getPaymentStatus().name() : null)
                         .approvedBy(e.getApprovedBy())
@@ -310,17 +308,18 @@ public class AdminReportServiceImpl implements AdminReportService {
                         .build())
                 .toList();
 
-        BigDecimal totalAmount = sumAmount(enrollments, Enrollment::getFinalAmount);
+        Function<Enrollment, BigDecimal> coursePrice = e -> e.getCourse() != null ? e.getCourse().getPrice() : null;
+        BigDecimal totalAmount = sumAmount(enrollments, coursePrice);
         BigDecimal paidAmount = sumAmount(
                 enrollments.stream()
                         .filter(e -> e.getPaymentStatus() == com.tutorschool.backend.entity.PaymentStatus.PAID)
                         .toList(),
-                Enrollment::getFinalAmount);
+                coursePrice);
         BigDecimal pendingAmount = sumAmount(
                 enrollments.stream()
                         .filter(e -> e.getPaymentStatus() == com.tutorschool.backend.entity.PaymentStatus.PENDING_VERIFICATION)
                         .toList(),
-                Enrollment::getFinalAmount);
+                coursePrice);
 
         return PaymentReportResponse.builder()
                 .totalCount(enrollments.size())

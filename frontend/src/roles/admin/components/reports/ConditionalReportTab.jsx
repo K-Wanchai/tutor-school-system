@@ -654,9 +654,7 @@ export default function ConditionalReportTab() {
                         <th>รหัสสมัคร</th>
                         <th>นักเรียน</th>
                         <th>คอร์ส</th>
-                        <th className="ar-num">ยอดเต็ม</th>
-                        <th className="ar-num">ส่วนลด</th>
-                        <th className="ar-num">ยอดสุทธิ</th>
+                        <th className="ar-num">ราคา</th>
                         <th>วิธีชำระ</th>
                         <th>สถานะ</th>
                         <th>ผู้อนุมัติ</th>
@@ -665,7 +663,7 @@ export default function ConditionalReportTab() {
                     </thead>
                     <tbody>
                       {(report.items || []).length === 0 ? (
-                        <tr><td colSpan={10} className="ar-empty">ไม่พบข้อมูลตามเงื่อนไขที่เลือก</td></tr>
+                        <tr><td colSpan={8} className="ar-empty">ไม่พบข้อมูลตามเงื่อนไขที่เลือก</td></tr>
                       ) : (
                         report.items.map((i) => (
                           <tr key={i.enrollmentId}>
@@ -678,9 +676,7 @@ export default function ConditionalReportTab() {
                               <strong>{i.courseName || '-'}</strong>
                               <span className="ar-code">{i.courseCode || ''}</span>
                             </td>
-                            <td className="ar-num">{formatCurrency(i.amount)}</td>
-                            <td className="ar-num">{formatCurrency(i.discountAmount)}</td>
-                            <td className="ar-num">{formatCurrency(i.finalAmount)}</td>
+                            <td className="ar-num">{formatCurrency(i.price)}</td>
                             <td>{PAYMENT_METHOD_TH[i.paymentMethod] || '-'}</td>
                             <td>{statusLabelTH(i.paymentStatus, PAYMENT_STATUS_TH)}</td>
                             <td>{i.approvedBy || '-'}</td>
