@@ -11,7 +11,6 @@ import com.tutorschool.backend.dto.response.StudentReportResponse;
 import com.tutorschool.backend.dto.response.TutorReportResponse;
 import com.tutorschool.backend.entity.CourseStatus;
 import com.tutorschool.backend.entity.EnrollmentStatus;
-import com.tutorschool.backend.entity.PaymentStatus;
 import com.tutorschool.backend.entity.PaymentVerificationStatus;
 import com.tutorschool.backend.service.AdminDashboardService;
 import com.tutorschool.backend.service.AdminReportService;
@@ -170,7 +169,7 @@ public class AdminController {
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate dateFrom,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate dateTo,
             @RequestParam(required = false) Long courseId,
-            @RequestParam(required = false) PaymentStatus status,
+            @RequestParam(required = false) EnrollmentStatus status,
             @RequestParam(required = false) Long studentId) {
         PaymentReportResponse data = adminReportService.getPaymentReport(dateFrom, dateTo, courseId, status, studentId);
         return ResponseEntity.ok(ApiResponse.success("Payment report retrieved", data));

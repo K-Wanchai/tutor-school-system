@@ -285,10 +285,9 @@ public class AdminReportServiceImpl implements AdminReportService {
     @Override
     @Transactional(readOnly = true)
     public PaymentReportResponse getPaymentReport(LocalDate dateFrom, LocalDate dateTo, Long courseId,
-                                                   com.tutorschool.backend.entity.PaymentStatus paymentStatus,
-                                                   Long studentId) {
+                                                   EnrollmentStatus status, Long studentId) {
         List<Enrollment> enrollments = enrollmentRepository.searchForPaymentReport(
-                startOfDay(dateFrom), endOfDay(dateTo), courseId, paymentStatus, studentId);
+                startOfDay(dateFrom), endOfDay(dateTo), courseId, status, studentId);
 
         List<PaymentReportResponse.PaymentReportItem> items = enrollments.stream()
                 .map(e -> PaymentReportResponse.PaymentReportItem.builder()
@@ -302,7 +301,7 @@ public class AdminReportServiceImpl implements AdminReportService {
                         .courseCode(e.getCourse() != null ? e.getCourse().getCourseCode() : null)
                         .price(e.getCourse() != null ? e.getCourse().getPrice() : null)
                         .paymentMethod(e.getPaymentMethod() != null ? e.getPaymentMethod().name() : null)
-                        .paymentStatus(e.getPaymentStatus() != null ? e.getPaymentStatus().name() : null)
+                        .status(e.getStatus() != null ? e.getStatus().name() : null)
                         .approvedBy(e.getApprovedBy())
                         .approvedAt(e.getApprovedAt())
                         .build())
@@ -310,22 +309,18 @@ public class AdminReportServiceImpl implements AdminReportService {
 
         Function<Enrollment, BigDecimal> coursePrice = e -> e.getCourse() != null ? e.getCourse().getPrice() : null;
         BigDecimal totalAmount = sumAmount(enrollments, coursePrice);
-        BigDecimal paidAmount = sumAmount(
-                enrollments.stream()
-                        .filter(e -> e.getPaymentStatus() == com.tutorschool.backend.entity.PaymentStatus.PAID)
-                        .toList(),
+        BigDecimal approvedAmount = sumAmount(
+                enrollments.stream().filter(e -> e.getStatus() == EnrollmentStatus.APPROVED).toList(),
                 coursePrice);
-        BigDecimal pendingAmount = sumAmount(
-                enrollments.stream()
-                        .filter(e -> e.getPaymentStatus() == com.tutorschool.backend.entity.PaymentStatus.PENDING_VERIFICATION)
-                        .toList(),
+        BigDecimal rejectedAmount = sumAmount(
+                enrollments.stream().filter(e -> e.getStatus() == EnrollmentStatus.REJECTED).toList(),
                 coursePrice);
 
         return PaymentReportResponse.builder()
                 .totalCount(enrollments.size())
                 .totalAmount(totalAmount)
-                .paidAmount(paidAmount)
-                .pendingAmount(pendingAmount)
+                .approvedAmount(approvedAmount)
+                .rejectedAmount(rejectedAmount)
                 .items(items)
                 .build();
     }

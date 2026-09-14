@@ -10,8 +10,9 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 /**
- * รายงานข้อมูลการชำระเงิน — สร้างจาก Enrollment.paymentStatus/finalAmount เพราะเป็นแหล่งข้อมูล
- * การชำระเงินจริงเพียงแหล่งเดียวที่ flow อนุมัติของแอดมินเขียนถึง (ตาราง Payment แยกไม่ถูกใช้งาน)
+ * รายงานข้อมูลการชำระเงิน — สร้างจาก Enrollment.status/Course.price เพราะเป็นแหล่งข้อมูลการชำระเงิน
+ * จริงเพียงแหล่งเดียวที่ flow อนุมัติของแอดมินเขียนถึง (ตาราง Payment แยกไม่ถูกใช้งาน) จำกัดเฉพาะ
+ * ใบสมัครที่ตรวจสอบจบแล้ว — APPROVED (ชำระเงินเรียบร้อยแล้ว) หรือ REJECTED (ปฏิเสธ)
  */
 @Data
 @Builder
@@ -21,8 +22,8 @@ public class PaymentReportResponse {
 
     private long totalCount;
     private BigDecimal totalAmount;
-    private BigDecimal paidAmount;
-    private BigDecimal pendingAmount;
+    private BigDecimal approvedAmount;
+    private BigDecimal rejectedAmount;
 
     private List<PaymentReportItem> items;
 
@@ -41,7 +42,7 @@ public class PaymentReportResponse {
         private String courseCode;
         private BigDecimal price;
         private String paymentMethod;
-        private String paymentStatus;
+        private String status;
         private String approvedBy;
         private LocalDateTime approvedAt;
     }

@@ -10,6 +10,7 @@ import { getFaculties, getMajors } from '../../services/academicFacultyService';
 import { getVocationalMajors } from '../../services/vocationalMajorService';
 import { getSchoolTracks } from '../../services/schoolTrackService';
 import { statusLabelTH, COURSE_STATUS_TH, ENROLLMENT_STATUS_TH, PAYMENT_STATUS_TH } from '../../../../shared/utils/statusLabels';
+import { ENROLLMENT_HISTORY_STATUS_LABEL } from '../../../../shared/utils/enrollmentHistoryStatus';
 
 const EDUCATION_LEVEL_TH = {
   LOWER_SECONDARY: 'มัธยมต้น',
@@ -25,8 +26,9 @@ const PAYMENT_METHOD_TH = {
   CREDIT_CARD: 'บัตรเครดิต',
 };
 
-// สถานะการชำระเงินจริงของระบบ (Enrollment.paymentStatus) — ไม่ใช้ค่าจากตาราง Payment ที่แยกไม่ถูกใช้งาน
-const PAYMENT_DATA_STATUS_OPTIONS = ['UNPAID', 'PENDING_VERIFICATION', 'PAID', 'FAILED'];
+// "ข้อมูลการชำระเงิน" แสดงเฉพาะใบสมัครที่แอดมินตรวจสอบจบแล้ว — ชำระเงินเรียบร้อยแล้ว (APPROVED)
+// หรือปฏิเสธ (REJECTED) เท่านั้น ไม่รวมรายการที่ยังรอตรวจสอบ/รอแก้ไขสลิป
+const PAYMENT_DATA_STATUS_OPTIONS = ['APPROVED', 'REJECTED'];
 
 // โหลดข้อมูลย่อยของสถาบันที่จัดสอบตามประเภท — มหาวิทยาลัย: คณะ > สาขา, ปวส.: สาขา, โรงเรียน: สายการเรียน/ห้องเรียน
 async function loadInstitutionChildren(inst) {
@@ -356,7 +358,7 @@ export default function ConditionalReportTab() {
               <option key={key} value={key}>{label}</option>
             ))}
             {filters.category === 'PAYMENT' && PAYMENT_DATA_STATUS_OPTIONS.map((key) => (
-              <option key={key} value={key}>{statusLabelTH(key, PAYMENT_STATUS_TH)}</option>
+              <option key={key} value={key}>{statusLabelTH(key, ENROLLMENT_HISTORY_STATUS_LABEL)}</option>
             ))}
           </select>
         </div>
@@ -642,8 +644,8 @@ export default function ConditionalReportTab() {
               <div className="ar-summary-chips">
                 <div className="ar-chip"><span>จำนวนรายการ</span><strong>{formatNumber(report.totalCount)}</strong></div>
                 <div className="ar-chip"><span>ยอดรวม</span><strong>{formatCurrency(report.totalAmount)}</strong></div>
-                <div className="ar-chip"><span>ชำระแล้ว</span><strong>{formatCurrency(report.paidAmount)}</strong></div>
-                <div className="ar-chip"><span>รอตรวจสอบ</span><strong>{formatCurrency(report.pendingAmount)}</strong></div>
+                <div className="ar-chip"><span>ชำระเงินเรียบร้อยแล้ว</span><strong>{formatCurrency(report.approvedAmount)}</strong></div>
+                <div className="ar-chip"><span>ปฏิเสธ</span><strong>{formatCurrency(report.rejectedAmount)}</strong></div>
               </div>
 
               <section className="ar-card">
@@ -678,7 +680,7 @@ export default function ConditionalReportTab() {
                             </td>
                             <td className="ar-num">{formatCurrency(i.price)}</td>
                             <td>{PAYMENT_METHOD_TH[i.paymentMethod] || '-'}</td>
-                            <td>{statusLabelTH(i.paymentStatus, PAYMENT_STATUS_TH)}</td>
+                            <td>{statusLabelTH(i.status, ENROLLMENT_HISTORY_STATUS_LABEL)}</td>
                             <td>{i.approvedBy || '-'}</td>
                             <td>{formatDateTime(i.approvedAt)}</td>
                           </tr>

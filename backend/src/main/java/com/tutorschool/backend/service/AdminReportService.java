@@ -9,7 +9,6 @@ import com.tutorschool.backend.dto.response.StudentReportResponse;
 import com.tutorschool.backend.dto.response.TutorReportResponse;
 import com.tutorschool.backend.entity.CourseStatus;
 import com.tutorschool.backend.entity.EnrollmentStatus;
-import com.tutorschool.backend.entity.PaymentStatus;
 import com.tutorschool.backend.entity.PaymentVerificationStatus;
 
 import java.time.LocalDate;
@@ -31,5 +30,5 @@ public interface AdminReportService {
     CourseReportResponse getCourseReport(LocalDate dateFrom, LocalDate dateTo, Long courseId, CourseStatus status);
 
     PaymentReportResponse getPaymentReport(LocalDate dateFrom, LocalDate dateTo, Long courseId,
-                                            PaymentStatus paymentStatus, Long studentId);
+                                            EnrollmentStatus status, Long studentId);
 }

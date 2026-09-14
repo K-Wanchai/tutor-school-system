@@ -71,19 +71,20 @@ public interface EnrollmentRepository extends JpaRepository<Enrollment, Long> {
                                       @Param("status") EnrollmentStatus status,
                                       @Param("studentId") Long studentId);
 
-    // รายงานข้อมูลการชำระเงิน — เหมือน searchForReport แต่กรองตามสถานะการชำระเงิน (paymentStatus)
-    // แทนสถานะใบสมัคร (status) เพราะข้อมูลการชำระเงินจริงของระบบอยู่ที่ฟิลด์นี้ของ Enrollment ทั้งหมด
-    // (ตาราง Payment แยกต่างหากไม่ถูกใช้งานโดย flow อนุมัติการชำระเงินจริง)
+    // รายงานข้อมูลการชำระเงิน — เหมือน searchForReport แต่จำกัดเฉพาะใบสมัครที่แอดมินตรวจสอบจบแล้ว
+    // (APPROVED = ชำระเงินเรียบร้อยแล้ว, REJECTED = ปฏิเสธ) เพราะ "ข้อมูลการชำระเงิน" ควรมีแค่ผลสรุป
+    // ไม่รวมรายการที่ยังรอตรวจสอบ/รอแก้ไขสลิป — status ให้กรองซ้ำแคบลงเหลือแค่ค่าใดค่าหนึ่งในสองนี้ได้
     @Query("SELECT e FROM Enrollment e " +
             "WHERE e.enrollmentDate >= COALESCE(:dateFrom, e.enrollmentDate) " +
             "AND e.enrollmentDate <= COALESCE(:dateTo, e.enrollmentDate) " +
             "AND e.course.id = COALESCE(:courseId, e.course.id) " +
-            "AND e.paymentStatus = COALESCE(:paymentStatus, e.paymentStatus) " +
+            "AND e.status IN ('APPROVED', 'REJECTED') " +
+            "AND e.status = COALESCE(:status, e.status) " +
             "AND e.student.id = COALESCE(:studentId, e.student.id) " +
             "ORDER BY e.enrollmentDate ASC")
     List<Enrollment> searchForPaymentReport(@Param("dateFrom") LocalDateTime dateFrom,
                                              @Param("dateTo") LocalDateTime dateTo,
                                              @Param("courseId") Long courseId,
-                                             @Param("paymentStatus") PaymentStatus paymentStatus,
+                                             @Param("status") EnrollmentStatus status,
                                              @Param("studentId") Long studentId);
 }
