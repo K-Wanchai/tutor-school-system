@@ -58,7 +58,6 @@ public class AdminReportServiceImpl implements AdminReportService {
     public AdminReportResponse getOverviewReport() {
         List<Course> courses = courseRepository.findAll();
         List<Enrollment> enrollments = enrollmentRepository.findAll();
-        List<Payment> payments = paymentRepository.findAll();
         List<CourseEvaluation> evaluations = courseEvaluationRepository.findAll();
 
         Map<Long, Long> activeEnrollmentByCourse = enrollments.stream()
@@ -91,9 +90,11 @@ public class AdminReportServiceImpl implements AdminReportService {
                 .limit(5)
                 .toList();
 
-        BigDecimal totalRevenue = payments.stream()
-                .filter(p -> p.getPaymentStatus() == PaymentVerificationStatus.VERIFIED && p.getAmount() != null)
-                .map(Payment::getAmount)
+        // รายได้ที่ยืนยันแล้ว = ยอดของใบสมัครที่แอดมินอนุมัติแล้ว (Enrollment.status == APPROVED)
+        // ไม่ใช้ตาราง Payment เพราะ flow อนุมัติการชำระเงินจริงไม่เคยเขียนสถานะ VERIFIED ลงตารางนั้น
+        BigDecimal totalRevenue = enrollments.stream()
+                .filter(e -> e.getStatus() == EnrollmentStatus.APPROVED && e.getFinalAmount() != null)
+                .map(Enrollment::getFinalAmount)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
 
         double averageRating = evaluations.stream()
