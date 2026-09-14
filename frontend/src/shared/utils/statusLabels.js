@@ -31,7 +31,7 @@ export const PAYMENT_STATUS_TH = {
   FAILED: 'ชำระเงินไม่สำเร็จ',
   PENDING: 'รอดำเนินการ',
   VERIFIED: 'ยืนยันแล้ว',
-  REJECTED: 'ปฏิเสธ',
+  REJECTED: 'ปฏิเสธการชำระเงินแล้ว',
   OVERDUE: 'เกินกำหนด',
 };
 

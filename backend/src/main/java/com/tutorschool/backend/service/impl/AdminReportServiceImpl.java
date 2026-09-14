@@ -112,7 +112,7 @@ public class AdminReportServiceImpl implements AdminReportService {
                 .limit(5)
                 .toList();
 
-        // รายได้ที่ยืนยันแล้ว = ยอดของใบสมัครที่ชำระเงินเรียบร้อยแล้ว (APPROVED หรือคอร์สสอนจบแล้ว COMPLETED)
+        // รายได้ที่ยืนยันแล้ว = ยอดของใบสมัครที่ยืนยันการชำระเงินแล้ว (APPROVED หรือคอร์สสอนจบแล้ว COMPLETED)
         // ต้องนับ COMPLETED ด้วยเพื่อให้ตรงกับหน้าประวัติการชำระเงิน (ดู getEnrollmentHistoryStatus ฝั่ง frontend)
         // ไม่ใช้ตาราง Payment เพราะ flow อนุมัติการชำระเงินจริงไม่เคยเขียนสถานะ VERIFIED ลงตารางนั้น
         BigDecimal totalRevenue = enrollments.stream()
@@ -304,7 +304,7 @@ public class AdminReportServiceImpl implements AdminReportService {
         List<Enrollment> allReviewed = enrollmentRepository.searchForPaymentReport(
                 startOfDay(dateFrom), endOfDay(dateTo), courseId, studentId);
 
-        // "ชำระเงินเรียบร้อยแล้ว" ต้องนับทั้ง APPROVED และ COMPLETED (คอร์สสอนจบแล้ว) เป็นกลุ่มเดียวกัน
+        // "ยืนยันการชำระเงินแล้ว" ต้องนับทั้ง APPROVED และ COMPLETED (คอร์สสอนจบแล้ว) เป็นกลุ่มเดียวกัน
         // เหมือนกับที่ getEnrollmentHistoryStatus ฝั่ง frontend ทำ ไม่งั้นจำนวน/ยอดจะไม่ตรงกับหน้า
         // ประวัติการชำระเงิน — ตัวกรอง status ที่ผู้ใช้เลือก (APPROVED หรือ REJECTED) จึงต้องแปลผ่าน bucket นี้
         List<Enrollment> enrollments = allReviewed.stream()
@@ -351,7 +351,7 @@ public class AdminReportServiceImpl implements AdminReportService {
     }
 
     // จับกลุ่มสถานะแบบเดียวกับ getEnrollmentHistoryStatus ฝั่ง frontend — APPROVED/COMPLETED ถือเป็น
-    // "ชำระเงินเรียบร้อยแล้ว" กลุ่มเดียวกัน (แทนด้วย EnrollmentStatus.APPROVED), ที่เหลือคือ REJECTED
+    // "ยืนยันการชำระเงินแล้ว" กลุ่มเดียวกัน (แทนด้วย EnrollmentStatus.APPROVED), ที่เหลือคือ REJECTED
     private EnrollmentStatus paymentHistoryBucket(EnrollmentStatus status) {
         return status == EnrollmentStatus.COMPLETED ? EnrollmentStatus.APPROVED : status;
     }

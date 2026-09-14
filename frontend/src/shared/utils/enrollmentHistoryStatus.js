@@ -11,8 +11,8 @@ export const ENROLLMENT_HISTORY_STATUSES = ['PENDING_VERIFICATION', 'NEEDS_REVIS
 export const ENROLLMENT_HISTORY_STATUS_LABEL = {
   PENDING_VERIFICATION: 'รอการยืนยันชำระเงิน',
   NEEDS_REVISION:       'แก้ไขสลิป',
-  APPROVED:             'ชำระเงินเรียบร้อยแล้ว',
-  REJECTED:             'ปฏิเสธ',
+  APPROVED:             'ยืนยันการชำระเงินแล้ว',
+  REJECTED:             'ปฏิเสธการชำระเงินแล้ว',
   CANCELLED:            'ยกเลิก',
 };
 

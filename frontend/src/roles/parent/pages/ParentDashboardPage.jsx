@@ -6,7 +6,7 @@ import '../../student/pages/StudentDashboardPage.css';
 
 const ENROLLMENT_STATUS_LABELS = {
   PENDING: 'รออนุมัติ',
-  APPROVED: 'ชำระเงินเรียบร้อยแล้ว',
+  APPROVED: 'ยืนยันการชำระเงินแล้ว',
   REJECTED: 'ถูกปฏิเสธ',
   CANCELLED: 'ยกเลิก',
   COMPLETED: 'เรียนจบแล้ว',
@@ -137,7 +137,7 @@ export default function ParentDashboardPage() {
             <p>คอร์สเรียนของบุตรหลาน</p>
             <h2>{courseSummary.total}</h2>
             <span>
-              ชำระเงินเรียบร้อยแล้ว {courseSummary.approved} คอร์ส · รออนุมัติ {courseSummary.pending} คอร์ส
+              ยืนยันการชำระเงินแล้ว {courseSummary.approved} คอร์ส · รออนุมัติ {courseSummary.pending} คอร์ส
             </span>
           </div>
         </button>

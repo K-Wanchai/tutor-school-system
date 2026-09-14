@@ -12,7 +12,7 @@ export const LEVEL_LABEL = {
 
 const ENROLLMENT_STATUS_LABEL = {
   PENDING: 'รอดำเนินการ',
-  APPROVED: 'ชำระเงินเรียบร้อยแล้ว',
+  APPROVED: 'ยืนยันการชำระเงินแล้ว',
   REJECTED: 'ปฏิเสธ',
   CANCELLED: 'ยกเลิก',
   COMPLETED: 'เสร็จสิ้น',

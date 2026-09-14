@@ -255,7 +255,7 @@ export default function AdminPaymentManagementPage() {
       <div className="pm-stats-grid">
         <div className="pm-stat-card pm-stat-card--success">
           <span className="pm-stat-value">{loading ? '...' : stats.count}</span>
-          <span className="pm-stat-label">ชำระเงินเรียบร้อยแล้ว</span>
+          <span className="pm-stat-label">ยืนยันการชำระเงินแล้ว</span>
         </div>
         <div className="pm-stat-card">
           <span className="pm-stat-value">{loading ? '...' : formatCurrency(stats.revenue)}</span>
@@ -263,7 +263,7 @@ export default function AdminPaymentManagementPage() {
         </div>
         <div className="pm-stat-card pm-stat-card--error">
           <span className="pm-stat-value">{loading ? '...' : stats.rejected}</span>
-          <span className="pm-stat-label">ปฏิเสธ</span>
+          <span className="pm-stat-label">ปฏิเสธการชำระเงินแล้ว</span>
         </div>
         <div className="pm-stat-card pm-stat-card--warning">
           <span className="pm-stat-value">{loading ? '...' : stats.needsRevision}</span>

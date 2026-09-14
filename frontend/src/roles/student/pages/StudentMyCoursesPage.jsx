@@ -6,7 +6,7 @@ import './StudentMyCoursesPage.css';
 
 const ENROLLMENT_STATUS_LABELS = {
   PENDING: 'รออนุมัติ',
-  APPROVED: 'ชำระเงินเรียบร้อยแล้ว',
+  APPROVED: 'ยืนยันการชำระเงินแล้ว',
   REJECTED: 'ถูกปฏิเสธ',
   CANCELLED: 'ยกเลิก',
   COMPLETED: 'เรียนจบแล้ว',
@@ -37,7 +37,7 @@ const FILTERS = [
   },
   {
     key: 'APPROVED',
-    label: 'ชำระเงินเรียบร้อยแล้ว',
+    label: 'ยืนยันการชำระเงินแล้ว',
   },
 ];
 
@@ -232,7 +232,7 @@ function StudentMyCoursesPage() {
         </article>
 
         <article className="smc-summary-card">
-          <span>ชำระเงินเรียบร้อยแล้ว</span>
+          <span>ยืนยันการชำระเงินแล้ว</span>
           <strong>{summary.approved}</strong>
         </article>
 

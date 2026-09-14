@@ -72,11 +72,11 @@ public interface EnrollmentRepository extends JpaRepository<Enrollment, Long> {
                                       @Param("studentId") Long studentId);
 
     // รายงานข้อมูลการชำระเงิน — เหมือน searchForReport แต่จำกัดเฉพาะใบสมัครที่แอดมินตรวจสอบจบแล้ว
-    // (APPROVED/COMPLETED = ชำระเงินเรียบร้อยแล้ว, REJECTED = ปฏิเสธ) เพราะ "ข้อมูลการชำระเงิน" ควรมีแค่
+    // (APPROVED/COMPLETED = ยืนยันการชำระเงินแล้ว, REJECTED = ปฏิเสธ) เพราะ "ข้อมูลการชำระเงิน" ควรมีแค่
     // ผลสรุป ไม่รวมรายการที่ยังรอตรวจสอบ/รอแก้ไขสลิป — ต้องรวม COMPLETED ด้วยไม่งั้นจำนวนจะไม่ตรงกับ
-    // หน้าประวัติการชำระเงิน (getEnrollmentHistoryStatus ฝั่ง frontend นับ COMPLETED เป็น "ชำระเงินเรียบร้อยแล้ว"
+    // หน้าประวัติการชำระเงิน (getEnrollmentHistoryStatus ฝั่ง frontend นับ COMPLETED เป็น "ยืนยันการชำระเงินแล้ว"
     // เหมือนกัน) — การกรองแคบลงเหลือ APPROVED หรือ REJECTED อย่างใดอย่างหนึ่งทำที่ service layer แทน
-    // เพราะ "ชำระเงินเรียบร้อยแล้ว" ต้องครอบคลุมทั้ง APPROVED และ COMPLETED ซึ่ง COALESCE เทียบเท่าค่าเดียวไม่ได้
+    // เพราะ "ยืนยันการชำระเงินแล้ว" ต้องครอบคลุมทั้ง APPROVED และ COMPLETED ซึ่ง COALESCE เทียบเท่าค่าเดียวไม่ได้
     @Query("SELECT e FROM Enrollment e " +
             "WHERE e.enrollmentDate >= COALESCE(:dateFrom, e.enrollmentDate) " +
             "AND e.enrollmentDate <= COALESCE(:dateTo, e.enrollmentDate) " +

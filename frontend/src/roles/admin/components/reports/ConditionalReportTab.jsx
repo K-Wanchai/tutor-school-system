@@ -30,7 +30,7 @@ const PAYMENT_METHOD_TH = {
   CREDIT_CARD: 'บัตรเครดิต',
 };
 
-// "ข้อมูลการชำระเงิน" แสดงเฉพาะใบสมัครที่แอดมินตรวจสอบจบแล้ว — ชำระเงินเรียบร้อยแล้ว (APPROVED)
+// "ข้อมูลการชำระเงิน" แสดงเฉพาะใบสมัครที่แอดมินตรวจสอบจบแล้ว — ยืนยันการชำระเงินแล้ว (APPROVED)
 // หรือปฏิเสธ (REJECTED) เท่านั้น ไม่รวมรายการที่ยังรอตรวจสอบ/รอแก้ไขสลิป
 const PAYMENT_DATA_STATUS_OPTIONS = ['APPROVED', 'REJECTED'];
 
@@ -690,8 +690,8 @@ export default function ConditionalReportTab() {
               <div className="ar-summary-chips">
                 <div className="ar-chip"><span>จำนวนรายการ</span><strong>{formatNumber(report.totalCount)}</strong></div>
                 <div className="ar-chip"><span>ยอดรวม</span><strong>{formatCurrency(report.totalAmount)}</strong></div>
-                <div className="ar-chip"><span>ชำระเงินเรียบร้อยแล้ว</span><strong>{formatCurrency(report.approvedAmount)}</strong></div>
-                <div className="ar-chip"><span>ปฏิเสธ</span><strong>{formatCurrency(report.rejectedAmount)}</strong></div>
+                <div className="ar-chip"><span>ยืนยันการชำระเงินแล้ว</span><strong>{formatCurrency(report.approvedAmount)}</strong></div>
+                <div className="ar-chip"><span>ปฏิเสธการชำระเงินแล้ว</span><strong>{formatCurrency(report.rejectedAmount)}</strong></div>
               </div>
 
               <section className="ar-card">
