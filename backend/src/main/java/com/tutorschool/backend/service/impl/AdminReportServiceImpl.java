@@ -364,7 +364,6 @@ public class AdminReportServiceImpl implements AdminReportService {
                     long late = list.stream().filter(a -> a.getStatus() == AttendanceStatus.LATE).count();
                     long absent = list.stream().filter(a -> a.getStatus() == AttendanceStatus.ABSENT).count();
                     long leave = list.stream().filter(a -> a.getStatus() == AttendanceStatus.LEAVE).count();
-                    long excused = list.stream().filter(a -> a.getStatus() == AttendanceStatus.EXCUSED).count();
                     long total = list.size();
                     // อัตราเข้าเรียน = (เข้าเรียน + มาสาย) / จำนวนครั้งทั้งหมด — มาสายยังถือว่าเข้าเรียน
                     double rate = total == 0 ? 0.0 : Math.round((present + late) * 1000.0 / total) / 10.0;
@@ -381,7 +380,6 @@ public class AdminReportServiceImpl implements AdminReportService {
                             .lateCount(late)
                             .absentCount(absent)
                             .leaveCount(leave)
-                            .excusedCount(excused)
                             .attendanceRate(rate)
                             .build();
                 })

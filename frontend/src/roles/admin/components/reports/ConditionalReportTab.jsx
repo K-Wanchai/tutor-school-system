@@ -736,13 +736,12 @@ export default function ConditionalReportTab() {
                         <th className="ar-num">{ATTENDANCE_STATUS_TH.LATE}</th>
                         <th className="ar-num">{ATTENDANCE_STATUS_TH.ABSENT}</th>
                         <th className="ar-num">{ATTENDANCE_STATUS_TH.LEAVE}</th>
-                        <th className="ar-num">{ATTENDANCE_STATUS_TH.EXCUSED}</th>
                         <th className="ar-num">อัตราเข้าเรียน</th>
                       </tr>
                     </thead>
                     <tbody>
                       {(report.items || []).length === 0 ? (
-                        <tr><td colSpan={9} className="ar-empty">ไม่พบข้อมูลตามเงื่อนไขที่เลือก</td></tr>
+                        <tr><td colSpan={8} className="ar-empty">ไม่พบข้อมูลตามเงื่อนไขที่เลือก</td></tr>
                       ) : (
                         report.items.map((i) => (
                           <tr key={`${i.studentId}-${i.courseId}`}>
@@ -759,7 +758,6 @@ export default function ConditionalReportTab() {
                             <td className="ar-num">{formatNumber(i.lateCount)}</td>
                             <td className="ar-num">{formatNumber(i.absentCount)}</td>
                             <td className="ar-num">{formatNumber(i.leaveCount)}</td>
-                            <td className="ar-num">{formatNumber(i.excusedCount)}</td>
                             <td className="ar-num">{i.attendanceRate}%</td>
                           </tr>
                         ))

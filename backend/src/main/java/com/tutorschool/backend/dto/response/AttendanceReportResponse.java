@@ -37,7 +37,6 @@ public class AttendanceReportResponse {
         private long lateCount;
         private long absentCount;
         private long leaveCount;
-        private long excusedCount;
         private double attendanceRate;
     }
 }
