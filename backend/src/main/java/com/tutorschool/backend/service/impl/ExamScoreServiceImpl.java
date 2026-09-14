@@ -52,6 +52,18 @@ public class ExamScoreServiceImpl implements ExamScoreService {
     }
 
     @Override
+    @Transactional(readOnly = true)
+    public List<ExamManualScoreResponse> getCourseScoresForStudent(Long courseId, Long studentId) {
+        if (!enrollmentRepository.existsByStudentIdAndCourseId(studentId, courseId)) {
+            throw new ExamAccessDeniedException("Student is not enrolled in this course");
+        }
+        return manualScoreRepository.findByExamCourseId(courseId).stream()
+                .filter(s -> s.getStudent().getId().equals(studentId))
+                .map(this::toResponse)
+                .toList();
+    }
+
+    @Override
     @Transactional
     public ExamManualScoreResponse saveScore(SaveExamScoreRequest request, String tutorEmail) {
         Tutor tutor = getTutor(tutorEmail);

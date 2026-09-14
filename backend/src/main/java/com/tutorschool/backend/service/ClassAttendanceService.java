@@ -19,6 +19,12 @@ public interface ClassAttendanceService {
     // นักเรียนดูการเช็คชื่อของตัวเองทุกคอร์ส
     List<ClassAttendanceResponse> getMyAttendance(String studentEmail);
 
+    // การเช็คชื่อของนักเรียนคนหนึ่งทุกคอร์ส ระบุด้วย studentId ตรงๆ — ใช้โดยผู้ปกครองดูของบุตรหลาน
+    List<ClassAttendanceResponse> getAttendanceByStudentId(Long studentId);
+
+    // รายการคาบเรียนของคอร์ส สำหรับนักเรียนคนหนึ่ง ระบุด้วย studentId ตรงๆ — ใช้โดยผู้ปกครองดูของบุตรหลาน
+    List<CourseSessionResponse> getCourseSessionsForStudent(Long courseId, Long studentId);
+
     ClassAttendanceResponse saveAttendance(SaveClassAttendanceRequest request, String tutorEmail);
 
     void deleteAttendance(Long courseId, Long studentId, LocalDate sessionDate, String tutorEmail);

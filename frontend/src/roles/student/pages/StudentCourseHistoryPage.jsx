@@ -143,7 +143,7 @@ export default function StudentCourseHistoryPage() {
             <table className="smc-table">
               <thead>
                 <tr>
-                  <th>รหัสสมัคร</th>
+                  <th>รหัสสมัครเรียน</th>
                   <th>รหัสคอร์ส</th>
                   <th>ชื่อคอร์ส</th>
                   <th>ผู้สอน</th>

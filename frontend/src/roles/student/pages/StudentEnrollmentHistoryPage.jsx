@@ -159,8 +159,9 @@ export default function StudentEnrollmentHistoryPage() {
           <table className="hist-table">
             <thead>
               <tr>
-                <th>รหัส</th>
-                <th>คอร์ส</th>
+                <th>รหัสการสมัครเรียน</th>
+                <th>รหัสคอร์ส</th>
+                <th>ชื่อคอร์ส</th>
                 <th>วันที่ดำเนินการ</th>
                 <th>ยอดชำระ</th>
                 <th>สถานะ</th>
@@ -174,9 +175,9 @@ export default function StudentEnrollmentHistoryPage() {
                 return (
                   <tr key={en.id}>
                     <td><span className="hist-code">{en.enrollmentCode}</span></td>
+                    <td><span className="hist-code">{en.courseCode || '-'}</span></td>
                     <td className="hist-td-course">
                       <strong>{en.courseName}</strong>
-                      {en.courseCode && <span className="hist-course-code">{en.courseCode}</span>}
                     </td>
                     <td className="hist-td-date">{fmtDate(en.enrollmentDate)}</td>
                     <td className="hist-td-amount">{fmt(en.finalAmount)}</td>

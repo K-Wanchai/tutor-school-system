@@ -65,9 +65,22 @@ public class ClassAttendanceServiceImpl implements ClassAttendanceService {
         } else if (currentUser.getRole() == Role.STUDENT) {
             requireEnrolled(course, currentUser.getEmail());
         }
+        return computeSessions(course);
+    }
 
+    @Override
+    @Transactional(readOnly = true)
+    public List<CourseSessionResponse> getCourseSessionsForStudent(Long courseId, Long studentId) {
+        Course course = getCourse(courseId);
+        if (!enrollmentRepository.existsByStudentIdAndCourseId(studentId, courseId)) {
+            throw new ExamAccessDeniedException("Student is not enrolled in this course");
+        }
+        return computeSessions(course);
+    }
+
+    private List<CourseSessionResponse> computeSessions(Course course) {
         Map<String, LocalTime[]> daySlots = new HashMap<>();
-        for (CourseScheduleDay pattern : courseScheduleDayRepository.findByCourseId(courseId)) {
+        for (CourseScheduleDay pattern : courseScheduleDayRepository.findByCourseId(course.getId())) {
             daySlots.put(pattern.getDayOfWeek(), new LocalTime[]{pattern.getStartTime(), pattern.getEndTime()});
         }
         if (daySlots.isEmpty() || course.getCourseStartDate() == null || course.getTotalHours() == null) {
@@ -97,7 +110,13 @@ public class ClassAttendanceServiceImpl implements ClassAttendanceService {
                 .orElseThrow(() -> new ResourceNotFoundException("User not found: " + studentEmail));
         Student student = studentRepository.findByUserId(user.getId())
                 .orElseThrow(() -> new ResourceNotFoundException("Student profile not found for current user"));
-        return attendanceRepository.findByStudentId(student.getId()).stream()
+        return getAttendanceByStudentId(student.getId());
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<ClassAttendanceResponse> getAttendanceByStudentId(Long studentId) {
+        return attendanceRepository.findByStudentId(studentId).stream()
                 .map(this::toResponse)
                 .toList();
     }

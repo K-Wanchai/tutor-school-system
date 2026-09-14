@@ -12,6 +12,9 @@ public interface ExamScoreService {
     // STUDENT ดูได้เฉพาะคะแนนของตัวเองในคอร์สที่ลงทะเบียน
     List<ExamManualScoreResponse> getCourseScores(Long courseId, User currentUser);
 
+    // คะแนนสอบของนักเรียนคนหนึ่งในคอร์สนี้ ระบุด้วย studentId ตรงๆ — ใช้โดยผู้ปกครองดูของบุตรหลาน
+    List<ExamManualScoreResponse> getCourseScoresForStudent(Long courseId, Long studentId);
+
     ExamManualScoreResponse saveScore(SaveExamScoreRequest request, String tutorEmail);
 
     void deleteScore(Long examId, Long studentId, String tutorEmail);

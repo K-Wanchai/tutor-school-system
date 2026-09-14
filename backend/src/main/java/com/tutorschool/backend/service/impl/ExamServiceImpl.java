@@ -111,8 +111,13 @@ public class ExamServiceImpl implements ExamService {
     public List<ExamResponse> getMyExamsAsStudent(Long studentUserId) {
         Student student = studentRepository.findByUserId(studentUserId)
                 .orElseThrow(() -> new ResourceNotFoundException("Student profile not found"));
+        return getExamsByStudentId(student.getId());
+    }
 
-        List<Long> courseIds = enrollmentRepository.findByStudentId(student.getId()).stream()
+    @Override
+    @Transactional(readOnly = true)
+    public List<ExamResponse> getExamsByStudentId(Long studentId) {
+        List<Long> courseIds = enrollmentRepository.findByStudentId(studentId).stream()
                 .filter(e -> e.getStatus() == EnrollmentStatus.APPROVED || e.getStatus() == EnrollmentStatus.COMPLETED)
                 .map(e -> e.getCourse().getId())
                 .toList();

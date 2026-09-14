@@ -25,6 +25,9 @@ public interface ExamService {
     List<ExamResponse> getMyExamsAsStudent(Long studentUserId);
     List<ExamResponse> getMyExamsAsTutor(String teacherEmail);
 
+    // ตารางสอบของนักเรียนคนหนึ่ง ระบุด้วย studentId ตรงๆ (ไม่ผ่าน userId) — ใช้โดยผู้ปกครองดูของบุตรหลาน
+    List<ExamResponse> getExamsByStudentId(Long studentId);
+
     // เรียกโดย ExamScheduler — เปิด/ปิดข้อสอบอัตโนมัติตาม startTime/endTime ที่ตั้งไว้
     void autoTransitionExams();
 }
