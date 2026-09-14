@@ -5,6 +5,7 @@ import com.tutorschool.backend.dto.response.AdminReportResponse.CourseReportItem
 import com.tutorschool.backend.dto.response.CourseReportResponse;
 import com.tutorschool.backend.dto.response.EnrollmentReportResponse;
 import com.tutorschool.backend.dto.response.EnrollmentReportResponse.EnrollmentReportItem;
+import com.tutorschool.backend.dto.response.PaymentReportResponse;
 import com.tutorschool.backend.dto.response.RevenueReportResponse;
 import com.tutorschool.backend.dto.response.RevenueReportResponse.RevenueReportItem;
 import com.tutorschool.backend.dto.response.StudentReportResponse;
@@ -278,6 +279,55 @@ public class AdminReportServiceImpl implements AdminReportService {
                         .map(c -> courseMapper.toResponse(
                                 c, enrollmentRepository.countByCourseIdAndStatusIn(c.getId(), ACTIVE_ENROLLMENT_STATUSES)))
                         .toList())
+                .build();
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public PaymentReportResponse getPaymentReport(LocalDate dateFrom, LocalDate dateTo, Long courseId,
+                                                   com.tutorschool.backend.entity.PaymentStatus paymentStatus,
+                                                   Long studentId) {
+        List<Enrollment> enrollments = enrollmentRepository.searchForPaymentReport(
+                startOfDay(dateFrom), endOfDay(dateTo), courseId, paymentStatus, studentId);
+
+        List<PaymentReportResponse.PaymentReportItem> items = enrollments.stream()
+                .map(e -> PaymentReportResponse.PaymentReportItem.builder()
+                        .enrollmentId(e.getId())
+                        .enrollmentCode(e.getEnrollmentCode())
+                        .enrollmentDate(e.getEnrollmentDate())
+                        .studentName(studentFullName(e.getStudent()))
+                        .studentCode(e.getStudent() != null ? e.getStudent().getStudentCode() : null)
+                        .courseId(e.getCourse() != null ? e.getCourse().getId() : null)
+                        .courseName(e.getCourse() != null ? e.getCourse().getCourseName() : null)
+                        .courseCode(e.getCourse() != null ? e.getCourse().getCourseCode() : null)
+                        .amount(e.getAmount())
+                        .discountAmount(e.getDiscountAmount())
+                        .finalAmount(e.getFinalAmount())
+                        .paymentMethod(e.getPaymentMethod() != null ? e.getPaymentMethod().name() : null)
+                        .paymentStatus(e.getPaymentStatus() != null ? e.getPaymentStatus().name() : null)
+                        .approvedBy(e.getApprovedBy())
+                        .approvedAt(e.getApprovedAt())
+                        .build())
+                .toList();
+
+        BigDecimal totalAmount = sumAmount(enrollments, Enrollment::getFinalAmount);
+        BigDecimal paidAmount = sumAmount(
+                enrollments.stream()
+                        .filter(e -> e.getPaymentStatus() == com.tutorschool.backend.entity.PaymentStatus.PAID)
+                        .toList(),
+                Enrollment::getFinalAmount);
+        BigDecimal pendingAmount = sumAmount(
+                enrollments.stream()
+                        .filter(e -> e.getPaymentStatus() == com.tutorschool.backend.entity.PaymentStatus.PENDING_VERIFICATION)
+                        .toList(),
+                Enrollment::getFinalAmount);
+
+        return PaymentReportResponse.builder()
+                .totalCount(enrollments.size())
+                .totalAmount(totalAmount)
+                .paidAmount(paidAmount)
+                .pendingAmount(pendingAmount)
+                .items(items)
                 .build();
     }
 }

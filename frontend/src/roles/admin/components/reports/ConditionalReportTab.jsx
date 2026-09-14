@@ -3,7 +3,7 @@ import CalendarDateInput from '../../../../shared/components/CalendarDateInput';
 import { getStudents } from '../../services/adminStudentService';
 import { getTutors } from '../../services/adminTutorService';
 import { getCourses } from '../../services/adminCourseService';
-import { getStudentReport, getTutorReport, getCourseReport, getEnrollmentReport } from '../../services/adminReportService';
+import { getStudentReport, getTutorReport, getCourseReport, getEnrollmentReport, getPaymentStatusReport } from '../../services/adminReportService';
 import { getInstitutionProfile } from '../../../../shared/services/institutionService';
 import { getExamInstitutions, getExamInstitutionById } from '../../services/examInstitutionService';
 import { getFaculties, getMajors } from '../../services/academicFacultyService';
@@ -17,6 +17,16 @@ const EDUCATION_LEVEL_TH = {
   VOCATIONAL_DIPLOMA: 'ปวส.',
   BACHELOR: 'ปริญญาตรี',
 };
+
+const PAYMENT_METHOD_TH = {
+  BANK_TRANSFER: 'โอนเงินผ่านธนาคาร',
+  PROMPTPAY: 'พร้อมเพย์',
+  CASH: 'เงินสด',
+  CREDIT_CARD: 'บัตรเครดิต',
+};
+
+// สถานะการชำระเงินจริงของระบบ (Enrollment.paymentStatus) — ไม่ใช้ค่าจากตาราง Payment ที่แยกไม่ถูกใช้งาน
+const PAYMENT_DATA_STATUS_OPTIONS = ['UNPAID', 'PENDING_VERIFICATION', 'PAID', 'FAILED'];
 
 // โหลดข้อมูลย่อยของสถาบันที่จัดสอบตามประเภท — มหาวิทยาลัย: คณะ > สาขา, ปวส.: สาขา, โรงเรียน: สายการเรียน/ห้องเรียน
 async function loadInstitutionChildren(inst) {
@@ -105,9 +115,9 @@ export default function ConditionalReportTab() {
     setFilters((f) => ({ ...f, specific: value, faculty: '' }));
   }
 
-  // ตัวกรองเฉพาะทางของ "ข้อมูลนักเรียน"/"ข้อมูลสมัครเรียน" — โหลดรายชื่อนักเรียนแบบ lazy ตอนเลือกหมวดนี้ครั้งแรกเท่านั้น
+  // ตัวกรองเฉพาะทางของ "ข้อมูลนักเรียน"/"ข้อมูลสมัครเรียน"/"ข้อมูลการชำระเงิน" — โหลดรายชื่อนักเรียนแบบ lazy ตอนเลือกหมวดนี้ครั้งแรกเท่านั้น
   useEffect(() => {
-    if ((filters.category !== 'STUDENT' && filters.category !== 'ENROLLMENT') || students.length > 0) return;
+    if (!['STUDENT', 'ENROLLMENT', 'PAYMENT'].includes(filters.category) || students.length > 0) return;
     let mounted = true;
     getStudents({ page: 0, size: 5000 })
       .then((data) => { if (mounted) setStudents(asList(data)); })
@@ -125,9 +135,9 @@ export default function ConditionalReportTab() {
     return () => { mounted = false; };
   }, [filters.category, tutors.length]);
 
-  // ตัวกรองเฉพาะทางของ "ข้อมูลคอร์สเรียน"/"ข้อมูลสมัครเรียน" — โหลดรายชื่อคอร์สแบบ lazy ตอนเลือกหมวดนี้ครั้งแรกเท่านั้น
+  // ตัวกรองเฉพาะทางของ "ข้อมูลคอร์สเรียน"/"ข้อมูลสมัครเรียน"/"ข้อมูลการชำระเงิน" — โหลดรายชื่อคอร์สแบบ lazy ตอนเลือกหมวดนี้ครั้งแรกเท่านั้น
   useEffect(() => {
-    if ((filters.category !== 'COURSE' && filters.category !== 'ENROLLMENT') || courses.length > 0) return;
+    if (!['COURSE', 'ENROLLMENT', 'PAYMENT'].includes(filters.category) || courses.length > 0) return;
     let mounted = true;
     getCourses({ page: 0, size: 5000 })
       .then((data) => { if (mounted) setCourses(asList(data)); })
@@ -145,7 +155,7 @@ export default function ConditionalReportTab() {
     return () => { mounted = false; };
   }, [filters.category, examInstitutions.length]);
 
-  const specificOptions = filters.category === 'STUDENT' || filters.category === 'ENROLLMENT'
+  const specificOptions = ['STUDENT', 'ENROLLMENT', 'PAYMENT'].includes(filters.category)
     ? students.map((s) => ({ value: s.id, label: `${s.fullName} (${s.studentCode})` }))
     : filters.category === 'TUTOR'
     ? tutors.map((t) => ({ value: t.id, label: `${t.firstName} ${t.lastName} (${t.tutorCode || ''})` }))
@@ -170,12 +180,12 @@ export default function ConditionalReportTab() {
   }, [isUniversitySpecific, filters.specific]);
 
   const isSearchable = filters.category === 'STUDENT' || filters.category === 'TUTOR'
-    || filters.category === 'COURSE' || filters.category === 'ENROLLMENT'
+    || filters.category === 'COURSE' || filters.category === 'ENROLLMENT' || filters.category === 'PAYMENT'
     || filters.category === 'INSTITUTION' || filters.category === 'EXAM_INSTITUTION';
   const hasSpecificFilter = filters.category === 'STUDENT' || filters.category === 'TUTOR'
-    || filters.category === 'COURSE' || filters.category === 'ENROLLMENT'
+    || filters.category === 'COURSE' || filters.category === 'ENROLLMENT' || filters.category === 'PAYMENT'
     || filters.category === 'EXAM_INSTITUTION';
-  const hasCourseFilter = filters.category === 'ENROLLMENT';
+  const hasCourseFilter = filters.category === 'ENROLLMENT' || filters.category === 'PAYMENT';
 
   // ต้องแสดงข้อมูลครบทุกตัวอักษรในบรรทัดเดียวตอนพิมพ์ ห้ามตัดขึ้นบรรทัดใหม่ — คำนวณ zoom
   // ให้ตารางย่อพอดีความกว้างหน้ากระดาษแทนการ wrap (ดู white-space: nowrap ใน AdminReportsPage.css)
@@ -237,6 +247,15 @@ export default function ConditionalReportTab() {
         setReport(data);
       } else if (filters.category === 'ENROLLMENT') {
         const data = await getEnrollmentReport({
+          dateFrom: filters.dateFrom,
+          dateTo: filters.dateTo,
+          courseId: filters.courseId,
+          status: filters.status,
+          studentId: filters.specific,
+        });
+        setReport(data);
+      } else if (filters.category === 'PAYMENT') {
+        const data = await getPaymentStatusReport({
           dateFrom: filters.dateFrom,
           dateTo: filters.dateTo,
           courseId: filters.courseId,
@@ -311,7 +330,7 @@ export default function ConditionalReportTab() {
             ))}
           </select>
         </div>
-        {/* ตัวกรอง "คอร์ส" — ใช้ได้เฉพาะหมวด "ข้อมูลสมัครเรียน" */}
+        {/* ตัวกรอง "คอร์ส" — ใช้ได้เฉพาะหมวด "ข้อมูลสมัครเรียน"/"ข้อมูลการชำระเงิน" */}
         <div className="ar-filter-field">
           <label>คอร์ส</label>
           <select value={filters.courseId} onChange={(e) => fld('courseId', e.target.value)} disabled={!hasCourseFilter}>
@@ -321,13 +340,13 @@ export default function ConditionalReportTab() {
             ))}
           </select>
         </div>
-        {/* ตัวกรอง "สถานะ" — ใช้ได้เฉพาะหมวด "ข้อมูลคอร์สเรียน"/"ข้อมูลสมัครเรียน" (ตัวเลือกเปลี่ยนความหมายตามหมวด) */}
+        {/* ตัวกรอง "สถานะ" — ใช้ได้เฉพาะหมวดที่มีสถานะ (ตัวเลือกเปลี่ยนความหมายตามหมวด) */}
         <div className="ar-filter-field">
           <label>สถานะ</label>
           <select
             value={filters.status}
             onChange={(e) => fld('status', e.target.value)}
-            disabled={filters.category !== 'COURSE' && filters.category !== 'ENROLLMENT'}
+            disabled={!['COURSE', 'ENROLLMENT', 'PAYMENT'].includes(filters.category)}
           >
             <option value="">ทั้งหมด</option>
             {filters.category === 'COURSE' && Object.entries(COURSE_STATUS_TH).map(([key, label]) => (
@@ -335,6 +354,9 @@ export default function ConditionalReportTab() {
             ))}
             {filters.category === 'ENROLLMENT' && Object.entries(ENROLLMENT_STATUS_TH).map(([key, label]) => (
               <option key={key} value={key}>{label}</option>
+            ))}
+            {filters.category === 'PAYMENT' && PAYMENT_DATA_STATUS_OPTIONS.map((key) => (
+              <option key={key} value={key}>{statusLabelTH(key, PAYMENT_STATUS_TH)}</option>
             ))}
           </select>
         </div>
@@ -595,6 +617,74 @@ export default function ConditionalReportTab() {
                             <td>{statusLabelTH(i.status, ENROLLMENT_STATUS_TH)}</td>
                             <td>{statusLabelTH(i.paymentStatus, PAYMENT_STATUS_TH)}</td>
                             <td className="ar-num">{formatCurrency(i.finalAmount)}</td>
+                          </tr>
+                        ))
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              </section>
+            </div>
+          )}
+
+          {report && filters.category === 'PAYMENT' && (
+            <div id="ar-print-area">
+              <h2 className="ar-print-title">
+                รายงานข้อมูลการชำระเงิน
+                <span>
+                  {filters.dateFrom || filters.dateTo
+                    ? `ช่วงวันที่สมัคร: ${filters.dateFrom ? formatDate(filters.dateFrom) : 'ไม่ระบุ'} ถึง ${filters.dateTo ? formatDate(filters.dateTo) : 'ไม่ระบุ'}`
+                    : 'ทุกช่วงวันที่สมัคร'}
+                  {' · '}พิมพ์เมื่อ {formatDate(new Date())}
+                </span>
+              </h2>
+
+              <div className="ar-summary-chips">
+                <div className="ar-chip"><span>จำนวนรายการ</span><strong>{formatNumber(report.totalCount)}</strong></div>
+                <div className="ar-chip"><span>ยอดรวม</span><strong>{formatCurrency(report.totalAmount)}</strong></div>
+                <div className="ar-chip"><span>ชำระแล้ว</span><strong>{formatCurrency(report.paidAmount)}</strong></div>
+                <div className="ar-chip"><span>รอตรวจสอบ</span><strong>{formatCurrency(report.pendingAmount)}</strong></div>
+              </div>
+
+              <section className="ar-card">
+                <div className="ar-table-wrap">
+                  <table className="ar-table ar-print-table">
+                    <thead>
+                      <tr>
+                        <th>รหัสสมัคร</th>
+                        <th>นักเรียน</th>
+                        <th>คอร์ส</th>
+                        <th className="ar-num">ยอดเต็ม</th>
+                        <th className="ar-num">ส่วนลด</th>
+                        <th className="ar-num">ยอดสุทธิ</th>
+                        <th>วิธีชำระ</th>
+                        <th>สถานะ</th>
+                        <th>ผู้อนุมัติ</th>
+                        <th>วันที่อนุมัติ</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {(report.items || []).length === 0 ? (
+                        <tr><td colSpan={10} className="ar-empty">ไม่พบข้อมูลตามเงื่อนไขที่เลือก</td></tr>
+                      ) : (
+                        report.items.map((i) => (
+                          <tr key={i.enrollmentId}>
+                            <td>{i.enrollmentCode || '-'}</td>
+                            <td>
+                              <strong>{i.studentName || '-'}</strong>
+                              <span className="ar-code">{i.studentCode || ''}</span>
+                            </td>
+                            <td>
+                              <strong>{i.courseName || '-'}</strong>
+                              <span className="ar-code">{i.courseCode || ''}</span>
+                            </td>
+                            <td className="ar-num">{formatCurrency(i.amount)}</td>
+                            <td className="ar-num">{formatCurrency(i.discountAmount)}</td>
+                            <td className="ar-num">{formatCurrency(i.finalAmount)}</td>
+                            <td>{PAYMENT_METHOD_TH[i.paymentMethod] || '-'}</td>
+                            <td>{statusLabelTH(i.paymentStatus, PAYMENT_STATUS_TH)}</td>
+                            <td>{i.approvedBy || '-'}</td>
+                            <td>{formatDateTime(i.approvedAt)}</td>
                           </tr>
                         ))
                       )}

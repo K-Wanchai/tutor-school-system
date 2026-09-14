@@ -100,3 +100,13 @@ export const getCourseReport = async (filters) => {
     throw new Error(apiError('getCourseReport', error), { cause: error });
   }
 };
+
+// ── ข้อมูลการชำระเงิน ──
+export const getPaymentStatusReport = async (filters) => {
+  try {
+    const response = await api.get('/admin/reports/payments-status', { params: cleanParams(filters) });
+    return response.data.data;
+  } catch (error) {
+    throw new Error(apiError('getPaymentStatusReport', error), { cause: error });
+  }
+};

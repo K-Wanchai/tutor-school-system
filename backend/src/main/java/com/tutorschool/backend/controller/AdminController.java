@@ -5,11 +5,13 @@ import com.tutorschool.backend.dto.response.AdminReportResponse;
 import com.tutorschool.backend.dto.response.ApiResponse;
 import com.tutorschool.backend.dto.response.CourseReportResponse;
 import com.tutorschool.backend.dto.response.EnrollmentReportResponse;
+import com.tutorschool.backend.dto.response.PaymentReportResponse;
 import com.tutorschool.backend.dto.response.RevenueReportResponse;
 import com.tutorschool.backend.dto.response.StudentReportResponse;
 import com.tutorschool.backend.dto.response.TutorReportResponse;
 import com.tutorschool.backend.entity.CourseStatus;
 import com.tutorschool.backend.entity.EnrollmentStatus;
+import com.tutorschool.backend.entity.PaymentStatus;
 import com.tutorschool.backend.entity.PaymentVerificationStatus;
 import com.tutorschool.backend.service.AdminDashboardService;
 import com.tutorschool.backend.service.AdminReportService;
@@ -158,6 +160,20 @@ public class AdminController {
             @RequestParam(required = false) CourseStatus status) {
         CourseReportResponse data = adminReportService.getCourseReport(dateFrom, dateTo, courseId, status);
         return ResponseEntity.ok(ApiResponse.success("Course report retrieved", data));
+    }
+
+    // ─── รายงานข้อมูลการชำระเงิน ─────────────────────────────────────────────
+
+    @GetMapping("/reports/payments-status")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<ApiResponse<PaymentReportResponse>> getPaymentReport(
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate dateFrom,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate dateTo,
+            @RequestParam(required = false) Long courseId,
+            @RequestParam(required = false) PaymentStatus status,
+            @RequestParam(required = false) Long studentId) {
+        PaymentReportResponse data = adminReportService.getPaymentReport(dateFrom, dateTo, courseId, status, studentId);
+        return ResponseEntity.ok(ApiResponse.success("Payment report retrieved", data));
     }
 
     // ─── helpers ─────────────────────────────────────────────────────────────
