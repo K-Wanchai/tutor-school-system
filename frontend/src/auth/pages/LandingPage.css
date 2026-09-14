@@ -377,8 +377,9 @@
 }
 
 .lp-examstats-grid {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
   gap: 12px;
   margin-bottom: 26px;
 }
@@ -389,6 +390,8 @@
   border-radius: 14px;
   padding: 16px 14px;
   text-align: left;
+  flex: 1 1 220px;
+  max-width: 250px;
 }
 
 .lp-examstats-rank {
@@ -487,7 +490,6 @@
   .lp-feature-grid { grid-template-columns: repeat(2, 1fr); }
   .lp-contact-grid { grid-template-columns: 1fr; }
   .lp-hero-title { font-size: 34px; }
-  .lp-examstats-grid { grid-template-columns: repeat(2, 1fr); }
 }
 
 @media (max-width: 560px) {
@@ -504,5 +506,5 @@
   .lp-examstats { padding: 56px 16px; }
   .lp-examstats-title { font-size: 22px; }
   .lp-examstats-big { font-size: 38px; }
-  .lp-examstats-grid { grid-template-columns: 1fr; }
+  .lp-examstats-card { flex-basis: 100%; max-width: 320px; }
 }
