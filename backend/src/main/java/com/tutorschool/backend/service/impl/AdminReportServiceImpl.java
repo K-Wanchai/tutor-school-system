@@ -90,10 +90,11 @@ public class AdminReportServiceImpl implements AdminReportService {
                 .limit(5)
                 .toList();
 
-        // รายได้ที่ยืนยันแล้ว = ยอดของใบสมัครที่แอดมินอนุมัติแล้ว (Enrollment.status == APPROVED)
+        // รายได้ที่ยืนยันแล้ว = ยอดของใบสมัครที่ชำระเงินเรียบร้อยแล้ว (APPROVED หรือคอร์สสอนจบแล้ว COMPLETED)
+        // ต้องนับ COMPLETED ด้วยเพื่อให้ตรงกับหน้าประวัติการชำระเงิน (ดู getEnrollmentHistoryStatus ฝั่ง frontend)
         // ไม่ใช้ตาราง Payment เพราะ flow อนุมัติการชำระเงินจริงไม่เคยเขียนสถานะ VERIFIED ลงตารางนั้น
         BigDecimal totalRevenue = enrollments.stream()
-                .filter(e -> e.getStatus() == EnrollmentStatus.APPROVED && e.getFinalAmount() != null)
+                .filter(e -> ACTIVE_ENROLLMENT_STATUSES.contains(e.getStatus()) && e.getFinalAmount() != null)
                 .map(Enrollment::getFinalAmount)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
 
