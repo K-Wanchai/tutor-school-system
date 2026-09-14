@@ -46,7 +46,10 @@ public class PaymentReportResponse {
         private BigDecimal price;
         private String paymentMethod;
         private String status;
-        private String approvedBy;
-        private LocalDateTime approvedAt;
+        // ผู้ดำเนินการ/วันที่ดำเนินการ — ครอบคลุมทั้งอนุมัติและปฏิเสธ เพราะระบบมีแอดมินเป็นผู้ดำเนินการ
+        // ฝ่ายเดียว (ไม่มี rejectedBy/rejectedAt เก็บแยกจริง) กรณีปฏิเสธจึงใช้ "แอดมิน" + updatedAt แทน
+        private String processedBy;
+        private LocalDateTime processedAt;
+        private String note;
     }
 }

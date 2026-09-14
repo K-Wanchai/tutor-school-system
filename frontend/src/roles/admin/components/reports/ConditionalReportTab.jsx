@@ -659,13 +659,14 @@ export default function ConditionalReportTab() {
                         <th className="ar-num">ราคา</th>
                         <th>วิธีชำระ</th>
                         <th>สถานะ</th>
-                        <th>ผู้อนุมัติ</th>
-                        <th>วันที่อนุมัติ</th>
+                        <th>ผู้ดำเนินการ</th>
+                        <th>วันที่ดำเนินการ</th>
+                        <th>หมายเหตุ</th>
                       </tr>
                     </thead>
                     <tbody>
                       {(report.items || []).length === 0 ? (
-                        <tr><td colSpan={8} className="ar-empty">ไม่พบข้อมูลตามเงื่อนไขที่เลือก</td></tr>
+                        <tr><td colSpan={9} className="ar-empty">ไม่พบข้อมูลตามเงื่อนไขที่เลือก</td></tr>
                       ) : (
                         report.items.map((i) => (
                           <tr key={i.enrollmentId}>
@@ -681,8 +682,9 @@ export default function ConditionalReportTab() {
                             <td className="ar-num">{formatCurrency(i.price)}</td>
                             <td>{PAYMENT_METHOD_TH[i.paymentMethod] || '-'}</td>
                             <td>{statusLabelTH(i.status, ENROLLMENT_HISTORY_STATUS_LABEL)}</td>
-                            <td>{i.approvedBy || '-'}</td>
-                            <td>{formatDateTime(i.approvedAt)}</td>
+                            <td>{i.processedBy || '-'}</td>
+                            <td>{formatDateTime(i.processedAt)}</td>
+                            <td>{i.note || '-'}</td>
                           </tr>
                         ))
                       )}

@@ -309,8 +309,9 @@ public class AdminReportServiceImpl implements AdminReportService {
                         .price(e.getFinalAmount())
                         .paymentMethod(e.getPaymentMethod() != null ? e.getPaymentMethod().name() : null)
                         .status(paymentHistoryBucket(e.getStatus()).name())
-                        .approvedBy(e.getApprovedBy())
-                        .approvedAt(e.getApprovedAt())
+                        .processedBy(e.getStatus() == EnrollmentStatus.REJECTED ? "แอดมิน" : e.getApprovedBy())
+                        .processedAt(e.getStatus() == EnrollmentStatus.REJECTED ? e.getUpdatedAt() : e.getApprovedAt())
+                        .note(e.getNote())
                         .build())
                 .toList();
 
