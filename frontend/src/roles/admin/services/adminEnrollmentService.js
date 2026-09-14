@@ -65,7 +65,7 @@ export async function updateEnrollmentStatus(id, status, note) {
   }
 }
 
-// payload: { paymentStatus?, paymentMethod?, discountAmount?, note? }
+// payload: { paymentStatus?, paymentMethod?, note? }
 export async function updatePayment(id, payload) {
   try {
     const res = await api.patch(`/enrollments/${id}/payment`, payload);

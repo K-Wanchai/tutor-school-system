@@ -94,8 +94,6 @@ public class EnrollmentServiceImpl implements EnrollmentService {
         validateEnrollmentEligibility(request.getStudentId(), request.getCourseId(), course);
 
         BigDecimal amount = course.getPrice();
-        BigDecimal discountAmount = BigDecimal.ZERO;
-        BigDecimal finalAmount = amount.subtract(discountAmount);
 
         // Re-enrolling after a previous cancelled or rejected attempt always creates a brand new
         // row (own id/enrollmentCode) — student_id+course_id is not unique, so the old row stays
@@ -105,8 +103,7 @@ public class EnrollmentServiceImpl implements EnrollmentService {
                 .course(course)
                 .paymentMethod(request.getPaymentMethod())
                 .amount(amount)
-                .discountAmount(discountAmount)
-                .finalAmount(finalAmount)
+                .finalAmount(amount)
                 .note(request.getNote())
                 .paymentDeadline(LocalDateTime.now().plusMinutes(getPaymentDeadlineMinutes()))
                 .build();
@@ -151,7 +148,6 @@ public class EnrollmentServiceImpl implements EnrollmentService {
                 .student(student)
                 .course(course)
                 .amount(amount)
-                .discountAmount(BigDecimal.ZERO)
                 .finalAmount(amount)
                 .paymentSlipUrl(request.getPaymentSlipUrl())
                 .paymentStatus(PaymentStatus.PENDING_VERIFICATION)
@@ -186,18 +182,6 @@ public class EnrollmentServiceImpl implements EnrollmentService {
         }
         if (request.getPaymentMethod() != null) {
             enrollment.setPaymentMethod(request.getPaymentMethod());
-        }
-        if (request.getDiscountAmount() != null) {
-            BigDecimal discount = request.getDiscountAmount();
-            if (discount.compareTo(BigDecimal.ZERO) < 0) {
-                throw new IllegalArgumentException("Discount amount cannot be negative");
-            }
-            BigDecimal finalAmount = enrollment.getAmount().subtract(discount);
-            if (finalAmount.compareTo(BigDecimal.ZERO) < 0) {
-                throw new IllegalArgumentException("Final amount cannot be negative");
-            }
-            enrollment.setDiscountAmount(discount);
-            enrollment.setFinalAmount(finalAmount);
         }
         if (request.getNote() != null) {
             enrollment.setNote(request.getNote());

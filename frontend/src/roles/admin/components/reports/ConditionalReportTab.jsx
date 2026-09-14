@@ -14,8 +14,8 @@ import { getExamInstitutions, getExamInstitutionById } from '../../services/exam
 import { getFaculties, getMajors } from '../../services/academicFacultyService';
 import { getVocationalMajors } from '../../services/vocationalMajorService';
 import { getSchoolTracks } from '../../services/schoolTrackService';
-import { statusLabelTH, COURSE_STATUS_TH, ENROLLMENT_STATUS_TH, PAYMENT_STATUS_TH, ATTENDANCE_STATUS_TH } from '../../../../shared/utils/statusLabels';
-import { ENROLLMENT_HISTORY_STATUS_LABEL } from '../../../../shared/utils/enrollmentHistoryStatus';
+import { statusLabelTH, COURSE_STATUS_TH, ENROLLMENT_STATUS_TH, ATTENDANCE_STATUS_TH } from '../../../../shared/utils/statusLabels';
+import { ENROLLMENT_HISTORY_STATUS_LABEL, getEnrollmentHistoryStatus } from '../../../../shared/utils/enrollmentHistoryStatus';
 
 const EDUCATION_LEVEL_TH = {
   LOWER_SECONDARY: 'มัธยมต้น',
@@ -59,6 +59,55 @@ async function loadInstitutionChildren(inst) {
 function asList(pageOrArray) {
   if (Array.isArray(pageOrArray)) return pageOrArray;
   return pageOrArray?.content || [];
+}
+
+// รายการ "คณะ/ระดับชั้น" + "สาขา/สายการเรียน" ของสถาบันเดียว — โครงสร้างต่างกันตามประเภท
+// (มหาวิทยาลัย: คณะ>สาขา, ปวส.: สาขา, โรงเรียน: ระดับชั้น>สายการเรียน/ห้องเรียน) การันตีว่ามีอย่างน้อย 1 แถวเสมอ
+function institutionDetailRows(inst) {
+  if (inst.institutionType === 'UNIVERSITY') {
+    const faculties = inst.faculties || [];
+    if (faculties.length === 0) return [{ category: '-', detail: '-' }];
+    return faculties.flatMap((f) => {
+      const majors = f.majors || [];
+      if (majors.length === 0) return [{ category: f.name || '-', detail: '-' }];
+      return majors.map((m) => ({ category: f.name || '-', detail: m.name || '-' }));
+    });
+  }
+  if (inst.institutionType === 'VOCATIONAL_DIPLOMA') {
+    const majors = inst.majors || [];
+    if (majors.length === 0) return [{ category: '-', detail: '-' }];
+    return majors.map((m) => ({ category: '-', detail: m.name || '-' }));
+  }
+  if (inst.institutionType === 'SECONDARY') {
+    const tracks = inst.tracks || [];
+    if (tracks.length === 0) return [{ category: '-', detail: '-' }];
+    return tracks.map((t) => ({
+      category: EDUCATION_LEVEL_TH[t.educationLevel] || t.educationLevel || '-',
+      detail: t.name || '-',
+    }));
+  }
+  return [{ category: '-', detail: '-' }];
+}
+
+// ยุบข้อมูลสถาบันที่จัดสอบให้เป็นแถวเดียวกันหมด สำหรับตารางรูปแบบเดียวกันทั้งรายงาน — ชื่อ/รหัสสถาบัน
+// แสดงแค่แถวแรกของแต่ละสถาบัน (rowSpan ครอบแถวย่อยทั้งหมด) ไม่ต้องพิมพ์ซ้ำทุกแถว
+function buildExamInstitutionRows(items) {
+  const rows = [];
+  (items || []).forEach((inst) => {
+    const detailRows = institutionDetailRows(inst);
+    detailRows.forEach((d, i) => {
+      rows.push({
+        institutionName: inst.institutionName || '-',
+        institutionCode: inst.institutionCode || '-',
+        typeLabel: inst.institutionTypeLabel || inst.institutionType || '-',
+        province: inst.province || '-',
+        category: d.category,
+        detail: d.detail,
+        isFirstOfInstitution: i === 0,
+      });
+    });
+  });
+  return rows;
 }
 
 // A4 portrait 210mm หัก margin 10mm ทั้งสองข้าง (ดู @page ใน AdminReportsPage.css) แปลงเป็น px ที่ 96dpi
@@ -724,14 +773,13 @@ export default function ConditionalReportTab() {
                         <th>นักเรียน</th>
                         <th>คอร์ส</th>
                         <th>ติวเตอร์</th>
-                        <th>สถานะสมัคร</th>
-                        <th>การชำระเงิน</th>
+                        <th>สถานะ</th>
                         <th className="ar-num">ยอดชำระ</th>
                       </tr>
                     </thead>
                     <tbody>
                       {(report.items || []).length === 0 ? (
-                        <tr><td colSpan={8} className="ar-empty">ไม่พบข้อมูลตามเงื่อนไขที่เลือก</td></tr>
+                        <tr><td colSpan={7} className="ar-empty">ไม่พบข้อมูลตามเงื่อนไขที่เลือก</td></tr>
                       ) : (
                         report.items.map((i) => (
                           <tr key={i.enrollmentId}>
@@ -746,8 +794,7 @@ export default function ConditionalReportTab() {
                               <span className="ar-code">{i.courseCode || ''}</span>
                             </td>
                             <td>{i.tutorName || '-'}</td>
-                            <td>{statusLabelTH(i.status, ENROLLMENT_STATUS_TH)}</td>
-                            <td>{statusLabelTH(i.paymentStatus, PAYMENT_STATUS_TH)}</td>
+                            <td>{statusLabelTH(getEnrollmentHistoryStatus(i), ENROLLMENT_HISTORY_STATUS_LABEL)}</td>
                             <td className="ar-num">{formatCurrency(i.finalAmount)}</td>
                           </tr>
                         ))
@@ -1154,104 +1201,41 @@ export default function ConditionalReportTab() {
                 <div className="ar-chip"><span>จำนวนสถาบัน</span><strong>{report.totalCount}</strong></div>
               </div>
 
-              {(report.items || []).length === 0 ? (
-                <section className="ar-card">
-                  <p className="ar-empty">ไม่พบข้อมูลตามเงื่อนไขที่เลือก</p>
-                </section>
-              ) : (
-                report.items.map((inst) => (
-                  <section className="ar-card ar-exam-inst-card" key={inst.id}>
-                    <h3 className="ar-exam-inst-title">
-                      {inst.institutionName || '-'}
-                      <span className="ar-code">
-                        {inst.institutionCode || '-'} · {inst.institutionTypeLabel || inst.institutionType || '-'}
-                        {' · '}{inst.province || '-'} {inst.district || ''}
-                      </span>
-                    </h3>
-
-                    <div className="ar-table-wrap">
-                      {inst.institutionType === 'UNIVERSITY' && (
-                        <table className="ar-table ar-print-table">
-                          <thead>
-                            <tr>
-                              <th>คณะ</th>
-                              <th>สาขา</th>
+              <section className="ar-card">
+                <div className="ar-table-wrap">
+                  <table className="ar-table ar-print-table">
+                    <thead>
+                      <tr>
+                        <th>ชื่อสถาบัน</th>
+                        <th>รหัสสถาบัน</th>
+                        <th>ประเภท</th>
+                        <th>จังหวัด</th>
+                        <th>คณะ/ระดับชั้น</th>
+                        <th>สาขา/สายการเรียน</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {(() => {
+                        const rows = buildExamInstitutionRows(report.items);
+                        return rows.length === 0 ? (
+                          <tr><td colSpan={6} className="ar-empty">ไม่พบข้อมูลตามเงื่อนไขที่เลือก</td></tr>
+                        ) : (
+                          rows.map((r, idx) => (
+                            <tr key={idx} className={r.isFirstOfInstitution ? 'ar-row-inst-start' : ''}>
+                              <td>{r.isFirstOfInstitution ? r.institutionName : ''}</td>
+                              <td>{r.isFirstOfInstitution ? r.institutionCode : ''}</td>
+                              <td>{r.typeLabel}</td>
+                              <td>{r.isFirstOfInstitution ? r.province : ''}</td>
+                              <td>{r.category}</td>
+                              <td>{r.detail}</td>
                             </tr>
-                          </thead>
-                          <tbody>
-                            {(inst.faculties || []).length === 0 ? (
-                              <tr><td colSpan={2} className="ar-empty">ไม่มีข้อมูลคณะ/สาขา</td></tr>
-                            ) : (
-                              inst.faculties.flatMap((f) => {
-                                const majors = f.majors || [];
-                                const rowSpan = Math.max(majors.length, 1);
-                                if (majors.length === 0) {
-                                  return [
-                                    <tr key={`${f.id}-none`}>
-                                      <td rowSpan={rowSpan}>{f.name || '-'}</td>
-                                      <td>-</td>
-                                    </tr>,
-                                  ];
-                                }
-                                return majors.map((m, i) => (
-                                  <tr key={`${f.id}-${m.id}`}>
-                                    {i === 0 && <td rowSpan={rowSpan}>{f.name || '-'}</td>}
-                                    <td>{m.name || '-'}</td>
-                                  </tr>
-                                ));
-                              })
-                            )}
-                          </tbody>
-                        </table>
-                      )}
-
-                      {inst.institutionType === 'VOCATIONAL_DIPLOMA' && (
-                        <table className="ar-table ar-print-table">
-                          <thead>
-                            <tr>
-                              <th>สาขา</th>
-                            </tr>
-                          </thead>
-                          <tbody>
-                            {(inst.majors || []).length === 0 ? (
-                              <tr><td className="ar-empty">ไม่มีข้อมูลสาขา</td></tr>
-                            ) : (
-                              inst.majors.map((m) => (
-                                <tr key={m.id}>
-                                  <td>{m.name || '-'}</td>
-                                </tr>
-                              ))
-                            )}
-                          </tbody>
-                        </table>
-                      )}
-
-                      {inst.institutionType === 'SECONDARY' && (
-                        <table className="ar-table ar-print-table">
-                          <thead>
-                            <tr>
-                              <th>ระดับชั้น</th>
-                              <th>สายการเรียน/ห้องเรียน</th>
-                            </tr>
-                          </thead>
-                          <tbody>
-                            {(inst.tracks || []).length === 0 ? (
-                              <tr><td colSpan={2} className="ar-empty">ไม่มีข้อมูลสายการเรียน/ห้องเรียน</td></tr>
-                            ) : (
-                              inst.tracks.map((t) => (
-                                <tr key={t.id}>
-                                  <td>{EDUCATION_LEVEL_TH[t.educationLevel] || t.educationLevel || '-'}</td>
-                                  <td>{t.name || '-'}</td>
-                                </tr>
-                              ))
-                            )}
-                          </tbody>
-                        </table>
-                      )}
-                    </div>
-                  </section>
-                ))
-              )}
+                          ))
+                        );
+                      })()}
+                    </tbody>
+                  </table>
+                </div>
+              </section>
             </div>
           )}
         </>

@@ -25,7 +25,6 @@ public class EnrollmentMapper {
                 .paymentStatus(enrollment.getPaymentStatus())
                 .paymentMethod(enrollment.getPaymentMethod())
                 .amount(enrollment.getAmount())
-                .discountAmount(enrollment.getDiscountAmount())
                 .finalAmount(enrollment.getFinalAmount())
                 .paymentSlipUrl(enrollment.getPaymentSlipUrl())
                 .note(enrollment.getNote())

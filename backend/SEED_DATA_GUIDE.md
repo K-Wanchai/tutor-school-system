@@ -231,7 +231,6 @@ INSERT INTO enrollments (
   payment_status,
   payment_method,
   amount,
-  discount_amount,
   final_amount,
   note,
   created_at,
@@ -246,7 +245,6 @@ VALUES (
   'UNPAID',
   'BANK_TRANSFER',
   5000.00,
-  0.00,
   5000.00,
   'ลงทะเบียนทดสอบระบบ',
   NOW(),
@@ -322,12 +320,12 @@ VALUES (
 -- 5. Enrollment
 INSERT INTO enrollments (
   enrollment_code, student_id, course_id, enrollment_date,
-  status, payment_status, payment_method, amount, discount_amount, final_amount,
+  status, payment_status, payment_method, amount, final_amount,
   note, created_at, updated_at
 )
 VALUES (
   'ENR-2026-001', 1, 1, NOW(),
-  'PENDING', 'UNPAID', 'BANK_TRANSFER', 5000.00, 0.00, 5000.00,
+  'PENDING', 'UNPAID', 'BANK_TRANSFER', 5000.00, 5000.00,
   'ลงทะเบียนทดสอบระบบ',
   NOW(), NOW()
 );

@@ -50,10 +50,6 @@ public class Enrollment {
     @Column(precision = 10, scale = 2)
     private BigDecimal amount;
 
-    @Column(name = "discount_amount", precision = 10, scale = 2)
-    @Builder.Default
-    private BigDecimal discountAmount = BigDecimal.ZERO;
-
     @Column(name = "final_amount", precision = 10, scale = 2)
     private BigDecimal finalAmount;
 

@@ -35,7 +35,6 @@ public class EnrollmentResponse {
     private PaymentStatus paymentStatus;
     private PaymentMethod paymentMethod;
     private BigDecimal amount;
-    private BigDecimal discountAmount;
     private BigDecimal finalAmount;
     private String paymentSlipUrl;
     private String note;

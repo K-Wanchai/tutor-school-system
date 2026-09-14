@@ -172,6 +172,13 @@
   background: #eef2ff;
 }
 
+/* แถวแรกของแต่ละสถาบันในรายงาน "ข้อมูลสถาบันที่จัดสอบ" — ไฮไลต์ให้เห็นจุดเริ่มสถาบันใหม่ชัดเจน
+   ใช้โทนอำพันจางๆ ให้ต่างจากหัวตาราง (สีเทา) และแถวคู่/hover (โทนน้ำเงิน) อย่างชัดเจน */
+.ar-table tbody tr.ar-row-inst-start {
+  background: #fffbeb;
+  box-shadow: inset 3px 0 0 #d97706;
+}
+
 .ar-code {
   display: block;
   font-size: 12px;
@@ -357,19 +364,6 @@
   display: flex;
   flex-direction: column;
   gap: 16px;
-}
-
-/* ── การ์ดสถาบันที่จัดสอบ (วนลูปทีละสถาบัน ตารางคณะ/สาขาแยกของใครของมัน) ── */
-.ar-exam-inst-title {
-  margin: 0 0 12px;
-  font-size: 15px;
-  font-weight: 800;
-}
-
-.ar-exam-inst-title .ar-code {
-  margin-top: 4px;
-  font-size: 12px;
-  font-weight: 600;
 }
 
 /* ── ตารางแบบ key-value (ใช้กับหมวดข้อมูลที่มีระเบียนเดียว เช่น ข้อมูลสถาบัน) ── */
@@ -582,6 +576,13 @@
     background: #f1f5f9 !important;
   }
 
+  #ar-print-area .ar-table tbody tr.ar-row-inst-start {
+    background: #fef3c7 !important;
+    box-shadow: inset 3px 0 0 #d97706;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
   #ar-print-area .ar-kv-grid,
   #ar-print-area .ar-kv-item {
     border-color: #0f172a !important;
@@ -589,18 +590,6 @@
     print-color-adjust: exact;
   }
 
-  /* เดิมกัน break-inside บนทั้งการ์ด ทำให้ตารางยาวๆ (สถาบันเดียวแต่มีหลายสาขา) ถูกดันไปทั้งก้อน
-     ขึ้นหน้าถัดไปทั้งที่หน้าแรกยังว่างพอ — เปลี่ยนมากันแค่ "หัวข้อสถาบันไม่ให้แยกจากแถวแรกของตาราง"
-     และ "แต่ละแถวไม่ให้ถูกตัดครึ่ง" แทน ส่วนตัวตารางเองปล่อยให้ไหลข้ามหน้าได้ตามปกติ */
-  .ar-exam-inst-title {
-    break-after: avoid;
-    page-break-after: avoid;
-  }
-
-  .ar-exam-inst-card tr {
-    break-inside: avoid;
-    page-break-inside: avoid;
-  }
 }
 
 .ar-summary-chips {
