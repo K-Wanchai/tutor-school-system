@@ -1,9 +1,13 @@
 import { useEffect, useState } from 'react';
+import {
+  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
+  PieChart, Pie, Cell, Legend,
+} from 'recharts';
 import CalendarDateInput from '../../../../shared/components/CalendarDateInput';
 import { getStudents } from '../../services/adminStudentService';
 import { getTutors } from '../../services/adminTutorService';
 import { getCourses } from '../../services/adminCourseService';
-import { getStudentReport, getTutorReport, getCourseReport, getEnrollmentReport, getPaymentStatusReport, getAttendanceReport, getExamResultReport, getEvaluationReport } from '../../services/adminReportService';
+import { getStudentReport, getTutorReport, getCourseReport, getEnrollmentReport, getPaymentStatusReport, getAttendanceReport, getExamResultReport, getEvaluationReport, getEntranceExamResultReport } from '../../services/adminReportService';
 import { getInstitutionProfile } from '../../../../shared/services/institutionService';
 import { getExamInstitutions, getExamInstitutionById } from '../../services/examInstitutionService';
 import { getFaculties, getMajors } from '../../services/academicFacultyService';
@@ -29,6 +33,9 @@ const PAYMENT_METHOD_TH = {
 // "ข้อมูลการชำระเงิน" แสดงเฉพาะใบสมัครที่แอดมินตรวจสอบจบแล้ว — ชำระเงินเรียบร้อยแล้ว (APPROVED)
 // หรือปฏิเสธ (REJECTED) เท่านั้น ไม่รวมรายการที่ยังรอตรวจสอบ/รอแก้ไขสลิป
 const PAYMENT_DATA_STATUS_OPTIONS = ['APPROVED', 'REJECTED'];
+
+// โทนสีกราฟ — อิงโทนน้ำเงิน/ม่วงเดียวกับสีหลักของระบบ (#6366f1 - #3b82f6 - #1d4ed8) ให้ดูเป็นชุดเดียวกัน
+const CHART_COLORS = ['#4f46e5', '#3b82f6', '#0ea5e9', '#14b8a6', '#f59e0b', '#f97316', '#ec4899', '#8b5cf6'];
 
 // โหลดข้อมูลย่อยของสถาบันที่จัดสอบตามประเภท — มหาวิทยาลัย: คณะ > สาขา, ปวส.: สาขา, โรงเรียน: สายการเรียน/ห้องเรียน
 async function loadInstitutionChildren(inst) {
@@ -147,9 +154,9 @@ export default function ConditionalReportTab() {
     return () => { mounted = false; };
   }, [filters.category, courses.length]);
 
-  // ตัวกรองเฉพาะทางของ "ข้อมูลสถาบันที่จัดสอบ" — โหลดรายชื่อสถาบันแบบ lazy ตอนเลือกหมวดนี้ครั้งแรกเท่านั้น
+  // ตัวกรองเฉพาะทางของ "ข้อมูลสถาบันที่จัดสอบ"/"ข้อมูลผลการสอบเข้า" — โหลดรายชื่อสถาบันแบบ lazy ตอนเลือกหมวดนี้ครั้งแรกเท่านั้น
   useEffect(() => {
-    if (filters.category !== 'EXAM_INSTITUTION' || examInstitutions.length > 0) return;
+    if (!['EXAM_INSTITUTION', 'ENTRANCE_EXAM_RESULT'].includes(filters.category) || examInstitutions.length > 0) return;
     let mounted = true;
     getExamInstitutions({})
       .then((data) => { if (mounted) setExamInstitutions(asList(data)); })
@@ -163,7 +170,7 @@ export default function ConditionalReportTab() {
     ? tutors.map((t) => ({ value: t.id, label: `${t.firstName} ${t.lastName} (${t.tutorCode || ''})` }))
     : filters.category === 'COURSE' || filters.category === 'EVALUATION'
     ? courses.map((c) => ({ value: c.id, label: `${c.courseName} (${c.courseCode || ''})` }))
-    : filters.category === 'EXAM_INSTITUTION'
+    : filters.category === 'EXAM_INSTITUTION' || filters.category === 'ENTRANCE_EXAM_RESULT'
     ? examInstitutions.map((e) => ({ value: e.id, label: `${e.institutionName} (${e.institutionTypeLabel || ''})` }))
     : [];
 
@@ -184,10 +191,12 @@ export default function ConditionalReportTab() {
   const isSearchable = filters.category === 'STUDENT' || filters.category === 'TUTOR'
     || filters.category === 'COURSE' || filters.category === 'ENROLLMENT' || filters.category === 'PAYMENT'
     || filters.category === 'ATTENDANCE' || filters.category === 'EXAM_RESULT' || filters.category === 'EVALUATION'
+    || filters.category === 'ENTRANCE_EXAM_RESULT'
     || filters.category === 'INSTITUTION' || filters.category === 'EXAM_INSTITUTION';
   const hasSpecificFilter = filters.category === 'STUDENT' || filters.category === 'TUTOR'
     || filters.category === 'COURSE' || filters.category === 'ENROLLMENT' || filters.category === 'PAYMENT'
     || filters.category === 'ATTENDANCE' || filters.category === 'EXAM_RESULT' || filters.category === 'EVALUATION'
+    || filters.category === 'ENTRANCE_EXAM_RESULT'
     || filters.category === 'EXAM_INSTITUTION';
   const hasCourseFilter = filters.category === 'ENROLLMENT' || filters.category === 'PAYMENT'
     || filters.category === 'ATTENDANCE' || filters.category === 'EXAM_RESULT';
@@ -291,6 +300,14 @@ export default function ConditionalReportTab() {
           courseId: filters.specific,
         });
         setReport(data);
+      } else if (filters.category === 'ENTRANCE_EXAM_RESULT') {
+        const data = await getEntranceExamResultReport({
+          dateFrom: filters.dateFrom,
+          dateTo: filters.dateTo,
+          institutionId: filters.specific,
+          educationLevel: filters.status,
+        });
+        setReport(data);
       } else if (filters.category === 'INSTITUTION') {
         const profile = await getInstitutionProfile();
         setReport({ totalCount: profile ? 1 : 0, items: profile ? [profile] : [] });
@@ -372,10 +389,10 @@ export default function ConditionalReportTab() {
             </select>
           </div>
         )}
-        {/* ตัวกรอง "สถานะ" — แสดงเฉพาะหมวดที่มีสถานะ (ตัวเลือกเปลี่ยนความหมายตามหมวด) */}
-        {['COURSE', 'ENROLLMENT', 'PAYMENT'].includes(filters.category) && (
+        {/* ตัวกรอง "สถานะ"/"ระดับการศึกษา" — แสดงเฉพาะหมวดที่มีสถานะ (ตัวเลือกเปลี่ยนความหมายตามหมวด) */}
+        {['COURSE', 'ENROLLMENT', 'PAYMENT', 'ENTRANCE_EXAM_RESULT'].includes(filters.category) && (
           <div className="ar-filter-field">
-            <label>สถานะ</label>
+            <label>{filters.category === 'ENTRANCE_EXAM_RESULT' ? 'ระดับการศึกษา' : 'สถานะ'}</label>
             <select value={filters.status} onChange={(e) => fld('status', e.target.value)}>
               <option value="">ทั้งหมด</option>
               {filters.category === 'COURSE' && Object.entries(COURSE_STATUS_TH).map(([key, label]) => (
@@ -386,6 +403,9 @@ export default function ConditionalReportTab() {
               ))}
               {filters.category === 'PAYMENT' && PAYMENT_DATA_STATUS_OPTIONS.map((key) => (
                 <option key={key} value={key}>{statusLabelTH(key, ENROLLMENT_HISTORY_STATUS_LABEL)}</option>
+              ))}
+              {filters.category === 'ENTRANCE_EXAM_RESULT' && Object.entries(EDUCATION_LEVEL_TH).map(([key, label]) => (
+                <option key={key} value={key}>{label}</option>
               ))}
             </select>
           </div>
@@ -892,6 +912,125 @@ export default function ConditionalReportTab() {
                             <td>{i.tutorName || '-'}</td>
                             <td className="ar-num">{formatNumber(i.evaluationCount)}</td>
                             <td className="ar-num">{i.averageRating} / 5</td>
+                          </tr>
+                        ))
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              </section>
+            </div>
+          )}
+
+          {report && filters.category === 'ENTRANCE_EXAM_RESULT' && (
+            <div id="ar-print-area">
+              <h2 className="ar-print-title">
+                รายงานข้อมูลผลการสอบเข้า
+                <span>
+                  {filters.dateFrom || filters.dateTo
+                    ? `ช่วงวันที่ประกาศผล: ${filters.dateFrom ? formatDate(filters.dateFrom) : 'ไม่ระบุ'} ถึง ${filters.dateTo ? formatDate(filters.dateTo) : 'ไม่ระบุ'}`
+                    : 'ทุกช่วงวันที่ประกาศผล'}
+                  {' · '}พิมพ์เมื่อ {formatDate(new Date())}
+                </span>
+              </h2>
+
+              <div className="ar-summary-chips">
+                <div className="ar-chip"><span>จำนวนนักเรียนที่สอบติด</span><strong>{formatNumber(report.totalCount)}</strong></div>
+                <div className="ar-chip"><span>จำนวนสถาบัน</span><strong>{formatNumber((report.byInstitution || []).length)}</strong></div>
+              </div>
+
+              {(report.items || []).length > 0 && (
+                <div className="ar-grid">
+                  <section className="ar-card">
+                    <h2>จำนวนนักเรียนสอบติดต่อสถาบัน</h2>
+                    <div style={{ width: '100%', height: 320 }}>
+                      <ResponsiveContainer>
+                        <BarChart
+                          data={(report.byInstitution || []).slice(0, 10)}
+                          layout="vertical"
+                          margin={{ top: 8, right: 24, bottom: 8, left: 8 }}
+                        >
+                          <CartesianGrid strokeDasharray="3 3" horizontal={false} />
+                          <XAxis type="number" allowDecimals={false} />
+                          <YAxis
+                            type="category"
+                            dataKey="institutionName"
+                            width={140}
+                            tick={{ fontSize: 12 }}
+                            tickFormatter={(name) => (name && name.length > 18 ? `${name.slice(0, 18)}…` : name)}
+                          />
+                          <Tooltip formatter={(value) => [formatNumber(value), 'จำนวนนักเรียน']} />
+                          <Bar dataKey="count" fill={CHART_COLORS[0]} radius={[0, 6, 6, 0]} />
+                        </BarChart>
+                      </ResponsiveContainer>
+                    </div>
+                  </section>
+
+                  <section className="ar-card">
+                    <h2>สัดส่วนตามระดับการศึกษา</h2>
+                    <div style={{ width: '100%', height: 320 }}>
+                      <ResponsiveContainer>
+                        <PieChart>
+                          <Pie
+                            data={(report.byEducationLevel || []).map((l) => ({
+                              name: EDUCATION_LEVEL_TH[l.educationLevel] || l.educationLevel,
+                              value: l.count,
+                            }))}
+                            dataKey="value"
+                            nameKey="name"
+                            cx="50%"
+                            cy="50%"
+                            outerRadius={100}
+                            label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                          >
+                            {(report.byEducationLevel || []).map((entry, idx) => (
+                              <Cell key={entry.educationLevel} fill={CHART_COLORS[idx % CHART_COLORS.length]} />
+                            ))}
+                          </Pie>
+                          <Tooltip formatter={(value) => [formatNumber(value), 'จำนวนนักเรียน']} />
+                          <Legend />
+                        </PieChart>
+                      </ResponsiveContainer>
+                    </div>
+                  </section>
+                </div>
+              )}
+
+              <section className="ar-card">
+                <div className="ar-table-wrap">
+                  <table className="ar-table ar-print-table">
+                    <thead>
+                      <tr>
+                        <th>นักเรียน</th>
+                        <th>สถาบัน</th>
+                        <th>ระดับการศึกษา</th>
+                        <th>สาขา/แผนการเรียน</th>
+                        <th>รอบที่สอบติด</th>
+                        <th className="ar-num">ปีการศึกษา</th>
+                        <th>วันที่ประกาศผล</th>
+                        <th>หมายเหตุ</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {(report.items || []).length === 0 ? (
+                        <tr><td colSpan={8} className="ar-empty">ไม่พบข้อมูลตามเงื่อนไขที่เลือก</td></tr>
+                      ) : (
+                        report.items.map((i, idx) => (
+                          <tr key={`${i.studentId}-${i.institutionId}-${idx}`}>
+                            <td>
+                              <strong>{i.studentName || '-'}</strong>
+                              <span className="ar-code">{i.studentCode || ''}</span>
+                            </td>
+                            <td>
+                              <strong>{i.institutionName || '-'}</strong>
+                              <span className="ar-code">{i.institutionCode || ''}</span>
+                            </td>
+                            <td>{EDUCATION_LEVEL_TH[i.educationLevel] || i.educationLevel || '-'}</td>
+                            <td>{i.programName || '-'}</td>
+                            <td>{i.admissionRoundName || '-'}</td>
+                            <td className="ar-num">{i.academicYear || '-'}</td>
+                            <td>{formatDate(i.resultDate)}</td>
+                            <td>{i.note || '-'}</td>
                           </tr>
                         ))
                       )}

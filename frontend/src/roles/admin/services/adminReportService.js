@@ -140,3 +140,13 @@ export const getEvaluationReport = async (filters) => {
     throw new Error(apiError('getEvaluationReport', error), { cause: error });
   }
 };
+
+// ── ข้อมูลผลการสอบเข้า ──
+export const getEntranceExamResultReport = async (filters) => {
+  try {
+    const response = await api.get('/admin/reports/entrance-exam-results', { params: cleanParams(filters) });
+    return response.data.data;
+  } catch (error) {
+    throw new Error(apiError('getEntranceExamResultReport', error), { cause: error });
+  }
+};

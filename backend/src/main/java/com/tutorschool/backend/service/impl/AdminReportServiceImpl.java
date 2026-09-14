@@ -6,6 +6,7 @@ import com.tutorschool.backend.dto.response.AttendanceReportResponse;
 import com.tutorschool.backend.dto.response.CourseReportResponse;
 import com.tutorschool.backend.dto.response.EnrollmentReportResponse;
 import com.tutorschool.backend.dto.response.EnrollmentReportResponse.EnrollmentReportItem;
+import com.tutorschool.backend.dto.response.EntranceExamResultReportResponse;
 import com.tutorschool.backend.dto.response.EvaluationReportResponse;
 import com.tutorschool.backend.dto.response.ExamResultReportResponse;
 import com.tutorschool.backend.dto.response.PaymentReportResponse;
@@ -17,12 +18,14 @@ import com.tutorschool.backend.entity.AttendanceStatus;
 import com.tutorschool.backend.entity.ClassAttendance;
 import com.tutorschool.backend.entity.Course;
 import com.tutorschool.backend.entity.CourseEvaluation;
+import com.tutorschool.backend.entity.EducationLevel;
 import com.tutorschool.backend.entity.Enrollment;
 import com.tutorschool.backend.entity.EnrollmentStatus;
 import com.tutorschool.backend.entity.ExamManualScore;
 import com.tutorschool.backend.entity.Payment;
 import com.tutorschool.backend.entity.PaymentVerificationStatus;
 import com.tutorschool.backend.entity.Student;
+import com.tutorschool.backend.entity.StudentExamAchievement;
 import com.tutorschool.backend.entity.Tutor;
 import com.tutorschool.backend.repository.ClassAttendanceRepository;
 import com.tutorschool.backend.repository.CourseEvaluationRepository;
@@ -30,6 +33,7 @@ import com.tutorschool.backend.repository.CourseRepository;
 import com.tutorschool.backend.repository.EnrollmentRepository;
 import com.tutorschool.backend.repository.ExamManualScoreRepository;
 import com.tutorschool.backend.repository.PaymentRepository;
+import com.tutorschool.backend.repository.StudentExamAchievementRepository;
 import com.tutorschool.backend.repository.StudentRepository;
 import com.tutorschool.backend.repository.TutorRepository;
 import com.tutorschool.backend.mapper.CourseMapper;
@@ -66,6 +70,7 @@ public class AdminReportServiceImpl implements AdminReportService {
     private final CourseEvaluationRepository courseEvaluationRepository;
     private final ClassAttendanceRepository classAttendanceRepository;
     private final ExamManualScoreRepository examManualScoreRepository;
+    private final StudentExamAchievementRepository studentExamAchievementRepository;
     private final StudentMapper studentMapper;
     private final TutorMapper tutorMapper;
     private final CourseMapper courseMapper;
@@ -506,5 +511,75 @@ public class AdminReportServiceImpl implements AdminReportService {
                 .overallAverageRating(Math.round(overallAverage * 10.0) / 10.0)
                 .items(items)
                 .build();
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public EntranceExamResultReportResponse getEntranceExamResultReport(LocalDate dateFrom, LocalDate dateTo,
+                                                                          Long institutionId, EducationLevel educationLevel) {
+        List<StudentExamAchievement> achievements = studentExamAchievementRepository.searchForReport(
+                dateFrom, dateTo, institutionId, educationLevel);
+
+        List<EntranceExamResultReportResponse.InstitutionCount> byInstitution = achievements.stream()
+                .filter(a -> a.getExamInstitution() != null)
+                .collect(Collectors.groupingBy(a -> a.getExamInstitution().getId(), Collectors.counting()))
+                .entrySet().stream()
+                .map(entry -> {
+                    String name = achievements.stream()
+                            .filter(a -> a.getExamInstitution() != null && a.getExamInstitution().getId().equals(entry.getKey()))
+                            .findFirst()
+                            .map(a -> a.getExamInstitution().getInstitutionName())
+                            .orElse(null);
+                    return EntranceExamResultReportResponse.InstitutionCount.builder()
+                            .institutionId(entry.getKey())
+                            .institutionName(name)
+                            .count(entry.getValue())
+                            .build();
+                })
+                .sorted(Comparator.comparingLong(EntranceExamResultReportResponse.InstitutionCount::getCount).reversed())
+                .toList();
+
+        List<EntranceExamResultReportResponse.EducationLevelCount> byEducationLevel = achievements.stream()
+                .filter(a -> a.getEducationLevel() != null)
+                .collect(Collectors.groupingBy(a -> a.getEducationLevel().name(), Collectors.counting()))
+                .entrySet().stream()
+                .map(entry -> EntranceExamResultReportResponse.EducationLevelCount.builder()
+                        .educationLevel(entry.getKey())
+                        .count(entry.getValue())
+                        .build())
+                .toList();
+
+        List<EntranceExamResultReportResponse.EntranceExamResultItem> items = achievements.stream()
+                .map(a -> EntranceExamResultReportResponse.EntranceExamResultItem.builder()
+                        .studentId(a.getStudent() != null ? a.getStudent().getId() : null)
+                        .studentName(studentFullName(a.getStudent()))
+                        .studentCode(a.getStudent() != null ? a.getStudent().getStudentCode() : null)
+                        .institutionId(a.getExamInstitution() != null ? a.getExamInstitution().getId() : null)
+                        .institutionName(a.getExamInstitution() != null ? a.getExamInstitution().getInstitutionName() : null)
+                        .institutionCode(a.getExamInstitution() != null ? a.getExamInstitution().getInstitutionCode() : null)
+                        .educationLevel(a.getEducationLevel() != null ? a.getEducationLevel().name() : null)
+                        .programName(achievementProgramName(a))
+                        .admissionRoundName(a.getAdmissionRound() != null ? a.getAdmissionRound().getName() : null)
+                        .academicYear(a.getAcademicYear())
+                        .resultDate(a.getResultDate())
+                        .note(a.getNote())
+                        .build())
+                .toList();
+
+        return EntranceExamResultReportResponse.builder()
+                .totalCount(achievements.size())
+                .byInstitution(byInstitution)
+                .byEducationLevel(byEducationLevel)
+                .items(items)
+                .build();
+    }
+
+    // ชื่อสาขา/แผนการเรียน ขึ้นกับ educationLevel — ม.ต้น/ม.ปลาย ใช้ schoolTrack, ปวส. ใช้ vocationalMajor,
+    // ปริญญาตรีใช้ academicMajor (ดูคอมเมนต์ที่ StudentExamAchievement entity)
+    private String achievementProgramName(StudentExamAchievement a) {
+        if (a.getSchoolTrack() != null) return a.getSchoolTrack().getName();
+        if (a.getVocationalMajor() != null) return a.getVocationalMajor().getName();
+        if (a.getAcademicMajor() != null) return a.getAcademicMajor().getName();
+        return null;
     }
 }

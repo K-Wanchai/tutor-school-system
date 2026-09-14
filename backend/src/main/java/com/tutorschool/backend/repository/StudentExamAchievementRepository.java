@@ -6,6 +6,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import java.time.LocalDate;
 import java.util.List;
 
 public interface StudentExamAchievementRepository extends JpaRepository<StudentExamAchievement, Long> {
@@ -50,4 +51,18 @@ public interface StudentExamAchievementRepository extends JpaRepository<StudentE
             @Param("institutionId") Long institutionId,
             @Param("academicYear") Integer academicYear,
             @Param("active") Boolean active);
+
+    // รายงานข้อมูลผลการสอบเข้า — กรองแบบ nullable-param เหมือน searchForReport ของ Student/Tutor/Course
+    // กรองตามวันที่ประกาศผล (resultDate) — นับเฉพาะรายการที่ยัง active (ไม่ถูกยกเลิก/แก้ไขทิ้ง)
+    @Query("SELECT a FROM StudentExamAchievement a " +
+            "WHERE a.active = true " +
+            "AND a.resultDate >= COALESCE(:dateFrom, a.resultDate) " +
+            "AND a.resultDate <= COALESCE(:dateTo, a.resultDate) " +
+            "AND a.examInstitution.id = COALESCE(:institutionId, a.examInstitution.id) " +
+            "AND a.educationLevel = COALESCE(:educationLevel, a.educationLevel) " +
+            "ORDER BY a.resultDate ASC")
+    List<StudentExamAchievement> searchForReport(@Param("dateFrom") LocalDate dateFrom,
+                                                  @Param("dateTo") LocalDate dateTo,
+                                                  @Param("institutionId") Long institutionId,
+                                                  @Param("educationLevel") EducationLevel educationLevel);
 }

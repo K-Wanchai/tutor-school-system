@@ -6,6 +6,7 @@ import com.tutorschool.backend.dto.response.ApiResponse;
 import com.tutorschool.backend.dto.response.AttendanceReportResponse;
 import com.tutorschool.backend.dto.response.CourseReportResponse;
 import com.tutorschool.backend.dto.response.EnrollmentReportResponse;
+import com.tutorschool.backend.dto.response.EntranceExamResultReportResponse;
 import com.tutorschool.backend.dto.response.EvaluationReportResponse;
 import com.tutorschool.backend.dto.response.ExamResultReportResponse;
 import com.tutorschool.backend.dto.response.PaymentReportResponse;
@@ -13,6 +14,7 @@ import com.tutorschool.backend.dto.response.RevenueReportResponse;
 import com.tutorschool.backend.dto.response.StudentReportResponse;
 import com.tutorschool.backend.dto.response.TutorReportResponse;
 import com.tutorschool.backend.entity.CourseStatus;
+import com.tutorschool.backend.entity.EducationLevel;
 import com.tutorschool.backend.entity.EnrollmentStatus;
 import com.tutorschool.backend.entity.PaymentVerificationStatus;
 import com.tutorschool.backend.service.AdminDashboardService;
@@ -214,6 +216,20 @@ public class AdminController {
             @RequestParam(required = false) Long courseId) {
         EvaluationReportResponse data = adminReportService.getEvaluationReport(dateFrom, dateTo, courseId);
         return ResponseEntity.ok(ApiResponse.success("Evaluation report retrieved", data));
+    }
+
+    // ─── รายงานข้อมูลผลการสอบเข้า ────────────────────────────────────────────
+
+    @GetMapping("/reports/entrance-exam-results")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<ApiResponse<EntranceExamResultReportResponse>> getEntranceExamResultReport(
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate dateFrom,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate dateTo,
+            @RequestParam(required = false) Long institutionId,
+            @RequestParam(required = false) EducationLevel educationLevel) {
+        EntranceExamResultReportResponse data = adminReportService.getEntranceExamResultReport(
+                dateFrom, dateTo, institutionId, educationLevel);
+        return ResponseEntity.ok(ApiResponse.success("Entrance exam result report retrieved", data));
     }
 
     // ─── helpers ─────────────────────────────────────────────────────────────

@@ -4,6 +4,7 @@ import com.tutorschool.backend.dto.response.AdminReportResponse;
 import com.tutorschool.backend.dto.response.AttendanceReportResponse;
 import com.tutorschool.backend.dto.response.CourseReportResponse;
 import com.tutorschool.backend.dto.response.EnrollmentReportResponse;
+import com.tutorschool.backend.dto.response.EntranceExamResultReportResponse;
 import com.tutorschool.backend.dto.response.EvaluationReportResponse;
 import com.tutorschool.backend.dto.response.ExamResultReportResponse;
 import com.tutorschool.backend.dto.response.PaymentReportResponse;
@@ -11,6 +12,7 @@ import com.tutorschool.backend.dto.response.RevenueReportResponse;
 import com.tutorschool.backend.dto.response.StudentReportResponse;
 import com.tutorschool.backend.dto.response.TutorReportResponse;
 import com.tutorschool.backend.entity.CourseStatus;
+import com.tutorschool.backend.entity.EducationLevel;
 import com.tutorschool.backend.entity.EnrollmentStatus;
 import com.tutorschool.backend.entity.PaymentVerificationStatus;
 
@@ -40,4 +42,7 @@ public interface AdminReportService {
     ExamResultReportResponse getExamResultReport(LocalDate dateFrom, LocalDate dateTo, Long courseId, Long studentId);
 
     EvaluationReportResponse getEvaluationReport(LocalDate dateFrom, LocalDate dateTo, Long courseId);
+
+    EntranceExamResultReportResponse getEntranceExamResultReport(LocalDate dateFrom, LocalDate dateTo,
+                                                                   Long institutionId, EducationLevel educationLevel);
 }
