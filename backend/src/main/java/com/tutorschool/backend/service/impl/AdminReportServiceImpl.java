@@ -404,6 +404,17 @@ public class AdminReportServiceImpl implements AdminReportService {
         List<ExamManualScore> scores = examManualScoreRepository.searchForReport(
                 startOfDay(dateFrom), endOfDay(dateTo), courseId, studentId);
 
+        // คอร์สไหน "สอบจบก่อน" ดูจากเวลาสิ้นสุดของข้อสอบครั้งล่าสุดในคอร์สนั้น (MAX endTime, fallback
+        // เป็น startTime ถ้าไม่มี endTime) — ต้องดูทุกข้อสอบของคอร์สนั้นถึงจะรู้ว่า "จบ" เมื่อไหร่
+        Map<Long, LocalDateTime> courseFinishTime = new java.util.HashMap<>();
+        for (ExamManualScore s : scores) {
+            if (s.getExam() == null || s.getExam().getCourse() == null) continue;
+            Long cId = s.getExam().getCourse().getId();
+            LocalDateTime examTime = s.getExam().getEndTime() != null ? s.getExam().getEndTime() : s.getExam().getStartTime();
+            if (examTime == null) continue;
+            courseFinishTime.merge(cId, examTime, (a, b) -> a.isAfter(b) ? a : b);
+        }
+
         List<ExamResultReportResponse.ExamResultReportItem> items = scores.stream()
                 .map(s -> {
                     Double totalScore = s.getExam() != null ? s.getExam().getTotalScore() : null;
@@ -428,6 +439,15 @@ public class AdminReportServiceImpl implements AdminReportService {
                             .note(s.getNote())
                             .build();
                 })
+                // เรียง: คอร์สที่สอบจบก่อน -> รหัสนักเรียนภายในคอร์สนั้น -> วันที่สอบ (ถ้านักเรียนคนเดียวกัน
+                // มีหลายครั้งในคอร์สเดียวกัน)
+                .sorted(Comparator
+                        .comparing((ExamResultReportResponse.ExamResultReportItem i) -> courseFinishTime.get(i.getCourseId()),
+                                Comparator.nullsLast(Comparator.naturalOrder()))
+                        .thenComparing(ExamResultReportResponse.ExamResultReportItem::getStudentCode,
+                                Comparator.nullsLast(Comparator.naturalOrder()))
+                        .thenComparing(ExamResultReportResponse.ExamResultReportItem::getExamStartTime,
+                                Comparator.nullsLast(Comparator.naturalOrder())))
                 .toList();
 
         double averagePercentage = items.stream()
