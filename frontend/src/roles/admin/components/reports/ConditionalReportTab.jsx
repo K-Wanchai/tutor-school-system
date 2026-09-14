@@ -9,6 +9,7 @@ import { getTutors } from '../../services/adminTutorService';
 import { getCourses } from '../../services/adminCourseService';
 import { getStudentReport, getTutorReport, getCourseReport, getEnrollmentReport, getPaymentStatusReport, getAttendanceReport, getExamResultReport, getEvaluationReport, getEntranceExamResultReport } from '../../services/adminReportService';
 import { getInstitutionProfile } from '../../../../shared/services/institutionService';
+import { resolveFileUrl } from '../../../../shared/services/api';
 import { getExamInstitutions, getExamInstitutionById } from '../../services/examInstitutionService';
 import { getFaculties, getMajors } from '../../services/academicFacultyService';
 import { getVocationalMajors } from '../../services/vocationalMajorService';
@@ -104,7 +105,7 @@ function ReportPrintHeader({ institution, title, subtitle }) {
       <div className="ar-print-row">
         <div className="ar-print-inst">
           {institution?.logoUrl ? (
-            <img className="ar-print-logo" src={institution.logoUrl} alt="" />
+            <img className="ar-print-logo" src={resolveFileUrl(institution.logoUrl)} alt="" />
           ) : (
             <div className="ar-print-logo ar-print-logo--placeholder">{initials}</div>
           )}
@@ -295,11 +296,14 @@ export default function ConditionalReportTab() {
   // เบราว์เซอร์ใส่ document.title ("TutorSchool / รายงาน") เป็นหัวกระดาษ/ท้ายกระดาษ
   // อัตโนมัติตอนพิมพ์ (ถ้าผู้ใช้เปิด "Headers and footers" ไว้) — เคลียร์ชั่วคราวระหว่างพิมพ์
   // เพื่อไม่ให้ซ้ำกับหัวกระดาษของรายงานเอง แล้วค่อยคืนกลับหลังพิมพ์เสร็จ
+  //
+  // ตั้งเป็นสตริงว่างเปล่าตรงๆ ไม่ได้ — เบราว์เซอร์ (Chrome/Edge) จะ fallback ไปโชว์ URL
+  // ของหน้าแทนตอน title ว่าง ใช้ non-breaking space แทนเพื่อให้ title "มีค่า" แต่ไม่มีตัวอักษรให้เห็น
   useEffect(() => {
     let originalTitle = '';
     function clearTitle() {
       originalTitle = document.title;
-      document.title = '';
+      document.title = ' ';
     }
     function restoreTitle() {
       document.title = originalTitle;
