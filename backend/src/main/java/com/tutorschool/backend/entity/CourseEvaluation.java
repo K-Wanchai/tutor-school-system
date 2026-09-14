@@ -51,9 +51,6 @@ public class CourseEvaluation {
     @Column(columnDefinition = "TEXT")
     private String comment;
 
-    @Column(columnDefinition = "TEXT")
-    private String suggestion;
-
     @Column(name = "is_anonymous", nullable = false)
     @Builder.Default
     private Boolean isAnonymous = false;

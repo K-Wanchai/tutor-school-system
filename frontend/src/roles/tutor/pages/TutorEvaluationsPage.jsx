@@ -60,6 +60,36 @@ export default function TutorEvaluationsPage() {
     return result;
   }, [evaluations, keyword, ratingFilter, sortBy]);
 
+  const courseGroups = useMemo(() => {
+    const groups = new Map();
+
+    filteredEvaluations.forEach((item) => {
+      const courseId = item.courseId ?? item.courseName ?? 'unknown';
+      if (!groups.has(courseId)) {
+        groups.set(courseId, {
+          courseId,
+          courseName: item.courseName || 'ไม่ระบุคอร์ส',
+          reviews: [],
+        });
+      }
+      groups.get(courseId).reviews.push(item);
+    });
+
+    return Array.from(groups.values())
+      .map((group) => {
+        const count = group.reviews.length;
+        const totalRating = group.reviews.reduce((sum, r) => sum + Number(r.rating || 0), 0);
+        const average = count > 0 ? totalRating / count : 0;
+        const latestDate = group.reviews.reduce((latest, r) => {
+          const d = new Date(r.createdAt || 0);
+          return d > latest ? d : latest;
+        }, new Date(0));
+
+        return { ...group, count, average, latestDate };
+      })
+      .sort((a, b) => b.latestDate - a.latestDate);
+  }, [filteredEvaluations]);
+
   const summary = useMemo(() => {
     const total = evaluations.length;
     const totalRating = evaluations.reduce(
@@ -185,8 +215,8 @@ export default function TutorEvaluationsPage() {
       <section className="tutor-eval-review-section">
         <div className="tutor-eval-section-head">
           <div>
-            <h2>เสียงสะท้อนจากนักเรียน</h2>
-            <p>ความคิดเห็นจริงจากผู้เรียนในแต่ละคอร์ส</p>
+            <h2>ผลประเมินความพึงพอใจคอร์สเรียน</h2>
+            <p>สรุปความคิดเห็นจริงจากผู้เรียน แยกตามคอร์ส</p>
           </div>
 
           <span>{filteredEvaluations.length} รายการ</span>
@@ -200,9 +230,9 @@ export default function TutorEvaluationsPage() {
             <p>ถ้ามีข้อมูลในฐานข้อมูลแล้ว ให้ตรวจสอบ tutorId และ API /course-evaluations/tutor/&#123;tutorId&#125;</p>
           </div>
         ) : (
-          <div className="tutor-eval-timeline">
-            {filteredEvaluations.map((item, index) => (
-              <EvaluationTimelineCard key={item.id || index} item={item} />
+          <div className="tutor-eval-course-grid">
+            {courseGroups.map((group) => (
+              <CourseEvaluationCard key={group.courseId} group={group} />
             ))}
           </div>
         )}
@@ -230,38 +260,68 @@ function RatingBar({ star, count, total }) {
   );
 }
 
-function EvaluationTimelineCard({ item }) {
-  const rating = Number(item.rating || 0);
+function CourseEvaluationCard({ group }) {
+  const [expanded, setExpanded] = useState(false);
+  const rounded = Math.round(group.average);
+  const reviewsToShow = expanded ? group.reviews : group.reviews.slice(0, 2);
 
   return (
-    <article className="tutor-eval-review-card">
-      <div className="tutor-eval-review-line" />
-
-      <div className="tutor-eval-review-avatar">
-        {(item.studentName || 'S').charAt(0)}
+    <article className="tutor-eval-course-card">
+      <div className="tutor-eval-course-score-badge">
+        <span className="tutor-eval-course-stars">
+          {[1, 2, 3, 4, 5].map((n) => (
+            <span key={n} className={n <= rounded ? 'on' : ''}>★</span>
+          ))}
+        </span>
+        <strong>{group.average.toFixed(1)}</strong>
       </div>
 
-      <div className="tutor-eval-review-content">
-        <div className="tutor-eval-review-head">
-          <div>
-            <h3>{item.studentName || 'นักเรียน'}</h3>
-            <p>{item.courseName || 'ไม่ระบุคอร์ส'} · {formatDate(item.createdAt)}</p>
-          </div>
-
-          <div className={`tutor-eval-rating-badge ${getRatingClass(rating)}`}>
-            ★ {rating || 0}
-          </div>
-        </div>
-
-        <blockquote>
-          {item.comment || 'ไม่มีความคิดเห็นเพิ่มเติม'}
-        </blockquote>
-
-        <div className="tutor-eval-review-footer">
-          <span>{getRatingLabel(rating)}</span>
-          <small>{getSuggestionText(rating)}</small>
-        </div>
+      <div className="tutor-eval-course-head">
+        <h3>{group.courseName}</h3>
+        <p>{group.count} รีวิว · ล่าสุด {formatDate(group.latestDate)}</p>
       </div>
+
+      <div className="tutor-eval-course-reviews">
+        {reviewsToShow.map((item, index) => {
+          const rating = Number(item.rating || 0);
+          return (
+            <div key={item.id || index} className="tutor-eval-course-review-item">
+              <div className="tutor-eval-review-avatar tutor-eval-review-avatar--sm">
+                {(item.studentName || 'S').charAt(0)}
+              </div>
+
+              <div className="tutor-eval-review-content">
+                <div className="tutor-eval-review-head">
+                  <div>
+                    <h4>{item.studentName || 'นักเรียน'}</h4>
+                    <p>{formatDate(item.createdAt)}</p>
+                  </div>
+
+                  <div className={`tutor-eval-rating-badge ${getRatingClass(rating)}`}>
+                    ★ {rating || 0}
+                  </div>
+                </div>
+
+                <blockquote>
+                  {item.comment || 'ไม่มีความคิดเห็นเพิ่มเติม'}
+                </blockquote>
+
+                <span className="tutor-eval-review-tag">{getRatingLabel(rating)}</span>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      {group.reviews.length > 2 && (
+        <button
+          type="button"
+          className="tutor-eval-course-toggle"
+          onClick={() => setExpanded((v) => !v)}
+        >
+          {expanded ? 'ย่อรีวิว' : `ดูรีวิวทั้งหมด (${group.reviews.length})`}
+        </button>
+      )}
     </article>
   );
 }
@@ -292,13 +352,6 @@ function getRatingLabel(value) {
   if (value >= 3) return 'พอใช้';
   if (value >= 2) return 'ควรปรับปรุง';
   return 'ต้องติดตาม';
-}
-
-function getSuggestionText(value) {
-  if (value >= 5) return 'รักษามาตรฐานการสอนนี้ต่อไป';
-  if (value >= 4) return 'ผลตอบรับดี มีจุดให้พัฒนาต่อได้';
-  if (value >= 3) return 'ควรดูความคิดเห็นเพื่อปรับการสอน';
-  return 'ควรติดตามและปรับปรุงอย่างจริงจัง';
 }
 
 function getRatingClass(value) {

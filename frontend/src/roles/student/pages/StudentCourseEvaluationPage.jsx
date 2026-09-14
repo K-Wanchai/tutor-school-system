@@ -52,7 +52,6 @@ function EvaluationFormModal({ target, existing, scoreFields, onClose, onSaved }
   const [form, setForm] = useState(() => ({
     scores: buildInitialScores(scoreFields, existing),
     comment: existing?.comment || '',
-    suggestion: existing?.suggestion || '',
     isAnonymous: Boolean(existing?.isAnonymous),
   }));
   const [busy, setBusy] = useState(false);
@@ -95,7 +94,6 @@ function EvaluationFormModal({ target, existing, scoreFields, onClose, onSaved }
         await updateEvaluation(existing.id, {
           criteriaScores,
           comment: form.comment.trim() || null,
-          suggestion: form.suggestion.trim() || null,
           isAnonymous: form.isAnonymous,
         });
       } else {
@@ -103,7 +101,6 @@ function EvaluationFormModal({ target, existing, scoreFields, onClose, onSaved }
           enrollmentId: target.enrollmentId,
           criteriaScores,
           comment: form.comment.trim() || null,
-          suggestion: form.suggestion.trim() || null,
           isAnonymous: form.isAnonymous,
         });
       }
@@ -167,19 +164,6 @@ function EvaluationFormModal({ target, existing, scoreFields, onClose, onSaved }
               value={form.comment}
               onChange={(e) => setField('comment', e.target.value)}
               placeholder="สิ่งที่ประทับใจในคอร์สนี้..."
-            />
-          </div>
-
-          <div className="sce-form-block">
-            <label className="sce-form-label" htmlFor="sce-suggestion">
-              ข้อเสนอแนะเพื่อการพัฒนา
-            </label>
-            <textarea
-              id="sce-suggestion"
-              rows={3}
-              value={form.suggestion}
-              onChange={(e) => setField('suggestion', e.target.value)}
-              placeholder="สิ่งที่อยากให้ปรับปรุง..."
             />
           </div>
 

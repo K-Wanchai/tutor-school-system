@@ -94,9 +94,6 @@ function DetailModal({ course, onClose }) {
                 </div>
               )}
               {item.comment && <p className="er-review-text">“{item.comment}”</p>}
-              {item.suggestion && (
-                <p className="er-review-suggestion"><b>ข้อเสนอแนะ:</b> {item.suggestion}</p>
-              )}
             </article>
           ))}
         </div>

@@ -22,7 +22,5 @@ public class CreateCourseEvaluationRequest {
 
     private String comment;
 
-    private String suggestion;
-
     private Boolean isAnonymous = false;
 }

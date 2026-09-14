@@ -30,7 +30,6 @@ public class CourseEvaluationResponse {
     private List<CriteriaScoreResponse> criteriaScores;
 
     private String comment;
-    private String suggestion;
 
     private Boolean isAnonymous;
     private EvaluationStatus status;

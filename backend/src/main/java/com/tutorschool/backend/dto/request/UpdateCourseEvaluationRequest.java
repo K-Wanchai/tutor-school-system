@@ -18,7 +18,5 @@ public class UpdateCourseEvaluationRequest {
 
     private String comment;
 
-    private String suggestion;
-
     private Boolean isAnonymous;
 }

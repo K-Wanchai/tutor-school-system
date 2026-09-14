@@ -97,7 +97,6 @@ public class CourseEvaluationServiceImpl implements CourseEvaluationService {
                 .enrollment(enrollment)
                 .tutor(Tutor)
                 .comment(request.getComment())
-                .suggestion(request.getSuggestion())
                 .isAnonymous(request.getIsAnonymous() != null ? request.getIsAnonymous() : false)
                 .status(EvaluationStatus.PUBLISHED)
                 .build();
@@ -262,7 +261,6 @@ public class CourseEvaluationServiceImpl implements CourseEvaluationService {
         attachCriteriaScores(evaluation, request.getCriteriaScores());
         evaluation.setRating(computeOverallRating(evaluation.getCriteriaScores()));
         evaluation.setComment(request.getComment());
-        evaluation.setSuggestion(request.getSuggestion());
         if (request.getIsAnonymous() != null) {
             evaluation.setIsAnonymous(request.getIsAnonymous());
         }
