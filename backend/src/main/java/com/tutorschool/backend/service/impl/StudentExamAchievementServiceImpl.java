@@ -72,7 +72,6 @@ public class StudentExamAchievementServiceImpl implements StudentExamAchievement
                 .vocationalMajor(resolveVocationalMajor(request.getVocationalMajorId(), institution.getId()))
                 .admissionRound(resolveAdmissionRound(request.getAdmissionRoundId(), institution.getId()))
                 .academicYear(request.getAcademicYear())
-                .resultDate(request.getResultDate())
                 .note(request.getNote())
                 .active(request.getActive() == null ? Boolean.TRUE : request.getActive())
                 .build();
@@ -122,7 +121,6 @@ public class StudentExamAchievementServiceImpl implements StudentExamAchievement
         achievement.setVocationalMajor(resolveVocationalMajor(request.getVocationalMajorId(), institution.getId()));
         achievement.setAdmissionRound(resolveAdmissionRound(request.getAdmissionRoundId(), institution.getId()));
         achievement.setAcademicYear(request.getAcademicYear());
-        achievement.setResultDate(request.getResultDate());
         achievement.setNote(request.getNote());
         if (request.getActive() != null) {
             achievement.setActive(request.getActive());

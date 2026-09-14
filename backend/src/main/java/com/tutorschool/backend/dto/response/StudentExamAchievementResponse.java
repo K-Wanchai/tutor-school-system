@@ -7,7 +7,6 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -40,7 +39,6 @@ public class StudentExamAchievementResponse {
     private Long admissionRoundId;
     private String admissionRoundName;
     private Integer academicYear;
-    private LocalDate resultDate;
     private String note;
     private Boolean active;
     private List<AchievementCourseTagResponse> taggedCourses;

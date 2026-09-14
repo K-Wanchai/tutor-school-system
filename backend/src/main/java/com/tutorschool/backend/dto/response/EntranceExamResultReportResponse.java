@@ -5,7 +5,6 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import java.time.LocalDate;
 import java.util.List;
 
 /**
@@ -59,7 +58,6 @@ public class EntranceExamResultReportResponse {
         private String programName;
         private String admissionRoundName;
         private Integer academicYear;
-        private LocalDate resultDate;
         private String note;
     }
 }

@@ -223,12 +223,10 @@ public class AdminController {
     @GetMapping("/reports/entrance-exam-results")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ApiResponse<EntranceExamResultReportResponse>> getEntranceExamResultReport(
-            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate dateFrom,
-            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate dateTo,
             @RequestParam(required = false) Long institutionId,
             @RequestParam(required = false) EducationLevel educationLevel) {
         EntranceExamResultReportResponse data = adminReportService.getEntranceExamResultReport(
-                dateFrom, dateTo, institutionId, educationLevel);
+                institutionId, educationLevel);
         return ResponseEntity.ok(ApiResponse.success("Entrance exam result report retrieved", data));
     }
 

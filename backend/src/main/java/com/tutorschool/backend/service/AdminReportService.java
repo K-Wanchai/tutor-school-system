@@ -43,6 +43,5 @@ public interface AdminReportService {
 
     EvaluationReportResponse getEvaluationReport(LocalDate dateFrom, LocalDate dateTo, Long courseId);
 
-    EntranceExamResultReportResponse getEntranceExamResultReport(LocalDate dateFrom, LocalDate dateTo,
-                                                                   Long institutionId, EducationLevel educationLevel);
+    EntranceExamResultReportResponse getEntranceExamResultReport(Long institutionId, EducationLevel educationLevel);
 }

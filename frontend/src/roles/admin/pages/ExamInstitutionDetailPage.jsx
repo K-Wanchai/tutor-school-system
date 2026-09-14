@@ -8,7 +8,6 @@ import {
   getStudentExamAchievementById,
   getStudentAchievementDetail,
 } from '../services/studentExamAchievementService';
-import { getEnrollmentsByStudent } from '../services/adminEnrollmentService';
 import { getStudents } from '../services/adminStudentService';
 import { getFaculties, getMajors } from '../services/academicFacultyService';
 import { getSchoolTracks } from '../services/schoolTrackService';
@@ -19,7 +18,6 @@ import SchoolTrackManager from '../components/SchoolTrackManager';
 import VocationalMajorManager from '../components/VocationalMajorManager';
 import AdmissionRoundManager from '../components/AdmissionRoundManager';
 import { AchievementDetailBody, LEVEL_LABEL } from './StudentAchievementDetailPage';
-import DateInput from '../../../shared/components/DateInput';
 import './StudentAchievementDetailPage.css';
 import './ExamInstitutionDetailPage.css';
 
@@ -28,9 +26,6 @@ const TYPE_LABEL = {
   VOCATIONAL_DIPLOMA: 'อนุปริญญา (ปวส.)',
   UNIVERSITY: 'มหาวิทยาลัย / ป.ตรี',
 };
-
-// เฉพาะการลงทะเบียนที่แอดมินยืนยัน (อนุมัติ) แล้วเท่านั้น ที่นำมาแท็กเป็นคอร์สที่เรียนในผลสอบติดได้
-const CONFIRMED_ENROLLMENT_STATUSES = ['APPROVED', 'COMPLETED'];
 
 const EMPTY_FORM = {
   studentId: '',
@@ -41,7 +36,6 @@ const EMPTY_FORM = {
   vocationalMajorId: '',
   admissionRoundId: '',
   academicYear: '',
-  resultDate: '',
   note: '',
   active: true,
 };
@@ -84,84 +78,6 @@ function Toast({ msg, type, onClose }) {
   );
 }
 
-// ── Course Picker: พิมพ์ชื่อ/รหัสคอร์ส หรือคลิกเพื่อเลือกจากคอร์สที่นักเรียนลงทะเบียนแล้ว ──
-
-function CoursePicker({ enrollments, loading, disabled, selectedIds, onChange }) {
-  const [query, setQuery] = useState('');
-  const [open, setOpen] = useState(false);
-
-  const selected = enrollments.filter((en) => selectedIds.includes(en.id));
-  const available = enrollments.filter((en) => !selectedIds.includes(en.id));
-  const term = query.trim().toLowerCase();
-  const filtered = term
-    ? available.filter((en) =>
-        (en.courseName || '').toLowerCase().includes(term) ||
-        (en.courseCode || '').toLowerCase().includes(term))
-    : available;
-
-  function addCourse(enrollmentId) {
-    onChange([...selectedIds, enrollmentId]);
-    setQuery('');
-  }
-
-  function removeCourse(enrollmentId) {
-    onChange(selectedIds.filter((id) => id !== enrollmentId));
-  }
-
-  return (
-    <div className="eid-course-picker">
-      {selected.length > 0 && (
-        <div className="eid-course-chips">
-          {selected.map((en) => (
-            <span key={en.id} className="eid-course-chip">
-              {en.courseName} ({en.courseCode})
-              <button type="button" onClick={() => removeCourse(en.id)} aria-label="เอาออก">✕</button>
-            </span>
-          ))}
-        </div>
-      )}
-
-      {disabled ? (
-        <p className="eid-course-picker-hint">กรุณาเลือกนักเรียนก่อน</p>
-      ) : loading ? (
-        <p className="eid-course-picker-hint">กำลังโหลดคอร์สที่นักเรียนลงทะเบียน...</p>
-      ) : enrollments.length === 0 ? (
-        <p className="eid-course-picker-hint">นักเรียนคนนี้ยังไม่ได้ลงทะเบียนคอร์สใด</p>
-      ) : (
-        <div className="eid-course-picker-input-wrap">
-          <input
-            type="text"
-            className="eid-course-picker-input"
-            placeholder="พิมพ์ชื่อคอร์สหรือรหัสคอร์ส หรือคลิกเพื่อเลือก..."
-            value={query}
-            onChange={(e) => { setQuery(e.target.value); setOpen(true); }}
-            onFocus={() => setOpen(true)}
-            onBlur={() => setTimeout(() => setOpen(false), 150)}
-          />
-          {open && (
-            <div className="eid-course-picker-dropdown">
-              {filtered.length === 0 ? (
-                <div className="eid-course-picker-empty">ไม่พบคอร์สที่ตรงกัน หรือเลือกครบแล้ว</div>
-              ) : (
-                filtered.map((en) => (
-                  <button
-                    type="button"
-                    key={en.id}
-                    className="eid-course-picker-option"
-                    onMouseDown={() => addCourse(en.id)}
-                  >
-                    <span className="eid-course-picker-option-name">{en.courseName}</span>
-                    <span className="eid-course-picker-option-code">{en.courseCode}</span>
-                  </button>
-                ))
-              )}
-            </div>
-          )}
-        </div>
-      )}
-    </div>
-  );
-}
 
 // ── Achievement Table (ใช้ร่วมกันทั้งมุมมองโรงเรียนและมหาวิทยาลัย) ─────────
 
@@ -499,10 +415,6 @@ export default function ExamInstitutionDetailPage() {
   const [form, setForm] = useState(EMPTY_FORM);
   const [formErr, setFormErr] = useState({});
   const [saving, setSaving] = useState(false);
-  const [selectedCourseIds, setSelectedCourseIds] = useState([]);
-
-  const [studentEnrollments, setStudentEnrollments] = useState([]);
-  const [loadingEnrollments, setLoadingEnrollments] = useState(false);
 
   const [confirmDelete, setConfirmDelete] = useState(null);
   const [deleting, setDeleting] = useState(false);
@@ -536,22 +448,6 @@ export default function ExamInstitutionDetailPage() {
       })
       .catch(() => { /* ตัวเลือกนักเรียนเป็นข้อมูลเสริม ไม่บล็อกหน้าหลัก */ });
   }, []);
-
-  // เฉพาะคอร์สที่ลงทะเบียนและผ่านการยืนยัน (อนุมัติ) จากแอดมินแล้ว เท่านั้น ที่นำมาแท็กในผลสอบติดได้
-  useEffect(() => {
-    if (!form.studentId) { setStudentEnrollments([]); return; }
-    let cancelled = false;
-    setLoadingEnrollments(true);
-    getEnrollmentsByStudent(form.studentId)
-      .then((data) => {
-        const list = Array.isArray(data) ? data : [];
-        const confirmed = list.filter((en) => CONFIRMED_ENROLLMENT_STATUSES.includes(en.status));
-        if (!cancelled) setStudentEnrollments(confirmed);
-      })
-      .catch(() => { if (!cancelled) setStudentEnrollments([]); })
-      .finally(() => { if (!cancelled) setLoadingEnrollments(false); });
-    return () => { cancelled = true; };
-  }, [form.studentId]);
 
   // โหลดรายชื่อคณะของสถาบันนี้ (สำหรับสถาบันประเภทมหาวิทยาลัย) — ใช้ทั้งเป็นตัวเลือกในฟอร์ม และ
   // จำนวนคณะ/สาขาจริงบนการ์ดสรุปด้านบน จึงโหลดตั้งแต่หน้าเปิด (ไม่รอเปิดฟอร์ม) และโหลดใหม่เมื่อกลับมา
@@ -623,7 +519,6 @@ export default function ExamInstitutionDetailPage() {
   function fldStudent(val) {
     setForm((f) => ({ ...f, studentId: val }));
     setFormErr((e) => ({ ...e, studentId: '' }));
-    setSelectedCourseIds([]);
   }
 
   function fldFaculty(val) {
@@ -645,11 +540,9 @@ export default function ExamInstitutionDetailPage() {
         vocationalMajorId: a.vocationalMajorId ?? '',
         admissionRoundId: a.admissionRoundId ?? '',
         academicYear: a.academicYear ?? '',
-        resultDate: a.resultDate ?? '',
         note: a.note ?? '',
         active: a.active ?? true,
       });
-      setSelectedCourseIds((a.taggedCourses || []).map((c) => c.enrollmentId));
       setFormErr({});
       setShowForm(true);
     } catch (err) {
@@ -667,7 +560,7 @@ export default function ExamInstitutionDetailPage() {
       const payload = {
         studentId: Number(form.studentId),
         examInstitutionId: Number(institutionId),
-        enrollmentIds: selectedCourseIds,
+        enrollmentIds: [],
         educationLevel: form.educationLevel,
         schoolTrackId: (form.educationLevel === 'LOWER_SECONDARY' || form.educationLevel === 'UPPER_SECONDARY') && form.schoolTrackId
           ? Number(form.schoolTrackId) : null,
@@ -675,7 +568,6 @@ export default function ExamInstitutionDetailPage() {
         vocationalMajorId: form.educationLevel === 'VOCATIONAL_DIPLOMA' && form.vocationalMajorId ? Number(form.vocationalMajorId) : null,
         admissionRoundId: form.admissionRoundId ? Number(form.admissionRoundId) : null,
         academicYear: Number(form.academicYear),
-        resultDate: form.resultDate || null,
         note: form.note?.trim() || null,
         active: form.active,
       };
@@ -1087,22 +979,6 @@ export default function ExamInstitutionDetailPage() {
                   />
                   {formErr.academicYear && <span className="eid-err">{formErr.academicYear}</span>}
                 </div>
-              </div>
-
-              <div className="eid-field">
-                <label>วันที่ประกาศผล / วันที่บันทึกผล</label>
-                <DateInput value={form.resultDate} onChange={(v) => fld('resultDate', v)} />
-              </div>
-
-              <div className="eid-field">
-                <label>คอร์สที่เรียน</label>
-                <CoursePicker
-                  enrollments={studentEnrollments}
-                  loading={loadingEnrollments}
-                  disabled={!form.studentId}
-                  selectedIds={selectedCourseIds}
-                  onChange={setSelectedCourseIds}
-                />
               </div>
 
               <div className="eid-field">

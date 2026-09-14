@@ -26,11 +26,6 @@ const ENROLLMENT_STATUS_TONE = {
   COMPLETED: 'info',
 };
 
-function formatDate(d) {
-  if (!d) return '—';
-  return new Date(d).toLocaleDateString('th-TH', { day: '2-digit', month: 'short', year: 'numeric' });
-}
-
 function formatDateTime(dt) {
   if (!dt) return '—';
   return new Date(dt).toLocaleString('th-TH', {
@@ -97,7 +92,6 @@ export function AchievementDetailBody({ achievement, enrollments }) {
           ))}
           <DetailRow label="รอบที่สอบติด" value={achievement.admissionRoundName} />
           <DetailRow label="ปีการศึกษา" value={achievement.academicYear} />
-          <DetailRow label="วันที่ประกาศผล" value={formatDate(achievement.resultDate)} />
           <DetailRow label="หมายเหตุ" value={achievement.note} />
         </div>
       </div>

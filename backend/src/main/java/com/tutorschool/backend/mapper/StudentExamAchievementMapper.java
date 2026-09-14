@@ -34,7 +34,6 @@ public class StudentExamAchievementMapper {
                 .admissionRoundId(achievement.getAdmissionRound() != null ? achievement.getAdmissionRound().getId() : null)
                 .admissionRoundName(achievement.getAdmissionRound() != null ? achievement.getAdmissionRound().getName() : null)
                 .academicYear(achievement.getAcademicYear())
-                .resultDate(achievement.getResultDate())
                 .note(achievement.getNote())
                 .active(achievement.getActive())
                 .taggedCourses(achievement.getEnrollments().stream()

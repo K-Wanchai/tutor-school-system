@@ -515,10 +515,9 @@ public class AdminReportServiceImpl implements AdminReportService {
 
     @Override
     @Transactional(readOnly = true)
-    public EntranceExamResultReportResponse getEntranceExamResultReport(LocalDate dateFrom, LocalDate dateTo,
-                                                                          Long institutionId, EducationLevel educationLevel) {
+    public EntranceExamResultReportResponse getEntranceExamResultReport(Long institutionId, EducationLevel educationLevel) {
         List<StudentExamAchievement> achievements = studentExamAchievementRepository.searchForReport(
-                dateFrom, dateTo, institutionId, educationLevel);
+                institutionId, educationLevel);
 
         List<EntranceExamResultReportResponse.InstitutionCount> byInstitution = achievements.stream()
                 .filter(a -> a.getExamInstitution() != null)
@@ -561,7 +560,6 @@ public class AdminReportServiceImpl implements AdminReportService {
                         .programName(achievementProgramName(a))
                         .admissionRoundName(a.getAdmissionRound() != null ? a.getAdmissionRound().getName() : null)
                         .academicYear(a.getAcademicYear())
-                        .resultDate(a.getResultDate())
                         .note(a.getNote())
                         .build())
                 .toList();

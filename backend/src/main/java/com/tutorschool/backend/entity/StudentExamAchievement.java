@@ -3,7 +3,6 @@ package com.tutorschool.backend.entity;
 import jakarta.persistence.*;
 import lombok.*;
 
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -65,9 +64,6 @@ public class StudentExamAchievement {
 
     @Column(name = "academic_year")
     private Integer academicYear;
-
-    @Column(name = "result_date")
-    private LocalDate resultDate;
 
     @Column(name = "note", columnDefinition = "TEXT")
     private String note;

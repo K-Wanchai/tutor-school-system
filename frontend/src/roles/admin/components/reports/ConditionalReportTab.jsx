@@ -302,8 +302,6 @@ export default function ConditionalReportTab() {
         setReport(data);
       } else if (filters.category === 'ENTRANCE_EXAM_RESULT') {
         const data = await getEntranceExamResultReport({
-          dateFrom: filters.dateFrom,
-          dateTo: filters.dateTo,
           institutionId: filters.specific,
           educationLevel: filters.status,
         });
@@ -926,12 +924,7 @@ export default function ConditionalReportTab() {
             <div id="ar-print-area">
               <h2 className="ar-print-title">
                 รายงานข้อมูลผลการสอบเข้า
-                <span>
-                  {filters.dateFrom || filters.dateTo
-                    ? `ช่วงวันที่ประกาศผล: ${filters.dateFrom ? formatDate(filters.dateFrom) : 'ไม่ระบุ'} ถึง ${filters.dateTo ? formatDate(filters.dateTo) : 'ไม่ระบุ'}`
-                    : 'ทุกช่วงวันที่ประกาศผล'}
-                  {' · '}พิมพ์เมื่อ {formatDate(new Date())}
-                </span>
+                <span>พิมพ์เมื่อ {formatDate(new Date())}</span>
               </h2>
 
               <div className="ar-summary-chips">
@@ -1007,13 +1000,12 @@ export default function ConditionalReportTab() {
                         <th>สาขา/แผนการเรียน</th>
                         <th>รอบที่สอบติด</th>
                         <th className="ar-num">ปีการศึกษา</th>
-                        <th>วันที่ประกาศผล</th>
                         <th>หมายเหตุ</th>
                       </tr>
                     </thead>
                     <tbody>
                       {(report.items || []).length === 0 ? (
-                        <tr><td colSpan={8} className="ar-empty">ไม่พบข้อมูลตามเงื่อนไขที่เลือก</td></tr>
+                        <tr><td colSpan={7} className="ar-empty">ไม่พบข้อมูลตามเงื่อนไขที่เลือก</td></tr>
                       ) : (
                         report.items.map((i, idx) => (
                           <tr key={`${i.studentId}-${i.institutionId}-${idx}`}>
@@ -1029,7 +1021,6 @@ export default function ConditionalReportTab() {
                             <td>{i.programName || '-'}</td>
                             <td>{i.admissionRoundName || '-'}</td>
                             <td className="ar-num">{i.academicYear || '-'}</td>
-                            <td>{formatDate(i.resultDate)}</td>
                             <td>{i.note || '-'}</td>
                           </tr>
                         ))
