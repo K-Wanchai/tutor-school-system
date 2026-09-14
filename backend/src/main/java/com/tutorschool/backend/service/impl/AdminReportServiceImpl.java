@@ -286,8 +286,15 @@ public class AdminReportServiceImpl implements AdminReportService {
     @Transactional(readOnly = true)
     public PaymentReportResponse getPaymentReport(LocalDate dateFrom, LocalDate dateTo, Long courseId,
                                                    EnrollmentStatus status, Long studentId) {
-        List<Enrollment> enrollments = enrollmentRepository.searchForPaymentReport(
-                startOfDay(dateFrom), endOfDay(dateTo), courseId, status, studentId);
+        List<Enrollment> allReviewed = enrollmentRepository.searchForPaymentReport(
+                startOfDay(dateFrom), endOfDay(dateTo), courseId, studentId);
+
+        // "ชำระเงินเรียบร้อยแล้ว" ต้องนับทั้ง APPROVED และ COMPLETED (คอร์สสอนจบแล้ว) เป็นกลุ่มเดียวกัน
+        // เหมือนกับที่ getEnrollmentHistoryStatus ฝั่ง frontend ทำ ไม่งั้นจำนวน/ยอดจะไม่ตรงกับหน้า
+        // ประวัติการชำระเงิน — ตัวกรอง status ที่ผู้ใช้เลือก (APPROVED หรือ REJECTED) จึงต้องแปลผ่าน bucket นี้
+        List<Enrollment> enrollments = allReviewed.stream()
+                .filter(e -> status == null || paymentHistoryBucket(e.getStatus()) == status)
+                .toList();
 
         List<PaymentReportResponse.PaymentReportItem> items = enrollments.stream()
                 .map(e -> PaymentReportResponse.PaymentReportItem.builder()
@@ -301,7 +308,7 @@ public class AdminReportServiceImpl implements AdminReportService {
                         .courseCode(e.getCourse() != null ? e.getCourse().getCourseCode() : null)
                         .price(e.getFinalAmount())
                         .paymentMethod(e.getPaymentMethod() != null ? e.getPaymentMethod().name() : null)
-                        .status(e.getStatus() != null ? e.getStatus().name() : null)
+                        .status(paymentHistoryBucket(e.getStatus()).name())
                         .approvedBy(e.getApprovedBy())
                         .approvedAt(e.getApprovedAt())
                         .build())
@@ -312,10 +319,10 @@ public class AdminReportServiceImpl implements AdminReportService {
         // ประวัติการชำระเงินซึ่งคำนวณจาก finalAmount ของแต่ละ enrollment เสมอ
         BigDecimal totalAmount = sumAmount(enrollments, Enrollment::getFinalAmount);
         BigDecimal approvedAmount = sumAmount(
-                enrollments.stream().filter(e -> e.getStatus() == EnrollmentStatus.APPROVED).toList(),
+                allReviewed.stream().filter(e -> paymentHistoryBucket(e.getStatus()) == EnrollmentStatus.APPROVED).toList(),
                 Enrollment::getFinalAmount);
         BigDecimal rejectedAmount = sumAmount(
-                enrollments.stream().filter(e -> e.getStatus() == EnrollmentStatus.REJECTED).toList(),
+                allReviewed.stream().filter(e -> paymentHistoryBucket(e.getStatus()) == EnrollmentStatus.REJECTED).toList(),
                 Enrollment::getFinalAmount);
 
         return PaymentReportResponse.builder()
@@ -325,5 +332,11 @@ public class AdminReportServiceImpl implements AdminReportService {
                 .rejectedAmount(rejectedAmount)
                 .items(items)
                 .build();
+    }
+
+    // จับกลุ่มสถานะแบบเดียวกับ getEnrollmentHistoryStatus ฝั่ง frontend — APPROVED/COMPLETED ถือเป็น
+    // "ชำระเงินเรียบร้อยแล้ว" กลุ่มเดียวกัน (แทนด้วย EnrollmentStatus.APPROVED), ที่เหลือคือ REJECTED
+    private EnrollmentStatus paymentHistoryBucket(EnrollmentStatus status) {
+        return status == EnrollmentStatus.COMPLETED ? EnrollmentStatus.APPROVED : status;
     }
 }

@@ -72,19 +72,20 @@ public interface EnrollmentRepository extends JpaRepository<Enrollment, Long> {
                                       @Param("studentId") Long studentId);
 
     // รายงานข้อมูลการชำระเงิน — เหมือน searchForReport แต่จำกัดเฉพาะใบสมัครที่แอดมินตรวจสอบจบแล้ว
-    // (APPROVED = ชำระเงินเรียบร้อยแล้ว, REJECTED = ปฏิเสธ) เพราะ "ข้อมูลการชำระเงิน" ควรมีแค่ผลสรุป
-    // ไม่รวมรายการที่ยังรอตรวจสอบ/รอแก้ไขสลิป — status ให้กรองซ้ำแคบลงเหลือแค่ค่าใดค่าหนึ่งในสองนี้ได้
+    // (APPROVED/COMPLETED = ชำระเงินเรียบร้อยแล้ว, REJECTED = ปฏิเสธ) เพราะ "ข้อมูลการชำระเงิน" ควรมีแค่
+    // ผลสรุป ไม่รวมรายการที่ยังรอตรวจสอบ/รอแก้ไขสลิป — ต้องรวม COMPLETED ด้วยไม่งั้นจำนวนจะไม่ตรงกับ
+    // หน้าประวัติการชำระเงิน (getEnrollmentHistoryStatus ฝั่ง frontend นับ COMPLETED เป็น "ชำระเงินเรียบร้อยแล้ว"
+    // เหมือนกัน) — การกรองแคบลงเหลือ APPROVED หรือ REJECTED อย่างใดอย่างหนึ่งทำที่ service layer แทน
+    // เพราะ "ชำระเงินเรียบร้อยแล้ว" ต้องครอบคลุมทั้ง APPROVED และ COMPLETED ซึ่ง COALESCE เทียบเท่าค่าเดียวไม่ได้
     @Query("SELECT e FROM Enrollment e " +
             "WHERE e.enrollmentDate >= COALESCE(:dateFrom, e.enrollmentDate) " +
             "AND e.enrollmentDate <= COALESCE(:dateTo, e.enrollmentDate) " +
             "AND e.course.id = COALESCE(:courseId, e.course.id) " +
-            "AND e.status IN ('APPROVED', 'REJECTED') " +
-            "AND e.status = COALESCE(:status, e.status) " +
+            "AND e.status IN ('APPROVED', 'COMPLETED', 'REJECTED') " +
             "AND e.student.id = COALESCE(:studentId, e.student.id) " +
             "ORDER BY e.enrollmentDate ASC")
     List<Enrollment> searchForPaymentReport(@Param("dateFrom") LocalDateTime dateFrom,
                                              @Param("dateTo") LocalDateTime dateTo,
                                              @Param("courseId") Long courseId,
-                                             @Param("status") EnrollmentStatus status,
                                              @Param("studentId") Long studentId);
 }
