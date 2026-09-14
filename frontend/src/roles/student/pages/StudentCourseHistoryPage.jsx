@@ -139,49 +139,37 @@ export default function StudentCourseHistoryPage() {
         )}
 
         {!loading && !error && courses.length > 0 && (
-          <div className="smc-course-grid">
-            {courses.map((course) => (
-              <article key={course.id} className="smc-course-card">
-                <div className="smc-card-top">
-                  <div>
-                    <p className="smc-enrollment-code">{safeText(course.enrollmentCode)}</p>
-                    <h3>
-                      {safeText(course.courseName)}
-                      {course.courseCode && (
-                        <span className="smc-course-code">{course.courseCode}</span>
-                      )}
-                    </h3>
-                  </div>
-
-                  <span className="smc-status smc-status-COMPLETED">เรียนจบแล้ว</span>
-                </div>
-
-                <div className="smc-info-list">
-                  <div>
-                    <span>วันที่สมัคร</span>
-                    <strong>{formatDate(course.enrollmentDate)}</strong>
-                  </div>
-                  <div>
-                    <span>ผู้สอน</span>
-                    <strong>{safeText(course.tutorName)}</strong>
-                  </div>
-                  <div>
-                    <span>วันที่เริ่มเรียน</span>
-                    <strong>{formatDate(course.courseStartDate)}</strong>
-                  </div>
-                  <div className="smc-info-full">
-                    <span>ตารางเรียน</span>
-                    <strong className="schedule-multiline">{formatScheduleDaysTH(course.scheduleDays)}</strong>
-                  </div>
-                </div>
-
-                <div className="smc-card-actions">
-                  <button type="button" className="smc-outline-btn" onClick={() => setSelectedCourse(course)}>
-                    ดูรายละเอียด
-                  </button>
-                </div>
-              </article>
-            ))}
+          <div className="smc-table-wrap">
+            <table className="smc-table">
+              <thead>
+                <tr>
+                  <th>รหัสสมัคร</th>
+                  <th>รหัสคอร์ส</th>
+                  <th>ชื่อคอร์ส</th>
+                  <th>ผู้สอน</th>
+                  <th>วันที่สมัคร</th>
+                  <th>วันที่เริ่มเรียน</th>
+                  <th>รายละเอียด</th>
+                </tr>
+              </thead>
+              <tbody>
+                {courses.map((course) => (
+                  <tr key={course.id}>
+                    <td><span className="smc-table-code">{safeText(course.enrollmentCode)}</span></td>
+                    <td><span className="smc-table-code">{safeText(course.courseCode)}</span></td>
+                    <td className="smc-table-name">{safeText(course.courseName)}</td>
+                    <td>{safeText(course.tutorName)}</td>
+                    <td>{formatDate(course.enrollmentDate)}</td>
+                    <td>{formatDate(course.courseStartDate)}</td>
+                    <td>
+                      <button type="button" className="smc-table-btn-icon" title="ดูรายละเอียด" onClick={() => setSelectedCourse(course)}>
+                        👁
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
         )}
       </section>

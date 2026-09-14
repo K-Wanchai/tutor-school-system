@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   completeCourse,
+  getCourseCompletionEligibility,
   getMyCourses,
   markCourseViewed,
 } from '../services/tutorCourseService';
@@ -69,6 +70,7 @@ export default function TutorCoursesPage() {
   const [completing, setCompleting] = useState(false);
   const [completeError, setCompleteError] = useState('');
   const [toast, setToast] = useState('');
+  const [eligibilityByCourseId, setEligibilityByCourseId] = useState({});
 
   const load = useCallback(async () => {
     try {
@@ -84,6 +86,19 @@ export default function TutorCoursesPage() {
       if (unviewed.length > 0) {
         await Promise.all(unviewed.map((c) => markCourseViewed(c.id).catch(() => {})));
       }
+
+      // คอร์สที่กำลังเรียนอยู่ — เช็คว่าเช็คชื่อ+กรอกคะแนนสอบครบทุกช่องหรือยัง เพื่อเปิด/ปิดปุ่ม "บันทึกข้อมูลและจบการสอน"
+      const ongoing = list.filter((c) => c.status === 'ONGOING');
+      const entries = await Promise.all(
+        ongoing.map(async (c) => {
+          try {
+            return [c.id, await getCourseCompletionEligibility(c.id)];
+          } catch {
+            return [c.id, null];
+          }
+        })
+      );
+      setEligibilityByCourseId(Object.fromEntries(entries));
     } catch (error) {
       console.error(error);
       setCourses([]);
@@ -121,7 +136,7 @@ export default function TutorCoursesPage() {
     try {
       await completeCourse(completeTarget.id);
       setCompleteTarget(null);
-      setToast('ปิดจบการสอนคอร์สเรียบร้อยแล้ว นักเรียนสามารถประเมินคอร์สได้แล้ว');
+      setToast('บันทึกข้อมูลและจบการสอนเรียบร้อยแล้ว นักเรียนสามารถประเมินคอร์สได้แล้ว');
       window.setTimeout(() => setToast(''), 4000);
       await load();
     } catch (error) {
@@ -274,17 +289,27 @@ export default function TutorCoursesPage() {
                   </button>
                 )}
 
-                {course.status === 'ONGOING' && (
-                  <button
-                    className="tc-btn-complete"
-                    onClick={() => {
-                      setCompleteError('');
-                      setCompleteTarget(course);
-                    }}
-                  >
-                    ✅ ปิดจบการสอน
-                  </button>
-                )}
+                {course.status === 'ONGOING' && (() => {
+                  const eligibility = eligibilityByCourseId[course.id];
+                  const canComplete = !!eligibility?.canComplete;
+                  return (
+                    <button
+                      className="tc-btn-complete"
+                      disabled={!canComplete}
+                      title={
+                        canComplete
+                          ? undefined
+                          : 'ต้องเช็คชื่อและกรอกคะแนนสอบให้ครบทุกช่องก่อน จึงจะบันทึกข้อมูลและจบการสอนได้'
+                      }
+                      onClick={() => {
+                        setCompleteError('');
+                        setCompleteTarget(course);
+                      }}
+                    >
+                      ✅ บันทึกข้อมูลและจบการสอน
+                    </button>
+                  );
+                })()}
 
                 {/* {['PENDING', 'CLOSED', 'OPEN_FOR_REGISTRATION', 'ONGOING'].includes(course.status) && (
                   <button className="tc-btn-accept" onClick={() => openManage(course)}>
@@ -308,7 +333,7 @@ export default function TutorCoursesPage() {
         <div className="tc-modal-overlay" onClick={() => !completing && setCompleteTarget(null)}>
           <div className="tc-modal tc-modal--sm" onClick={(e) => e.stopPropagation()}>
             <div className="tc-modal-header">
-              <h2>ปิดจบการสอนคอร์ส</h2>
+              <h2>บันทึกข้อมูลและจบการสอน</h2>
               <button
                 className="tc-modal-close"
                 onClick={() => !completing && setCompleteTarget(null)}
@@ -319,10 +344,10 @@ export default function TutorCoursesPage() {
 
             <div className="tc-modal-section">
               <p>
-                ยืนยันปิดจบการสอนคอร์ส <strong>{completeTarget.courseName}</strong> หรือไม่?
+                ยืนยันบันทึกข้อมูลและจบการสอนคอร์ส <strong>{completeTarget.courseName}</strong> หรือไม่?
               </p>
               <p className="tc-modal-hint">
-                เมื่อปิดจบแล้ว สถานะคอร์สจะเปลี่ยนเป็น "สอนจบแล้ว"
+                เมื่อยืนยันแล้ว สถานะคอร์สจะเปลี่ยนเป็น "สอนจบแล้ว" ทันที
                 นักเรียนที่ชำระเงินเรียบร้อยจะถือว่าเรียนจบและสามารถประเมินคอร์สนี้ได้
                 การดำเนินการนี้ไม่สามารถย้อนกลับได้
               </p>
@@ -338,7 +363,7 @@ export default function TutorCoursesPage() {
                 onClick={confirmCompleteCourse}
                 disabled={completing}
               >
-                {completing ? 'กำลังดำเนินการ...' : 'ยืนยันปิดจบการสอน'}
+                {completing ? 'กำลังดำเนินการ...' : 'ยืนยันบันทึกข้อมูลและจบการสอน'}
               </button>
             </div>
           </div>

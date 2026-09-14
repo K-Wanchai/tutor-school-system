@@ -68,39 +68,35 @@ export default function TutorCourseHistoryPage() {
           <p>เมื่อคุณปิดจบการสอนคอร์สใด คอร์สนั้นจะย้ายมาแสดงที่นี่</p>
         </div>
       ) : (
-        <div className="tc-grid">
-          {filtered.map((course) => (
-            <div key={course.id} className="tc-card">
-              <div className="tc-card-top">
-                <span className="tc-code">{course.courseCode}</span>
-                <span className="tc-badge tc-badge-completed">สอนจบแล้ว</span>
-              </div>
-
-              <h2 className="tc-card-title">{course.courseName}</h2>
-              <p className="tc-card-desc">{course.description || 'ไม่มีรายละเอียดคอร์ส'}</p>
-
-              <div className="tc-card-info">
-                <div>
-                  <span>ชั่วโมงเรียน</span>
-                  <strong>{course.totalHours || 0} ชั่วโมง</strong>
-                </div>
-                <div>
-                  <span>จำนวนนักเรียน</span>
-                  <strong>{course.enrolledCount || 0}/{course.seatLimit || 0} คน</strong>
-                </div>
-                <div>
-                  <span>เริ่มเรียน</span>
-                  <strong>{formatDate(course.courseStartDate)}</strong>
-                </div>
-              </div>
-
-              <div className="tc-card-actions">
-                <button className="tc-btn-detail" onClick={() => setDetailCourse(course)}>
-                  ดูรายละเอียด
-                </button>
-              </div>
-            </div>
-          ))}
+        <div className="tc-table-wrap">
+          <table className="tc-table">
+            <thead>
+              <tr>
+                <th>รหัสคอร์ส</th>
+                <th>ชื่อคอร์ส</th>
+                <th>ชั่วโมงเรียน</th>
+                <th>จำนวนนักเรียน</th>
+                <th>วันเริ่มเรียน</th>
+                <th>รายละเอียด</th>
+              </tr>
+            </thead>
+            <tbody>
+              {filtered.map((course) => (
+                <tr key={course.id}>
+                  <td><span className="tc-table-code">{course.courseCode}</span></td>
+                  <td className="tc-table-name">{course.courseName}</td>
+                  <td>{course.totalHours || 0} ชั่วโมง</td>
+                  <td>{course.enrolledCount || 0}/{course.seatLimit || 0} คน</td>
+                  <td>{formatDate(course.courseStartDate)}</td>
+                  <td>
+                    <button className="tc-table-btn-icon" title="ดูรายละเอียด" onClick={() => setDetailCourse(course)}>
+                      👁
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
       )}
 

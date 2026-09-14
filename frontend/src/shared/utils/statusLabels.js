@@ -18,8 +18,8 @@ export const SCHEDULE_STATUS_TH = {
 
 export const ENROLLMENT_STATUS_TH = {
   PENDING: 'รออนุมัติ',
-  APPROVED: 'อนุมัติแล้ว',
-  REJECTED: 'ถูกปฏิเสธ',
+  APPROVED: 'ยืนยันการชำระเงินแล้ว',
+  REJECTED: 'ปฏิเสธการชำระเงินแล้ว',
   CANCELLED: 'ยกเลิก',
   COMPLETED: 'เรียนจบแล้ว',
 };

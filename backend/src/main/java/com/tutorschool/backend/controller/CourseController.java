@@ -21,6 +21,7 @@ import com.tutorschool.backend.dto.request.CreateCourseRequest;
 import com.tutorschool.backend.dto.request.UpdateCourseRequest;
 import com.tutorschool.backend.dto.request.UpdateCourseStatusRequest;
 import com.tutorschool.backend.dto.response.ApiResponse;
+import com.tutorschool.backend.dto.response.CourseCompletionEligibilityResponse;
 import com.tutorschool.backend.dto.response.CourseResponse;
 import com.tutorschool.backend.dto.response.PageResponse;
 import com.tutorschool.backend.dto.response.TutorAvailabilityResponse;
@@ -120,7 +121,18 @@ public class CourseController {
             @PathVariable Long courseId,
             @AuthenticationPrincipal User currentUser) {
         CourseResponse response = courseService.completeCourse(courseId, currentUser.getId());
-        return ResponseEntity.ok(ApiResponse.success("ปิดจบการสอนคอร์สเรียบร้อยแล้ว", response));
+        return ResponseEntity.ok(ApiResponse.success("บันทึกข้อมูลและจบการสอนเรียบร้อยแล้ว", response));
+    }
+
+    // เช็คว่าคอร์สพร้อมกดปุ่ม "บันทึกข้อมูลและจบการสอน" หรือยัง (เช็คชื่อ+กรอกคะแนนสอบครบทุกช่องหรือยัง)
+    @GetMapping("/{courseId}/completion-eligibility")
+    @PreAuthorize("hasRole('TUTOR')")
+    public ResponseEntity<ApiResponse<CourseCompletionEligibilityResponse>> getCourseCompletionEligibility(
+            @PathVariable Long courseId,
+            @AuthenticationPrincipal User currentUser) {
+        CourseCompletionEligibilityResponse response =
+                courseService.getCourseCompletionEligibility(courseId, currentUser.getId());
+        return ResponseEntity.ok(ApiResponse.success("ตรวจสอบสถานะความพร้อมสำเร็จ", response));
     }
 
     @DeleteMapping("/{id}")

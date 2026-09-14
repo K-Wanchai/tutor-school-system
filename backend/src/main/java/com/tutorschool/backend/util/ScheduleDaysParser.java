@@ -1,9 +1,13 @@
 package com.tutorschool.backend.util;
 
 import java.time.DayOfWeek;
+import java.time.Duration;
+import java.time.LocalDate;
 import java.time.LocalTime;
 import java.time.format.DateTimeParseException;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -53,6 +57,35 @@ public final class ScheduleDaysParser {
         }
 
         return slots;
+    }
+
+    // จำลองวันเรียนจริงของคอร์สทั้งหมด (คาบเรียนที่ตรงกับ pattern รายสัปดาห์) ไล่ไปทีละวันตั้งแต่วันเริ่มเรียน
+    // จนสะสมชั่วโมงครบ totalHours — ใช้ร่วมกันทั้งหน้าตารางสอน (ClassAttendanceService) และตอนเช็คว่า
+    // ปิดจบการสอนได้หรือยัง (CourseService) เพื่อให้จำนวนคาบเรียนที่ทั้งสองฝั่งอ้างอิงตรงกันเสมอ
+    private static final int SESSION_SCAN_LIMIT_DAYS = 3650; // 10 ปี — กันลูปไม่รู้จบถ้า pattern ไม่ตรงวันไหนเลย
+
+    public static List<LocalDate> computeSessionDates(LocalDate startDate, int totalHours, Map<String, LocalTime[]> daySlots) {
+        List<LocalDate> dates = new ArrayList<>();
+        if (startDate == null || daySlots.isEmpty()) {
+            return dates;
+        }
+
+        LocalDate cursor = startDate;
+        long targetMinutes = totalHours * 60L;
+        long cumulativeMinutes = 0;
+        int scanned = 0;
+
+        while (cumulativeMinutes < targetMinutes && scanned < SESSION_SCAN_LIMIT_DAYS) {
+            LocalTime[] slot = daySlots.get(toDayCode(cursor.getDayOfWeek()));
+            if (slot != null) {
+                dates.add(cursor);
+                cumulativeMinutes += Duration.between(slot[0], slot[1]).toMinutes();
+            }
+            cursor = cursor.plusDays(1);
+            scanned++;
+        }
+
+        return dates;
     }
 
     public static String toDayCode(DayOfWeek dayOfWeek) {

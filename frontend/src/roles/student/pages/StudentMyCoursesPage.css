@@ -163,6 +163,76 @@
   gap: 18px;
 }
 
+/* Table (ประวัติคอร์สเรียน) */
+.smc-table-wrap {
+  border: 1px solid #e5e7eb;
+  border-radius: 16px;
+  overflow-x: auto;
+}
+
+.smc-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13.5px;
+}
+
+.smc-table th {
+  background: #f5f3ff;
+  color: #5b21b6;
+  font-weight: 700;
+  text-align: left;
+  padding: 12px 16px;
+  border-bottom: 2px solid #ddd6fe;
+  white-space: nowrap;
+}
+
+.smc-table td {
+  padding: 12px 16px;
+  border-bottom: 1px solid #f3f4f6;
+  color: #374151;
+  vertical-align: middle;
+}
+
+.smc-table tr:last-child td {
+  border-bottom: none;
+}
+
+.smc-table tr:hover td {
+  background: #faf9ff;
+}
+
+.smc-table-code {
+  font-family: monospace;
+  font-size: 12.5px;
+  background: #ede9fe;
+  color: #5b21b6;
+  padding: 2px 8px;
+  border-radius: 4px;
+}
+
+.smc-table-name {
+  max-width: 280px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-weight: 700;
+  color: #111827;
+}
+
+.smc-table-btn-icon {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 5px;
+  border-radius: 6px;
+  font-size: 15px;
+  transition: background 0.15s;
+}
+
+.smc-table-btn-icon:hover {
+  background: #ede9fe;
+}
+
 .smc-course-card {
   display: flex;
   flex-direction: column;

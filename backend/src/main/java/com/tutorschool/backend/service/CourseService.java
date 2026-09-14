@@ -5,6 +5,7 @@ import java.util.List;
 import com.tutorschool.backend.dto.request.CreateCourseRequest;
 import com.tutorschool.backend.dto.request.UpdateCourseRequest;
 import com.tutorschool.backend.dto.request.UpdateCourseStatusRequest;
+import com.tutorschool.backend.dto.response.CourseCompletionEligibilityResponse;
 import com.tutorschool.backend.dto.response.CourseResponse;
 import com.tutorschool.backend.dto.response.PageResponse;
 import com.tutorschool.backend.dto.response.TutorAvailabilityResponse;
@@ -35,6 +36,8 @@ public interface CourseService {
     void markCourseViewed(Long courseId, Long tutorUserId);
 
     CourseResponse completeCourse(Long courseId, Long tutorUserId);
+
+    CourseCompletionEligibilityResponse getCourseCompletionEligibility(Long courseId, Long tutorUserId);
 
     void deleteCourse(Long id);
 

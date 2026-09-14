@@ -42,3 +42,14 @@ export async function completeCourse(courseId) {
   }
 }
 
+// { canComplete, attendanceComplete, examScoresComplete } — เช็คว่าเช็คชื่อ+กรอกคะแนนสอบครบทุกช่องหรือยัง
+// ก่อนจะให้กดปุ่ม "บันทึกข้อมูลและจบการสอน" ได้
+export async function getCourseCompletionEligibility(courseId) {
+  try {
+    const res = await api.get(`/courses/${courseId}/completion-eligibility`);
+    return unwrap(res);
+  } catch (error) {
+    throw new Error(apiError(error, 'getCourseCompletionEligibility'), { cause: error });
+  }
+}
+

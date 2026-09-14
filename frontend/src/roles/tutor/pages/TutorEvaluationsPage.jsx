@@ -351,7 +351,7 @@ function getRatingLabel(value) {
   if (value >= 4) return 'ดีมาก';
   if (value >= 3) return 'พอใช้';
   if (value >= 2) return 'ควรปรับปรุง';
-  return 'ต้องติดตาม';
+  return 'แย่';
 }
 
 function getRatingClass(value) {

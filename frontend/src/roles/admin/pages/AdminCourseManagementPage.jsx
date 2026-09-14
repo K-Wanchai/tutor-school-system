@@ -43,8 +43,8 @@ const STATUS_LABEL = {
 
 const ENROLLMENT_STATUS_LABEL = {
   PENDING:   { label: 'รอดำเนินการ', cls: 'cm-badge-draft' },
-  APPROVED:  { label: 'อนุมัติแล้ว', cls: 'cm-badge-open' },
-  REJECTED:  { label: 'ปฏิเสธ',      cls: 'cm-badge-closed' },
+  APPROVED:  { label: 'ยืนยันการชำระเงินแล้ว', cls: 'cm-badge-open' },
+  REJECTED:  { label: 'ปฏิเสธการชำระเงินแล้ว',  cls: 'cm-badge-closed' },
   CANCELLED: { label: 'ยกเลิก',      cls: 'cm-badge-closed' },
   COMPLETED: { label: 'เรียนจบ',     cls: 'cm-badge-completed' },
 };

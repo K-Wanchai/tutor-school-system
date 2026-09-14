@@ -16,6 +16,7 @@ import com.tutorschool.backend.dto.request.CreateNotificationRequest;
 import com.tutorschool.backend.dto.request.ScheduleDaySlotRequest;
 import com.tutorschool.backend.dto.request.UpdateCourseRequest;
 import com.tutorschool.backend.dto.request.UpdateCourseStatusRequest;
+import com.tutorschool.backend.dto.response.CourseCompletionEligibilityResponse;
 import com.tutorschool.backend.dto.response.CourseResponse;
 import com.tutorschool.backend.dto.response.PageResponse;
 import com.tutorschool.backend.dto.response.TutorAvailabilityResponse;
@@ -24,19 +25,24 @@ import com.tutorschool.backend.entity.CourseScheduleDay;
 import com.tutorschool.backend.entity.CourseStatus;
 import com.tutorschool.backend.entity.Enrollment;
 import com.tutorschool.backend.entity.EnrollmentStatus;
+import com.tutorschool.backend.entity.Exam;
+import com.tutorschool.backend.entity.ExamStatus;
 import com.tutorschool.backend.entity.InstitutionProfile;
 import com.tutorschool.backend.entity.NotificationType;
 import com.tutorschool.backend.entity.ReferenceType;
+import com.tutorschool.backend.entity.Student;
 import com.tutorschool.backend.entity.Tutor;
 import com.tutorschool.backend.exception.CourseScheduleConflictException;
 import com.tutorschool.backend.exception.InvalidCourseDateException;
 import com.tutorschool.backend.exception.ResourceInUseException;
 import com.tutorschool.backend.exception.ResourceNotFoundException;
 import com.tutorschool.backend.mapper.CourseMapper;
+import com.tutorschool.backend.repository.ClassAttendanceRepository;
 import com.tutorschool.backend.repository.CourseEvaluationRepository;
 import com.tutorschool.backend.repository.CourseRepository;
 import com.tutorschool.backend.repository.CourseScheduleDayRepository;
 import com.tutorschool.backend.repository.EnrollmentRepository;
+import com.tutorschool.backend.repository.ExamManualScoreRepository;
 import com.tutorschool.backend.repository.ExamRepository;
 import com.tutorschool.backend.repository.InstitutionProfileRepository;
 import com.tutorschool.backend.repository.TutorRepository;
@@ -50,7 +56,10 @@ import lombok.extern.slf4j.Slf4j;
 import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Service
@@ -61,6 +70,8 @@ public class CourseServiceImpl implements CourseService {
     private final TutorRepository TutorRepository;
     private final EnrollmentRepository enrollmentRepository;
     private final ExamRepository examRepository;
+    private final ExamManualScoreRepository examManualScoreRepository;
+    private final ClassAttendanceRepository classAttendanceRepository;
     private final CourseEvaluationRepository courseEvaluationRepository;
     private final CourseScheduleDayRepository courseScheduleDayRepository;
     private final InstitutionProfileRepository institutionProfileRepository;
@@ -348,6 +359,12 @@ public class CourseServiceImpl implements CourseService {
                     "ปิดจบการสอนได้เฉพาะคอร์สที่กำลังเรียนอยู่เท่านั้น");
         }
 
+        CourseCompletionEligibilityResponse eligibility = buildCompletionEligibility(course);
+        if (!eligibility.isCanComplete()) {
+            throw new IllegalStateException(
+                    "ต้องเช็คชื่อและกรอกคะแนนสอบให้ครบทุกช่องก่อน จึงจะบันทึกข้อมูลและจบการสอนได้");
+        }
+
         course.setStatus(CourseStatus.COMPLETED);
         course = courseRepository.save(course);
 
@@ -362,6 +379,92 @@ public class CourseServiceImpl implements CourseService {
         sendCourseCompletedNotifications(course, approved);
 
         return courseMapper.toResponse(course, countActiveEnrollments(courseId));
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public CourseCompletionEligibilityResponse getCourseCompletionEligibility(Long courseId, Long tutorUserId) {
+        Course course = courseRepository.findById(courseId)
+                .orElseThrow(() -> new ResourceNotFoundException("Course", courseId));
+        verifyTutorOwnsCourse(course, tutorUserId);
+        return buildCompletionEligibility(course);
+    }
+
+    // ปิดจบการสอนได้ก็ต่อเมื่อเช็คชื่อครบทุกคาบเรียน + กรอกคะแนนสอบครบทุกฉบับ สำหรับนักเรียนที่อนุมัติแล้วทุกคน
+    // (เผื่อกรณีติวเตอร์แจ้งงดสอนวันนั้นแล้วยังอยากเก็บชั่วโมงให้ครบ ก็ยังต้องเช็คชื่อ/บันทึกไว้อยู่ดี — ระบบจึง
+    // ไม่ปิดคอร์สให้เองตามตารางเรียน ต้องให้ติวเตอร์กรอกข้อมูลให้ครบแล้วกดยืนยันเองเท่านั้น)
+    private CourseCompletionEligibilityResponse buildCompletionEligibility(Course course) {
+        List<Student> activeStudents = enrollmentRepository
+                .findByCourseIdAndStatus(course.getId(), EnrollmentStatus.APPROVED).stream()
+                .map(Enrollment::getStudent)
+                .toList();
+
+        boolean attendanceComplete = isAttendanceComplete(course, activeStudents);
+        boolean examScoresComplete = isExamScoresComplete(course, activeStudents);
+
+        return CourseCompletionEligibilityResponse.builder()
+                .attendanceComplete(attendanceComplete)
+                .examScoresComplete(examScoresComplete)
+                .canComplete(attendanceComplete && examScoresComplete)
+                .build();
+    }
+
+    private boolean isAttendanceComplete(Course course, List<Student> activeStudents) {
+        if (activeStudents.isEmpty()) {
+            return true;
+        }
+
+        Map<String, LocalTime[]> daySlots = new HashMap<>();
+        for (CourseScheduleDay pattern : courseScheduleDayRepository.findByCourseId(course.getId())) {
+            daySlots.put(pattern.getDayOfWeek(), new LocalTime[]{pattern.getStartTime(), pattern.getEndTime()});
+        }
+        if (daySlots.isEmpty() || course.getCourseStartDate() == null || course.getTotalHours() == null) {
+            return true;
+        }
+        List<LocalDate> sessionDates = ScheduleDaysParser.computeSessionDates(
+                course.getCourseStartDate(), course.getTotalHours(), daySlots);
+        if (sessionDates.isEmpty()) {
+            return true;
+        }
+
+        Set<String> recorded = classAttendanceRepository.findByCourseId(course.getId()).stream()
+                .map(a -> a.getSessionDate() + "|" + a.getStudent().getId())
+                .collect(Collectors.toSet());
+
+        for (LocalDate date : sessionDates) {
+            for (Student student : activeStudents) {
+                if (!recorded.contains(date + "|" + student.getId())) {
+                    return false;
+                }
+            }
+        }
+        return true;
+    }
+
+    private boolean isExamScoresComplete(Course course, List<Student> activeStudents) {
+        if (activeStudents.isEmpty()) {
+            return true;
+        }
+
+        List<Exam> exams = examRepository.findByCourseId(course.getId()).stream()
+                .filter(e -> e.getStatus() == ExamStatus.OPEN || e.getStatus() == ExamStatus.CLOSED)
+                .toList();
+        if (exams.isEmpty()) {
+            return true;
+        }
+
+        Set<String> scored = examManualScoreRepository.findByExamCourseId(course.getId()).stream()
+                .map(s -> s.getExam().getId() + "|" + s.getStudent().getId())
+                .collect(Collectors.toSet());
+
+        for (Exam exam : exams) {
+            for (Student student : activeStudents) {
+                if (!scored.contains(exam.getId() + "|" + student.getId())) {
+                    return false;
+                }
+            }
+        }
+        return true;
     }
 
     private void sendCourseCompletedNotifications(Course course, List<Enrollment> completedEnrollments) {

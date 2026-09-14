@@ -25,7 +25,6 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.Duration;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.ArrayList;
@@ -44,8 +43,6 @@ public class ClassAttendanceServiceImpl implements ClassAttendanceService {
     private final StudentRepository studentRepository;
     private final TutorRepository tutorRepository;
     private final UserRepository userRepository;
-
-    private static final int SESSION_SCAN_LIMIT_DAYS = 3650; // 10 years — กันลูปไม่รู้จบถ้า pattern ไม่ตรงวันไหนเลย
 
     @Override
     @Transactional(readOnly = true)
@@ -77,24 +74,17 @@ public class ClassAttendanceServiceImpl implements ClassAttendanceService {
             return List.of();
         }
 
-        List<CourseSessionResponse> sessions = new ArrayList<>();
-        LocalDate cursor = course.getCourseStartDate();
-        long targetMinutes = course.getTotalHours() * 60L;
-        long cumulativeMinutes = 0;
-        int scanned = 0;
+        List<LocalDate> sessionDates = ScheduleDaysParser.computeSessionDates(
+                course.getCourseStartDate(), course.getTotalHours(), daySlots);
 
-        while (cumulativeMinutes < targetMinutes && scanned < SESSION_SCAN_LIMIT_DAYS) {
-            LocalTime[] slot = daySlots.get(ScheduleDaysParser.toDayCode(cursor.getDayOfWeek()));
-            if (slot != null) {
-                sessions.add(CourseSessionResponse.builder()
-                        .scheduleDate(cursor)
-                        .startTime(slot[0])
-                        .endTime(slot[1])
-                        .build());
-                cumulativeMinutes += Duration.between(slot[0], slot[1]).toMinutes();
-            }
-            cursor = cursor.plusDays(1);
-            scanned++;
+        List<CourseSessionResponse> sessions = new ArrayList<>();
+        for (LocalDate date : sessionDates) {
+            LocalTime[] slot = daySlots.get(ScheduleDaysParser.toDayCode(date.getDayOfWeek()));
+            sessions.add(CourseSessionResponse.builder()
+                    .scheduleDate(date)
+                    .startTime(slot[0])
+                    .endTime(slot[1])
+                    .build());
         }
 
         return sessions;
