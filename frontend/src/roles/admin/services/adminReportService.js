@@ -110,3 +110,13 @@ export const getPaymentStatusReport = async (filters) => {
     throw new Error(apiError('getPaymentStatusReport', error), { cause: error });
   }
 };
+
+// ── ข้อมูลการเข้าเรียน ──
+export const getAttendanceReport = async (filters) => {
+  try {
+    const response = await api.get('/admin/reports/attendance', { params: cleanParams(filters) });
+    return response.data.data;
+  } catch (error) {
+    throw new Error(apiError('getAttendanceReport', error), { cause: error });
+  }
+};

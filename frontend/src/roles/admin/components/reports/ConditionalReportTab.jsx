@@ -3,13 +3,13 @@ import CalendarDateInput from '../../../../shared/components/CalendarDateInput';
 import { getStudents } from '../../services/adminStudentService';
 import { getTutors } from '../../services/adminTutorService';
 import { getCourses } from '../../services/adminCourseService';
-import { getStudentReport, getTutorReport, getCourseReport, getEnrollmentReport, getPaymentStatusReport } from '../../services/adminReportService';
+import { getStudentReport, getTutorReport, getCourseReport, getEnrollmentReport, getPaymentStatusReport, getAttendanceReport } from '../../services/adminReportService';
 import { getInstitutionProfile } from '../../../../shared/services/institutionService';
 import { getExamInstitutions, getExamInstitutionById } from '../../services/examInstitutionService';
 import { getFaculties, getMajors } from '../../services/academicFacultyService';
 import { getVocationalMajors } from '../../services/vocationalMajorService';
 import { getSchoolTracks } from '../../services/schoolTrackService';
-import { statusLabelTH, COURSE_STATUS_TH, ENROLLMENT_STATUS_TH, PAYMENT_STATUS_TH } from '../../../../shared/utils/statusLabels';
+import { statusLabelTH, COURSE_STATUS_TH, ENROLLMENT_STATUS_TH, PAYMENT_STATUS_TH, ATTENDANCE_STATUS_TH } from '../../../../shared/utils/statusLabels';
 import { ENROLLMENT_HISTORY_STATUS_LABEL } from '../../../../shared/utils/enrollmentHistoryStatus';
 
 const EDUCATION_LEVEL_TH = {
@@ -119,7 +119,7 @@ export default function ConditionalReportTab() {
 
   // ตัวกรองเฉพาะทางของ "ข้อมูลนักเรียน"/"ข้อมูลสมัครเรียน"/"ข้อมูลการชำระเงิน" — โหลดรายชื่อนักเรียนแบบ lazy ตอนเลือกหมวดนี้ครั้งแรกเท่านั้น
   useEffect(() => {
-    if (!['STUDENT', 'ENROLLMENT', 'PAYMENT'].includes(filters.category) || students.length > 0) return;
+    if (!['STUDENT', 'ENROLLMENT', 'PAYMENT', 'ATTENDANCE'].includes(filters.category) || students.length > 0) return;
     let mounted = true;
     getStudents({ page: 0, size: 5000 })
       .then((data) => { if (mounted) setStudents(asList(data)); })
@@ -139,7 +139,7 @@ export default function ConditionalReportTab() {
 
   // ตัวกรองเฉพาะทางของ "ข้อมูลคอร์สเรียน"/"ข้อมูลสมัครเรียน"/"ข้อมูลการชำระเงิน" — โหลดรายชื่อคอร์สแบบ lazy ตอนเลือกหมวดนี้ครั้งแรกเท่านั้น
   useEffect(() => {
-    if (!['COURSE', 'ENROLLMENT', 'PAYMENT'].includes(filters.category) || courses.length > 0) return;
+    if (!['COURSE', 'ENROLLMENT', 'PAYMENT', 'ATTENDANCE'].includes(filters.category) || courses.length > 0) return;
     let mounted = true;
     getCourses({ page: 0, size: 5000 })
       .then((data) => { if (mounted) setCourses(asList(data)); })
@@ -157,7 +157,7 @@ export default function ConditionalReportTab() {
     return () => { mounted = false; };
   }, [filters.category, examInstitutions.length]);
 
-  const specificOptions = ['STUDENT', 'ENROLLMENT', 'PAYMENT'].includes(filters.category)
+  const specificOptions = ['STUDENT', 'ENROLLMENT', 'PAYMENT', 'ATTENDANCE'].includes(filters.category)
     ? students.map((s) => ({ value: s.id, label: `${s.fullName} (${s.studentCode})` }))
     : filters.category === 'TUTOR'
     ? tutors.map((t) => ({ value: t.id, label: `${t.firstName} ${t.lastName} (${t.tutorCode || ''})` }))
@@ -183,11 +183,14 @@ export default function ConditionalReportTab() {
 
   const isSearchable = filters.category === 'STUDENT' || filters.category === 'TUTOR'
     || filters.category === 'COURSE' || filters.category === 'ENROLLMENT' || filters.category === 'PAYMENT'
+    || filters.category === 'ATTENDANCE'
     || filters.category === 'INSTITUTION' || filters.category === 'EXAM_INSTITUTION';
   const hasSpecificFilter = filters.category === 'STUDENT' || filters.category === 'TUTOR'
     || filters.category === 'COURSE' || filters.category === 'ENROLLMENT' || filters.category === 'PAYMENT'
+    || filters.category === 'ATTENDANCE'
     || filters.category === 'EXAM_INSTITUTION';
-  const hasCourseFilter = filters.category === 'ENROLLMENT' || filters.category === 'PAYMENT';
+  const hasCourseFilter = filters.category === 'ENROLLMENT' || filters.category === 'PAYMENT'
+    || filters.category === 'ATTENDANCE';
 
   // ต้องแสดงข้อมูลครบทุกตัวอักษรในบรรทัดเดียวตอนพิมพ์ ห้ามตัดขึ้นบรรทัดใหม่ — คำนวณ zoom
   // ให้ตารางย่อพอดีความกว้างหน้ากระดาษแทนการ wrap (ดู white-space: nowrap ใน AdminReportsPage.css)
@@ -262,6 +265,14 @@ export default function ConditionalReportTab() {
           dateTo: filters.dateTo,
           courseId: filters.courseId,
           status: filters.status,
+          studentId: filters.specific,
+        });
+        setReport(data);
+      } else if (filters.category === 'ATTENDANCE') {
+        const data = await getAttendanceReport({
+          dateFrom: filters.dateFrom,
+          dateTo: filters.dateTo,
+          courseId: filters.courseId,
           studentId: filters.specific,
         });
         setReport(data);
@@ -687,6 +698,69 @@ export default function ConditionalReportTab() {
                             <td>{i.processedBy || '-'}</td>
                             <td>{formatDateTime(i.processedAt)}</td>
                             <td>{i.note || '-'}</td>
+                          </tr>
+                        ))
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              </section>
+            </div>
+          )}
+
+          {report && filters.category === 'ATTENDANCE' && (
+            <div id="ar-print-area">
+              <h2 className="ar-print-title">
+                รายงานข้อมูลการเข้าเรียน
+                <span>
+                  {filters.dateFrom || filters.dateTo
+                    ? `ช่วงวันที่เรียน: ${filters.dateFrom ? formatDate(filters.dateFrom) : 'ไม่ระบุ'} ถึง ${filters.dateTo ? formatDate(filters.dateTo) : 'ไม่ระบุ'}`
+                    : 'ทุกช่วงวันที่เรียน'}
+                  {' · '}พิมพ์เมื่อ {formatDate(new Date())}
+                </span>
+              </h2>
+
+              <div className="ar-summary-chips">
+                <div className="ar-chip"><span>จำนวนนักเรียน/คอร์ส</span><strong>{formatNumber(report.totalCount)}</strong></div>
+              </div>
+
+              <section className="ar-card">
+                <div className="ar-table-wrap">
+                  <table className="ar-table ar-print-table">
+                    <thead>
+                      <tr>
+                        <th>นักเรียน</th>
+                        <th>คอร์ส</th>
+                        <th className="ar-num">จำนวนครั้งเรียน</th>
+                        <th className="ar-num">{ATTENDANCE_STATUS_TH.PRESENT}</th>
+                        <th className="ar-num">{ATTENDANCE_STATUS_TH.LATE}</th>
+                        <th className="ar-num">{ATTENDANCE_STATUS_TH.ABSENT}</th>
+                        <th className="ar-num">{ATTENDANCE_STATUS_TH.LEAVE}</th>
+                        <th className="ar-num">{ATTENDANCE_STATUS_TH.EXCUSED}</th>
+                        <th className="ar-num">อัตราเข้าเรียน</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {(report.items || []).length === 0 ? (
+                        <tr><td colSpan={9} className="ar-empty">ไม่พบข้อมูลตามเงื่อนไขที่เลือก</td></tr>
+                      ) : (
+                        report.items.map((i) => (
+                          <tr key={`${i.studentId}-${i.courseId}`}>
+                            <td>
+                              <strong>{i.studentName || '-'}</strong>
+                              <span className="ar-code">{i.studentCode || ''}</span>
+                            </td>
+                            <td>
+                              <strong>{i.courseName || '-'}</strong>
+                              <span className="ar-code">{i.courseCode || ''}</span>
+                            </td>
+                            <td className="ar-num">{formatNumber(i.totalSessions)}</td>
+                            <td className="ar-num">{formatNumber(i.presentCount)}</td>
+                            <td className="ar-num">{formatNumber(i.lateCount)}</td>
+                            <td className="ar-num">{formatNumber(i.absentCount)}</td>
+                            <td className="ar-num">{formatNumber(i.leaveCount)}</td>
+                            <td className="ar-num">{formatNumber(i.excusedCount)}</td>
+                            <td className="ar-num">{i.attendanceRate}%</td>
                           </tr>
                         ))
                       )}

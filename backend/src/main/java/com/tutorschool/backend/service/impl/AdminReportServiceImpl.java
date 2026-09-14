@@ -2,6 +2,7 @@ package com.tutorschool.backend.service.impl;
 
 import com.tutorschool.backend.dto.response.AdminReportResponse;
 import com.tutorschool.backend.dto.response.AdminReportResponse.CourseReportItem;
+import com.tutorschool.backend.dto.response.AttendanceReportResponse;
 import com.tutorschool.backend.dto.response.CourseReportResponse;
 import com.tutorschool.backend.dto.response.EnrollmentReportResponse;
 import com.tutorschool.backend.dto.response.EnrollmentReportResponse.EnrollmentReportItem;
@@ -10,6 +11,8 @@ import com.tutorschool.backend.dto.response.RevenueReportResponse;
 import com.tutorschool.backend.dto.response.RevenueReportResponse.RevenueReportItem;
 import com.tutorschool.backend.dto.response.StudentReportResponse;
 import com.tutorschool.backend.dto.response.TutorReportResponse;
+import com.tutorschool.backend.entity.AttendanceStatus;
+import com.tutorschool.backend.entity.ClassAttendance;
 import com.tutorschool.backend.entity.Course;
 import com.tutorschool.backend.entity.CourseEvaluation;
 import com.tutorschool.backend.entity.Enrollment;
@@ -18,6 +21,7 @@ import com.tutorschool.backend.entity.Payment;
 import com.tutorschool.backend.entity.PaymentVerificationStatus;
 import com.tutorschool.backend.entity.Student;
 import com.tutorschool.backend.entity.Tutor;
+import com.tutorschool.backend.repository.ClassAttendanceRepository;
 import com.tutorschool.backend.repository.CourseEvaluationRepository;
 import com.tutorschool.backend.repository.CourseRepository;
 import com.tutorschool.backend.repository.EnrollmentRepository;
@@ -56,6 +60,7 @@ public class AdminReportServiceImpl implements AdminReportService {
     private final EnrollmentRepository enrollmentRepository;
     private final PaymentRepository paymentRepository;
     private final CourseEvaluationRepository courseEvaluationRepository;
+    private final ClassAttendanceRepository classAttendanceRepository;
     private final StudentMapper studentMapper;
     private final TutorMapper tutorMapper;
     private final CourseMapper courseMapper;
@@ -339,5 +344,55 @@ public class AdminReportServiceImpl implements AdminReportService {
     // "ชำระเงินเรียบร้อยแล้ว" กลุ่มเดียวกัน (แทนด้วย EnrollmentStatus.APPROVED), ที่เหลือคือ REJECTED
     private EnrollmentStatus paymentHistoryBucket(EnrollmentStatus status) {
         return status == EnrollmentStatus.COMPLETED ? EnrollmentStatus.APPROVED : status;
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public AttendanceReportResponse getAttendanceReport(LocalDate dateFrom, LocalDate dateTo, Long courseId, Long studentId) {
+        List<ClassAttendance> records = classAttendanceRepository.searchForReport(dateFrom, dateTo, courseId, studentId);
+
+        record StudentCourseKey(Long studentId, Long courseId) {}
+        Map<StudentCourseKey, List<ClassAttendance>> grouped = records.stream()
+                .collect(Collectors.groupingBy(a -> new StudentCourseKey(
+                        a.getStudent() != null ? a.getStudent().getId() : null,
+                        a.getCourse() != null ? a.getCourse().getId() : null)));
+
+        List<AttendanceReportResponse.AttendanceReportItem> items = grouped.values().stream()
+                .map(list -> {
+                    ClassAttendance sample = list.get(0);
+                    long present = list.stream().filter(a -> a.getStatus() == AttendanceStatus.PRESENT).count();
+                    long late = list.stream().filter(a -> a.getStatus() == AttendanceStatus.LATE).count();
+                    long absent = list.stream().filter(a -> a.getStatus() == AttendanceStatus.ABSENT).count();
+                    long leave = list.stream().filter(a -> a.getStatus() == AttendanceStatus.LEAVE).count();
+                    long excused = list.stream().filter(a -> a.getStatus() == AttendanceStatus.EXCUSED).count();
+                    long total = list.size();
+                    // อัตราเข้าเรียน = (เข้าเรียน + มาสาย) / จำนวนครั้งทั้งหมด — มาสายยังถือว่าเข้าเรียน
+                    double rate = total == 0 ? 0.0 : Math.round((present + late) * 1000.0 / total) / 10.0;
+
+                    return AttendanceReportResponse.AttendanceReportItem.builder()
+                            .studentId(sample.getStudent() != null ? sample.getStudent().getId() : null)
+                            .studentName(studentFullName(sample.getStudent()))
+                            .studentCode(sample.getStudent() != null ? sample.getStudent().getStudentCode() : null)
+                            .courseId(sample.getCourse() != null ? sample.getCourse().getId() : null)
+                            .courseName(sample.getCourse() != null ? sample.getCourse().getCourseName() : null)
+                            .courseCode(sample.getCourse() != null ? sample.getCourse().getCourseCode() : null)
+                            .totalSessions(total)
+                            .presentCount(present)
+                            .lateCount(late)
+                            .absentCount(absent)
+                            .leaveCount(leave)
+                            .excusedCount(excused)
+                            .attendanceRate(rate)
+                            .build();
+                })
+                .sorted(Comparator.comparing(
+                        AttendanceReportResponse.AttendanceReportItem::getStudentName,
+                        Comparator.nullsLast(Comparator.naturalOrder())))
+                .toList();
+
+        return AttendanceReportResponse.builder()
+                .totalCount(items.size())
+                .items(items)
+                .build();
     }
 }

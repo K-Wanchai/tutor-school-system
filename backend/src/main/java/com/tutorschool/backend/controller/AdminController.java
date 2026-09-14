@@ -3,6 +3,7 @@ package com.tutorschool.backend.controller;
 import com.tutorschool.backend.dto.response.AdminDashboardResponse;
 import com.tutorschool.backend.dto.response.AdminReportResponse;
 import com.tutorschool.backend.dto.response.ApiResponse;
+import com.tutorschool.backend.dto.response.AttendanceReportResponse;
 import com.tutorschool.backend.dto.response.CourseReportResponse;
 import com.tutorschool.backend.dto.response.EnrollmentReportResponse;
 import com.tutorschool.backend.dto.response.PaymentReportResponse;
@@ -173,6 +174,19 @@ public class AdminController {
             @RequestParam(required = false) Long studentId) {
         PaymentReportResponse data = adminReportService.getPaymentReport(dateFrom, dateTo, courseId, status, studentId);
         return ResponseEntity.ok(ApiResponse.success("Payment report retrieved", data));
+    }
+
+    // ─── รายงานข้อมูลการเข้าเรียน ────────────────────────────────────────────
+
+    @GetMapping("/reports/attendance")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<ApiResponse<AttendanceReportResponse>> getAttendanceReport(
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate dateFrom,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate dateTo,
+            @RequestParam(required = false) Long courseId,
+            @RequestParam(required = false) Long studentId) {
+        AttendanceReportResponse data = adminReportService.getAttendanceReport(dateFrom, dateTo, courseId, studentId);
+        return ResponseEntity.ok(ApiResponse.success("Attendance report retrieved", data));
     }
 
     // ─── helpers ─────────────────────────────────────────────────────────────
