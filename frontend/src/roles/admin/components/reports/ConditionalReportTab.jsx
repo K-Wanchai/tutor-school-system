@@ -292,6 +292,26 @@ export default function ConditionalReportTab() {
     };
   }, []);
 
+  // เบราว์เซอร์ใส่ document.title ("TutorSchool / รายงาน") เป็นหัวกระดาษ/ท้ายกระดาษ
+  // อัตโนมัติตอนพิมพ์ (ถ้าผู้ใช้เปิด "Headers and footers" ไว้) — เคลียร์ชั่วคราวระหว่างพิมพ์
+  // เพื่อไม่ให้ซ้ำกับหัวกระดาษของรายงานเอง แล้วค่อยคืนกลับหลังพิมพ์เสร็จ
+  useEffect(() => {
+    let originalTitle = '';
+    function clearTitle() {
+      originalTitle = document.title;
+      document.title = '';
+    }
+    function restoreTitle() {
+      document.title = originalTitle;
+    }
+    window.addEventListener('beforeprint', clearTitle);
+    window.addEventListener('afterprint', restoreTitle);
+    return () => {
+      window.removeEventListener('beforeprint', clearTitle);
+      window.removeEventListener('afterprint', restoreTitle);
+    };
+  }, []);
+
   async function handleSearch() {
     if (!isSearchable) return;
     setLoading(true);
