@@ -3,13 +3,13 @@ import CalendarDateInput from '../../../../shared/components/CalendarDateInput';
 import { getStudents } from '../../services/adminStudentService';
 import { getTutors } from '../../services/adminTutorService';
 import { getCourses } from '../../services/adminCourseService';
-import { getStudentReport, getTutorReport, getCourseReport } from '../../services/adminReportService';
+import { getStudentReport, getTutorReport, getCourseReport, getEnrollmentReport } from '../../services/adminReportService';
 import { getInstitutionProfile } from '../../../../shared/services/institutionService';
 import { getExamInstitutions, getExamInstitutionById } from '../../services/examInstitutionService';
 import { getFaculties, getMajors } from '../../services/academicFacultyService';
 import { getVocationalMajors } from '../../services/vocationalMajorService';
 import { getSchoolTracks } from '../../services/schoolTrackService';
-import { statusLabelTH, COURSE_STATUS_TH } from '../../../../shared/utils/statusLabels';
+import { statusLabelTH, COURSE_STATUS_TH, ENROLLMENT_STATUS_TH, PAYMENT_STATUS_TH } from '../../../../shared/utils/statusLabels';
 
 const EDUCATION_LEVEL_TH = {
   LOWER_SECONDARY: 'มัธยมต้น',
@@ -56,6 +56,13 @@ function formatNumber(value) {
   return Number(value || 0).toLocaleString('th-TH');
 }
 
+function formatDateTime(value) {
+  if (!value) return '-';
+  const d = new Date(value);
+  if (Number.isNaN(d.getTime())) return '-';
+  return d.toLocaleString('th-TH', { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+}
+
 const DATA_CATEGORIES = [
   { key: 'STUDENT', label: 'ข้อมูลนักเรียน' },
   { key: 'INSTITUTION', label: 'ข้อมูลสถาบัน' },
@@ -71,7 +78,7 @@ const DATA_CATEGORIES = [
 ];
 
 export default function ConditionalReportTab() {
-  const [filters, setFilters] = useState({ category: '', dateFrom: '', dateTo: '', specific: '', faculty: '', status: '' });
+  const [filters, setFilters] = useState({ category: '', dateFrom: '', dateTo: '', specific: '', faculty: '', status: '', courseId: '' });
   const [students, setStudents] = useState([]);
   const [tutors, setTutors] = useState([]);
   const [courses, setCourses] = useState([]);
@@ -86,7 +93,7 @@ export default function ConditionalReportTab() {
   }
 
   function changeCategory(value) {
-    setFilters((f) => ({ ...f, category: value, specific: '', faculty: '', status: '' }));
+    setFilters((f) => ({ ...f, category: value, specific: '', faculty: '', status: '', courseId: '' }));
     setReport(null);
     setError('');
   }
@@ -95,9 +102,9 @@ export default function ConditionalReportTab() {
     setFilters((f) => ({ ...f, specific: value, faculty: '' }));
   }
 
-  // ตัวกรองเฉพาะทางของ "ข้อมูลนักเรียน" — โหลดรายชื่อนักเรียนแบบ lazy ตอนเลือกหมวดนี้ครั้งแรกเท่านั้น
+  // ตัวกรองเฉพาะทางของ "ข้อมูลนักเรียน"/"ข้อมูลสมัครเรียน" — โหลดรายชื่อนักเรียนแบบ lazy ตอนเลือกหมวดนี้ครั้งแรกเท่านั้น
   useEffect(() => {
-    if (filters.category !== 'STUDENT' || students.length > 0) return;
+    if ((filters.category !== 'STUDENT' && filters.category !== 'ENROLLMENT') || students.length > 0) return;
     let mounted = true;
     getStudents({ page: 0, size: 5000 })
       .then((data) => { if (mounted) setStudents(asList(data)); })
@@ -115,9 +122,9 @@ export default function ConditionalReportTab() {
     return () => { mounted = false; };
   }, [filters.category, tutors.length]);
 
-  // ตัวกรองเฉพาะทางของ "ข้อมูลคอร์สเรียน" — โหลดรายชื่อคอร์สแบบ lazy ตอนเลือกหมวดนี้ครั้งแรกเท่านั้น
+  // ตัวกรองเฉพาะทางของ "ข้อมูลคอร์สเรียน"/"ข้อมูลสมัครเรียน" — โหลดรายชื่อคอร์สแบบ lazy ตอนเลือกหมวดนี้ครั้งแรกเท่านั้น
   useEffect(() => {
-    if (filters.category !== 'COURSE' || courses.length > 0) return;
+    if ((filters.category !== 'COURSE' && filters.category !== 'ENROLLMENT') || courses.length > 0) return;
     let mounted = true;
     getCourses({ page: 0, size: 5000 })
       .then((data) => { if (mounted) setCourses(asList(data)); })
@@ -135,7 +142,7 @@ export default function ConditionalReportTab() {
     return () => { mounted = false; };
   }, [filters.category, examInstitutions.length]);
 
-  const specificOptions = filters.category === 'STUDENT'
+  const specificOptions = filters.category === 'STUDENT' || filters.category === 'ENROLLMENT'
     ? students.map((s) => ({ value: s.id, label: `${s.fullName} (${s.studentCode})` }))
     : filters.category === 'TUTOR'
     ? tutors.map((t) => ({ value: t.id, label: `${t.firstName} ${t.lastName} (${t.tutorCode || ''})` }))
@@ -160,10 +167,12 @@ export default function ConditionalReportTab() {
   }, [isUniversitySpecific, filters.specific]);
 
   const isSearchable = filters.category === 'STUDENT' || filters.category === 'TUTOR'
-    || filters.category === 'COURSE' || filters.category === 'INSTITUTION'
-    || filters.category === 'EXAM_INSTITUTION';
+    || filters.category === 'COURSE' || filters.category === 'ENROLLMENT'
+    || filters.category === 'INSTITUTION' || filters.category === 'EXAM_INSTITUTION';
   const hasSpecificFilter = filters.category === 'STUDENT' || filters.category === 'TUTOR'
-    || filters.category === 'COURSE' || filters.category === 'EXAM_INSTITUTION';
+    || filters.category === 'COURSE' || filters.category === 'ENROLLMENT'
+    || filters.category === 'EXAM_INSTITUTION';
+  const hasCourseFilter = filters.category === 'ENROLLMENT';
 
   // ต้องแสดงข้อมูลครบทุกตัวอักษรในบรรทัดเดียวตอนพิมพ์ ห้ามตัดขึ้นบรรทัดใหม่ — คำนวณ zoom
   // ให้ตารางย่อพอดีความกว้างหน้ากระดาษแทนการ wrap (ดู white-space: nowrap ใน AdminReportsPage.css)
@@ -216,6 +225,15 @@ export default function ConditionalReportTab() {
           dateTo: filters.dateTo,
           courseId: filters.specific,
           status: filters.status,
+        });
+        setReport(data);
+      } else if (filters.category === 'ENROLLMENT') {
+        const data = await getEnrollmentReport({
+          dateFrom: filters.dateFrom,
+          dateTo: filters.dateTo,
+          courseId: filters.courseId,
+          status: filters.status,
+          studentId: filters.specific,
         });
         setReport(data);
       } else if (filters.category === 'INSTITUTION') {
@@ -285,12 +303,29 @@ export default function ConditionalReportTab() {
             ))}
           </select>
         </div>
-        {/* ตัวกรอง "สถานะ" — ใช้ได้เฉพาะหมวด "ข้อมูลคอร์สเรียน" */}
+        {/* ตัวกรอง "คอร์ส" — ใช้ได้เฉพาะหมวด "ข้อมูลสมัครเรียน" */}
+        <div className="ar-filter-field">
+          <label>คอร์ส</label>
+          <select value={filters.courseId} onChange={(e) => fld('courseId', e.target.value)} disabled={!hasCourseFilter}>
+            <option value="">ทั้งหมด</option>
+            {hasCourseFilter && courses.map((c) => (
+              <option key={c.id} value={c.id}>{c.courseName} ({c.courseCode || ''})</option>
+            ))}
+          </select>
+        </div>
+        {/* ตัวกรอง "สถานะ" — ใช้ได้เฉพาะหมวด "ข้อมูลคอร์สเรียน"/"ข้อมูลสมัครเรียน" (ตัวเลือกเปลี่ยนความหมายตามหมวด) */}
         <div className="ar-filter-field">
           <label>สถานะ</label>
-          <select value={filters.status} onChange={(e) => fld('status', e.target.value)} disabled={filters.category !== 'COURSE'}>
+          <select
+            value={filters.status}
+            onChange={(e) => fld('status', e.target.value)}
+            disabled={filters.category !== 'COURSE' && filters.category !== 'ENROLLMENT'}
+          >
             <option value="">ทั้งหมด</option>
             {filters.category === 'COURSE' && Object.entries(COURSE_STATUS_TH).map(([key, label]) => (
+              <option key={key} value={key}>{label}</option>
+            ))}
+            {filters.category === 'ENROLLMENT' && Object.entries(ENROLLMENT_STATUS_TH).map(([key, label]) => (
               <option key={key} value={key}>{label}</option>
             ))}
           </select>
@@ -484,6 +519,74 @@ export default function ConditionalReportTab() {
                             <td>{statusLabelTH(c.status, COURSE_STATUS_TH)}</td>
                             <td>{formatDate(c.courseStartDate)}</td>
                             <td>{formatDate(c.createdAt)}</td>
+                          </tr>
+                        ))
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              </section>
+            </div>
+          )}
+
+          {report && filters.category === 'ENROLLMENT' && (
+            <div id="ar-print-area">
+              <h2 className="ar-print-title">
+                รายงานข้อมูลสมัครเรียน
+                <span>
+                  {filters.dateFrom || filters.dateTo
+                    ? `ช่วงวันที่สมัคร: ${filters.dateFrom ? formatDate(filters.dateFrom) : 'ไม่ระบุ'} ถึง ${filters.dateTo ? formatDate(filters.dateTo) : 'ไม่ระบุ'}`
+                    : 'ทุกช่วงวันที่สมัคร'}
+                  {' · '}พิมพ์เมื่อ {formatDate(new Date())}
+                </span>
+              </h2>
+
+              <div className="ar-summary-chips">
+                <div className="ar-chip"><span>จำนวนรายการ</span><strong>{formatNumber(report.totalCount)}</strong></div>
+                <div className="ar-chip"><span>ยอดรวม</span><strong>{formatCurrency(report.totalAmount)}</strong></div>
+                {Object.entries(report.byStatus || {}).map(([status, count]) => (
+                  <div className="ar-chip" key={status}>
+                    <span>{statusLabelTH(status, ENROLLMENT_STATUS_TH)}</span>
+                    <strong>{formatNumber(count)}</strong>
+                  </div>
+                ))}
+              </div>
+
+              <section className="ar-card">
+                <div className="ar-table-wrap">
+                  <table className="ar-table ar-print-table">
+                    <thead>
+                      <tr>
+                        <th>รหัสสมัคร</th>
+                        <th>วันที่สมัคร</th>
+                        <th>นักเรียน</th>
+                        <th>คอร์ส</th>
+                        <th>ติวเตอร์</th>
+                        <th>สถานะสมัคร</th>
+                        <th>การชำระเงิน</th>
+                        <th className="ar-num">ยอดชำระ</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {(report.items || []).length === 0 ? (
+                        <tr><td colSpan={8} className="ar-empty">ไม่พบข้อมูลตามเงื่อนไขที่เลือก</td></tr>
+                      ) : (
+                        report.items.map((i) => (
+                          <tr key={i.enrollmentId}>
+                            <td>{i.enrollmentCode || '-'}</td>
+                            <td>{formatDateTime(i.enrollmentDate)}</td>
+                            <td>
+                              <strong>{i.studentName || '-'}</strong>
+                              <span className="ar-code">{i.studentCode || ''}</span>
+                            </td>
+                            <td>
+                              <strong>{i.courseName || '-'}</strong>
+                              <span className="ar-code">{i.courseCode || ''}</span>
+                            </td>
+                            <td>{i.tutorName || '-'}</td>
+                            <td>{statusLabelTH(i.status, ENROLLMENT_STATUS_TH)}</td>
+                            <td>{statusLabelTH(i.paymentStatus, PAYMENT_STATUS_TH)}</td>
+                            <td className="ar-num">{formatCurrency(i.finalAmount)}</td>
                           </tr>
                         ))
                       )}
