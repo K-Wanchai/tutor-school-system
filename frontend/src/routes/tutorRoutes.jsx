@@ -13,6 +13,7 @@ import TutorEvaluationsPage from '../roles/tutor/pages/TutorEvaluationsPage';
 import TutorAttendancePage from '../roles/tutor/pages/TutorAttendancePage';
 import TutorAttendanceCoursePage from '../roles/tutor/pages/TutorAttendanceCoursePage';
 import TutorProfilePage from '../roles/tutor/pages/TutorProfilePage';
+import TutorSchedulePage from '../roles/tutor/pages/TutorSchedulePage';
 
 const tutorRoutes = (
   <Route
@@ -35,8 +36,7 @@ const tutorRoutes = (
     <Route path="attendance" element={<TutorAttendancePage />} />
     <Route path="attendance/:courseId" element={<TutorAttendanceCoursePage />} />
     <Route path="profile" element={<TutorProfilePage />} />
-    {/* เส้นทางเดิม — คงไว้กันลิงก์เก่า/บุ๊กมาร์กพัง (ตารางเรียน/ทำข้อสอบในระบบถูกถอดออกแล้ว) */}
-    <Route path="schedule" element={<Navigate to="/tutor/dashboard" replace />} />
+    <Route path="schedule" element={<TutorSchedulePage />} />
     <Route path="exams/:examId/build" element={<Navigate to="/tutor/exam-schedule" replace />} />
     <Route path="exams/:examId/grading" element={<Navigate to="/tutor/exam-schedule" replace />} />
   </Route>

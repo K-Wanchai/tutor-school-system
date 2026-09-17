@@ -28,5 +28,7 @@ public class TutorAvailabilityResponse {
         private LocalTime endTime;
         // null สำหรับ freeSlots
         private String courseTitle;
+        // null สำหรับ pattern-based slots และ freeSlots
+        private String scheduleCode;
     }
 }
