@@ -69,7 +69,7 @@ export default function StudentAttendanceCoursePage() {
       {loading ? (
         <div className="aes-empty">กำลังโหลดข้อมูล...</div>
       ) : (
-        <AttendanceGrid courseId={courseId} />
+        <AttendanceGrid courseId={courseId} fallbackName={course?.studentName} />
       )}
     </div>
   );

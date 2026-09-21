@@ -69,7 +69,7 @@ export default function StudentExamResultsCoursePage() {
       {loading ? (
         <div className="aes-empty">กำลังโหลดคะแนน...</div>
       ) : (
-        <ExamScoreGrid courseId={courseId} />
+        <ExamScoreGrid courseId={courseId} fallbackName={course?.studentName} />
       )}
     </div>
   );

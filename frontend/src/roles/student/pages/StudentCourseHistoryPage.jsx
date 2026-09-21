@@ -305,7 +305,7 @@ export default function StudentCourseHistoryPage() {
             </div>
 
             <div className="smc-modal-body">
-              <AttendanceGrid courseId={attendanceCourse.courseId} />
+              <AttendanceGrid courseId={attendanceCourse.courseId} fallbackName={attendanceCourse.studentName} />
             </div>
 
             <div className="smc-modal-footer">
@@ -342,7 +342,7 @@ export default function StudentCourseHistoryPage() {
             </div>
 
             <div className="smc-modal-body">
-              <ExamScoreGrid courseId={examCourse.courseId} />
+              <ExamScoreGrid courseId={examCourse.courseId} fallbackName={examCourse.studentName} />
             </div>
 
             <div className="smc-modal-footer">
