@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { getUsername } from '../../../../shared/utils/tokenUtils';
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
   PieChart, Pie, Cell, Legend,
@@ -34,6 +35,11 @@ const PAYMENT_METHOD_TH = {
 // "ข้อมูลการชำระเงิน" แสดงเฉพาะใบสมัครที่แอดมินตรวจสอบจบแล้ว — ยืนยันการชำระเงินแล้ว (APPROVED)
 // หรือปฏิเสธ (REJECTED) เท่านั้น ไม่รวมรายการที่ยังรอตรวจสอบ/รอแก้ไขสลิป
 const PAYMENT_DATA_STATUS_OPTIONS = ['APPROVED', 'REJECTED'];
+
+const SYSTEM_START_DATE = '2020-01-01';
+function todayStr() { return new Date().toISOString().slice(0, 10); }
+function effFrom(d) { return d || SYSTEM_START_DATE; }
+function effTo(d)   { return d || todayStr(); }
 
 // โทนสีกราฟ — อิงโทนน้ำเงิน/ม่วงเดียวกับสีหลักของระบบ (#6366f1 - #3b82f6 - #1d4ed8) ให้ดูเป็นชุดเดียวกัน
 const CHART_COLORS = ['#4f46e5', '#3b82f6', '#0ea5e9', '#14b8a6', '#f59e0b', '#f97316', '#ec4899', '#8b5cf6'];
@@ -145,7 +151,7 @@ function splitAddressLines(address) {
 }
 
 // หัวกระดาษเดียวกันสำหรับรายงานทุกหมวดตอนพิมพ์ — โลโก้/ข้อมูลสถาบันซ้าย ชื่อรายงานกลาง วันที่พิมพ์ขวา
-function ReportPrintHeader({ institution, title, subtitle }) {
+function ReportPrintHeader({ institution, title, subtitle, author }) {
   const initials = (institution?.institutionName || 'TS').trim().slice(0, 2).toUpperCase();
   const addr = splitAddressLines(institution?.address);
   return (
@@ -178,6 +184,12 @@ function ReportPrintHeader({ institution, title, subtitle }) {
         <div className="ar-print-meta">
           <b>พิมพ์เมื่อ</b>
           {formatDateTime(new Date())}
+          {author && (
+            <>
+              <b>ผู้จัดทำรายงาน</b>
+              {author}
+            </>
+          )}
         </div>
       </div>
       <div className="ar-print-rule" />
@@ -201,6 +213,7 @@ const DATA_CATEGORIES = [
 
 export default function ConditionalReportTab() {
   const [filters, setFilters] = useState({ category: '', dateFrom: '', dateTo: '', specific: '', faculty: '', status: '', courseId: '' });
+  const reportAuthor = getUsername() || '';
   const [students, setStudents] = useState([]);
   const [tutors, setTutors] = useState([]);
   const [courses, setCourses] = useState([]);
@@ -372,30 +385,30 @@ export default function ConditionalReportTab() {
     try {
       if (filters.category === 'STUDENT') {
         const data = await getStudentReport({
-          dateFrom: filters.dateFrom,
-          dateTo: filters.dateTo,
+          dateFrom: effFrom(filters.dateFrom),
+          dateTo: effTo(filters.dateTo),
           studentId: filters.specific,
         });
         setReport(data);
       } else if (filters.category === 'TUTOR') {
         const data = await getTutorReport({
-          dateFrom: filters.dateFrom,
-          dateTo: filters.dateTo,
+          dateFrom: effFrom(filters.dateFrom),
+          dateTo: effTo(filters.dateTo),
           tutorId: filters.specific,
         });
         setReport(data);
       } else if (filters.category === 'COURSE') {
         const data = await getCourseReport({
-          dateFrom: filters.dateFrom,
-          dateTo: filters.dateTo,
+          dateFrom: effFrom(filters.dateFrom),
+          dateTo: effTo(filters.dateTo),
           courseId: filters.specific,
           status: filters.status,
         });
         setReport(data);
       } else if (filters.category === 'ENROLLMENT') {
         const data = await getEnrollmentReport({
-          dateFrom: filters.dateFrom,
-          dateTo: filters.dateTo,
+          dateFrom: effFrom(filters.dateFrom),
+          dateTo: effTo(filters.dateTo),
           courseId: filters.courseId,
           status: filters.status,
           studentId: filters.specific,
@@ -403,8 +416,8 @@ export default function ConditionalReportTab() {
         setReport(data);
       } else if (filters.category === 'PAYMENT') {
         const data = await getPaymentStatusReport({
-          dateFrom: filters.dateFrom,
-          dateTo: filters.dateTo,
+          dateFrom: effFrom(filters.dateFrom),
+          dateTo: effTo(filters.dateTo),
           courseId: filters.courseId,
           status: filters.status,
           studentId: filters.specific,
@@ -412,24 +425,24 @@ export default function ConditionalReportTab() {
         setReport(data);
       } else if (filters.category === 'ATTENDANCE') {
         const data = await getAttendanceReport({
-          dateFrom: filters.dateFrom,
-          dateTo: filters.dateTo,
+          dateFrom: effFrom(filters.dateFrom),
+          dateTo: effTo(filters.dateTo),
           courseId: filters.courseId,
           studentId: filters.specific,
         });
         setReport(data);
       } else if (filters.category === 'EXAM_RESULT') {
         const data = await getExamResultReport({
-          dateFrom: filters.dateFrom,
-          dateTo: filters.dateTo,
+          dateFrom: effFrom(filters.dateFrom),
+          dateTo: effTo(filters.dateTo),
           courseId: filters.courseId,
           studentId: filters.specific,
         });
         setReport(data);
       } else if (filters.category === 'EVALUATION') {
         const data = await getEvaluationReport({
-          dateFrom: filters.dateFrom,
-          dateTo: filters.dateTo,
+          dateFrom: effFrom(filters.dateFrom),
+          dateTo: effTo(filters.dateTo),
           courseId: filters.specific,
         });
         setReport(data);
@@ -541,6 +554,7 @@ export default function ConditionalReportTab() {
             </select>
           </div>
         )}
+
         <div className="ar-filter-actions">
           <button
             type="button"
@@ -584,13 +598,9 @@ export default function ConditionalReportTab() {
           {report && filters.category === 'STUDENT' && (
             <div id="ar-print-area">
               <ReportPrintHeader
-                institution={institution}
+                institution={institution} author={reportAuthor}
                 title="รายงานข้อมูลนักเรียน"
-                subtitle={
-                  filters.dateFrom || filters.dateTo
-                    ? `ช่วงวันที่สมัคร: ${filters.dateFrom ? formatDate(filters.dateFrom) : 'ไม่ระบุ'} ถึง ${filters.dateTo ? formatDate(filters.dateTo) : 'ไม่ระบุ'}`
-                    : 'ทุกช่วงวันที่สมัคร'
-                }
+                subtitle={`ระหว่างวันที่ ${formatDate(effFrom(filters.dateFrom))} ถึง ${formatDate(effTo(filters.dateTo))}`}
               />
 
               <div className="ar-summary-chips">
@@ -637,13 +647,9 @@ export default function ConditionalReportTab() {
           {report && filters.category === 'TUTOR' && (
             <div id="ar-print-area">
               <ReportPrintHeader
-                institution={institution}
+                institution={institution} author={reportAuthor}
                 title="รายงานข้อมูลติวเตอร์"
-                subtitle={
-                  filters.dateFrom || filters.dateTo
-                    ? `ช่วงวันที่สมัคร: ${filters.dateFrom ? formatDate(filters.dateFrom) : 'ไม่ระบุ'} ถึง ${filters.dateTo ? formatDate(filters.dateTo) : 'ไม่ระบุ'}`
-                    : 'ทุกช่วงวันที่สมัคร'
-                }
+                subtitle={`ระหว่างวันที่ ${formatDate(effFrom(filters.dateFrom))} ถึง ${formatDate(effTo(filters.dateTo))}`}
               />
 
               <div className="ar-summary-chips">
@@ -688,13 +694,9 @@ export default function ConditionalReportTab() {
           {report && filters.category === 'COURSE' && (
             <div id="ar-print-area">
               <ReportPrintHeader
-                institution={institution}
+                institution={institution} author={reportAuthor}
                 title="รายงานข้อมูลคอร์สเรียน"
-                subtitle={
-                  filters.dateFrom || filters.dateTo
-                    ? `ช่วงวันที่สร้างคอร์ส: ${filters.dateFrom ? formatDate(filters.dateFrom) : 'ไม่ระบุ'} ถึง ${filters.dateTo ? formatDate(filters.dateTo) : 'ไม่ระบุ'}`
-                    : 'ทุกช่วงวันที่สร้างคอร์ส'
-                }
+                subtitle={`ระหว่างวันที่ ${formatDate(effFrom(filters.dateFrom))} ถึง ${formatDate(effTo(filters.dateTo))}`}
               />
 
               <div className="ar-summary-chips">
@@ -743,13 +745,9 @@ export default function ConditionalReportTab() {
           {report && filters.category === 'ENROLLMENT' && (
             <div id="ar-print-area">
               <ReportPrintHeader
-                institution={institution}
+                institution={institution} author={reportAuthor}
                 title="รายงานข้อมูลสมัครเรียน"
-                subtitle={
-                  filters.dateFrom || filters.dateTo
-                    ? `ช่วงวันที่สมัคร: ${filters.dateFrom ? formatDate(filters.dateFrom) : 'ไม่ระบุ'} ถึง ${filters.dateTo ? formatDate(filters.dateTo) : 'ไม่ระบุ'}`
-                    : 'ทุกช่วงวันที่สมัคร'
-                }
+                subtitle={`ระหว่างวันที่ ${formatDate(effFrom(filters.dateFrom))} ถึง ${formatDate(effTo(filters.dateTo))}`}
               />
 
               <div className="ar-summary-chips">
@@ -809,13 +807,9 @@ export default function ConditionalReportTab() {
           {report && filters.category === 'PAYMENT' && (
             <div id="ar-print-area">
               <ReportPrintHeader
-                institution={institution}
+                institution={institution} author={reportAuthor}
                 title="รายงานข้อมูลการชำระเงิน"
-                subtitle={
-                  filters.dateFrom || filters.dateTo
-                    ? `ช่วงวันที่สมัคร: ${filters.dateFrom ? formatDate(filters.dateFrom) : 'ไม่ระบุ'} ถึง ${filters.dateTo ? formatDate(filters.dateTo) : 'ไม่ระบุ'}`
-                    : 'ทุกช่วงวันที่สมัคร'
-                }
+                subtitle={`ระหว่างวันที่ ${formatDate(effFrom(filters.dateFrom))} ถึง ${formatDate(effTo(filters.dateTo))}`}
               />
 
               <div className="ar-summary-chips">
@@ -875,13 +869,9 @@ export default function ConditionalReportTab() {
           {report && filters.category === 'ATTENDANCE' && (
             <div id="ar-print-area">
               <ReportPrintHeader
-                institution={institution}
+                institution={institution} author={reportAuthor}
                 title="รายงานข้อมูลการเข้าเรียน"
-                subtitle={
-                  filters.dateFrom || filters.dateTo
-                    ? `ช่วงวันที่เรียน: ${filters.dateFrom ? formatDate(filters.dateFrom) : 'ไม่ระบุ'} ถึง ${filters.dateTo ? formatDate(filters.dateTo) : 'ไม่ระบุ'}`
-                    : 'ทุกช่วงวันที่เรียน'
-                }
+                subtitle={`ระหว่างวันที่ ${formatDate(effFrom(filters.dateFrom))} ถึง ${formatDate(effTo(filters.dateTo))}`}
               />
 
               <div className="ar-summary-chips">
@@ -936,13 +926,9 @@ export default function ConditionalReportTab() {
           {report && filters.category === 'EXAM_RESULT' && (
             <div id="ar-print-area">
               <ReportPrintHeader
-                institution={institution}
+                institution={institution} author={reportAuthor}
                 title="รายงานข้อมูลผลการสอบ"
-                subtitle={
-                  filters.dateFrom || filters.dateTo
-                    ? `ช่วงวันที่สอบ: ${filters.dateFrom ? formatDate(filters.dateFrom) : 'ไม่ระบุ'} ถึง ${filters.dateTo ? formatDate(filters.dateTo) : 'ไม่ระบุ'}`
-                    : 'ทุกช่วงวันที่สอบ'
-                }
+                subtitle={`ระหว่างวันที่ ${formatDate(effFrom(filters.dateFrom))} ถึง ${formatDate(effTo(filters.dateTo))}`}
               />
 
               <div className="ar-summary-chips">
@@ -1003,13 +989,9 @@ export default function ConditionalReportTab() {
           {report && filters.category === 'EVALUATION' && (
             <div id="ar-print-area">
               <ReportPrintHeader
-                institution={institution}
+                institution={institution} author={reportAuthor}
                 title="รายงานข้อมูลประเมินความพึงพอใจของคอร์สเรียน"
-                subtitle={
-                  filters.dateFrom || filters.dateTo
-                    ? `ช่วงวันที่ประเมิน: ${filters.dateFrom ? formatDate(filters.dateFrom) : 'ไม่ระบุ'} ถึง ${filters.dateTo ? formatDate(filters.dateTo) : 'ไม่ระบุ'}`
-                    : 'ทุกช่วงวันที่ประเมิน'
-                }
+                subtitle={`ระหว่างวันที่ ${formatDate(effFrom(filters.dateFrom))} ถึง ${formatDate(effTo(filters.dateTo))}`}
               />
 
               <div className="ar-summary-chips">
@@ -1053,7 +1035,7 @@ export default function ConditionalReportTab() {
 
           {report && filters.category === 'ENTRANCE_EXAM_RESULT' && (
             <div id="ar-print-area">
-              <ReportPrintHeader institution={institution} title="รายงานข้อมูลผลการสอบเข้า" />
+              <ReportPrintHeader institution={institution} author={reportAuthor} title="รายงานข้อมูลผลการสอบเข้า" />
 
               <div className="ar-summary-chips">
                 <div className="ar-chip"><span>จำนวนนักเรียนที่สอบติด</span><strong>{formatNumber(report.totalCount)}</strong></div>
@@ -1162,7 +1144,7 @@ export default function ConditionalReportTab() {
 
           {report && filters.category === 'INSTITUTION' && (
             <div id="ar-print-area">
-              <ReportPrintHeader institution={institution} title="รายงานข้อมูลสถาบัน" />
+              <ReportPrintHeader institution={institution} author={reportAuthor} title="รายงานข้อมูลสถาบัน" />
 
               {(report.items || []).length === 0 ? (
                 <section className="ar-card">
@@ -1195,7 +1177,7 @@ export default function ConditionalReportTab() {
 
           {report && filters.category === 'EXAM_INSTITUTION' && (
             <div id="ar-print-area">
-              <ReportPrintHeader institution={institution} title="รายงานข้อมูลสถาบันที่จัดสอบ" />
+              <ReportPrintHeader institution={institution} author={reportAuthor} title="รายงานข้อมูลสถาบันที่จัดสอบ" />
 
               <div className="ar-summary-chips">
                 <div className="ar-chip"><span>จำนวนสถาบัน</span><strong>{report.totalCount}</strong></div>

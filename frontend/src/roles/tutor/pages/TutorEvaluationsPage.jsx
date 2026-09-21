@@ -2,12 +2,126 @@ import { useEffect, useMemo, useState } from 'react';
 import { getTutorEvaluations } from '../services/tutorEvaluationService';
 import './TutorEvaluationsPage.css';
 
+function Stars({ value }) {
+  const score = Math.max(0, Math.min(5, Number(value) || 0));
+  return (
+    <span className="te-stars">
+      {[1, 2, 3, 4, 5].map((n) => {
+        const fill = Math.min(1, Math.max(0, score - (n - 1)));
+        return (
+          <span key={n} className="te-star-wrap">
+            <span className="te-star-empty">★</span>
+            {fill > 0 && (
+              <span className="te-star-fill" style={{ width: `${fill * 100}%` }}>★</span>
+            )}
+          </span>
+        );
+      })}
+    </span>
+  );
+}
+
+function CriteriaDetailModal({ group, onClose }) {
+  const criteriaAverages = useMemo(() => {
+    const map = new Map();
+    group.reviews.forEach((r) => {
+      (r.criteriaScores || []).forEach((s) => {
+        if (!map.has(s.criteriaId)) {
+          map.set(s.criteriaId, { criteriaId: s.criteriaId, label: s.label, total: 0, count: 0 });
+        }
+        const e = map.get(s.criteriaId);
+        e.total += Number(s.score || 0);
+        e.count += 1;
+      });
+    });
+    return Array.from(map.values()).map((e) => ({
+      ...e,
+      average: e.count > 0 ? e.total / e.count : 0,
+    }));
+  }, [group]);
+
+  return (
+    <div className="te-modal-backdrop" role="presentation" onClick={onClose}>
+      <div className="te-modal" role="dialog" aria-modal="true" onClick={(e) => e.stopPropagation()}>
+        <div className="te-modal-header">
+          <div className="te-modal-title-block">
+            <p className="te-modal-label">ผลการประเมิน</p>
+            <h2 className="te-modal-title">{group.courseName}</h2>
+            <div className="te-modal-meta">
+              <Stars value={group.average} />
+              <strong>{group.average.toFixed(1)} / 5</strong>
+              <span>·</span>
+              <span>{group.count} รีวิว</span>
+            </div>
+          </div>
+          <button type="button" className="te-modal-close" onClick={onClose} aria-label="ปิด">×</button>
+        </div>
+
+        <div className="te-modal-body">
+          {criteriaAverages.length > 0 && (
+            <div className="te-criteria-section">
+              <h3 className="te-section-title">ผลการประเมินรายหัวข้อ</h3>
+              <div className="te-criteria-list">
+                {criteriaAverages.map((c) => (
+                  <div key={c.criteriaId} className="te-criteria-row">
+                    <span className="te-criteria-label">{c.label}</span>
+                    <div className="te-criteria-bar-wrap">
+                      <div className="te-criteria-bar" style={{ width: `${(c.average / 5) * 100}%` }} />
+                    </div>
+                    <strong className="te-criteria-score">{c.average.toFixed(1)}</strong>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          <div className="te-reviews-section">
+            <h3 className="te-section-title">รีวิวทั้งหมด ({group.reviews.length})</h3>
+            <div className="te-reviews-list">
+              {group.reviews.map((item, index) => {
+                const rating = Number(item.rating || 0);
+                return (
+                  <div key={item.id || index} className="te-review-item">
+                    <div className="te-review-top">
+                      <div className="tutor-eval-review-avatar tutor-eval-review-avatar--sm">
+                        {(item.studentName || 'S').charAt(0)}
+                      </div>
+                      <div className="te-review-meta">
+                        <strong>{item.isAnonymous ? 'ไม่ระบุชื่อ' : (item.studentName || 'นักเรียน')}</strong>
+                        <p>{formatDate(item.submittedAt || item.createdAt)}</p>
+                      </div>
+                      <div className={`tutor-eval-rating-badge ${getRatingClass(rating)}`}>★ {rating}</div>
+                    </div>
+                    {(item.criteriaScores || []).length > 0 && (
+                      <div className="te-review-criteria">
+                        {item.criteriaScores.map((s) => (
+                          <span key={s.criteriaId} className="te-criteria-tag">
+                            {s.label}: <b>{s.score}</b>
+                          </span>
+                        ))}
+                      </div>
+                    )}
+                    {item.comment && (
+                      <blockquote className="te-review-comment">"{item.comment}"</blockquote>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function TutorEvaluationsPage() {
   const [evaluations, setEvaluations] = useState([]);
   const [keyword, setKeyword] = useState('');
   const [ratingFilter, setRatingFilter] = useState('ALL');
   const [sortBy, setSortBy] = useState('NEWEST');
   const [loading, setLoading] = useState(true);
+  const [detailGroup, setDetailGroup] = useState(null);
 
   useEffect(() => {
     loadEvaluations();
@@ -232,11 +346,15 @@ export default function TutorEvaluationsPage() {
         ) : (
           <div className="tutor-eval-course-grid">
             {courseGroups.map((group) => (
-              <CourseEvaluationCard key={group.courseId} group={group} />
+              <CourseEvaluationCard key={group.courseId} group={group} onViewCriteria={setDetailGroup} />
             ))}
           </div>
         )}
       </section>
+
+      {detailGroup && (
+        <CriteriaDetailModal group={detailGroup} onClose={() => setDetailGroup(null)} />
+      )}
     </div>
   );
 }
@@ -260,19 +378,15 @@ function RatingBar({ star, count, total }) {
   );
 }
 
-function CourseEvaluationCard({ group }) {
+function CourseEvaluationCard({ group, onViewCriteria }) {
   const [expanded, setExpanded] = useState(false);
-  const rounded = Math.round(group.average);
   const reviewsToShow = expanded ? group.reviews : group.reviews.slice(0, 2);
+  const hasCriteria = group.reviews.some((r) => (r.criteriaScores || []).length > 0);
 
   return (
     <article className="tutor-eval-course-card">
       <div className="tutor-eval-course-score-badge">
-        <span className="tutor-eval-course-stars">
-          {[1, 2, 3, 4, 5].map((n) => (
-            <span key={n} className={n <= rounded ? 'on' : ''}>★</span>
-          ))}
-        </span>
+        <Stars value={group.average} />
         <strong>{group.average.toFixed(1)}</strong>
       </div>
 
@@ -322,6 +436,14 @@ function CourseEvaluationCard({ group }) {
           {expanded ? 'ย่อรีวิว' : `ดูรีวิวทั้งหมด (${group.reviews.length})`}
         </button>
       )}
+
+      <button
+        type="button"
+        className="te-view-criteria-btn"
+        onClick={() => onViewCriteria(group)}
+      >
+        {hasCriteria ? 'ดูผลการประเมินรายหัวข้อ →' : 'ดูรีวิวทั้งหมด →'}
+      </button>
     </article>
   );
 }

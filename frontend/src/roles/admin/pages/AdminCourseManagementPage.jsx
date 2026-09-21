@@ -3,7 +3,6 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { replaceIfChanged } from '../../../shared/utils/replaceIfChanged';
 import { getTutors } from '../services/adminTutorService';
 import { getEnrollmentsByCourse } from '../services/adminEnrollmentService';
-import { getInstitutionProfile, updateInstitutionProfile } from '../services/adminSettingsService';
 import {
   deleteCourse,
   getCourseStats,
@@ -61,104 +60,6 @@ const PAYMENT_STATUS_LABEL_TH = {
   FAILED: 'ไม่สำเร็จ',
 };
 
-// แปลงข้อมูลสถาบันทั้งชุดให้เป็น payload สำหรับ PUT /institution-profile (endpoint ต้องการฟิลด์ครบทุกตัว)
-// ใช้ตอนแก้ไขแค่บางฟิลด์จากหน้านี้ เพื่อไม่ให้ฟิลด์อื่นที่ตั้งค่าไว้ในหน้าอื่นถูกเขียนทับ
-function toInstitutionPayload(profile, overrides = {}) {
-  return {
-    institutionName: profile?.institutionName || '',
-    address: profile?.address || '',
-    phoneNumber: profile?.phoneNumber || '',
-    email: profile?.email || '',
-    logoUrl: profile?.logoUrl || '',
-    bankName: profile?.bankName || '',
-    bankAccountName: profile?.bankAccountName || '',
-    bankAccountNumber: profile?.bankAccountNumber || '',
-    bankQrCode: profile?.bankQrCode || '',
-    promptPayId: profile?.promptPayId || '',
-    enrollmentPaymentDeadlineMinutes: profile?.enrollmentPaymentDeadlineMinutes ?? 15,
-    slipRevisionDeadlineMinutes: profile?.slipRevisionDeadlineMinutes ?? 15,
-    allowedTimeSlots: parseDaySlots(profile?.allowedTimeSlots),
-    ...overrides,
-  };
-}
-
-// ── Settings Modal (ช่วงเวลาที่อนุญาตให้จัดตารางสอน) ────────────────────────────
-
-function AllowedTimeSlotsModal({ onClose, onSaved, notify }) {
-  const [profile, setProfile] = useState(null);
-  const [form, setForm] = useState({ allowedTimeSlots: {} });
-  const [loading, setLoading] = useState(true);
-  const [loadError, setLoadError] = useState('');
-  const [saving, setSaving] = useState(false);
-  const [saveError, setSaveError] = useState('');
-
-  useEffect(() => {
-    getInstitutionProfile()
-      .then((data) => {
-        setProfile(data);
-        setForm({ allowedTimeSlots: parseDaySlots(data?.allowedTimeSlots) });
-      })
-      .catch((err) => setLoadError(err.message || 'ไม่สามารถโหลดข้อมูลได้'))
-      .finally(() => setLoading(false));
-  }, []);
-
-  function fld(name, value) {
-    setForm((prev) => ({ ...prev, [name]: value }));
-  }
-
-  async function handleSave() {
-    setSaving(true);
-    setSaveError('');
-    try {
-      await updateInstitutionProfile(toInstitutionPayload(profile, { allowedTimeSlots: form.allowedTimeSlots }));
-      notify('บันทึกการตั้งค่าสำเร็จ');
-      onSaved();
-    } catch (err) {
-      setSaveError(err.message || 'ไม่สามารถบันทึกข้อมูลได้');
-    } finally {
-      setSaving(false);
-    }
-  }
-
-  return (
-    <div className="cm-overlay" onClick={onClose}>
-      <div className="cm-modal cm-modal-lg" onClick={(e) => e.stopPropagation()}>
-        <div className="cm-modal-header">
-          <h2>ช่วงเวลาที่อนุญาตให้จัดตารางสอน</h2>
-          <button className="cm-modal-close" onClick={onClose}>✕</button>
-        </div>
-        <div className="cm-form">
-          {loading && <div className="cm-loading">กำลังโหลดข้อมูล...</div>}
-          {!loading && loadError && <div className="cm-err">{loadError}</div>}
-          {!loading && !loadError && (
-            <>
-              <p className="cm-field-hint">
-                กำหนดช่วงเวลาที่อนุญาตให้จัดตารางสอนในแต่ละวัน วันที่ไม่ได้ตั้งค่าไว้จะไม่จำกัดเวลา
-                หากแอดมินลงตารางสอนของคอร์สนอกช่วงเวลานี้ ระบบจะแจ้งเตือนใต้ช่องเวลานั้นทันที
-              </p>
-              <ScheduleSection
-                form={form}
-                fld={fld}
-                slotsField="allowedTimeSlots"
-                icon="✅"
-                title="เวลาที่อนุญาตรายวัน"
-                hint="(ว่างไว้ = ไม่จำกัดเวลาวันนั้น)"
-              />
-              {saveError && <div className="cm-err">{saveError}</div>}
-              <div className="cm-form-actions">
-                <button type="button" className="cm-btn-cancel" onClick={onClose} disabled={saving}>ยกเลิก</button>
-                <button type="button" className="cm-btn-primary" disabled={saving} onClick={handleSave}>
-                  {saving ? 'กำลังบันทึก...' : 'บันทึกการตั้งค่า'}
-                </button>
-              </div>
-            </>
-          )}
-        </div>
-      </div>
-    </div>
-  );
-}
-
 function StatusBadge({ status }) {
   const s = STATUS_LABEL[status] || { label: status, cls: '' };
   return <span className={`cm-badge ${s.cls}`}>{s.label}</span>;
@@ -203,7 +104,6 @@ export default function AdminCourseManagementPage() {
   const [showDetail, setShowDetail]   = useState(false);
   const [courseEnrollments, setCourseEnrollments] = useState([]);
   const [enrollmentsLoading, setEnrollmentsLoading] = useState(false);
-  const [showTimeSettings, setShowTimeSettings] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
   const [selected, setSelected]       = useState(null);
   const [form, setForm]               = useState(EMPTY_COURSE_FORM);
@@ -365,9 +265,6 @@ export default function AdminCourseManagementPage() {
           <p>สร้างและจัดการคอร์สเรียนทั้งหมด พร้อมส่งการแจ้งเตือนไปยังติวเตอร์</p>
         </div>
         <div className="cm-header-actions">
-          <button className="cm-btn-ghost" onClick={() => setShowTimeSettings(true)}>
-            ⚙️ ช่วงเวลาที่อนุญาตให้จัดตารางสอน
-          </button>
           <button className="cm-btn-primary" onClick={() => navigate('/admin/courses/create')}>+ เพิ่มคอร์ส</button>
         </div>
       </div>
@@ -700,13 +597,6 @@ export default function AdminCourseManagementPage() {
         </div>
       )}
 
-      {showTimeSettings && (
-        <AllowedTimeSlotsModal
-          onClose={() => setShowTimeSettings(false)}
-          onSaved={() => setShowTimeSettings(false)}
-          notify={notify}
-        />
-      )}
     </div>
   );
 }
