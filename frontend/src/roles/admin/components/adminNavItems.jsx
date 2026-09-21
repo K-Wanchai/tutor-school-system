@@ -16,7 +16,7 @@ export const NAV_GROUPS = [
     ],
   },
   {
-    section: 'ข้อมูลบุคคลและสถาบัน',
+    section: '',
     items: [
       {
         label: 'นักเรียน',
@@ -66,7 +66,7 @@ export const NAV_GROUPS = [
     ],
   },
   {
-    section: 'หลักสูตรและการเรียน',
+    section: '',
     items: [
       {
         label: 'คอร์สเรียน',
