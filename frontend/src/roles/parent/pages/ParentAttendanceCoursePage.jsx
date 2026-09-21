@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { getChildEnrollments, getChildCourseSessions, getChildAttendance } from '../services/parentService';
+import { getStudentName } from '../../../shared/utils/tokenUtils';
 import AttendanceGrid from '../../student/components/AttendanceGrid';
 import '../../admin/pages/AdminExamPages.css';
 
@@ -74,7 +75,7 @@ export default function ParentAttendanceCoursePage() {
           fetchSessions={getChildCourseSessions}
           fetchAttendance={getChildAttendance}
           legendNote="คุณดูข้อมูลการเข้าเรียนของบุตรหลานได้เท่านั้น — การเช็คชื่อทำได้ที่บัญชีติวเตอร์"
-          fallbackName="บุตรหลาน"
+          fallbackName={getStudentName() || 'บุตรหลาน'}
         />
       )}
     </div>

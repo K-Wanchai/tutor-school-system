@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { getChildEnrollments, getChildExams, getChildCourseScores } from '../services/parentService';
+import { getStudentName } from '../../../shared/utils/tokenUtils';
 import ExamScoreGrid from '../../student/components/ExamScoreGrid';
 import '../../admin/pages/AdminExamPages.css';
 
@@ -74,7 +75,7 @@ export default function ParentExamResultsCoursePage() {
           fetchExams={getChildExams}
           fetchScores={getChildCourseScores}
           legendNote="คุณดูคะแนนสอบของบุตรหลานได้เท่านั้น — การกรอกคะแนนทำได้ที่บัญชีติวเตอร์"
-          fallbackName="บุตรหลาน"
+          fallbackName={getStudentName() || 'บุตรหลาน'}
         />
       )}
     </div>

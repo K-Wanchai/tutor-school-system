@@ -7,6 +7,7 @@ import {
   getChildCourseScores,
 } from '../services/parentService';
 import { resolveFileUrl } from '../../../shared/services/api';
+import { getStudentName } from '../../../shared/utils/tokenUtils';
 import { formatScheduleDaysTH } from '../../../shared/utils/dateUtils';
 import AttendanceGrid from '../../student/components/AttendanceGrid';
 import ExamScoreGrid from '../../student/components/ExamScoreGrid';
@@ -316,7 +317,7 @@ export default function ParentCourseHistoryPage() {
                 fetchSessions={getChildCourseSessions}
                 fetchAttendance={getChildAttendance}
                 legendNote="คุณดูข้อมูลการเข้าเรียนของบุตรหลานได้เท่านั้น — การเช็คชื่อทำได้ที่บัญชีติวเตอร์"
-                fallbackName="บุตรหลาน"
+                fallbackName={getStudentName() || 'บุตรหลาน'}
               />
             </div>
 
@@ -359,7 +360,7 @@ export default function ParentCourseHistoryPage() {
                 fetchExams={getChildExams}
                 fetchScores={getChildCourseScores}
                 legendNote="คุณดูคะแนนสอบของบุตรหลานได้เท่านั้น — การกรอกคะแนนทำได้ที่บัญชีติวเตอร์"
-                fallbackName="บุตรหลาน"
+                fallbackName={getStudentName() || 'บุตรหลาน'}
               />
             </div>
 
