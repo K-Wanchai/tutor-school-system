@@ -653,6 +653,53 @@
   color: #374151;
 }
 
+/* Enrollment roster button */
+.tc-btn-roster {
+  flex: 1;
+  height: 42px;
+  border: 1px solid #a7f3d0;
+  border-radius: 10px;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: 0.2s ease;
+  background: #f0fdf4;
+  color: #047857;
+}
+.tc-btn-roster:hover {
+  background: #dcfce7;
+}
+
+/* Enrollment summary bar */
+.tc-enroll-summary {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: #f9fafb;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  padding: 10px 16px;
+  font-size: 13.5px;
+  color: #374151;
+}
+.tc-enroll-summary-sep { color: #d1d5db; }
+.tc-enroll-paid { color: #059669; }
+
+/* Payment status badges */
+.tc-pay-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+.tc-pay-unpaid  { background: #f3f4f6; color: #6b7280; }
+.tc-pay-pending { background: #fef3c7; color: #92400e; }
+.tc-pay-paid    { background: #dcfce7; color: #15803d; }
+.tc-pay-failed  { background: #fef2f2; color: #dc2626; }
+
 /* Empty */
 .tc-loading,
 .tc-empty {

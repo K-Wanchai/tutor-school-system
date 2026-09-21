@@ -6,6 +6,7 @@ import {
   getMyCourses,
   markCourseViewed,
 } from '../services/tutorCourseService';
+import { getEnrollmentsByCourse } from '../services/tutorEnrollmentService';
 
 import RefreshButton from '../components/RefreshButton';
 import { formatScheduleDaysTH } from '../../../shared/utils/dateUtils';
@@ -66,6 +67,7 @@ export default function TutorCoursesPage() {
 
   const [loading, setLoading] = useState(true);
   const [detailCourse, setDetailCourse] = useState(null);
+  const [enrollCourse, setEnrollCourse] = useState(null);
   const [completeTarget, setCompleteTarget] = useState(null);
   const [completing, setCompleting] = useState(false);
   const [completeError, setCompleteError] = useState('');
@@ -279,6 +281,9 @@ export default function TutorCoursesPage() {
                 <button className="tc-btn-detail" onClick={() => openDetail(course)}>
                   ดูรายละเอียด
                 </button>
+                <button className="tc-btn-roster" onClick={() => setEnrollCourse(course)}>
+                  👥 รายชื่อ
+                </button>
 
                 {course.status === 'ONGOING' && (
                   <button
@@ -329,6 +334,13 @@ export default function TutorCoursesPage() {
         />
       )}
 
+      {enrollCourse && (
+        <EnrollmentListModal
+          course={enrollCourse}
+          onClose={() => setEnrollCourse(null)}
+        />
+      )}
+
       {completeTarget && (
         <div className="tc-modal-overlay" onClick={() => !completing && setCompleteTarget(null)}>
           <div className="tc-modal tc-modal--sm" onClick={(e) => e.stopPropagation()}>
@@ -369,6 +381,100 @@ export default function TutorCoursesPage() {
           </div>
         </div>
       )}
+    </div>
+  );
+}
+
+const PAYMENT_STATUS_LABEL = {
+  UNPAID:               { label: 'ยังไม่ชำระ',      cls: 'tc-pay-unpaid' },
+  PENDING_VERIFICATION: { label: 'รอตรวจสอบ',        cls: 'tc-pay-pending' },
+  PAID:                 { label: 'ชำระแล้ว',         cls: 'tc-pay-paid' },
+  FAILED:               { label: 'ชำระไม่สำเร็จ',   cls: 'tc-pay-failed' },
+};
+
+function PayBadge({ status }) {
+  const s = PAYMENT_STATUS_LABEL[status] || { label: status || '-', cls: '' };
+  return <span className={`tc-pay-badge ${s.cls}`}>{s.label}</span>;
+}
+
+function formatDateTime(value) {
+  if (!value) return '-';
+  return new Date(value).toLocaleDateString('th-TH', { year: 'numeric', month: 'short', day: 'numeric' });
+}
+
+function EnrollmentListModal({ course, onClose }) {
+  const [enrollments, setEnrollments] = useState([]);
+  const [loadingEnr, setLoadingEnr] = useState(true);
+  const [errEnr, setErrEnr] = useState('');
+
+  useEffect(() => {
+    let cancelled = false;
+    setLoadingEnr(true);
+    setErrEnr('');
+    getEnrollmentsByCourse(course.id)
+      .then((data) => {
+        if (cancelled) return;
+        // ซ่อนรายการที่ยกเลิกหรือถูกปฏิเสธ
+        setEnrollments(data.filter((e) => e.status !== 'CANCELLED' && e.status !== 'REJECTED'));
+      })
+      .catch((err) => { if (!cancelled) setErrEnr(err.message); })
+      .finally(() => { if (!cancelled) setLoadingEnr(false); });
+    return () => { cancelled = true; };
+  }, [course.id]);
+
+  const paidCount = enrollments.filter((e) => e.paymentStatus === 'PAID').length;
+
+  return (
+    <div className="tc-modal-overlay" onClick={onClose}>
+      <div className="tc-modal tc-modal--lg" onClick={(e) => e.stopPropagation()}>
+        <div className="tc-modal-header">
+          <h2>รายชื่อนักเรียน — {course.courseName}</h2>
+          <button className="tc-modal-close" onClick={onClose}>✕</button>
+        </div>
+
+        <div className="tc-enroll-summary">
+          <span>ทั้งหมด <strong>{enrollments.length}</strong> ราย</span>
+          <span className="tc-enroll-summary-sep">·</span>
+          <span>ชำระเงินแล้ว <strong className="tc-enroll-paid">{paidCount}</strong> ราย</span>
+        </div>
+
+        {errEnr && <div className="tc-modal-error">{errEnr}</div>}
+
+        {loadingEnr ? (
+          <p className="tc-modal-hint">กำลังโหลด...</p>
+        ) : enrollments.length === 0 ? (
+          <p className="tc-modal-hint">ยังไม่มีนักเรียนสมัครเรียนคอร์สนี้</p>
+        ) : (
+          <div className="tc-table-wrap">
+            <table className="tc-table">
+              <thead>
+                <tr>
+                  <th>#</th>
+                  <th>รหัสสมัคร</th>
+                  <th>ชื่อนักเรียน</th>
+                  <th>วันที่สมัคร</th>
+                  <th>สถานะชำระเงิน</th>
+                </tr>
+              </thead>
+              <tbody>
+                {enrollments.map((e, i) => (
+                  <tr key={e.id}>
+                    <td style={{ color: '#9ca3af', fontSize: 12 }}>{i + 1}</td>
+                    <td><span className="tc-table-code">{e.enrollmentCode || '-'}</span></td>
+                    <td className="tc-table-name">{e.studentName || '-'}</td>
+                    <td style={{ whiteSpace: 'nowrap' }}>{formatDateTime(e.enrollmentDate)}</td>
+                    <td><PayBadge status={e.paymentStatus} /></td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+
+        <div className="tc-modal-footer">
+          <button onClick={onClose}>ปิด</button>
+        </div>
+      </div>
     </div>
   );
 }
