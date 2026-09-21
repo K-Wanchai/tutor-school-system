@@ -16,7 +16,6 @@ export const NAV_GROUPS = [
     ],
   },
   {
-    // จัดกลุ่มเมนู "การจัดการข้อมูลพื้นฐาน" ให้อยู่ใกล้กัน ตาม DFD (นักเรียน/ติวเตอร์/คอร์ส/สถาบัน)
     section: 'ข้อมูลบุคคลและสถาบัน',
     items: [
       {
@@ -89,16 +88,7 @@ export const NAV_GROUPS = [
         ),
       },
       {
-        label: 'ประวัติคอร์สเรียน',
-        path: '/admin/course-history',
-        icon: (
-          <svg viewBox="0 0 20 20" fill="currentColor" width="18" height="18">
-            <path fillRule="evenodd" d="M10 2a8 8 0 100 16 8 8 0 000-16zm.75 4a.75.75 0 00-1.5 0v4c0 .29.155.556.406.7l3 1.732a.75.75 0 10.75-1.3L10.75 9.567V6z" clipRule="evenodd" />
-          </svg>
-        ),
-      },
-      {
-        label: 'การสอบ',
+        label: 'ข้อมูลการสอบ',
         path: '/admin/exams',
         icon: (
           <svg viewBox="0 0 20 20" fill="currentColor" width="18" height="18">
@@ -107,7 +97,7 @@ export const NAV_GROUPS = [
         ),
       },
       {
-        label: 'การเข้าเรียน',
+        label: 'ข้อมูลการเข้าเรียน',
         path: '/admin/attendance',
         icon: (
           <svg viewBox="0 0 20 20" fill="currentColor" width="18" height="18">
@@ -115,11 +105,6 @@ export const NAV_GROUPS = [
           </svg>
         ),
       },
-    ],
-  },
-  {
-    section: 'ทะเบียนและการเงิน',
-    items: [
       {
         label: 'การสมัครเรียน',
         path: '/admin/enrollments',
@@ -140,17 +125,12 @@ export const NAV_GROUPS = [
           </svg>
         ),
       },
-    ],
-  },
-  {
-    section: 'การติดตามและประเมินผล',
-    items: [
       {
-        label: 'รายงาน',
-        path: '/admin/reports',
+        label: 'หัวข้อการประเมิน',
+        path: '/admin/evaluation-settings',
         icon: (
           <svg viewBox="0 0 20 20" fill="currentColor" width="18" height="18">
-            <path fillRule="evenodd" d="M3 3a1 1 0 000 2v8a2 2 0 002 2h2.586l-1.293 1.293a1 1 0 101.414 1.414L10 15.414l2.293 2.293a1 1 0 001.414-1.414L12.414 15H15a2 2 0 002-2V5a1 1 0 100-2H3zm11 4a1 1 0 10-2 0v4a1 1 0 102 0V7zm-3 1a1 1 0 10-2 0v3a1 1 0 102 0V8zM8 9a1 1 0 00-2 0v2a1 1 0 102 0V9z" clipRule="evenodd" />
+            <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.286 3.958a1 1 0 00.95.69h4.162c.969 0 1.371 1.24.588 1.81l-3.368 2.446a1 1 0 00-.363 1.118l1.287 3.957c.3.922-.755 1.688-1.539 1.118l-3.367-2.446a1 1 0 00-1.176 0l-3.367 2.446c-.784.57-1.838-.196-1.539-1.118l1.287-3.957a1 1 0 00-.363-1.118L2.063 9.385c-.783-.57-.38-1.81.588-1.81h4.163a1 1 0 00.95-.69l1.285-3.958z" />
           </svg>
         ),
       },
@@ -164,11 +144,11 @@ export const NAV_GROUPS = [
         ),
       },
       {
-        label: 'หัวข้อการประเมิน',
-        path: '/admin/evaluation-settings',
+        label: 'รายงาน',
+        path: '/admin/reports',
         icon: (
           <svg viewBox="0 0 20 20" fill="currentColor" width="18" height="18">
-            <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.286 3.958a1 1 0 00.95.69h4.162c.969 0 1.371 1.24.588 1.81l-3.368 2.446a1 1 0 00-.363 1.118l1.287 3.957c.3.922-.755 1.688-1.539 1.118l-3.367-2.446a1 1 0 00-1.176 0l-3.367 2.446c-.784.57-1.838-.196-1.539-1.118l1.287-3.957a1 1 0 00-.363-1.118L2.063 9.385c-.783-.57-.38-1.81.588-1.81h4.163a1 1 0 00.95-.69l1.285-3.958z" />
+            <path fillRule="evenodd" d="M3 3a1 1 0 000 2v8a2 2 0 002 2h2.586l-1.293 1.293a1 1 0 101.414 1.414L10 15.414l2.293 2.293a1 1 0 001.414-1.414L12.414 15H15a2 2 0 002-2V5a1 1 0 100-2H3zm11 4a1 1 0 10-2 0v4a1 1 0 102 0V7zm-3 1a1 1 0 10-2 0v3a1 1 0 102 0V8zM8 9a1 1 0 00-2 0v2a1 1 0 102 0V9z" clipRule="evenodd" />
           </svg>
         ),
       },
