@@ -628,7 +628,7 @@ export default function TutorExamCourseDetailPage() {
                 ระยะเวลาทำข้อสอบ (นาที) *
                 <input
                   type="number" min="1" step="1"
-                  value={form.durationMinutes}
+                    value={form.durationMinutes}
                   onChange={(e) => handleDurationChange(e.target.value)}
                 />
               </label>
