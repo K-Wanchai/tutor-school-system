@@ -76,6 +76,6 @@ public class ExamInstitutionController {
     @DeleteMapping("/{id}")
     public ResponseEntity<ApiResponse<Void>> deleteExamInstitution(@PathVariable Long id) {
         examInstitutionService.deleteExamInstitution(id);
-        return ResponseEntity.ok(ApiResponse.success("ปิดใช้งานสถาบันที่จัดสอบสำเร็จ"));
+        return ResponseEntity.ok(ApiResponse.success("ลบข้อมูลสถาบันที่จัดสอบสำเร็จ"));
     }
 }

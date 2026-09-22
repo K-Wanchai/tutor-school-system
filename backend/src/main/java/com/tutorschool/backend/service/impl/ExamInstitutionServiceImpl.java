@@ -5,6 +5,7 @@ import com.tutorschool.backend.dto.response.AchievementStudentCardResponse;
 import com.tutorschool.backend.dto.response.AchievementSummaryResponse;
 import com.tutorschool.backend.dto.response.ExamInstitutionResponse;
 import com.tutorschool.backend.dto.response.InstitutionAchievementOverviewResponse;
+import com.tutorschool.backend.entity.AcademicFaculty;
 import com.tutorschool.backend.entity.ExamInstitution;
 import com.tutorschool.backend.entity.InstitutionType;
 import com.tutorschool.backend.entity.StudentExamAchievement;
@@ -12,8 +13,13 @@ import com.tutorschool.backend.exception.DuplicateResourceException;
 import com.tutorschool.backend.exception.ExamInstitutionNotFoundException;
 import com.tutorschool.backend.exception.ResourceInUseException;
 import com.tutorschool.backend.mapper.ExamInstitutionMapper;
+import com.tutorschool.backend.repository.AcademicFacultyRepository;
+import com.tutorschool.backend.repository.AcademicMajorRepository;
+import com.tutorschool.backend.repository.AdmissionRoundRepository;
 import com.tutorschool.backend.repository.ExamInstitutionRepository;
+import com.tutorschool.backend.repository.SchoolTrackRepository;
 import com.tutorschool.backend.repository.StudentExamAchievementRepository;
+import com.tutorschool.backend.repository.VocationalMajorRepository;
 import com.tutorschool.backend.service.ExamInstitutionService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -31,6 +37,11 @@ public class ExamInstitutionServiceImpl implements ExamInstitutionService {
     private final ExamInstitutionRepository examInstitutionRepository;
     private final ExamInstitutionMapper examInstitutionMapper;
     private final StudentExamAchievementRepository studentExamAchievementRepository;
+    private final AcademicFacultyRepository academicFacultyRepository;
+    private final AcademicMajorRepository academicMajorRepository;
+    private final SchoolTrackRepository schoolTrackRepository;
+    private final VocationalMajorRepository vocationalMajorRepository;
+    private final AdmissionRoundRepository admissionRoundRepository;
 
     @Override
     @Transactional
@@ -127,10 +138,18 @@ public class ExamInstitutionServiceImpl implements ExamInstitutionService {
     public void deleteExamInstitution(Long id) {
         ExamInstitution institution = findEntityById(id);
         if (studentExamAchievementRepository.existsByExamInstitutionId(id)) {
-            throw new ResourceInUseException("ไม่สามารถลบข้อมูลได้เนื่องจากมีข้อมูลนักเรียนเชื่อมโยงอยู่");
+            throw new ResourceInUseException("ไม่สามารถลบข้อมูลได้เนื่องจากมีข้อมูลผลการสอบเข้าของนักเรียนเชื่อมโยงอยู่");
         }
-        institution.setActive(false);
-        examInstitutionRepository.save(institution);
+        // ลบ sub-data (ข้อมูลพื้นฐาน) ของสถาบัน: majors → faculties → tracks → vocational majors → rounds
+        List<AcademicFaculty> faculties = academicFacultyRepository.findByExamInstitutionIdOrderByNameAsc(id);
+        for (AcademicFaculty faculty : faculties) {
+            academicMajorRepository.deleteAll(academicMajorRepository.findByFacultyIdOrderByNameAsc(faculty.getId()));
+        }
+        academicFacultyRepository.deleteAll(faculties);
+        schoolTrackRepository.deleteAll(schoolTrackRepository.findByExamInstitutionIdOrderByNameAsc(id));
+        vocationalMajorRepository.deleteAll(vocationalMajorRepository.findByExamInstitutionIdOrderByNameAsc(id));
+        admissionRoundRepository.deleteAll(admissionRoundRepository.findByExamInstitutionIdOrderByNameAsc(id));
+        examInstitutionRepository.delete(institution);
     }
 
     @Override

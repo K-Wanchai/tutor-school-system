@@ -23,6 +23,7 @@ import com.tutorschool.backend.exception.ResourceInUseException;
 import com.tutorschool.backend.exception.ResourceNotFoundException;
 import com.tutorschool.backend.mapper.TutorMapper;
 import com.tutorschool.backend.repository.CourseRepository;
+import com.tutorschool.backend.repository.NotificationRepository;
 import com.tutorschool.backend.repository.TutorRepository;
 import com.tutorschool.backend.repository.UserRepository;
 import com.tutorschool.backend.service.EmailService;
@@ -44,6 +45,7 @@ public class TutorServiceImpl implements TutorService {
     private final PasswordEncoder passwordEncoder;
     private final TutorMapper tutorMapper;
     private final CourseRepository courseRepository;
+    private final NotificationRepository notificationRepository;
     private final NotificationService notificationService;
     private final EmailService emailService;
 
@@ -139,7 +141,11 @@ public class TutorServiceImpl implements TutorService {
         if (courseRepository.existsByTutorId(id)) {
             throw new ResourceInUseException("ไม่สามารถลบข้อมูลติวเตอร์ได้เนื่องจากมีคอร์สเรียนเชื่อมโยงอยู่");
         }
+        // ลบ notifications ก่อนลบ User (FK constraint)
+        notificationRepository.deleteByUserId(tutor.getUser().getId());
+        // ลบ Tutor ก่อน แล้วค่อยลบ User (เพราะ FK constraint)
         tutorRepository.delete(tutor);
+        userRepository.delete(tutor.getUser());
     }
 
     @Override

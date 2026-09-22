@@ -14,7 +14,10 @@ import com.tutorschool.backend.exception.DuplicateResourceException;
 import com.tutorschool.backend.exception.ResourceInUseException;
 import com.tutorschool.backend.exception.ResourceNotFoundException;
 import com.tutorschool.backend.mapper.StudentMapper;
+import com.tutorschool.backend.repository.ClassAttendanceRepository;
 import com.tutorschool.backend.repository.EnrollmentRepository;
+import com.tutorschool.backend.repository.NotificationRepository;
+import com.tutorschool.backend.repository.StudentExamAchievementRepository;
 import com.tutorschool.backend.repository.StudentRepository;
 import com.tutorschool.backend.repository.UserRepository;
 import com.tutorschool.backend.service.EmailService;
@@ -40,6 +43,9 @@ public class StudentServiceImpl implements StudentService {
     private final PasswordEncoder passwordEncoder;
     private final StudentMapper studentMapper;
     private final EnrollmentRepository enrollmentRepository;
+    private final StudentExamAchievementRepository studentExamAchievementRepository;
+    private final ClassAttendanceRepository classAttendanceRepository;
+    private final NotificationRepository notificationRepository;
     private final NotificationService notificationService;
     private final EmailService emailService;
 
@@ -229,6 +235,14 @@ public class StudentServiceImpl implements StudentService {
         if (enrollmentRepository.existsByStudentId(id)) {
             throw new ResourceInUseException("ไม่สามารถลบข้อมูลนักเรียนได้เนื่องจากมีข้อมูลการสมัครเรียนเชื่อมโยงอยู่");
         }
+        if (studentExamAchievementRepository.existsByStudentId(id)) {
+            throw new ResourceInUseException("ไม่สามารถลบข้อมูลนักเรียนได้เนื่องจากมีข้อมูลผลการสอบเข้าเชื่อมโยงอยู่");
+        }
+        if (classAttendanceRepository.existsByStudentId(id)) {
+            throw new ResourceInUseException("ไม่สามารถลบข้อมูลนักเรียนได้เนื่องจากมีข้อมูลการเข้าเรียนเชื่อมโยงอยู่");
+        }
+        // ลบ notifications ก่อนลบ User (FK constraint)
+        notificationRepository.deleteByUserId(student.getUser().getId());
         // ลบ Student ก่อน แล้วค่อยลบ User (เพราะ FK constraint)
         studentRepository.delete(student);
         userRepository.delete(student.getUser());

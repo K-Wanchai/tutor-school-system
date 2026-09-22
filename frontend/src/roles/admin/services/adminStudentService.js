@@ -13,6 +13,7 @@ function apiError(error, label) {
   if (status === 401) return 'กรุณาเข้าสู่ระบบใหม่ (Token หมดอายุ)';
   if (status === 403) return 'ไม่มีสิทธิ์เข้าถึงข้อมูลนี้ (403 Forbidden)';
   if (status === 404) return 'ไม่พบ API endpoint (404 Not Found)';
+  if (status === 409) return serverMsg || 'ไม่สามารถดำเนินการได้ เนื่องจากข้อมูลถูกใช้งานอยู่';
   if (status === 500) return `เกิดข้อผิดพลาดที่ server${serverMsg ? ': ' + serverMsg : ' (500)'}`;
   return serverMsg || `เกิดข้อผิดพลาด (${status})`;
 }
@@ -34,6 +35,15 @@ export async function getStudentById(id) {
     return unwrap(res);
   } catch (error) {
     throw new Error(apiError(error, 'getStudentById'), { cause: error });
+  }
+}
+
+export async function deleteStudent(id) {
+  try {
+    const res = await api.delete(`/students/${id}`);
+    return unwrap(res);
+  } catch (error) {
+    throw new Error(apiError(error, 'deleteStudent'), { cause: error });
   }
 }
 

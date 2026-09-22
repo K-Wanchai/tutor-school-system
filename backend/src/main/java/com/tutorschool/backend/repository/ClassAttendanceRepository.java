@@ -17,6 +17,8 @@ public interface ClassAttendanceRepository extends JpaRepository<ClassAttendance
 
     List<ClassAttendance> findByStudentId(Long studentId);
 
+    boolean existsByStudentId(Long studentId);
+
     Optional<ClassAttendance> findByCourseIdAndStudentIdAndSessionDate(Long courseId, Long studentId, LocalDate sessionDate);
 
     // รายงานข้อมูลการเข้าเรียน — กรองแบบ nullable-param เหมือน searchForReport ของ Student/Tutor/Course

@@ -9,6 +9,7 @@ import {
 } from '../services/studentExamAchievementService';
 import { getExamInstitutions, getExamInstitutionById } from '../services/examInstitutionService';
 import { getStudents } from '../services/adminStudentService';
+import { getEnrollmentsByStudent, getAllEnrollments } from '../services/adminEnrollmentService';
 import { getFaculties, getMajors } from '../services/academicFacultyService';
 import { getSchoolTracks } from '../services/schoolTrackService';
 import { getVocationalMajors } from '../services/vocationalMajorService';
@@ -127,6 +128,7 @@ export default function StudentExamAchievementManagePage() {
 
   const [institutions, setInstitutions] = useState([]);
   const [students, setStudents] = useState([]);
+  const [paidStudentIds, setPaidStudentIds] = useState(new Set());
 
   const [facultyList, setFacultyList] = useState([]);
   const [majorList, setMajorList] = useState([]);
@@ -149,6 +151,30 @@ export default function StudentExamAchievementManagePage() {
 
   const [confirmDelete, setConfirmDelete] = useState(null);
   const [deleting, setDeleting] = useState(false);
+
+  const [courseModal, setCourseModal] = useState(null); // { studentId, studentName }
+  const [courseModalData, setCourseModalData] = useState([]);
+  const [courseModalLoading, setCourseModalLoading] = useState(false);
+  const [courseModalError, setCourseModalError] = useState('');
+
+  // ตรวจว่านักเรียนที่เลือกมีคอร์สที่ชำระเงินสำเร็จอย่างน้อย 1 คอร์สก่อนอนุญาตให้บันทึกผลสอบติด
+  const [studentPaidCheck, setStudentPaidCheck] = useState({ loading: false, hasPaid: null });
+
+  async function openCourseModal(studentId, studentName) {
+    setCourseModal({ studentId, studentName });
+    setCourseModalData([]);
+    setCourseModalError('');
+    setCourseModalLoading(true);
+    try {
+      const data = await getEnrollmentsByStudent(studentId);
+      const list = Array.isArray(data) ? data : [];
+      setCourseModalData(list.filter((e) => e.paymentStatus === 'PAID'));
+    } catch (err) {
+      setCourseModalError(err.message || 'โหลดข้อมูลไม่สำเร็จ');
+    } finally {
+      setCourseModalLoading(false);
+    }
+  }
 
   function notify(msg, type = 'success') {
     setToast({ msg, type });
@@ -203,7 +229,16 @@ export default function StudentExamAchievementManagePage() {
         const list = Array.isArray(data) ? data : (data?.content ?? []);
         setStudents(list);
       })
-      .catch(() => { /* ตัวเลือกนักเรียนเป็นข้อมูลเสริม ไม่บล็อกหน้าหลัก */ });
+      .catch(() => {});
+    getAllEnrollments()
+      .then((data) => {
+        const list = Array.isArray(data) ? data : (data?.content ?? []);
+        const ids = new Set(
+          list.filter((e) => e.paymentStatus === 'PAID').map((e) => e.studentId)
+        );
+        setPaidStudentIds(ids);
+      })
+      .catch(() => {});
   }, []);
 
   const stats = useMemo(() => ({
@@ -262,9 +297,18 @@ export default function StudentExamAchievementManagePage() {
     setFormErr((e) => ({ ...e, [key]: '' }));
   }
 
-  function fldStudent(val) {
+  async function fldStudent(val) {
     setForm((f) => ({ ...f, studentId: val }));
     setFormErr((e) => ({ ...e, studentId: '' }));
+    if (!val) { setStudentPaidCheck({ loading: false, hasPaid: null }); return; }
+    setStudentPaidCheck({ loading: true, hasPaid: null });
+    try {
+      const data = await getEnrollmentsByStudent(val);
+      const list = Array.isArray(data) ? data : [];
+      setStudentPaidCheck({ loading: false, hasPaid: list.some((e) => e.paymentStatus === 'PAID') });
+    } catch {
+      setStudentPaidCheck({ loading: false, hasPaid: null });
+    }
   }
 
   function fldFaculty(val) {
@@ -300,6 +344,7 @@ export default function StudentExamAchievementManagePage() {
   function openCreate(presetInstitution) {
     setFormMode('create');
     setEditingId(null);
+    setStudentPaidCheck({ loading: false, hasPaid: null });
     setFormErr({});
     if (presetInstitution) {
       setInstitutionLocked(true);
@@ -418,6 +463,10 @@ export default function StudentExamAchievementManagePage() {
     e.preventDefault();
     const err = validateForm(form);
     if (Object.keys(err).length) { setFormErr(err); return; }
+    if (formMode === 'create' && studentPaidCheck.hasPaid === false) {
+      setFormErr((prev) => ({ ...prev, studentId: 'นักเรียนคนนี้ยังไม่มีคอร์สที่ชำระเงินสำเร็จ ไม่สามารถเพิ่มผลสอบติดได้' }));
+      return;
+    }
 
     setSaving(true);
     try {
@@ -617,7 +666,14 @@ export default function StudentExamAchievementManagePage() {
                     <td>{a.educationLevelLabel || LEVEL_LABEL[a.educationLevel]}</td>
                     <td>{levelDetail(a)}</td>
                     <td>{a.academicYear || '—'}</td>
-                    <td className="eid-course-cell" title={courseSummary(a)}>{courseSummary(a)}</td>
+                    <td>
+                      <button
+                        className="eim-btn-course"
+                        onClick={() => openCourseModal(a.studentId, a.studentName)}
+                      >
+                        ดูคอร์ส
+                      </button>
+                    </td>
                     <td>
                       <div className="eim-actions">
                         <button
@@ -628,7 +684,6 @@ export default function StudentExamAchievementManagePage() {
                           👁
                         </button>
                         <button className="eim-btn-icon" title="แก้ไข" onClick={() => openEdit(a.id)}>✏️</button>
-                        <button className="eim-btn-icon" title="ลบ" onClick={() => setConfirmDelete(a)}>🗑</button>
                       </div>
                     </td>
                   </tr>
@@ -675,11 +730,15 @@ export default function StudentExamAchievementManagePage() {
                 <label>นักเรียน *</label>
                 <select value={form.studentId} onChange={(e) => fldStudent(e.target.value)}>
                   <option value="">— เลือกนักเรียน —</option>
-                  {students.map((s) => (
+                  {students.filter((s) => paidStudentIds.has(s.id)).map((s) => (
                     <option key={s.id} value={s.id}>{s.fullName} ({s.studentCode})</option>
                   ))}
                 </select>
                 {formErr.studentId && <span className="eid-err">{formErr.studentId}</span>}
+                {studentPaidCheck.loading && <span className="eid-hint">กำลังตรวจสอบคอร์ส...</span>}
+                {!studentPaidCheck.loading && studentPaidCheck.hasPaid === false && (
+                  <span className="eid-err">นักเรียนคนนี้ยังไม่มีคอร์สที่ชำระเงินสำเร็จ ไม่สามารถเพิ่มผลสอบติดได้</span>
+                )}
               </div>
 
               <div className="eid-field">
@@ -842,6 +901,53 @@ export default function StudentExamAchievementManagePage() {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* ═══ COURSE MODAL ═══ */}
+      {courseModal && (
+        <div className="eid-overlay" onClick={() => setCourseModal(null)}>
+          <div className="eid-modal eid-modal--lg" onClick={(e) => e.stopPropagation()}>
+            <div className="eid-modal-header">
+              <h2>คอร์สที่ลงทะเบียนและชำระเงินสำเร็จ</h2>
+              <button className="eid-modal-close" onClick={() => setCourseModal(null)} aria-label="ปิด">✕</button>
+            </div>
+            <div className="eid-modal-body">
+              <p className="eim-course-modal-name">นักเรียน: <strong>{courseModal.studentName}</strong></p>
+              {courseModalLoading && <p className="eim-course-modal-state">กำลังโหลด...</p>}
+              {courseModalError && <p className="eim-course-modal-state eim-course-modal-state--err">{courseModalError}</p>}
+              {!courseModalLoading && !courseModalError && courseModalData.length === 0 && (
+                <p className="eim-course-modal-state">ไม่พบคอร์สที่ชำระเงินสำเร็จ</p>
+              )}
+              {!courseModalLoading && courseModalData.length > 0 && (
+                <div className="eim-table-wrap">
+                  <table className="eim-table">
+                    <thead>
+                      <tr>
+                        <th>รหัสคอร์ส</th>
+                        <th>ชื่อคอร์ส</th>
+                        <th>ติวเตอร์</th>
+                        <th>วันที่สมัคร</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {courseModalData.map((e) => (
+                        <tr key={e.id} className="eim-table-row">
+                          <td><span className="eim-code-badge">{e.courseCode || '—'}</span></td>
+                          <td className="eim-text-name">{e.courseName || '—'}</td>
+                          <td>{e.tutorName || '—'}</td>
+                          <td>{e.enrollmentDate ? new Date(e.enrollmentDate).toLocaleDateString('th-TH', { year: 'numeric', month: 'short', day: 'numeric' }) : '—'}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+            <div className="eid-form-actions" style={{ padding: '0 24px 20px' }}>
+              <button className="eim-btn eim-btn--ghost" onClick={() => setCourseModal(null)}>ปิด</button>
+            </div>
           </div>
         </div>
       )}

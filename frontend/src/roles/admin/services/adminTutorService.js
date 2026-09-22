@@ -80,6 +80,15 @@ export async function updateTutor(id, form) {
   }
 }
 
+export async function deleteTutor(id) {
+  try {
+    const res = await api.delete(`/tutors/${id}`);
+    return unwrap(res);
+  } catch (error) {
+    throw new Error(apiError(error, 'deleteTutor'), { cause: error });
+  }
+}
+
 export async function getTutorStats() {
   try {
     const res = await api.get('/tutors', { params: { page: 0, size: 5000 } });

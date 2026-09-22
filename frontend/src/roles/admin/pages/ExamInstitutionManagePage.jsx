@@ -4,6 +4,7 @@ import {
   getExamInstitutions,
   createExamInstitution,
   updateExamInstitution,
+  deleteExamInstitution,
 } from '../services/examInstitutionService';
 import './ExamInstitutionManagePage.css';
 
@@ -91,6 +92,10 @@ export default function ExamInstitutionManagePage() {
   const [form, setForm] = useState(EMPTY_FORM);
   const [formErr, setFormErr] = useState({});
   const [saving, setSaving] = useState(false);
+
+  // delete confirm state
+  const [deleteTarget, setDeleteTarget] = useState(null);
+  const [deleting, setDeleting] = useState(false);
 
   function notify(msg, type = 'success') {
     setToast({ msg, type });
@@ -186,6 +191,23 @@ export default function ExamInstitutionManagePage() {
     });
     setFormErr({});
     setShowForm(true);
+  }
+
+  async function handleDelete() {
+    if (!deleteTarget) return;
+    setDeleting(true);
+    try {
+      await deleteExamInstitution(deleteTarget.id);
+      notify('ลบข้อมูลสถาบันที่จัดสอบสำเร็จ');
+      setDeleteTarget(null);
+      await load(filters);
+      await loadStats();
+    } catch (ex) {
+      notify(ex.message, 'error');
+      setDeleteTarget(null);
+    } finally {
+      setDeleting(false);
+    }
   }
 
   async function handleSubmit(e) {
@@ -354,6 +376,11 @@ export default function ExamInstitutionManagePage() {
                           ⚙️
                         </button>
                         <button className="eim-btn-icon" title="แก้ไข" onClick={() => openEdit(inst)}>✏️</button>
+                        <button
+                          className="eim-btn-icon eim-btn-icon--danger"
+                          title="ลบสถาบัน"
+                          onClick={() => setDeleteTarget(inst)}
+                        >🗑️</button>
                       </div>
                     </td>
                   </tr>
@@ -363,6 +390,32 @@ export default function ExamInstitutionManagePage() {
           </div>
         )}
       </div>
+
+      {/* ═══ DELETE CONFIRM MODAL ═══ */}
+      {deleteTarget && (
+        <div className="eim-overlay" onClick={() => !deleting && setDeleteTarget(null)}>
+          <div className="eim-modal eim-modal--confirm" onClick={(e) => e.stopPropagation()}>
+            <div className="eim-modal-header">
+              <h2>ยืนยันการลบสถาบัน</h2>
+              <button className="eim-modal-close" onClick={() => setDeleteTarget(null)} disabled={deleting} aria-label="ปิด">
+                <svg viewBox="0 0 20 20" fill="currentColor" width="18" height="18">
+                  <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
+                </svg>
+              </button>
+            </div>
+            <div className="eim-confirm-body">
+              <p>คุณต้องการลบสถาบัน <strong>{deleteTarget.institutionName}</strong> ออกจากระบบหรือไม่?</p>
+              <p className="eim-confirm-warning">การลบจะลบข้อมูลพื้นฐานที่เชื่อมโยงทั้งหมด (คณะ/สาขา/สายการเรียน/รอบที่สอบติด) และไม่สามารถย้อนกลับได้</p>
+            </div>
+            <div className="eim-confirm-actions">
+              <button type="button" className="eim-btn eim-btn--ghost" onClick={() => setDeleteTarget(null)} disabled={deleting}>ยกเลิก</button>
+              <button type="button" className="eim-btn eim-btn--danger" onClick={handleDelete} disabled={deleting}>
+                {deleting ? 'กำลังลบ...' : 'ยืนยันการลบ'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* ═══ CREATE / EDIT MODAL ═══ */}
       {showForm && (
