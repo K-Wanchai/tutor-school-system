@@ -309,8 +309,7 @@ export default function AdminStudentManagementPage() {
     try {
       const data = await getStudentEnrollments(student.id);
       const filtered = (Array.isArray(data) ? data : []).filter(
-        e => e.status === 'APPROVED' &&
-          (e.paymentStatus === 'PAID' || e.paymentStatus === 'PENDING_VERIFICATION')
+        e => e.status === 'APPROVED'
       );
       setCourseModal({ student, loading: false, enrollments: filtered });
     } catch {
