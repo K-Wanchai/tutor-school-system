@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react';
 import { getUsername } from '../../../../shared/utils/tokenUtils';
 import {
-  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
-  PieChart, Pie, Cell, Legend,
+  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LabelList,
+  PieChart, Pie, Cell,
 } from 'recharts';
 import CalendarDateInput from '../../../../shared/components/CalendarDateInput';
 import { getStudents } from '../../services/adminStudentService';
@@ -1051,10 +1051,9 @@ export default function ConditionalReportTab() {
                         <BarChart
                           data={(report.byInstitution || []).slice(0, 10)}
                           layout="vertical"
-                          margin={{ top: 8, right: 24, bottom: 8, left: 8 }}
+                          margin={{ top: 8, right: 40, bottom: 8, left: 8 }}
                         >
-                          <CartesianGrid strokeDasharray="3 3" horizontal={false} />
-                          <XAxis type="number" allowDecimals={false} />
+                          <XAxis type="number" allowDecimals={false} hide />
                           <YAxis
                             type="category"
                             dataKey="institutionName"
@@ -1063,7 +1062,9 @@ export default function ConditionalReportTab() {
                             tickFormatter={(name) => (name && name.length > 18 ? `${name.slice(0, 18)}…` : name)}
                           />
                           <Tooltip formatter={(value) => [formatNumber(value), 'จำนวนนักเรียน']} />
-                          <Bar dataKey="count" fill={CHART_COLORS[0]} radius={[0, 6, 6, 0]} />
+                          <Bar dataKey="count" fill={CHART_COLORS[0]} radius={[0, 6, 6, 0]}>
+                            <LabelList dataKey="count" position="right" style={{ fontSize: 12, fill: '#1e3a8a', fontWeight: 600 }} />
+                          </Bar>
                         </BarChart>
                       </ResponsiveContainer>
                     </div>
@@ -1091,7 +1092,6 @@ export default function ConditionalReportTab() {
                             ))}
                           </Pie>
                           <Tooltip formatter={(value) => [formatNumber(value), 'จำนวนนักเรียน']} />
-                          <Legend />
                         </PieChart>
                       </ResponsiveContainer>
                     </div>

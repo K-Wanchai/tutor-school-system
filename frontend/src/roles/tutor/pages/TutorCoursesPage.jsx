@@ -311,7 +311,7 @@ export default function TutorCoursesPage() {
                         setCompleteTarget(course);
                       }}
                     >
-                      ✅ บันทึกข้อมูลและจบการสอน
+                      ✅จบการสอน
                     </button>
                   );
                 })()}

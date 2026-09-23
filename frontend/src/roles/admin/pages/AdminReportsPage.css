@@ -590,6 +590,13 @@
     print-color-adjust: exact;
   }
 
+  /* ซ่อน interactive elements ของ recharts ที่ลอยอยู่ใน DOM และถูก visibility:visible ดึงขึ้นมาตอนพิมพ์ */
+  .recharts-tooltip-wrapper,
+  .recharts-legend-wrapper {
+    display: none !important;
+    visibility: hidden !important;
+  }
+
 }
 
 .ar-summary-chips {

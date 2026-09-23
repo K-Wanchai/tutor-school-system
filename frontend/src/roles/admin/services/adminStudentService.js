@@ -47,6 +47,15 @@ export async function deleteStudent(id) {
   }
 }
 
+export async function getStudentEnrollments(studentId) {
+  try {
+    const res = await api.get(`/enrollments/student/${studentId}`);
+    return unwrap(res) ?? [];
+  } catch (error) {
+    throw new Error(apiError(error, 'getStudentEnrollments'), { cause: error });
+  }
+}
+
 export async function getStudentStats() {
   try {
     const res = await api.get('/students', { params: { page: 0, size: 5000 } });

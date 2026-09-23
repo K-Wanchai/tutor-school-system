@@ -5,6 +5,7 @@ import {
   getStudentById,
   deleteStudent,
   getStudentStats,
+  getStudentEnrollments,
 } from '../services/adminStudentService';
 import './AdminStudentManagementPage.css';
 
@@ -37,6 +38,11 @@ function avatarColor(name = '') {
 
 function initials(firstName = '', lastName = '') {
   return `${firstName.charAt(0)}${lastName.charAt(0)}`.toUpperCase() || '?';
+}
+
+function formatBaht(amount) {
+  if (amount == null) return '—';
+  return `${Number(amount).toLocaleString('th-TH')} ฿`;
 }
 
 // ── StudentAvatar ─────────────────────────────────────────────────────────────
@@ -141,6 +147,90 @@ function DetailModal({ student, onClose }) {
   );
 }
 
+// ── Courses Modal ─────────────────────────────────────────────────────────────
+
+function CoursesModal({ student, loading, enrollments, onClose }) {
+  if (!student) return null;
+  return (
+    <div className="sm-modal-overlay" onClick={onClose}>
+      <div className="sm-modal sm-modal--courses" onClick={e => e.stopPropagation()}>
+        <div className="sm-modal-header">
+          <h2 className="sm-modal-title">คอร์สที่สมัคร</h2>
+          <button className="sm-modal-close" onClick={onClose} aria-label="ปิด">
+            <svg viewBox="0 0 20 20" fill="currentColor" width="18" height="18">
+              <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
+            </svg>
+          </button>
+        </div>
+
+        <div className="sm-modal-body">
+          <div className="sm-courses-header">
+            <div className="sm-courses-student">
+              <StudentAvatar firstName={student.firstName} lastName={student.lastName} size={46} />
+              <div>
+                <div className="sm-courses-student-name">{student.firstName} {student.lastName}</div>
+                <div className="sm-courses-student-code">{student.studentCode || '—'}</div>
+              </div>
+            </div>
+            {!loading && (
+              <div className="sm-courses-count-badge">
+                <span className="sm-courses-count-num">{enrollments.length}</span>
+                <span className="sm-courses-count-label">คอร์ส</span>
+              </div>
+            )}
+          </div>
+
+          <p className="sm-courses-hint">คอร์สที่ยืนยันและชำระเงินแล้วเท่านั้น</p>
+
+          {loading && (
+            <div className="sm-loading" style={{ padding: '40px 0' }}>
+              <div className="sm-spinner" />
+              <span>กำลังโหลด...</span>
+            </div>
+          )}
+
+          {!loading && enrollments.length === 0 && (
+            <div className="sm-empty" style={{ padding: '40px 0' }}>
+              <div className="sm-empty-icon">
+                <svg viewBox="0 0 20 20" fill="currentColor" width="28" height="28">
+                  <path d="M9 4.804A7.968 7.968 0 005.5 4c-1.255 0-2.443.29-3.5.804v10A7.969 7.969 0 015.5 14c1.669 0 3.218.51 4.5 1.385A7.962 7.962 0 0114.5 14c1.255 0 2.443.29 3.5.804v-10A7.968 7.968 0 0014.5 4c-1.255 0-2.443.29-3.5.804V12a1 1 0 11-2 0V4.804z" />
+                </svg>
+              </div>
+              <p className="sm-empty-title" style={{ fontSize: '15px' }}>ไม่มีคอร์สที่ผ่านเงื่อนไข</p>
+              <p className="sm-empty-subtitle">นักเรียนยังไม่มีคอร์สที่ยืนยันและชำระเงินแล้ว</p>
+            </div>
+          )}
+
+          {!loading && enrollments.length > 0 && (
+            <div className="sm-course-list">
+              {enrollments.map(enr => (
+                <div key={enr.id} className="sm-course-item">
+                  <div className="sm-course-item-icon">
+                    <svg viewBox="0 0 20 20" fill="currentColor" width="16" height="16">
+                      <path d="M9 4.804A7.968 7.968 0 005.5 4c-1.255 0-2.443.29-3.5.804v10A7.969 7.969 0 015.5 14c1.669 0 3.218.51 4.5 1.385A7.962 7.962 0 0114.5 14c1.255 0 2.443.29 3.5.804v-10A7.968 7.968 0 0014.5 4c-1.255 0-2.443.29-3.5.804V12a1 1 0 11-2 0V4.804z" />
+                    </svg>
+                  </div>
+                  <div className="sm-course-item-body">
+                    <div className="sm-course-item-name">{enr.courseName || '—'}</div>
+                    <div className="sm-course-item-meta">
+                      <span>{enr.courseCode}</span>
+                      {enr.tutorName && <><span className="sm-course-item-dot">·</span><span>{enr.tutorName}</span></>}
+                    </div>
+                  </div>
+                  <div className="sm-course-item-right">
+                    <div className="sm-course-item-amount">{formatBaht(enr.finalAmount ?? enr.amount)}</div>
+                    <div className="sm-course-item-date">{formatDate(enr.enrollmentDate)}</div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ── Main Page ─────────────────────────────────────────────────────────────────
 
 const PAGE_SIZE = 10;
@@ -156,6 +246,7 @@ export default function AdminStudentManagementPage() {
   const [totalPages, setTotalPages]       = useState(0);
   const [totalElements, setTotalElements] = useState(0);
   const [detailStudent, setDetailStudent] = useState(null);
+  const [courseModal, setCourseModal]     = useState({ student: null, loading: false, enrollments: [] });
   const [deleteTarget, setDeleteTarget]   = useState(null);
   const [deleting, setDeleting]           = useState(false);
   const [toast, setToast]                 = useState({ type: '', msg: '' });
@@ -211,6 +302,20 @@ export default function AdminStudentManagementPage() {
   function showToast(type, msg) {
     setToast({ type, msg });
     setTimeout(() => setToast({ type: '', msg: '' }), 3500);
+  }
+
+  async function handleViewCourses(student) {
+    setCourseModal({ student, loading: true, enrollments: [] });
+    try {
+      const data = await getStudentEnrollments(student.id);
+      const filtered = (Array.isArray(data) ? data : []).filter(
+        e => e.status === 'APPROVED' &&
+          (e.paymentStatus === 'PAID' || e.paymentStatus === 'PENDING_VERIFICATION')
+      );
+      setCourseModal({ student, loading: false, enrollments: filtered });
+    } catch {
+      setCourseModal({ student, loading: false, enrollments: [] });
+    }
   }
 
   async function handleViewDetail(student) {
@@ -397,6 +502,16 @@ export default function AdminStudentManagementPage() {
                       <td>
                         <div className="sm-row-actions">
                           <button
+                            className="sm-row-btn sm-row-btn--icon sm-row-btn--courses"
+                            onClick={() => handleViewCourses(student)}
+                            data-tooltip="ดูคอร์สที่สมัคร"
+                            aria-label="ดูคอร์สที่สมัคร"
+                          >
+                            <svg viewBox="0 0 20 20" fill="currentColor" width="16" height="16">
+                              <path d="M9 4.804A7.968 7.968 0 005.5 4c-1.255 0-2.443.29-3.5.804v10A7.969 7.969 0 015.5 14c1.669 0 3.218.51 4.5 1.385A7.962 7.962 0 0114.5 14c1.255 0 2.443.29 3.5.804v-10A7.968 7.968 0 0014.5 4c-1.255 0-2.443.29-3.5.804V12a1 1 0 11-2 0V4.804z" />
+                            </svg>
+                          </button>
+                          <button
                             className="sm-row-btn sm-row-btn--icon"
                             onClick={() => handleViewDetail(student)}
                             data-tooltip="ดูรายละเอียด"
@@ -470,6 +585,13 @@ export default function AdminStudentManagementPage() {
       {detailStudent && (
         <DetailModal student={detailStudent} onClose={() => setDetailStudent(null)} />
       )}
+
+      <CoursesModal
+        student={courseModal.student}
+        loading={courseModal.loading}
+        enrollments={courseModal.enrollments}
+        onClose={() => setCourseModal({ student: null, loading: false, enrollments: [] })}
+      />
 
       {/* ── Delete Confirm Modal ── */}
       {deleteTarget && (
